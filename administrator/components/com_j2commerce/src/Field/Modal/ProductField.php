@@ -15,6 +15,7 @@ use Joomla\CMS\Form\Field\ModalSelectField;
 use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\FileLayout;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\ParameterType;
@@ -130,7 +131,12 @@ class ProductField extends ModalSelectField
 
                 $title = $db->loadResult();
             } catch (\Throwable $e) {
-                Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+                Log::add('Failed to load product title: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+                Factory::getApplication()->enqueueMessage(
+                    Text::_('JERROR_AN_ERROR_HAS_OCCURRED'),
+                    'error'
+                );
             }
         }
 

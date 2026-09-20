@@ -19,6 +19,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 
 /**
  * PriceCalculator field - provides a dropdown of available pricing calculators.
@@ -59,8 +60,10 @@ class PricecalculatorField extends ListField
                 $options[] = HTMLHelper::_('select.option', $value, $text);
             }
         } catch (\Exception $e) {
+            Log::add('Failed to load pricing calculators: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
             Factory::getApplication()->enqueueMessage(
-                Text::sprintf('COM_J2COMMERCE_ERROR_LOADING_PRICING_CALCULATORS', $e->getMessage()),
+                Text::sprintf('COM_J2COMMERCE_ERROR_LOADING_PRICING_CALCULATORS', Text::_('JERROR_AN_ERROR_HAS_OCCURRED')),
                 'error'
             );
         }

@@ -18,6 +18,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\Database\DatabaseInterface;
 
 /**
@@ -57,8 +58,10 @@ class CategoryduallistboxField extends ListField
                 }
             }
         } catch (\Exception $e) {
+            Log::add('Failed to load categories: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
             Factory::getApplication()->enqueueMessage(
-                Text::sprintf('COM_J2COMMERCE_ERROR_LOADING_CATEGORIES', $e->getMessage()),
+                Text::sprintf('COM_J2COMMERCE_ERROR_LOADING_CATEGORIES', Text::_('JERROR_AN_ERROR_HAS_OCCURRED')),
                 'error'
             );
         }
@@ -136,7 +139,7 @@ class CategoryduallistboxField extends ListField
 
     protected function getInitScript(array $selected): string
     {
-        $selectedJson        = json_encode($selected);
+        $selectedJson        = json_encode($selected, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
         $availableLabel      = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_AVAILABLE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
         $selectedLabel       = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_SELECTED'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
         $searchPlaceholder   = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_SEARCH'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);

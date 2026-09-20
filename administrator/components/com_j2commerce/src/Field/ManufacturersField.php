@@ -18,6 +18,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\Database\DatabaseInterface;
 
 /**
@@ -59,8 +60,10 @@ class ManufacturersField extends ListField
                 }
             }
         } catch (\Exception $e) {
+            Log::add('Failed to load manufacturers: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
             Factory::getApplication()->enqueueMessage(
-                Text::sprintf('COM_J2COMMERCE_ERROR_LOADING_MANUFACTURERS', $e->getMessage()),
+                Text::sprintf('COM_J2COMMERCE_ERROR_LOADING_MANUFACTURERS', Text::_('JERROR_AN_ERROR_HAS_OCCURRED')),
                 'error'
             );
         }
