@@ -707,7 +707,7 @@ class ProductHelper
         // Convert params JSON string to Registry object for $product->params->get() access
         $product->params = new Registry($product->params ?? '{}');
 
-        // Add product images (includes j2commerce_productimage_id, brand_desc_id)
+        // Add product images
         $images                              = self::getProductImages($productId);
         $product->j2commerce_productimage_id = $images->j2commerce_productimage_id ?? 0;
         $product->main_image                 = $images->main_image ?? '';
@@ -719,13 +719,13 @@ class ProductHelper
         $product->additional_images_alt      = $images->additional_images_alt ?? '';
         $product->additional_thumb_images    = $images->additional_thumb_images ?? '';
         $product->additional_tiny_images     = $images->additional_tiny_images ?? '';
-        $product->brand_desc_id              = $images->brand_desc_id ?? 0;
 
-        // Add manufacturer data (company name + first/last name from address)
+        // Add manufacturer data (company name + first/last name from address, brand article)
         $manufacturerData                 = self::getManufacturerData((int) ($product->manufacturer_id ?? 0));
         $product->manufacturer            = $manufacturerData['company'] ?? '';
         $product->manufacturer_first_name = $manufacturerData['first_name'] ?? null;
         $product->manufacturer_last_name  = $manufacturerData['last_name'] ?? null;
+        $product->brand_desc_id           = $manufacturerData['brand_desc_id'] ?? 0;
 
         // Add article data (for com_content source products)
         $articleData = self::getArticleData(
@@ -1249,20 +1249,21 @@ class ProductHelper
     }
 
     /**
-     * Get full manufacturer data including company and name fields.
+     * Get full manufacturer data including company, name fields and brand description article.
      *
      * @param   int  $manufacturerId  The manufacturer ID
      *
-     * @return  array  Array with company, first_name, last_name keys
+     * @return  array  Array with company, first_name, last_name, brand_desc_id keys
      *
      * @since   6.0.8
      */
     public static function getManufacturerData(int $manufacturerId): array
     {
         $default = [
-            'company'    => '',
-            'first_name' => null,
-            'last_name'  => null,
+            'company'       => '',
+            'first_name'    => null,
+            'last_name'     => null,
+            'brand_desc_id' => 0,
         ];
 
         if ($manufacturerId <= 0) {
@@ -1282,6 +1283,7 @@ class ProductHelper
                 $db->quoteName('a.company'),
                 $db->quoteName('a.first_name'),
                 $db->quoteName('a.last_name'),
+                $db->quoteName('m.brand_desc_id'),
             ])
             ->from($db->quoteName('#__j2commerce_manufacturers', 'm'))
             ->leftJoin(
@@ -1296,9 +1298,10 @@ class ProductHelper
 
         if ($result) {
             $cache[$manufacturerId] = [
-                'company'    => $result->company ?? '',
-                'first_name' => $result->first_name ?? null,
-                'last_name'  => $result->last_name ?? null,
+                'company'       => $result->company ?? '',
+                'first_name'    => $result->first_name ?? null,
+                'last_name'     => $result->last_name ?? null,
+                'brand_desc_id' => (int) ($result->brand_desc_id ?? 0),
             ];
         } else {
             $cache[$manufacturerId] = $default;
