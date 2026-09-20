@@ -20,6 +20,7 @@ use Joomla\CMS\Event\Content\ContentPrepareEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
@@ -927,11 +928,12 @@ class ProductHelper
                 $behavior->onAfterGetProduct($event);
             }
         } catch (\Exception $e) {
-            // Log error but don't fail - base product data is still valid
-            Factory::getApplication()->enqueueMessage(
-                'Behavior enhancement failed: ' . $e->getMessage(),
-                'warning'
-            );
+            // Base product data is still valid, so this is not fatal to the caller --
+            // an unwritable log file must not take the render down with it.
+            try {
+                Log::add('Behavior enhancement failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            } catch (\Throwable $logFailure) {
+            }
         }
     }
 
