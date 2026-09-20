@@ -9,13 +9,14 @@ use Joomla\CMS\Installer\InstallerScript;
 use Joomla\CMS\Log\Log;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
+use Joomla\Filesystem\File;
 use Joomla\Registry\Registry;
 
 class Pkg_J2commerceInstallerScript extends InstallerScript
 {
     protected $minimumJoomlaVersion = '6.0';
-    protected $minimumPhpVersion = '8.1';
-    protected $deleteFiles = [
+    protected $minimumPhpVersion    = '8.1';
+    protected $deleteFiles          = [
         'administrator/components/com_j2commerce/src/Field/BoxPackerField.php',
         'administrator/components/com_j2commerce/src/Field/CategoryDuallistboxField.php',
         'administrator/components/com_j2commerce/src/Field/ConfigSubtemplateField.php',
@@ -57,7 +58,7 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
         'plugins/schemaorg/ecommerce/src/Field/EcommerceProductPreviewField.php',
         'plugins/schemaorg/ecommerce/src/Field/J2CommerceCurrencyField.php',
     ];
-    private string $debugLogFile = '';
+    private string $debugLogFile         = '';
     private array $preUpdatePluginExists = [];
 
     /**
@@ -100,7 +101,7 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
     private array $moduleConfig = [
         ['mod_j2commerce_menu',       1, 'status', 1, []],
         ['mod_j2commerce_orders',     1, 'j2commerce-dashboard-module-side-tab', 1, [
-            'limit' => 5,
+            'limit'         => 5,
             'filter_status' => ['1'],
         ]],
         ['mod_j2commerce_quickicons', 1, 'icon', 1, [
@@ -167,18 +168,40 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
         file_put_contents($this->debugLogFile, date('[Y-m-d H:i:s] ') . $message . "\n", FILE_APPEND);
     }
 
+    /**
+     * Overrides InstallerScript::removeFiles(): the parent builds JPATH_ROOT . $file with no
+     * separator, and every entry differs from its live replacement only by case, so the parent's
+     * is_file() would match and delete the live class. Overriding rather than adding a second
+     * method keeps the unsafe inherited path from being reachable at all.
+     */
+    public function removeFiles()
+    {
+        foreach ($this->deleteFiles as $file) {
+            $path = JPATH_ROOT . '/' . $file;
+
+            if (!is_file($path) || !$this->existsWithExactCase($path)) {
+                continue;
+            }
+
+            try {
+                File::delete($path);
+                $this->debugLog('PKG PREFLIGHT: deleted ' . $file);
+            } catch (\Exception $e) {
+                // One stubborn file must not abort the update: File::delete() throws, never returns false.
+                $this->debugLog('PKG PREFLIGHT: could not delete ' . $file);
+            }
+        }
+    }
+
+    /** Directory listings are byte-exact even where the filesystem's own lookups are not. */
+    private function existsWithExactCase(string $path): bool
+    {
+        return \in_array(basename($path), @scandir(\dirname($path)) ?: [], true);
+    }
+
     public function preflight($route, $parent)
     {
         $this->debugLog("=== PKG PREFLIGHT START (route={$route}) ===");
-
-        if ($route === 'update') {
-            $this->debugLog('PKG PREFLIGHT: removing legacy renamed files (' . count($this->deleteFiles) . ' configured)');
-            $this->removeFiles();
-            $this->debugLog('PKG PREFLIGHT: legacy file cleanup completed');
-
-            $db = Factory::getContainer()->get(DatabaseInterface::class);
-            $this->snapshotPreUpdatePluginState($db);
-        }
 
         if (version_compare(JVERSION, '6.0.0', '<')) {
             Log::add('J2Commerce requires Joomla 6.0.0 or later. Your version: ' . JVERSION, Log::WARNING, 'jerror');
@@ -195,6 +218,16 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
             return false;
         }
 
+        // Only past every gate above: aborting after this point cannot restore a deleted file.
+        if ($route === 'update') {
+            $this->debugLog('PKG PREFLIGHT: removing legacy renamed files (' . \count($this->deleteFiles) . ' configured)');
+            $this->removeFiles();
+            $this->debugLog('PKG PREFLIGHT: legacy file cleanup completed');
+
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+            $this->snapshotPreUpdatePluginState($db);
+        }
+
         $this->debugLog("PKG PREFLIGHT: passed all checks");
         return true;
     }
@@ -205,7 +238,7 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
 
         $db = Factory::getContainer()->get(DatabaseInterface::class);
 
-        if (in_array($route, ['install', 'discover_install'], true)) {
+        if (\in_array($route, ['install', 'discover_install'], true)) {
             $this->debugLog("PKG POSTFLIGHT: fresh install");
             $this->enablePlugins($db);
             $this->configureModules($db);
@@ -428,7 +461,7 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
 
             // Find the original module to clone its basic properties
             $clientId = 1;
-            $query = $db->getQuery(true)
+            $query    = $db->getQuery(true)
                 ->select([$db->quoteName('title'), $db->quoteName('access'), $db->quoteName('language')])
                 ->from($db->quoteName('#__modules'))
                 ->where($db->quoteName('module') . ' = :module')
@@ -446,15 +479,15 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
 
             // Create the new instance
             $obj = (object) [
-                'title'      => $original->title,
-                'module'     => $module,
-                'position'   => $position,
-                'published'  => 1,
-                'client_id'  => $clientId,
-                'access'     => $original->access ?? 1,
-                'ordering'   => 0,
-                'language'   => $original->language ?? '*',
-                'params'     => json_encode($params),
+                'title'     => $original->title,
+                'module'    => $module,
+                'position'  => $position,
+                'published' => 1,
+                'client_id' => $clientId,
+                'access'    => $original->access ?? 1,
+                'ordering'  => 0,
+                'language'  => $original->language ?? '*',
+                'params'    => json_encode($params),
             ];
 
             $db->insertObject('#__modules', $obj, 'id');
@@ -504,7 +537,7 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
         }
 
         $targetParams = new Registry($target->params ?? '{}');
-        $migrated = false;
+        $migrated     = false;
 
         foreach (['leaflet_enabled', 'leaflet_provider', 'leaflet_custom_url'] as $key) {
             $val = $oldParams->get($key);
@@ -554,7 +587,7 @@ class Pkg_J2commerceInstallerScript extends InstallerScript
         }
 
         $pluginParams = new Registry($plugin->params ?? '{}');
-        $maxSize = $pluginParams->get('max_file_size');
+        $maxSize      = $pluginParams->get('max_file_size');
 
         if ($maxSize === null) {
             return;
