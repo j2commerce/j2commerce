@@ -35,7 +35,7 @@ final class AppFlexivariable extends CMSPlugin implements SubscriberInterface
     {
         return [
             'onJ2CommerceGetProductTypes'           => 'onGetProductTypes',
-            'onJ2CommerceAfterAddAssets'            => 'onAfterAddAssets',
+            'onJ2CommerceAfterAddJS'                => 'onAfterAddAssets',
             'onJ2CommerceAfterProcessUpSellItem'    => 'onAfterProcessUpSellItem',
             'onJ2CommerceAfterProcessCrossSellItem' => 'onAfterProcessCrossSellItem',
             'onJ2CommerceAfterVariantListAjax'      => 'onAfterVariantListAjax',
