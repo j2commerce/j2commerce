@@ -2889,7 +2889,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         }
 
         // Offer for this variant
-        $schema['offers'] = $this->buildVariantOfferSchema($variant);
+        $schema['offers'] = $this->buildVariantOfferSchema($variant, $product);
 
         return $schema;
     }
@@ -3047,14 +3047,27 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
      *
      * @since   6.0.0
      */
-    private function buildVariantOfferSchema(object $variant): array
+    /**
+     * Both plugins ship in the same package, but this one runs precisely when the other did
+     * not emit - which includes the case where it was removed. Returning null there costs the
+     * page its Offer; calling into a class that is gone would cost it the whole render.
+     */
+    private function getSchemaHelper(): ?J2CommerceSchemaHelper
     {
-        $price = (float) ($variant->price ?? 0);
+        return class_exists(J2CommerceSchemaHelper::class) ? J2CommerceSchemaHelper::getInstance() : null;
+    }
 
-        // Check for special price
-        if (isset($variant->special_price) && (float) $variant->special_price > 0) {
-            $price = (float) $variant->special_price;
+    private function buildVariantOfferSchema(object $variant, object $product): array
+    {
+        // Same resolution plg_schemaorg_ecommerce uses, so the two emitters cannot quote
+        // different figures for one product depending on which of them ran.
+        $helper = $this->getSchemaHelper();
+
+        if ($helper === null) {
+            return [];
         }
+
+        $price = $helper->getProductPrice($variant, $product);
 
         // Same zero-price rule as the single-product offer above.
         if ($price <= 0) {
@@ -3078,7 +3091,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         }
 
         // Availability
-        $offer['availability'] = $this->mapVariantAvailability($variant);
+        $offer['availability'] = $helper->mapAvailability($variant);
 
         // URL
         $offer['url'] = Uri::current();
@@ -3150,41 +3163,6 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
     }
 
     /**
-     * Map variant availability to schema.org value
-     *
-     * @param   object  $variant  The variant
-     *
-     * @return  string
-     *
-     * @since   6.0.0
-     */
-    private function mapVariantAvailability(object $variant): string
-    {
-        // Note: In J2Commerce, availability field: 1 = in stock, 0 = out of stock
-        if (isset($variant->availability) && (int) $variant->availability === 0) {
-            return 'https://schema.org/OutOfStock';
-        }
-
-        $manageStock = (int) ($variant->manage_stock ?? 0);
-
-        if ($manageStock === 1) {
-            $quantity = (int) ($variant->stock_quantity ?? 0);
-
-            if ($quantity <= 0) {
-                $allowBackorder = (int) ($variant->allow_backorder ?? 0);
-
-                if ($allowBackorder === 1) {
-                    return 'https://schema.org/BackOrder';
-                }
-
-                return 'https://schema.org/OutOfStock';
-            }
-        }
-
-        return 'https://schema.org/InStock';
-    }
-
-    /**
      * Check if the product is a variable product
      *
      * @param   object  $product  The product
@@ -3219,7 +3197,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             $query = $db->getQuery(true)
                 ->select('v.*')
                 ->select($db->quoteName('pvo.product_optionvalue_ids', 'variant_name'))
-                ->select($db->quoteName('pq.quantity', 'stock_quantity'))
+                ->select($db->quoteName('pq.quantity'))
                 ->from($db->quoteName('#__j2commerce_variants', 'v'))
                 ->join(
                     'LEFT',
@@ -3653,16 +3631,15 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
      */
     private function buildOfferSchema(object $product): array
     {
-        $price = 0.0;
+        $helper = $this->getSchemaHelper();
 
-        if (isset($product->variant)) {
-            $price = (float) ($product->variant->price ?? 0);
-
-            // Check for special price
-            if (isset($product->variant->special_price) && (float) $product->variant->special_price > 0) {
-                $price = (float) $product->variant->special_price;
-            }
+        if ($helper === null) {
+            return [];
         }
+
+        $price = isset($product->variant)
+            ? $helper->getProductPrice($product->variant, $product)
+            : 0.0;
 
         // Merchant listing experiences require a price greater than zero, so a
         // resolved zero disqualifies the whole page. No offers is the better trade.
@@ -3689,7 +3666,9 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         }
 
         // Availability
-        $offer['availability'] = $this->mapAvailability($product);
+        $offer['availability'] = isset($product->variant)
+            ? $helper->mapAvailability($product->variant)
+            : 'https://schema.org/InStock';
 
         // URL
         $offer['url'] = $this->getProductUrl($product);
@@ -3771,49 +3750,6 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         $defaultCurrency = $params->get('config_currency', 'USD');
 
         return $defaultCurrency;
-    }
-
-    /**
-     * Map product availability to schema.org value
-     *
-     * @param   object  $product  The product
-     *
-     * @return  string
-     *
-     * @since   6.0.0
-     */
-    private function mapAvailability(object $product): string
-    {
-        if (!isset($product->variant)) {
-            return 'https://schema.org/InStock';
-        }
-
-        $variant = $product->variant;
-
-        // Check if product is available
-        if (isset($variant->availability) && (int) $variant->availability === 0) {
-            return 'https://schema.org/OutOfStock';
-        }
-
-        // Check stock
-        $manageStock = (int) ($variant->manage_stock ?? 0);
-
-        if ($manageStock === 1) {
-            $quantity = (int) ($variant->quantity ?? 0);
-
-            if ($quantity <= 0) {
-                // Check backorder setting
-                $allowBackorder = (int) ($variant->allow_backorder ?? 0);
-
-                if ($allowBackorder === 1) {
-                    return 'https://schema.org/BackOrder';
-                }
-
-                return 'https://schema.org/OutOfStock';
-            }
-        }
-
-        return 'https://schema.org/InStock';
     }
 
     /**
