@@ -45,13 +45,8 @@
 
 declare(strict_types=1);
 
-// CLI only. build/ is excluded from every package so these never reach an
-// install, but on a dev or CI box whose docroot is the Joomla root they are
-// served like any other file.
-if (PHP_SAPI !== 'cli') {
-    http_response_code(403);
-    exit(1);
-}
+require_once __DIR__ . '/inc/cli_guard.php';
+requireCli();
 
 $root = realpath(__DIR__ . '/..');
 

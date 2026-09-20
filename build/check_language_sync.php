@@ -19,14 +19,8 @@ declare(strict_types=1);
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
-// CLI only. build/ is excluded from every package so these never reach an
-// install, but on a dev or CI box whose docroot is the Joomla root they are
-// served like any other file. Without this the only thing stopping a web hit is
-// register_argc_argv being off — an accident, not a control.
-if (PHP_SAPI !== "cli") {
-    http_response_code(403);
-    exit(1);
-}
+require_once __DIR__ . '/inc/cli_guard.php';
+requireCli();
 
 // ── Configuration ──────────────────────────────────────────────────────────────
 
