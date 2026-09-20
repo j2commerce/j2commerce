@@ -105,7 +105,9 @@
     function initDropzone(zone) {
         const input = zone.querySelector('input.j2c-upload-native');
         const title = zone.querySelector('.dz-title');
-        if (!input) return;
+        if (!input || zone.dataset.j2cUploadBound) return;
+
+        zone.dataset.j2cUploadBound = '1';
 
         // Drop the label-for activation; the page may sit inside a parent <form> whose
         // submit handler intercepts label clicks. We open the picker explicitly.
@@ -168,7 +170,9 @@
         const title = hero.querySelector('.ih-title');
         const hint  = hero.querySelector('.ih-hint');
         const cta   = hero.querySelector('.ih-cta');
-        if (!input) return;
+        if (!input || hero.dataset.j2cUploadBound) return;
+
+        hero.dataset.j2cUploadBound = '1';
 
         // Drop the label-for activation; the page may sit inside a parent <form> whose
         // submit handler intercepts label clicks. We open the picker explicitly.
@@ -231,13 +235,20 @@
         });
     }
 
-    function init() {
-        document.querySelectorAll('[data-j2c-dropzone]').forEach(initDropzone);
-        document.querySelectorAll('[data-j2c-image-hero]').forEach(initImageHero);
+    // Scoped so the same pass can bind a fragment injected after load; the widgets are
+    // otherwise bound once at DOMContentLoaded and an AJAX-rendered child option is inert.
+    function init(scope) {
+        const root = scope || document;
+        root.querySelectorAll('[data-j2c-dropzone]').forEach(initDropzone);
+        root.querySelectorAll('[data-j2c-image-hero]').forEach(initImageHero);
     }
 
+    window.J2CommerceOptionUpload = { init };
+
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+        // Wrapped: as a listener init() would take the Event as its scope and throw on
+        // querySelectorAll. Unreachable while the asset is deferred, which is not this file's to assume.
+        document.addEventListener('DOMContentLoaded', () => init());
     } else {
         init();
     }

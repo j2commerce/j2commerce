@@ -3564,24 +3564,18 @@ class ProductHelper
                     'required'           => $productOption->required ?? 0,
                 ];
             } else {
-                $productOptionValues = self::getChildProductOptionValues(
-                    (int) $productOption->j2commerce_productoption_id,
-                    $productId,
-                    $parentOptionvalueId
-                );
-
-                if (!empty($productOptionValues)) {
-                    $productOptionData[] = [
-                        'productoption_id' => $productOption->j2commerce_productoption_id,
-                        'option_id'        => $productOption->option_id,
-                        'option_name'      => $productOption->option_name ?? '',
-                    'option_description'   => $productOption->option_description ?? '',
-                        'type'             => $type,
-                        'optionvalue'      => '',
-                        'option_params'    => $productOption->option_params ?? '',
-                        'required'         => $productOption->required ?? 0,
-                    ];
-                }
+                // An input type carries no rows in #__j2commerce_product_optionvalues, so - as in
+                // getProductOptions() at first paint - it is appended with no value lookup.
+                $productOptionData[] = [
+                    'productoption_id'   => $productOption->j2commerce_productoption_id,
+                    'option_id'          => $productOption->option_id,
+                    'option_name'        => $productOption->option_name ?? '',
+                    'option_description' => $productOption->option_description ?? '',
+                    'type'               => $type,
+                    'optionvalue'        => '',
+                    'option_params'      => $productOption->option_params ?? '',
+                    'required'           => $productOption->required ?? 0,
+                ];
             }
         }
 

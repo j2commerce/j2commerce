@@ -15,7 +15,10 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
+use Joomla\CMS\Router\Route;
 
 // Layout for rendering child configurable options via AJAX.
 // Injected into #child-ChildOptions{poId} when a parent option is selected.
@@ -31,6 +34,13 @@ $product_helper = J2CommerceHelper::product();
 $platform       = J2CommerceHelper::platform();
 $product_id     = (int) $product->j2commerce_product_id;
 $esc            = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+
+// Upload and picker inputs, read exactly as the top-level option view reads them.
+$mediaParams = ComponentHelper::getParams('com_media');
+$uploadMaxMB = (float) $mediaParams->get('upload_maxsize', 0);
+$fileExts    = strtolower((string) $mediaParams->get('restrict_uploads_extensions', ''));
+$imageExts   = strtolower((string) $mediaParams->get('image_extensions', 'bmp,gif,jpg,png,jpeg,webp,avif'));
+$uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.upload&product_id=' . $product_id, false);
 ?>
 <?php if (!empty($options)) : ?>
     <?php foreach ($options as $option) : ?>
@@ -216,6 +226,88 @@ $esc            = static fn(string $value): string => htmlspecialchars($value, E
                 <textarea<?php echo ProductLayoutService::optionDescribedBy($option); ?> id="<?php echo $textareaInputId; ?>" class="form-control"
                     name="product_option[<?php echo $optionId; ?>]"
                     cols="20" rows="5"><?php echo $esc($option['optionvalue'] ?? ''); ?></textarea>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($option['type'] === 'file') : ?>
+            <div id="child-option-<?php echo $optionId; ?>" class="option mb-3">
+                <?php echo LayoutHelper::render('productoption.upload_file', [
+                    'productOptionId' => $optionId,
+                    'productId'       => $product_id,
+                    'required'        => (bool) $option['required'],
+                    'optionName'      => (string) $option['option_name'],
+                    'ajaxUrl'         => $uploadAjax,
+                    'maxSizeMB'       => $uploadMaxMB,
+                    'allowedExts'     => $fileExts,
+                    'framework'       => 'bs5',
+                ]); ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($option['type'] === 'image') : ?>
+            <div id="child-option-<?php echo $optionId; ?>" class="option mb-3">
+                <?php echo LayoutHelper::render('productoption.upload_image', [
+                    'productOptionId' => $optionId,
+                    'productId'       => $product_id,
+                    'required'        => (bool) $option['required'],
+                    'optionName'      => (string) $option['option_name'],
+                    'ajaxUrl'         => $uploadAjax,
+                    'maxSizeMB'       => $uploadMaxMB,
+                    'allowedExts'     => $imageExts,
+                    'framework'       => 'bs5',
+                ]); ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($option['type'] === 'date') : ?>
+            <?php $dateInputId = 'child-j2commerce-date-' . $product_id . '-' . $optionId; ?>
+            <div id="child-option-<?php echo $optionId; ?>" class="option mb-3">
+                <label class="form-label fw-semibold pb-1 mb-2" for="<?php echo $dateInputId; ?>">
+                    <?php echo $esc(Text::_($option['option_name'])); ?>
+                    <?php if ($option['required']) : ?>
+                        <span class="text-danger">*</span>
+                    <?php endif; ?>
+                </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . $optionId,
+                ]); ?>
+                <?php echo J2CommerceHelper::strapper()->addDatePicker(
+                    'product_option[' . $optionId . ']',
+                    $dateInputId,
+                    (string) ($option['optionvalue'] ?? ''),
+                    $option['option_params'],
+                    (bool) $option['required'],
+                    trim((string) ($option['option_description'] ?? '')) !== ''
+                        ? 'option-desc-' . $optionId
+                        : ''
+                ); ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($option['type'] === 'datetime') : ?>
+            <?php $datetimeInputId = 'child-j2commerce-datetime-' . $product_id . '-' . $optionId; ?>
+            <div id="child-option-<?php echo $optionId; ?>" class="option mb-3">
+                <label class="form-label fw-semibold pb-1 mb-2" for="<?php echo $datetimeInputId; ?>">
+                    <?php echo $esc(Text::_($option['option_name'])); ?>
+                    <?php if ($option['required']) : ?>
+                        <span class="text-danger">*</span>
+                    <?php endif; ?>
+                </label>
+                <?php echo ProductLayoutService::renderLayout('productoption.description', [
+                    'description' => $option['option_description'] ?? '',
+                    'id'          => 'option-desc-' . $optionId,
+                ]); ?>
+                <?php echo J2CommerceHelper::strapper()->addDateTimePicker(
+                    'product_option[' . $optionId . ']',
+                    $datetimeInputId,
+                    (string) ($option['optionvalue'] ?? ''),
+                    $option['option_params'],
+                    (bool) $option['required'],
+                    trim((string) ($option['option_description'] ?? '')) !== ''
+                        ? 'option-desc-' . $optionId
+                        : ''
+                ); ?>
             </div>
         <?php endif; ?>
 

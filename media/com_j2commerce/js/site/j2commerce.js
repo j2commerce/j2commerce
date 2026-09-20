@@ -562,6 +562,7 @@ const J2Commerce = {
                     this.swapChildContent(childContainer, this.parseHtmlFragment(json.optionhtml));
                     this.initConfigCheckboxes(childContainer);
                     this.initColorOptionLabels();
+                    this.initInjectedFields(childContainer);
                     this.triggerChildDefaults(childContainer, productId);
                 } else {
                     this.collapseChild(childContainer);
@@ -691,6 +692,21 @@ const J2Commerce = {
     },
 
     // Attach change listeners to configurable checkbox options injected via innerHTML
+    // Widgets injected after page load: their own bootstrap ran at DOMContentLoaded and will
+    // never see these nodes. The upload fields expose a scoped init; core's calendar binds on
+    // joomla:updated, which is the event it documents for exactly this case.
+    initInjectedFields(container) {
+        if (window.J2CommerceOptionUpload) {
+            window.J2CommerceOptionUpload.init(container);
+        }
+
+        // Dispatched ON the container, as core's own subform does: _initCalendars() reads
+        // event.target, so this scopes the re-init to the injected nodes.
+        if (container.querySelector('.field-calendar')) {
+            container.dispatchEvent(new CustomEvent('joomla:updated', { bubbles: true, cancelable: true }));
+        }
+    },
+
     initConfigCheckboxes(container) {
         container.querySelectorAll('[data-config-checkbox="1"]').forEach(div => {
             const productId = div.dataset.productId;
