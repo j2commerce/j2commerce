@@ -68,10 +68,17 @@ class CustomFieldHelper
         $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true);
 
+        $shown = $db->quoteName('enabled') . ' = 1 AND ' . $db->quoteName($column) . ' = 1';
+
+        // The guest form is the only place a guest's email can be collected, and the order,
+        // its notifications and per-customer coupon limits all read it from there.
+        if ($area === 'guest') {
+            $shown = '(' . $shown . ') OR ' . $db->quoteName('field_namekey') . ' = ' . $db->quote('email');
+        }
+
         $query->select('*')
             ->from($db->quoteName('#__j2commerce_customfields'))
-            ->where($db->quoteName('enabled') . ' = 1')
-            ->where($db->quoteName($column) . ' = 1')
+            ->where('(' . $shown . ')')
             ->order($db->quoteName('ordering') . ' ASC, ' . $db->quoteName('j2commerce_customfield_id') . ' ASC');
 
         if ($type === 'address') {
@@ -84,7 +91,17 @@ class CustomFieldHelper
 
         $db->setQuery($query);
 
-        return $db->loadObjectList() ?: [];
+        $fields = $db->loadObjectList() ?: [];
+
+        if ($area === 'guest') {
+            foreach ($fields as $field) {
+                if ($field->field_namekey === 'email') {
+                    $field->field_required = 1;
+                }
+            }
+        }
+
+        return $fields;
     }
 
     /**
