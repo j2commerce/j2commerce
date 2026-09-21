@@ -360,6 +360,13 @@ class ProductsController extends AdminController
     {
         $app = Factory::getApplication();
 
+        // Shaped like an empty page, as the core.edit denial below.
+        if (!\Joomla\CMS\Session\Session::checkToken('request')) {
+            $this->sendJson(['html' => '']);
+
+            return;
+        }
+
         if (!$this->canDo('core.edit')) {
             $this->sendJson(['html' => '']);
 
@@ -1765,6 +1772,13 @@ class ProductsController extends AdminController
         $app = Factory::getApplication();
 
         $response = ['success' => false, 'html' => '', 'message' => ''];
+
+        if (!\Joomla\CMS\Session\Session::checkToken('request')) {
+            $response['message'] = Text::_('JINVALID_TOKEN');
+            $this->sendJson($response);
+
+            return;
+        }
 
         if (!$this->canDo('core.edit')) {
             $response['message'] = Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN');

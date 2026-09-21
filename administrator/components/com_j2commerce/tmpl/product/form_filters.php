@@ -133,6 +133,10 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
             limit: limit,
             form_prefix: <?php echo json_encode($formPrefix, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
         };
+        var tokenName = Joomla.getOptions('com_j2commerce.productForm')?.csrfToken;
+        if (tokenName) {
+            data[tokenName] = 1;
+        }
         var serializedData = Object.keys(data)
             .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
             .join('&');
