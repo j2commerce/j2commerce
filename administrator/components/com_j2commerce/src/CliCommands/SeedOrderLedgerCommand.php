@@ -81,7 +81,7 @@ class SeedOrderLedgerCommand extends AbstractCommand
                 ->select($db->quoteName([
                     'j2commerce_order_id', 'order_total', 'order_refund', 'transaction_id',
                     'transaction_status', 'transaction_details', 'currency_code',
-                    'currency_value', 'orderpayment_type', 'created_by',
+                    'currency_value', 'orderpayment_type', 'created_by', 'order_params',
                 ]))
                 ->from($db->quoteName('#__j2commerce_orders'))
                 ->order($db->quoteName('j2commerce_order_id') . ' ASC');
@@ -198,7 +198,9 @@ class SeedOrderLedgerCommand extends AbstractCommand
                 createdBy: $createdBy
             );
         } else {
-            $orderTotalDisplay = round((float) $order->order_total * $currencyValue, self::amountDecimals($currencyCode));
+            // The charged amount, not order_total: a deposit order stores the full value in
+            // order_total and the amount actually charged in order_params.amount_due_now.
+            $orderTotalDisplay = round(CurrencyHelper::baseChargeAmount($order) * $currencyValue, self::amountDecimals($currencyCode));
 
             if ($orderTotalDisplay > 0.0) {
                 OrderTransactionHelper::addCharge(

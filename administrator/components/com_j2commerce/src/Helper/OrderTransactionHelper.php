@@ -712,7 +712,7 @@ final class OrderTransactionHelper
         $query = $db->getQuery(true)
             ->select($db->quoteName([
                 'j2commerce_order_id', 'transaction_status', 'order_total',
-                'order_refund', 'currency_code', 'currency_value',
+                'order_refund', 'currency_code', 'currency_value', 'order_params',
             ]))
             ->from($db->quoteName('#__j2commerce_orders'))
             ->where($db->quoteName('j2commerce_order_id') . ' = :orderId')
@@ -773,7 +773,7 @@ final class OrderTransactionHelper
     // INTERNAL — legacy fallback (no ledger rows)
     // =========================================================================
 
-    /** @return float Display-currency amount — order_total is stored in the base currency. */
+    /** Display-currency amount the gateway was asked to charge (amount_due_now, e.g. a deposit), not order_total. */
     private static function legacyCaptured(int $orderId): float
     {
         $order = self::fetchOrderRow($orderId);
@@ -783,7 +783,7 @@ final class OrderTransactionHelper
         }
 
         $base = match ((string) $order->transaction_status) {
-            'Completed', 'Refunded', 'Partially Refunded' => (float) $order->order_total,
+            'Completed', 'Refunded', 'Partially Refunded' => CurrencyHelper::baseChargeAmount($order),
             default                                       => 0.0,
         };
 
