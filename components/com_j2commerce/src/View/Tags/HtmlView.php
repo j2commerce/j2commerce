@@ -189,11 +189,23 @@ class HtmlView extends BaseHtmlView
             }
         }
 
-        if ($this->params->get('menu-meta_description')) {
+        // A listing renders beneath a catalogue menu item, so reading the menu
+        // value first gives every tag under it the same description and leaves
+        // the tag's own metadata unreachable. Same precedence as the single-tag
+        // view. The root node is excluded for the reason the canonical route
+        // below excludes it: it stands for "no tag", so its own metadata would
+        // apply to every top-level listing.
+        $ownTag = $this->parent && $this->parent->id > TagTreeHelper::ROOT_ID;
+
+        if ($ownTag && !empty($this->parent->metadesc)) {
+            $this->getDocument()->setDescription($this->parent->metadesc);
+        } elseif ($this->params->get('menu-meta_description')) {
             $this->getDocument()->setDescription($this->params->get('menu-meta_description'));
         }
 
-        if ($this->params->get('menu-meta_keywords')) {
+        if ($ownTag && !empty($this->parent->metakey)) {
+            $this->getDocument()->setMetaData('keywords', $this->parent->metakey);
+        } elseif ($this->params->get('menu-meta_keywords')) {
             $this->getDocument()->setMetaData('keywords', $this->params->get('menu-meta_keywords'));
         }
 

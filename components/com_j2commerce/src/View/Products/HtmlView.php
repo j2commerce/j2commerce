@@ -315,12 +315,20 @@ class HtmlView extends BaseHtmlView
         $this->setDocumentTitle($title);
 
         // Set meta description
-        if ($this->params->get('menu-meta_description')) {
+        // A listing renders beneath a catalogue menu item, so reading the menu
+        // value first gives every category under it the same description and
+        // leaves the category's own metadata unreachable. Same precedence as
+        // the tag view.
+        if ($this->parent && !empty($this->parent->metadesc)) {
+            $this->getDocument()->setDescription($this->parent->metadesc);
+        } elseif ($this->params->get('menu-meta_description')) {
             $this->getDocument()->setDescription($this->params->get('menu-meta_description'));
         }
 
         // Set meta keywords
-        if ($this->params->get('menu-meta_keywords')) {
+        if ($this->parent && !empty($this->parent->metakey)) {
+            $this->getDocument()->setMetaData('keywords', $this->parent->metakey);
+        } elseif ($this->params->get('menu-meta_keywords')) {
             $this->getDocument()->setMetaData('keywords', $this->params->get('menu-meta_keywords'));
         }
 
