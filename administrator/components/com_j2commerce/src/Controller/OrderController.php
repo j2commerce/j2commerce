@@ -1012,7 +1012,7 @@ class OrderController extends FormController
                 $model->validateProductOptionSelection($productId, $options, $prices);
             }
 
-            $db = $model->getDatabase();
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
             $db->transactionStart(true);
 
             try {
@@ -1075,6 +1075,9 @@ class OrderController extends FormController
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
             $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         }
     }
 
