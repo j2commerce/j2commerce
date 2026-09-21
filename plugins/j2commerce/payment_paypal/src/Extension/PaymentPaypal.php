@@ -15,6 +15,7 @@ namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Extension;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderTransactionHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Base;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Payment;
@@ -414,6 +415,22 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             if ($result['status'] >= 200 && $result['status'] < 300) {
                 $refundId        = $result['body']['id'] ?? '';
                 $refundedStateId = PayPalOrderStates::resolve($this->params, $this->getDatabase(), PayPalOrderStates::REFUNDED);
+                $orderPk         = (int) $orderTable->j2commerce_order_id;
+                $refundedAmount  = $amount ?? (float) ($result['body']['amount']['value'] ?? 0);
+
+                // Keyed on PayPal's refund id so the PAYMENT.CAPTURE.REFUNDED webhook for this
+                // same refund dedupes instead of adding a second reversal. The refund has already
+                // happened at PayPal, so a ledger mismatch is logged rather than failing the order update.
+                if ($refundId !== '' && $refundedAmount > 0 && OrderTransactionHelper::hasLedger($orderPk)) {
+                    try {
+                        OrderTransactionHelper::addReversal($orderPk, $this->_name, $refundId, $captureId, $refundedAmount);
+                    } catch (\InvalidArgumentException $e) {
+                        Factory::getApplication()->getLogger()->error(
+                            'PayPal refund not recorded in the ledger: ' . $e->getMessage(),
+                            ['category' => 'j2commerce.paypal']
+                        );
+                    }
+                }
 
                 if ($refundedStateId > 0) {
                     $orderTable->order_state_id = $refundedStateId;
@@ -2109,6 +2126,18 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 }
 
                 $this->log('capturePayPalOrder: Capture successful - capture_id: ' . $captureId . ', status: ' . $captureStatus);
+
+                // Written before the order store so a retry after a failed store still dedupes
+                // on the capture id; the money has moved either way.
+                if ($captureId !== '') {
+                    OrderTransactionHelper::addCharge(
+                        (int) $orderTable->j2commerce_order_id,
+                        $this->_name,
+                        $captureId,
+                        $captureAmount,
+                        $captureCurrency
+                    );
+                }
 
                 $orderStateId                   = PayPalOrderStates::resolve($this->params, $this->getDatabase(), PayPalOrderStates::CONFIRMED);
                 $orderTable->order_state_id     = $orderStateId;

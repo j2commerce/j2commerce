@@ -14,6 +14,7 @@ namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderTransactionHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -477,6 +478,18 @@ final class PayPalWebhooks
             return ['status' => 409, 'message' => 'Amount/currency mismatch'];
         }
 
+        // Ahead of the store: a retry after a failed store passes the guard again and dedupes
+        // on the capture id, where a retry after the store would stop at the 409 above.
+        if ($captureId !== '') {
+            OrderTransactionHelper::addCharge(
+                (int) $orderTable->j2commerce_order_id,
+                'payment_paypal',
+                $captureId,
+                $captureAmount,
+                $captureCurrency
+            );
+        }
+
         $confirmedStateId = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::CONFIRMED);
 
         // State change and transaction fields are written on the same table instance in one
@@ -635,9 +648,10 @@ final class PayPalWebhooks
             return ['status' => 400, 'message' => 'Refund amount missing'];
         }
 
-        // order_refund is deliberately not written here: it is a base-currency column owned by
-        // OrderTransactionHelper, so a display-currency amount written straight into it would
-        // be wrong by currency_value and would bypass the reversal ledger.
+        // order_refund is not written directly: it is a base-currency column that addReversal()
+        // re-syncs from the ledger.
+        $this->recordReversal($order, $resource, $refundAmount);
+
         $isFullyRefunded = $chargedAmount > 0 && $refundAmount + 0.001 >= $chargedAmount;
         $refundedStateId = $isFullyRefunded
             ? PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::REFUNDED)
@@ -680,6 +694,12 @@ final class PayPalWebhooks
         if ($this->matchesBinding($order, $resource) === false) {
             return ['status' => 400, 'message' => 'PayPal order id not bound to local order'];
         }
+
+        $this->recordReversal(
+            $order,
+            $resource,
+            $this->roundToCurrency((float) ($resource['amount']['value'] ?? 0), $this->orderCurrency($order))
+        );
 
         $failedStateId = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::FAILED);
 
@@ -730,6 +750,36 @@ final class PayPalWebhooks
         );
 
         return ['status' => 200, 'message' => 'Dispute resolved logged'];
+    }
+
+    /**
+     * Keyed on the resource's own id, so a replayed webhook — or the webhook that follows an
+     * admin refund, which already wrote this id — dedupes. Orders captured before the ledger
+     * existed have no parent row to reverse against and keep their pre-ledger behaviour. A parent
+     * mismatch is logged, not thrown: a 500 would make PayPal retry an event that can never succeed
+     * and hold back the status change the money movement calls for.
+     *
+     * @param array<string, mixed> $resource
+     */
+    private function recordReversal(\stdClass $order, array $resource, float $amount): void
+    {
+        $orderPk   = (int) $order->j2commerce_order_id;
+        $txnId     = (string) ($resource['id'] ?? '');
+        $captureId = (string) ($resource['supplementary_data']['related_ids']['capture_id'] ?? '')
+            ?: (string) ($order->transaction_id ?? '');
+
+        if ($amount <= 0 || $txnId === '' || $captureId === '' || !OrderTransactionHelper::hasLedger($orderPk)) {
+            return;
+        }
+
+        try {
+            OrderTransactionHelper::addReversal($orderPk, 'payment_paypal', $txnId, $captureId, $amount);
+        } catch (\InvalidArgumentException $e) {
+            Factory::getApplication()->getLogger()->error(
+                'PayPal reversal not recorded in the ledger: ' . $e->getMessage(),
+                ['category' => 'j2commerce.paypal']
+            );
+        }
     }
 
     /**
