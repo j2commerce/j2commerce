@@ -925,6 +925,15 @@ class CustomFieldHelper
                 continue;
             }
 
+            if ($field->field_type === 'email') {
+                $trimmed = trim((string) $value);
+
+                if ($trimmed !== '' && !filter_var($trimmed, FILTER_VALIDATE_EMAIL)) {
+                    $errors[$namekey] = Text::sprintf('COM_J2COMMERCE_ERR_FIELD_INVALID_EMAIL', $label);
+                    continue;
+                }
+            }
+
             if ($field->field_type === 'telephone' && trim((string) $value) !== '') {
                 // Normalize separators (space, dash, paren, dot) before
                 // validating so legacy values entered via admin forms don't
