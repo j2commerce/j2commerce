@@ -588,9 +588,15 @@ class J2CommerceSchemaHelper
                 $alias     = $product->alias ?? null;
                 $catid     = (int) ($product->catid ?? 0) ?: null;
 
-                $url = Route::_(RouteHelper::getProductRoute($productId, $alias, $catid));
-
-                return Uri::root() . ltrim($url, '/');
+                // Route::_() already resolves the base path, so prefixing Uri::root()
+                // repeats it on a subdirectory install. Let Route build the absolute
+                // URL instead, unescaped — this value is emitted into JSON-LD, not HTML.
+                return Route::_(
+                    RouteHelper::getProductRoute($productId, $alias, $catid),
+                    false,
+                    Route::TLS_IGNORE,
+                    true
+                );
             } catch (\Exception $e) {
                 // Fall through to article URL
             }
