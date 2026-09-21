@@ -9,6 +9,7 @@
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Language\Text;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 ?>
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('BeforeProductContent', [$this->item, J2CommerceHelper::utilities()->getContext('view_content')])->getArgument('html'); ?>
@@ -36,10 +37,10 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
             <div class="product-filters mt-3">
                 <?php foreach ($productfilters as $group) : ?>
                     <div class="mb-3">
-                        <h6 class="fw-bold mb-2"><?php echo htmlspecialchars($group['group_name'], ENT_QUOTES, 'UTF-8'); ?></h6>
+                        <h6 class="fw-bold mb-2"><?php echo htmlspecialchars(Text::_($group['group_name']), ENT_QUOTES, 'UTF-8'); ?></h6>
                         <div class="d-flex flex-wrap gap-2">
                             <?php foreach ($group['filters'] as $filter) : ?>
-                                <span class="badge bg-light text-dark border"><?php echo htmlspecialchars($filter->filter_name, ENT_QUOTES, 'UTF-8'); ?></span>
+                                <span class="badge bg-light text-dark border"><?php echo htmlspecialchars(Text::_($filter->filter_name), ENT_QUOTES, 'UTF-8'); ?></span>
                             <?php endforeach; ?>
                         </div>
                     </div>

@@ -34,7 +34,7 @@ foreach ($optionValues as $opvalue) {
 // Build parent option values dropdown
 $parentOptionArray = [];
 foreach ($parentOptionValues as $parentOpvalue) {
-    $parentOptionArray[$parentOpvalue->j2commerce_product_optionvalue_id] = $parentOpvalue->optionvalue_name ?? '';
+    $parentOptionArray[$parentOpvalue->j2commerce_product_optionvalue_id] = Text::_($parentOpvalue->optionvalue_name ?? '');
 }
 
 $conSpan = 0;
@@ -53,7 +53,7 @@ $conSpan = 0;
 
         <div class="note">
             <fieldset class="options-form">
-                <legend><?php echo Text::_('COM_J2COMMERCE_PAO_SET_OPTIONS_FOR'); ?>: <?php echo htmlspecialchars($productOption->option_name ?? '', ENT_QUOTES, 'UTF-8'); ?></legend>
+                <legend><?php echo Text::_('COM_J2COMMERCE_PAO_SET_OPTIONS_FOR'); ?>: <?php echo htmlspecialchars(Text::_($productOption->option_name ?? ''), ENT_QUOTES, 'UTF-8'); ?></legend>
                 <div class="alert alert-info d-flex align-items-center" role="alert">
                     <span class="fas fa-solid fa-exclamation-circle flex-shrink-0 me-2" aria-hidden="true"></span>
                     <div><?php echo Text::_('COM_J2COMMERCE_PAO_ADD_NEW_OPTION'); ?></div>

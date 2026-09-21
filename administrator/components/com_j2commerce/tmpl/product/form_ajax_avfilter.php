@@ -51,13 +51,13 @@ $productFilters = (new ProductfiltersModel)->getFiltersByProduct($item->j2commer
     <?php if(isset($productFilters) && count($productFilters)): ?>
         <?php foreach($productFilters as $group_id=>$filters):?>
             <tr>
-                <td colspan="2"><h4 class="mb-0"><?php echo Text::_($this->escape($filters['group_name'])); ?></h4></td>
+                <td colspan="2"><h4 class="mb-0"><?php echo $this->escape(Text::_($filters['group_name'])); ?></h4></td>
             </tr>
             <?php foreach($filters['filters'] as $filter):
                 ?>
                 <tr id="product_filter_current_option_<?php echo $filter->filter_id;?>">
                     <td class="addedFilter">
-                        <?php echo $this->escape($filter->filter_name) ;?>
+                        <?php echo $this->escape(Text::_($filter->filter_name)) ;?>
                     </td>
                     <td class="text-center">
                                 <span class="filterRemove" onclick="removeFilter(<?php echo $filter->filter_id; ?>, <?php echo $item->j2commerce_product_id; ?>);">

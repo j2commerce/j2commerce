@@ -34,14 +34,13 @@ $prefix = $displayData['prefix'];
 // Build option values dropdown
 $options = [];
 foreach ($optionValues as $opvalue) {
-    // Option value names are data, not language keys - don't use Text::_()
-    $options[$opvalue->j2commerce_optionvalue_id] = $opvalue->optionvalue_name;
+    $options[$opvalue->j2commerce_optionvalue_id] = Text::_($opvalue->optionvalue_name);
 }
 
 // Build parent option values dropdown
 $parentOptionArray = [];
 foreach ($parentOptionValues as $parentOpvalue) {
-    $parentOptionArray[$parentOpvalue->j2commerce_product_optionvalue_id] = $parentOpvalue->optionvalue_name ?? '';
+    $parentOptionArray[$parentOpvalue->j2commerce_product_optionvalue_id] = Text::_($parentOpvalue->optionvalue_name ?? '');
 }
 
 $isVariableType = \in_array($product->product_type, ['variable', 'variablesubscriptionproduct'], true);
