@@ -207,18 +207,12 @@ class OptionModel extends AdminModel
                 ->getRegistry($item->option_params ?? '')
                 ->toArray();
 
-            // Load option values based on the type
+            // Load both subforms regardless of type so the one the admin switches
+            // to still carries the existing j2commerce_optionvalue_id hidden fields,
+            // and save() updates rows instead of re-inserting and orphaning products.
             if ($item->id > 0) {
-                if (\in_array($item->type, ['select', 'radio', 'checkbox'])) {
-                    $item->optionvalues      = $this->getOptionValues($item->id);
-                    $item->optioncolorvalues = [];
-                } elseif ($item->type === 'color') {
-                    $item->optioncolorvalues = $this->getOptionColorValues($item->id);
-                    $item->optionvalues      = [];
-                } else {
-                    $item->optionvalues      = [];
-                    $item->optioncolorvalues = [];
-                }
+                $item->optionvalues      = $this->getOptionValues($item->id);
+                $item->optioncolorvalues = $this->getOptionColorValues($item->id);
             } else {
                 $item->optionvalues      = [];
                 $item->optioncolorvalues = [];
