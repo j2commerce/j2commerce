@@ -14,6 +14,7 @@
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\UserHelper;
 use Joomla\CMS\Language\Text;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Checkout\HtmlView $this */
@@ -46,15 +47,7 @@ $shipSameAsBilling = (bool) ($this->shipSameAsBilling ?? true);
             <?php foreach ($addresses as $address) : ?>
                 <?php
                 $addressId = $address->j2commerce_address_id ?? $address->id ?? '';
-                $label = ($address->first_name ?? '') . ' ' . ($address->last_name ?? '');
-
-                if (!empty($address->address_1)) {
-                    $label .= ', ' . $address->address_1;
-                }
-
-                if (!empty($address->city)) {
-                    $label .= ', ' . $address->city;
-                }
+                $label = UserHelper::getAddressLabel($address);
 
                 $selected = ($addressId == $billingAddressId) ? 'selected' : '';
                 ?>
