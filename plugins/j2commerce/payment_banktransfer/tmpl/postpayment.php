@@ -10,9 +10,11 @@
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
+
 extract((array) $displayData);
 ?>
 
 <div class="alert alert-info">
-    <?php echo htmlspecialchars($vars->onafterpayment_text, ENT_QUOTES, 'UTF-8'); ?>
+    <?php echo J2htmlHelper::merchantText($vars->onafterpayment_text); ?>
 </div>

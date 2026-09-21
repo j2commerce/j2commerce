@@ -10,12 +10,14 @@
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
+
 /** @var array $displayData */
 $vars = $displayData['vars'];
 ?>
 
 <?php if (!empty($vars->onselection_text)): ?>
     <div class="j2commerce-payment-selection-text">
-        <?php echo htmlspecialchars($vars->onselection_text ?? '', ENT_QUOTES, 'UTF-8'); ?>
+        <?php echo J2htmlHelper::merchantText($vars->onselection_text); ?>
     </div>
 <?php endif; ?>

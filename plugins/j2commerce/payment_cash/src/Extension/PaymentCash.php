@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\J2Commerce\PaymentCash\Extension;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Base;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Payment;
@@ -338,13 +339,13 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
         $order = $this->createOrderTable();
 
         if (!$order->load(['order_id' => $orderId])) {
-            $json['error'] = $this->params->get('onerrorpayment', Text::_('PLG_J2COMMERCE_PAYMENT_CASH_ORDER_NOT_FOUND'));
+            $json['error'] = strip_tags(J2htmlHelper::translateKey($this->params->get('onerrorpayment', Text::_('PLG_J2COMMERCE_PAYMENT_CASH_ORDER_NOT_FOUND'))));
 
             return $json;
         }
 
         if ($order->orderpayment_type !== $this->_name || !$this->getPayment()->validateHash($order)) {
-            $json['error'] = $this->params->get('onerrorpayment', Text::_('PLG_J2COMMERCE_PAYMENT_CASH_INVALID_REQUEST'));
+            $json['error'] = strip_tags(J2htmlHelper::translateKey($this->params->get('onerrorpayment', Text::_('PLG_J2COMMERCE_PAYMENT_CASH_INVALID_REQUEST'))));
 
             return $json;
         }
@@ -366,7 +367,7 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
             orderStateId: $orderStateId,
         );
 
-        $json['success']  = $this->params->get('onafterpayment', '');
+        $json['success']  = strip_tags(J2htmlHelper::translateKey($this->params->get('onafterpayment', '')));
         $json['redirect'] = $this->getPayment()->getReturnUrl();
 
         return $json;

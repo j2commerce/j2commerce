@@ -9,7 +9,7 @@
 
 defined('_JEXEC') or die;
 
-use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 
 /** @var array $displayData */
 $vars = $displayData['vars'];
@@ -17,6 +17,6 @@ $vars = $displayData['vars'];
 
 <?php if (!empty($vars->onafterpayment_text)): ?>
     <div class="alert alert-success j2commerce-after-payment-text">
-        <?php echo htmlspecialchars(Text::_($vars->onafterpayment_text), ENT_QUOTES, 'UTF-8'); ?>
+        <?php echo J2htmlHelper::merchantText($vars->onafterpayment_text); ?>
     </div>
 <?php endif; ?>

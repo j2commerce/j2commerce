@@ -191,6 +191,7 @@
                 <field
                     name="onselection"
                     type="textarea"
+                    filter="safehtml"
                     cols="10"
                     rows="3"
                     default=""
@@ -201,6 +202,7 @@
                 <field
                     name="onbeforepayment"
                     type="textarea"
+                    filter="safehtml"
                     cols="10"
                     rows="3"
                     default=""
@@ -211,6 +213,7 @@
                 <field
                     name="onafterpayment"
                     type="textarea"
+                    filter="safehtml"
                     cols="10"
                     rows="3"
                     default=""
@@ -221,6 +224,7 @@
                 <field
                     name="onerrorpayment"
                     type="textarea"
+                    filter="safehtml"
                     cols="10"
                     rows="3"
                     default=""

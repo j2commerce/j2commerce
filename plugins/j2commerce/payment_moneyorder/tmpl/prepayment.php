@@ -9,6 +9,7 @@
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
@@ -39,15 +40,15 @@ $vars = $displayData['vars'];
         </p>
 
         <?php if (!empty($vars->onbeforepayment_text)): ?>
-            <p class="j2commerce-on-before-payment-text">
-                <?php echo htmlspecialchars(Text::_($vars->onbeforepayment_text), ENT_QUOTES, 'UTF-8'); ?>
-            </p>
+            <div class="j2commerce-on-before-payment-text">
+                <?php echo J2htmlHelper::merchantText($vars->onbeforepayment_text); ?>
+            </div>
         <?php endif; ?>
 
         <?php if (!empty($vars->moneyorder_information)): ?>
             <div class="j2commerce-moneyorder-information alert alert-info">
                 <h4><?php echo Text::_('PLG_J2COMMERCE_PAYMENT_MONEYORDER_INSTRUCTIONS'); ?></h4>
-                <?php echo $vars->moneyorder_information; ?>
+                <?php echo J2htmlHelper::merchantText($vars->moneyorder_information); ?>
             </div>
         <?php endif; ?>
 

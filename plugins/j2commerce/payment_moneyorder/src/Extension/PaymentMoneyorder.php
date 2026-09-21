@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\J2Commerce\PaymentMoneyorder\Extension;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Base;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Payment;
@@ -316,7 +317,7 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
 
         switch ($paction) {
             case 'display':
-                $vars->onafterpayment_text = Text::_($this->params->get('onafterpayment', ''));
+                $vars->onafterpayment_text = $this->params->get('onafterpayment', '');
                 $html                      = $this->_getLayout('postpayment', $vars);
                 $html .= $this->base->_displayArticle();
                 break;
@@ -329,7 +330,7 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
                 return json_encode($result);
 
             default:
-                $vars->message = Text::_($this->params->get('onerrorpayment', ''));
+                $vars->message = $this->params->get('onerrorpayment', '');
                 $html          = $this->_getLayout('message', $vars);
                 break;
         }
@@ -350,16 +351,16 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
             ->createTable('Order', 'Administrator');
 
         if (!$order->load(['order_id' => $orderId])) {
-            $json['error'] = $this->params->get('onerrorpayment', Text::_('PLG_J2COMMERCE_PAYMENT_MONEYORDER_ORDER_NOT_FOUND'));
+            $json['error'] = strip_tags(J2htmlHelper::translateKey($this->params->get('onerrorpayment', Text::_('PLG_J2COMMERCE_PAYMENT_MONEYORDER_ORDER_NOT_FOUND'))));
             return $json;
         }
 
         if ($order->orderpayment_type !== $this->_name || !$this->payment->validateHash($order)) {
-            $json['error'] = $this->params->get('onerrorpayment', Text::_('PLG_J2COMMERCE_PAYMENT_MONEYORDER_INVALID_REQUEST'));
+            $json['error'] = strip_tags(J2htmlHelper::translateKey($this->params->get('onerrorpayment', Text::_('PLG_J2COMMERCE_PAYMENT_MONEYORDER_INVALID_REQUEST'))));
             return $json;
         }
 
-        $moneyorderInformation = $this->params->get('moneyorder_information', '');
+        $moneyorderInformation = J2htmlHelper::translateKey($this->params->get('moneyorder_information', ''));
 
         if (\strlen($moneyorderInformation) > 5) {
             // Content only: the render sites supply their own heading.
@@ -391,7 +392,7 @@ final class PaymentMoneyorder extends CMSPlugin implements SubscriberInterface
                 orderStateId: (int) $order->order_state_id,
             );
 
-            $json['success']  = Text::_($this->params->get('onafterpayment', ''));
+            $json['success']  = strip_tags(J2htmlHelper::translateKey($this->params->get('onafterpayment', '')));
             $json['redirect'] = $this->payment->getReturnUrl();
         } else {
             $json['error'] = $order->getError();

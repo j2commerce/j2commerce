@@ -48,6 +48,25 @@ class J2htmlHelper
     }
 
     /**
+     * Translates only a bare language key. Free text never reaches Text::_(), which would
+     * rewrite its backslashes and run sprintf over a comma-separated sentence.
+     */
+    public static function translateKey(?string $text): string
+    {
+        $text = trim((string) $text);
+
+        return preg_match('/^[A-Z][A-Z0-9_]*$/', $text) ? Text::_($text) : $text;
+    }
+
+    /** Merchant-authored plugin text (safehtml params): markup is kept, plain text keeps its line breaks. */
+    public static function merchantText(?string $text): string
+    {
+        $text = self::translateKey($text);
+
+        return $text === strip_tags($text) ? nl2br(htmlspecialchars($text, ENT_QUOTES, 'UTF-8')) : $text;
+    }
+
+    /**
      * Same markup as jgrid.checkedout, with the tooltip timestamp rendered
      * in the component's configured date and time format. The escape-then-
      * html_entity_decode pair below is copied verbatim from core

@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\J2Commerce\PaymentBanktransfer\Extension;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Base;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Payment;
@@ -282,18 +283,18 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
         $order = $this->createOrderTable();
 
         if (!$order->load(['order_id' => $orderId])) {
-            $json['error'] = $this->params->get('onerrorpayment', Text::_('PLG_J2COMMERCE_PAYMENT_BANKTRANSFER_ORDER_NOT_FOUND'));
+            $json['error'] = strip_tags(J2htmlHelper::translateKey($this->params->get('onerrorpayment', Text::_('PLG_J2COMMERCE_PAYMENT_BANKTRANSFER_ORDER_NOT_FOUND'))));
 
             return $json;
         }
 
         if ($order->orderpayment_type !== $this->_element || !$this->getPayment()->validateHash($order)) {
-            $json['error'] = $this->params->get('onerrorpayment', Text::_('PLG_J2COMMERCE_PAYMENT_BANKTRANSFER_ORDER_NOT_FOUND'));
+            $json['error'] = strip_tags(J2htmlHelper::translateKey($this->params->get('onerrorpayment', Text::_('PLG_J2COMMERCE_PAYMENT_BANKTRANSFER_ORDER_NOT_FOUND'))));
 
             return $json;
         }
 
-        $bankDetails = $this->params->get('bank_details', '');
+        $bankDetails = J2htmlHelper::translateKey($this->params->get('bank_details', ''));
 
         if (\strlen($bankDetails) > 5) {
             // The parameter is filter="safehtml", and EmailHelper already carries this key
@@ -328,7 +329,7 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
             orderStateId: $orderStateId,
         );
 
-        $json['success']  = $this->params->get('onafterpayment', '');
+        $json['success']  = strip_tags(J2htmlHelper::translateKey($this->params->get('onafterpayment', '')));
         $json['redirect'] = $this->getPayment()->getReturnUrl();
 
         return $json;

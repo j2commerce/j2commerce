@@ -10,7 +10,9 @@
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
+
 extract((array) $displayData);
 ?>
 
-<?php echo htmlspecialchars($vars->onselection_text ?? '', ENT_QUOTES, 'UTF-8'); ?>
+<?php echo J2htmlHelper::merchantText($vars->onselection_text); ?>
