@@ -11,10 +11,15 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 
-$rawFramework = $displayData['framework'] ?? '';
-$framework = ($rawFramework === 'uikit3' || $rawFramework === 'uikit') ? 'uikit' : 'bootstrap5';
+// CustomSubtemplateTrait passes the product-family view's own subtemplate (a menu item may
+// override the store default), not a framework, so a bootstrap5 guess cannot lead the chain
+// on a UIkit page.
+$rawFramework = $displayData['framework']
+    ?? SubtemplateHelper::normalize((string) ($displayData['subtemplate'] ?? ''));
+$framework    = ($rawFramework === 'uikit3' || $rawFramework === 'uikit') ? 'uikit' : 'bootstrap5';
 
 // The framework folder is a fallback, not an override — see product/quantity.php.
 echo ProductLayoutService::renderLayout('fallback.missing_template', $displayData, [$framework]);
