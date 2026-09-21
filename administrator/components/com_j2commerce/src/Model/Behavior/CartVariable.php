@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model\Behavior;
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\CartModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\VariantsModel;
@@ -76,7 +77,7 @@ class CartVariable
             foreach ($product->product_options as $productOption) {
                 $optionId = $productOption->j2commerce_productoption_id ?? 0;
                 if (empty($options[$optionId])) {
-                    $optionName                           = Text::_($productOption->option_name ?? '');
+                    $optionName                           = J2htmlHelper::translateKey($productOption->option_name ?? '');
                     $errors['error']['option'][$optionId] = Text::sprintf(
                         'COM_J2COMMERCE_ADDTOCART_PRODUCT_OPTION_REQUIRED',
                         $optionName

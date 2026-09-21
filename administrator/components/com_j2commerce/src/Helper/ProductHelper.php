@@ -2022,7 +2022,7 @@ class ProductHelper
 
             $count = \is_array($option['optionvalue']) ? \count($option['optionvalue']) : 0;
             if ($count > 0) {
-                $optionName = Text::_($option['option_name']);
+                $optionName = J2htmlHelper::translateKey($option['option_name']);
                 $parts[]    = Text::plural('COM_J2COMMERCE_N_OPTION_VALUES', $count, $optionName);
             }
         }

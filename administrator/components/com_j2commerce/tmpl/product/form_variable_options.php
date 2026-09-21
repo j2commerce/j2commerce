@@ -14,6 +14,7 @@
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Session\Session;
 
@@ -70,7 +71,7 @@ $csrfToken  = Session::getFormToken();
                                 <tr id="pao_variable_option_<?php echo $poption->j2commerce_productoption_id; ?>">
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <strong><?php echo $this->escape(Text::_($poption->option_name)); ?></strong>
+                                            <strong><?php echo $this->escape(J2htmlHelper::translateKey($poption->option_name)); ?></strong>
                                             <input type="hidden" name="<?php echo $formPrefix . '[item_options][' . $poption->j2commerce_productoption_id . '][j2commerce_productoption_id]'; ?>" value="<?php echo $poption->j2commerce_productoption_id; ?>">
                                             <input type="hidden" name="<?php echo $formPrefix . '[item_options][' . $poption->j2commerce_productoption_id . '][option_id]'; ?>" value="<?php echo $poption->option_id; ?>">
                                             <small class="ms-1">(<?php echo $this->escape($poption->option_unique_name); ?>)</small>
@@ -78,7 +79,7 @@ $csrfToken  = Session::getFormToken();
                                                 <button type="button" class="small ms-2 ms-lg-3 btn btn-soft-dark btn-sm j2commerce-variable-option-values-link"
                                                         data-product-id="<?php echo $item->j2commerce_product_id; ?>"
                                                         data-option-id="<?php echo $poption->j2commerce_productoption_id; ?>"
-                                                        data-option-name="<?php echo $this->escape(Text::_($poption->option_name)); ?>">
+                                                        data-option-name="<?php echo $this->escape(J2htmlHelper::translateKey($poption->option_name)); ?>">
                                                     <span class="icon-cog me-1"></span> <?php echo Text::_('COM_J2COMMERCE_OPTION_SET_VALUES'); ?>
                                                 </button>
                                             <?php endif; ?>

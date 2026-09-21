@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model\Behavior;
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\CartModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\ProductOptionsModel;
@@ -91,7 +92,7 @@ class CartConfigurable
                 && !\in_array($productOptionId, $omitCheck)) {
                 $errors['error']['option'][$productOptionId] = Text::sprintf(
                     'COM_J2COMMERCE_ADDTOCART_PRODUCT_OPTION_REQUIRED',
-                    Text::_($productOption['option_name'])
+                    J2htmlHelper::translateKey($productOption['option_name'])
                 );
             } elseif (\array_key_exists($productOptionId, $options)) {
                 // Parent option is selected — check if it has children that should be tracked

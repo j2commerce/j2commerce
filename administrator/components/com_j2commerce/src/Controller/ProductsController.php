@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Application\CMSWebApplicationInterface;
@@ -1889,7 +1890,7 @@ class ProductsController extends AdminController
 
         $response['success']    = true;
         $response['html']       = $html;
-        $response['optionName'] = Text::_($productOption->option_name ?? '');
+        $response['optionName'] = J2htmlHelper::translateKey($productOption->option_name ?? '');
 
         $this->sendJson($response);
     }
@@ -3632,7 +3633,7 @@ class ProductsController extends AdminController
 
         $response['success']            = true;
         $response['productoption_id']   = $poTable->j2commerce_productoption_id;
-        $response['option_name']        = Text::_($optionMeta->option_name ?? '');
+        $response['option_name']        = J2htmlHelper::translateKey($optionMeta->option_name ?? '');
         $response['option_unique_name'] = $optionMeta->option_unique_name ?? '';
         $response['option_type']        = $optionMeta->type ?? '';
         $response['ordering']           = $nextOrdering;

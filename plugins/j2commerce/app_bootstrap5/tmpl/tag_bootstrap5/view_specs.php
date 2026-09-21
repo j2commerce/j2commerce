@@ -14,6 +14,7 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\LengthHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\WeightHelper;
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Product\HtmlView $this */
 
@@ -27,12 +28,12 @@ $productfilters = $this->product->productfilters ?? [];
         <table class="table table-borderless mb-0">
             <?php foreach ($productfilters as $group_id => $rows) : ?>
                 <tr class="filter-group-<?php echo $group_id;?>">
-                    <td class="fw-bold border-bottom"><span class="filter-group-name"><?php echo $this->escape(Text::_($rows['group_name'])); ?></span></td>
+                    <td class="fw-bold border-bottom"><span class="filter-group-name"><?php echo $this->escape(J2htmlHelper::translateKey($rows['group_name'])); ?></span></td>
                     <td class="text-end border-bottom">
                         <?php
                         $items = [];
                         foreach ($rows['filters'] as $filter) {
-                            $items[] = '<span class="classname">' . $this->escape(Text::_($filter->filter_name)) . '</span>';
+                            $items[] = '<span class="classname">' . $this->escape(J2htmlHelper::translateKey($filter->filter_name)) . '</span>';
                         }
                         echo implode(', ', $items);
                         ?>

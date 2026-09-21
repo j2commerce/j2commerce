@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
@@ -51,7 +52,7 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                 <?php $selectInputId = 'product-option-' . $productId . '-' . $optionId; ?>
             <div id="option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom">
                 <label class="uk-form-label" for="<?php echo $selectInputId; ?>">
-                    <?php echo $esc(Text::_($option['option_name'])); ?>
+                    <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>
                     <?php if ($option['required']) : ?>
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>
@@ -65,7 +66,7 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                     <?php foreach ($option['optionvalue'] as $ov) : ?>
                             <?php $ovId = (int) $ov['product_optionvalue_id']; ?>
                             <option value="<?php echo $ovId; ?>"<?php echo ($defaultOptionValueId == $ovId) ? ' selected' : ''; ?>>
-                            <?php echo $esc(Text::_($ov['optionvalue_name'])); ?>
+                            <?php echo $esc(J2htmlHelper::translateKey($ov['optionvalue_name'])); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -75,7 +76,7 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
         <?php if ($option['type'] === 'radio') : ?>
             <fieldset id="option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
                     <legend class="uk-form-label">
-                        <?php echo $esc(Text::_($option['option_name'])); ?>:
+                        <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>:
                     <?php if ($option['required']) : ?>
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>
@@ -101,13 +102,13 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                             data-option-id="<?php echo $optionId; ?>" />
 
                             <?php if ($showOptionImages && !empty($ov['optionvalue_image'])) { ?>
-                                <label class="btn-image uk-padding-remove" for="<?php echo $optionValueInputId; ?>" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>">
-                                    <img class="optionvalue-image uk-margin-small-right" src="<?php echo $esc(ImageHelper::getImageUrl($ov['optionvalue_image'])); ?>" alt="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>" width="48" style="width:48px;" />
-                                    <span class="uk-hidden"><?php echo $esc(Text::_($ov['optionvalue_name'])); ?></span>
+                                <label class="btn-image uk-padding-remove" for="<?php echo $optionValueInputId; ?>" data-label="<?php echo $esc(J2htmlHelper::translateKey($ov['optionvalue_name'])); ?>">
+                                    <img class="optionvalue-image uk-margin-small-right" src="<?php echo $esc(ImageHelper::getImageUrl($ov['optionvalue_image'])); ?>" alt="<?php echo $esc(J2htmlHelper::translateKey($ov['optionvalue_name'])); ?>" width="48" style="width:48px;" />
+                                    <span class="uk-hidden"><?php echo $esc(J2htmlHelper::translateKey($ov['optionvalue_name'])); ?></span>
                                 </label>
                             <?php } else { ?>
-                                <label class="uk-button uk-button-default uk-button-small" for="<?php echo $optionValueInputId; ?>" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>">
-                            <?php echo $esc(Text::_($ov['optionvalue_name'])); ?>
+                                <label class="uk-button uk-button-default uk-button-small" for="<?php echo $optionValueInputId; ?>" data-label="<?php echo $esc(J2htmlHelper::translateKey($ov['optionvalue_name'])); ?>">
+                            <?php echo $esc(J2htmlHelper::translateKey($ov['optionvalue_name'])); ?>
                         </label>
                             <?php } ?>
 
@@ -118,7 +119,7 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
             <?php if ($option['type'] === 'color') : ?>
                 <fieldset id="option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
                     <legend class="uk-form-label">
-                        <?php echo $esc(Text::_($option['option_name'])); ?>:
+                        <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>:
                         <?php if ($option['required']) : ?>
                             <span class="uk-text-danger">*</span>
                         <?php endif; ?>
@@ -145,8 +146,8 @@ $collapsedOptions = (bool) $params->get('list_collapsed_options', $params->get('
                                 <?php echo ($defaultOptionValueId == $ovId) ? 'checked' : ''; ?>
                             />
                             <?php $swatchColor = ProductHelper::swatchColor($ov['optionvalue_image']); ?>
-                            <label for="<?php echo $optionValueInputId; ?>" class="btn-color" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>"<?php if ($swatchColor !== '') : ?> style="color:<?php echo $esc($swatchColor); ?>;"<?php endif; ?>>
-                                <span class="uk-hidden"><?php echo $esc(Text::_($ov['optionvalue_name'])); ?></span>
+                            <label for="<?php echo $optionValueInputId; ?>" class="btn-color" data-label="<?php echo $esc(J2htmlHelper::translateKey($ov['optionvalue_name'])); ?>"<?php if ($swatchColor !== '') : ?> style="color:<?php echo $esc($swatchColor); ?>;"<?php endif; ?>>
+                                <span class="uk-hidden"><?php echo $esc(J2htmlHelper::translateKey($ov['optionvalue_name'])); ?></span>
                             </label>
                         <?php endforeach; ?>
                     </div>

@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -142,10 +143,10 @@ class OrdervariantsModel extends ListModel
 
             $this->variantOptions[$optionId] ??= (object) [
                 'id'     => $optionId,
-                'label'  => Text::_((string) $row->option_name),
+                'label'  => J2htmlHelper::translateKey((string) $row->option_name),
                 'values' => [],
             ];
-            $this->variantOptions[$optionId]->values[(int) $row->value_id] = Text::_((string) ($row->optionvalue_name ?? ''));
+            $this->variantOptions[$optionId]->values[(int) $row->value_id] = J2htmlHelper::translateKey((string) ($row->optionvalue_name ?? ''));
         }
 
         return $this->variantOptions;

@@ -17,6 +17,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 
@@ -50,7 +51,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
         <?php if ($option['type'] === 'select' && !empty($option['optionvalue'])) : ?>
             <div id="option-<?php echo $option['productoption_id']; ?>" class="option uk-margin-small-bottom">
                 <label class="uk-form-label uk-text-bold uk-margin-small-bottom uk-display-block">
-                    <?php echo $esc(Text::_($option['option_name'])); ?>
+                    <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>
                     <?php if ($option['required']) : ?>
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>
@@ -68,7 +69,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                     <option value="*"><?php echo $esc(Text::_('COM_J2COMMERCE_CHOOSE')); ?></option>
                     <?php foreach ($option['optionvalue'] as $optionValue) : ?>
                         <option value="<?php echo $optionValue['product_optionvalue_id']; ?>"<?php echo ($defaultOptionValueId == $optionValue['product_optionvalue_id']) ? ' selected' : ''; ?>>
-                            <?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>
+                            <?php echo $esc(J2htmlHelper::translateKey($optionValue['optionvalue_name'])); ?>
                             <?php if ($optionValue['product_optionvalue_price'] > 0 && $this->params->get('product_option_price', 1)) : ?>
                                 (
                                 <?php if ($this->params->get('product_option_price_prefix', 1)) : ?>
@@ -86,7 +87,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
         <?php if ($option['type'] === 'radio' && !empty($option['optionvalue'])) : ?>
             <fieldset id="option-<?php echo $option['productoption_id']; ?>" class="option uk-margin-small-bottom j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
                 <legend class="uk-form-label uk-text-bold uk-margin-small-bottom uk-display-block">
-                    <?php echo $esc(Text::_($option['option_name'])); ?>:
+                    <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>:
                     <?php if ($option['required']) : ?>
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>
@@ -113,13 +114,13 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                         />
 
                         <?php if ($showOptionImages && !empty($optionValue['optionvalue_image'])) : ?>
-                            <label class="btn-image uk-display-inline-block" for="option-value-<?php echo $optionValue['product_optionvalue_id']; ?>" data-label="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>">
-                                <img class="optionvalue-image" src="<?php echo $esc(ImageHelper::getImageUrl($optionValue['optionvalue_image'])); ?>" alt="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>" width="56" style="width:56px;" />
-                                <span class="uk-invisible"><?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?></span>
+                            <label class="btn-image uk-display-inline-block" for="option-value-<?php echo $optionValue['product_optionvalue_id']; ?>" data-label="<?php echo $esc(J2htmlHelper::translateKey($optionValue['optionvalue_name'])); ?>">
+                                <img class="optionvalue-image" src="<?php echo $esc(ImageHelper::getImageUrl($optionValue['optionvalue_image'])); ?>" alt="<?php echo $esc(J2htmlHelper::translateKey($optionValue['optionvalue_name'])); ?>" width="56" style="width:56px;" />
+                                <span class="uk-invisible"><?php echo $esc(J2htmlHelper::translateKey($optionValue['optionvalue_name'])); ?></span>
                             </label>
                         <?php else : ?>
-                            <label class="uk-button uk-button-small uk-button-default" for="option-value-<?php echo $optionValue['product_optionvalue_id']; ?>" data-label="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>">
-                                <?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>
+                            <label class="uk-button uk-button-small uk-button-default" for="option-value-<?php echo $optionValue['product_optionvalue_id']; ?>" data-label="<?php echo $esc(J2htmlHelper::translateKey($optionValue['optionvalue_name'])); ?>">
+                                <?php echo $esc(J2htmlHelper::translateKey($optionValue['optionvalue_name'])); ?>
                                 <?php if ($optionValue['product_optionvalue_price'] > 0 && $this->params->get('product_option_price', 1)) : ?>
                                     <?php if ($this->params->get('product_option_price_prefix', 1)) : ?>
                                         <?php echo $esc($optionValue['product_optionvalue_prefix']); ?>
@@ -136,7 +137,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
         <?php if ($option['type'] === 'color' && !empty($option['optionvalue'])) : ?>
             <fieldset id="option-<?php echo (int) $option['productoption_id']; ?>" class="option uk-margin-small-bottom j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
                 <legend class="uk-form-label uk-text-bold uk-margin-small-bottom uk-display-block">
-                    <?php echo $esc(Text::_($option['option_name'])); ?>:
+                    <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>:
                     <?php if ($option['required']) : ?>
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>
@@ -160,8 +161,8 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                             <?php echo ($defaultOptionValueId == $optionValue['product_optionvalue_id']) ? 'checked' : ''; ?>
                         />
                         <?php $swatchColor = ProductHelper::swatchColor($optionValue['optionvalue_image']); ?>
-                        <label for="option-value-<?php echo (int) $optionValue['product_optionvalue_id']; ?>" class="btn-color" title="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>" data-label="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>"<?php if ($swatchColor !== '') : ?> style="color:<?php echo $esc($swatchColor); ?>;"<?php endif; ?>>
-                            <span class="uk-invisible"><?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?></span>
+                        <label for="option-value-<?php echo (int) $optionValue['product_optionvalue_id']; ?>" class="btn-color" title="<?php echo $esc(J2htmlHelper::translateKey($optionValue['optionvalue_name'])); ?>" data-label="<?php echo $esc(J2htmlHelper::translateKey($optionValue['optionvalue_name'])); ?>"<?php if ($swatchColor !== '') : ?> style="color:<?php echo $esc($swatchColor); ?>;"<?php endif; ?>>
+                            <span class="uk-invisible"><?php echo $esc(J2htmlHelper::translateKey($optionValue['optionvalue_name'])); ?></span>
                         </label>
                     <?php endforeach; ?>
                 </div>
@@ -171,7 +172,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
         <?php if ($option['type'] === 'checkbox' && !empty($option['optionvalue'])) : ?>
             <fieldset id="option-<?php echo $option['productoption_id']; ?>" class="option uk-margin-small-bottom j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
                 <legend class="uk-form-label uk-text-bold uk-margin-small-bottom uk-display-block">
-                    <?php echo $esc(Text::_($option['option_name'])); ?>:
+                    <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>:
                     <?php if ($option['required']) : ?>
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>
@@ -195,10 +196,10 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                             <?php if ($showOptionImages && !empty($optionValue['optionvalue_image'])) : ?>
                                 <img class="optionvalue-image"
                                      src="<?php echo $esc(ImageHelper::getImageUrl($optionValue['optionvalue_image'])); ?>"
-                                     alt="<?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>"
+                                     alt="<?php echo $esc(J2htmlHelper::translateKey($optionValue['optionvalue_name'])); ?>"
                                      width="32" />
                             <?php endif; ?>
-                            <?php echo $esc(Text::_($optionValue['optionvalue_name'])); ?>
+                            <?php echo $esc(J2htmlHelper::translateKey($optionValue['optionvalue_name'])); ?>
                             <?php if ($optionValue['product_optionvalue_price'] > 0 && $this->params->get('product_option_price', 1)) : ?>
                                 (
                                 <?php if ($this->params->get('product_option_price_prefix', 1)) : ?>
@@ -217,7 +218,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
             <?php $text_option_params = J2CommerceHelper::platform()->getRegistry($option['option_params']); ?>
             <div id="option-<?php echo $option['productoption_id']; ?>" class="option uk-margin-small-bottom">
                 <label class="uk-form-label uk-text-bold uk-margin-small-bottom uk-display-block" for="option-input-<?php echo $option['productoption_id']; ?>">
-                    <?php echo $esc(Text::_($option['option_name'])); ?>
+                    <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>
                     <?php if ($option['required']) : ?>
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>
@@ -238,7 +239,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
         <?php if ($option['type'] === 'textarea') : ?>
             <div id="option-<?php echo $option['productoption_id']; ?>" class="option uk-margin-small-bottom">
                 <label class="uk-form-label uk-text-bold uk-margin-small-bottom uk-display-block" for="option-textarea-<?php echo $option['productoption_id']; ?>">
-                    <?php echo $esc(Text::_($option['option_name'])); ?>
+                    <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>
                     <?php if ($option['required']) : ?>
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>
@@ -284,7 +285,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
             <?php $element_date = 'j2commerce_date_' . $option['productoption_id']; ?>
             <div id="option-<?php echo $option['productoption_id']; ?>" class="option uk-margin-small-bottom">
                 <label class="uk-form-label uk-text-bold uk-margin-small-bottom uk-display-block" for="<?php echo $element_date; ?>">
-                    <?php echo $esc(Text::_($option['option_name'])); ?>
+                    <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>
                     <?php if ($option['required']) : ?>
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>
@@ -310,7 +311,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
             <?php $element_datetime = 'j2commerce_datetime_' . $option['productoption_id']; ?>
             <div id="option-<?php echo $option['productoption_id']; ?>" class="option uk-margin-small-bottom">
                 <label class="uk-form-label uk-text-bold uk-margin-small-bottom uk-display-block" for="<?php echo $element_datetime; ?>">
-                    <?php echo $esc(Text::_($option['option_name'])); ?>
+                    <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>
                     <?php if ($option['required']) : ?>
                         <span class="uk-text-danger">*</span>
                     <?php endif; ?>

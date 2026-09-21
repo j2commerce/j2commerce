@@ -12,6 +12,7 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
@@ -88,7 +89,7 @@ if ($saveOrder && !empty($this->items)) {
                             ?>
                             <tr class="row<?php echo $i % 2; ?>" data-draggable-group="none">
                                 <td class="text-center">
-                                    <?php echo HTMLHelper::_('grid.id', $i, $item->j2commerce_filtergroup_id, false, 'cid', 'cb', Text::_($item->group_name)); ?>
+                                    <?php echo HTMLHelper::_('grid.id', $i, $item->j2commerce_filtergroup_id, false, 'cid', 'cb', J2htmlHelper::translateKey($item->group_name)); ?>
                                 </td>
                                 <td class="order text-center d-none d-md-table-cell">
                                     <?php
@@ -116,11 +117,11 @@ if ($saveOrder && !empty($this->items)) {
                                     <?php endif; ?>
                                     */ ?>
                                     <?php if ($canEdit) : ?>
-                                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=filtergroup.edit&id=' . $item->j2commerce_filtergroup_id); ?>" title="<?php echo Text::_('JACTION_EDIT'); ?> <?php echo $this->escape(Text::_($item->group_name)); ?>">
-                                            <?php echo $this->escape(Text::_($item->group_name)); ?>
+                                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=filtergroup.edit&id=' . $item->j2commerce_filtergroup_id); ?>" title="<?php echo Text::_('JACTION_EDIT'); ?> <?php echo $this->escape(J2htmlHelper::translateKey($item->group_name)); ?>">
+                                            <?php echo $this->escape(J2htmlHelper::translateKey($item->group_name)); ?>
                                         </a>
                                     <?php else : ?>
-                                        <span title="<?php echo Text::sprintf('JFIELD_ALIAS_LABEL', $this->escape(Text::_($item->group_name))); ?>"><?php echo $this->escape(Text::_($item->group_name)); ?></span>
+                                        <span title="<?php echo Text::sprintf('JFIELD_ALIAS_LABEL', $this->escape(J2htmlHelper::translateKey($item->group_name))); ?>"><?php echo $this->escape(J2htmlHelper::translateKey($item->group_name)); ?></span>
                                     <?php endif; ?>
                                 </th>
                                 <td class="d-none d-md-table-cell">

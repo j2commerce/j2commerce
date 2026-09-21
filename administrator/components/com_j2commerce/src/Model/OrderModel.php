@@ -22,6 +22,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderCascadeHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
@@ -2403,7 +2404,7 @@ class OrderModel extends AdminModel
             ));
 
             if ($before !== $after) {
-                $changes[] = Text::_((string) $option->option_name) . ': '
+                $changes[] = J2htmlHelper::translateKey((string) $option->option_name) . ': '
                     . ($before === '' ? Text::_('JNONE') : $before) . ' → ' . ($after === '' ? Text::_('JNONE') : $after);
             }
         }
@@ -2591,13 +2592,13 @@ class OrderModel extends AdminModel
 
         return [
             'id'       => (int) $option->id,
-            'label'    => Text::_((string) $option->option_name),
+            'label'    => J2htmlHelper::translateKey((string) $option->option_name),
             'type'     => (string) $option->type,
             'required' => (int) $option->required === 1 && (int) $option->parent_id === 0,
             'values'   => $priced ? array_values(array_map(
                 static fn (object $value): array => [
                     'id'       => (int) $value->id,
-                    'label'    => Text::_((string) ($value->optionvalue_name ?? '')),
+                    'label'    => J2htmlHelper::translateKey((string) ($value->optionvalue_name ?? '')),
                     'prefix'   => (string) $value->product_optionvalue_prefix,
                     'price'    => round((float) $value->product_optionvalue_price, 5),
                     'selected' => \array_key_exists((int) $value->id, $selected),
@@ -2626,7 +2627,7 @@ class OrderModel extends AdminModel
         $entries = [];
 
         foreach ($options as $id => $option) {
-            $label = Text::_((string) $option->option_name);
+            $label = J2htmlHelper::translateKey((string) $option->option_name);
             $raw   = $submitted[$id] ?? null;
             $count = 0;
 
@@ -3027,7 +3028,7 @@ class OrderModel extends AdminModel
     private function describeVariant(int $variantId): string
     {
         return implode(', ', array_filter(array_map(
-            static fn (object $value): string => Text::_((string) ($value->optionvalue_name ?? '')),
+            static fn (object $value): string => J2htmlHelper::translateKey((string) ($value->optionvalue_name ?? '')),
             $this->loadVariantOptionValues($variantId)
         )));
     }
@@ -3080,8 +3081,8 @@ class OrderModel extends AdminModel
             foreach ($group['items'] as $item) {
                 $qty     = (int) ($item['qty'] ?? 1);
                 $pairs[] = [
-                    'label' => ($qty > 1 ? '(' . $qty . ') ' : '') . Text::_((string) $item['name']),
-                    'value' => html_entity_decode(Text::_((string) $item['value']), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                    'label' => ($qty > 1 ? '(' . $qty . ') ' : '') . J2htmlHelper::translateKey((string) $item['name']),
+                    'value' => html_entity_decode(J2htmlHelper::translateKey((string) $item['value']), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
                 ];
             }
         }
@@ -3258,8 +3259,8 @@ class OrderModel extends AdminModel
         $byName = [];
 
         foreach ($options as $id => $option) {
-            $byName[self::normalizeOptionName((string) $option->option_name)]          ??= $id;
-            $byName[self::normalizeOptionName(Text::_((string) $option->option_name))] ??= $id;
+            $byName[self::normalizeOptionName((string) $option->option_name)]                             ??= $id;
+            $byName[self::normalizeOptionName(J2htmlHelper::translateKey((string) $option->option_name))] ??= $id;
         }
 
         $matched   = [];
@@ -3331,7 +3332,7 @@ class OrderModel extends AdminModel
             foreach ($option->values as $id => $value) {
                 $raw = (string) ($value->optionvalue_name ?? '');
 
-                if ($name === self::normalizeOptionName($raw) || $name === self::normalizeOptionName(Text::_($raw))) {
+                if ($name === self::normalizeOptionName($raw) || $name === self::normalizeOptionName(J2htmlHelper::translateKey($raw))) {
                     return $id;
                 }
             }
@@ -3388,7 +3389,7 @@ class OrderModel extends AdminModel
         $prefix = (string) ($attr->orderitemattribute_prefix ?? '');
 
         if (\in_array($attr->orderitemattribute_type ?? '', self::PRICED_OPTION_TYPES, true)) {
-            $value = Text::_($value);
+            $value = J2htmlHelper::translateKey($value);
         }
 
         return $price > 0.0 && ($prefix === '+' || $prefix === '-')

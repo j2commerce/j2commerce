@@ -20,6 +20,7 @@ use Joomla\CMS\Form\Field\RadioField;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\HTML\Helpers\User;
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Layout\LayoutHelper;
 
@@ -51,13 +52,13 @@ $productFilters = (new ProductfiltersModel)->getFiltersByProduct($item->j2commer
     <?php if(isset($productFilters) && count($productFilters)): ?>
         <?php foreach($productFilters as $group_id=>$filters):?>
             <tr>
-                <td colspan="2"><h4 class="mb-0"><?php echo $this->escape(Text::_($filters['group_name'])); ?></h4></td>
+                <td colspan="2"><h4 class="mb-0"><?php echo $this->escape(J2htmlHelper::translateKey($filters['group_name'])); ?></h4></td>
             </tr>
             <?php foreach($filters['filters'] as $filter):
                 ?>
                 <tr id="product_filter_current_option_<?php echo $filter->filter_id;?>">
                     <td class="addedFilter">
-                        <?php echo $this->escape(Text::_($filter->filter_name)) ;?>
+                        <?php echo $this->escape(J2htmlHelper::translateKey($filter->filter_name)) ;?>
                     </td>
                     <td class="text-center">
                                 <span class="filterRemove" onclick="removeFilter(<?php echo $filter->filter_id; ?>, <?php echo $item->j2commerce_product_id; ?>);">

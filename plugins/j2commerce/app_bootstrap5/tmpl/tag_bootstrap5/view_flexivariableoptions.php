@@ -16,6 +16,7 @@ use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Product\HtmlView $this */
 
@@ -38,7 +39,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
         <?php if ($option['type'] === 'select') : ?>
             <div id="option-<?php echo $optionId; ?>" class="option mb-3">
                 <label class="form-label fw-semibold pb-1 mb-2">
-                    <?php echo $esc(Text::_($option['option_name'])); ?>
+                    <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>
                     <?php if ($option['required']) : ?>
                         <span class="text-danger">*</span>
                     <?php endif; ?>
@@ -52,7 +53,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                     <?php foreach ($option['optionvalue'] as $ov) : ?>
                         <?php $ovId = (int) $ov['product_optionvalue_id']; ?>
                         <option value="<?php echo $ovId; ?>"<?php echo ($defaultOptionValueId == $ovId) ? ' selected' : ''; ?>>
-                            <?php echo $esc(Text::_($ov['optionvalue_name'])); ?>
+                            <?php echo $esc(J2htmlHelper::translateKey($ov['optionvalue_name'])); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -62,7 +63,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
         <?php if ($option['type'] === 'radio') : ?>
             <fieldset id="option-<?php echo $optionId; ?>" class="option mb-3 j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
                 <legend class="form-label fw-semibold pb-1 mb-2">
-                    <?php echo $esc(Text::_($option['option_name'])); ?>:
+                    <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>:
                     <?php if ($option['required']) : ?>
                         <span class="text-danger">*</span>
                     <?php endif; ?>
@@ -87,13 +88,13 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                                data-option-id="<?php echo $optionId; ?>" />
 
                             <?php if ($showOptionImages && !empty($ov['optionvalue_image'])) { ?>
-                                <label class="btn btn-image p-0 form-check-label border-2" for="option-value-<?php echo $ovId; ?>" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>">
-                                    <img class="optionvalue-image me-1" src="<?php echo $esc(ImageHelper::getImageUrl($ov['optionvalue_image'])); ?>" alt="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>" width="56" style="width:56px;" />
-                                    <span class="visually-hidden"><?php echo $esc(Text::_($ov['optionvalue_name'])); ?></span>
+                                <label class="btn btn-image p-0 form-check-label border-2" for="option-value-<?php echo $ovId; ?>" data-label="<?php echo $esc(J2htmlHelper::translateKey($ov['optionvalue_name'])); ?>">
+                                    <img class="optionvalue-image me-1" src="<?php echo $esc(ImageHelper::getImageUrl($ov['optionvalue_image'])); ?>" alt="<?php echo $esc(J2htmlHelper::translateKey($ov['optionvalue_name'])); ?>" width="56" style="width:56px;" />
+                                    <span class="visually-hidden"><?php echo $esc(J2htmlHelper::translateKey($ov['optionvalue_name'])); ?></span>
                                 </label>
                             <?php } else { ?>
-                                <label class="btn btn-sm btn-outline-secondary form-check-label border-2" for="option-value-<?php echo $ovId; ?>" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>">
-                                    <?php echo $esc(Text::_($ov['optionvalue_name'])); ?>
+                                <label class="btn btn-sm btn-outline-secondary form-check-label border-2" for="option-value-<?php echo $ovId; ?>" data-label="<?php echo $esc(J2htmlHelper::translateKey($ov['optionvalue_name'])); ?>">
+                                    <?php echo $esc(J2htmlHelper::translateKey($ov['optionvalue_name'])); ?>
                                 </label>
                             <?php } ?>
 
@@ -105,7 +106,7 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
         <?php if ($option['type'] === 'color') : ?>
             <fieldset id="option-<?php echo $optionId; ?>" class="option mb-3 j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
                 <legend class="form-label fw-semibold pb-1 mb-2">
-                    <?php echo $esc(Text::_($option['option_name'])); ?>:
+                    <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>:
                     <?php if ($option['required']) : ?>
                         <span class="text-danger">*</span>
                     <?php endif; ?>
@@ -129,8 +130,8 @@ $esc = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 
                             <?php echo ($defaultOptionValueId == $ovId) ? 'checked' : ''; ?>
                         />
                         <?php $swatchColor = ProductHelper::swatchColor($ov['optionvalue_image']); ?>
-                        <label for="option-value-<?php echo $ovId; ?>" class="btn btn-color fs-xl" data-label="<?php echo $esc(Text::_($ov['optionvalue_name'])); ?>"<?php if ($swatchColor !== '') : ?> style="color:<?php echo $esc($swatchColor); ?>;"<?php endif; ?>>
-                            <span class="visually-hidden"><?php echo $esc(Text::_($ov['optionvalue_name'])); ?></span>
+                        <label for="option-value-<?php echo $ovId; ?>" class="btn btn-color fs-xl" data-label="<?php echo $esc(J2htmlHelper::translateKey($ov['optionvalue_name'])); ?>"<?php if ($swatchColor !== '') : ?> style="color:<?php echo $esc($swatchColor); ?>;"<?php endif; ?>>
+                            <span class="visually-hidden"><?php echo $esc(J2htmlHelper::translateKey($ov['optionvalue_name'])); ?></span>
                         </label>
                     <?php endforeach; ?>
                 </div>

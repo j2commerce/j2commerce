@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model\Behavior;
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\CartModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\VariantsModel;
@@ -96,7 +97,7 @@ class CartDownloadable
 
                 // Check if required option is empty
                 if (!empty($productOption->required) && empty($options[$optionId])) {
-                    $optionName                           = Text::_($productOption->option_name ?? '');
+                    $optionName                           = J2htmlHelper::translateKey($productOption->option_name ?? '');
                     $errors['error']['option'][$optionId] = Text::sprintf(
                         'COM_J2COMMERCE_ADDTOCART_PRODUCT_OPTION_REQUIRED',
                         $optionName
@@ -398,7 +399,7 @@ class CartDownloadable
     {
         $optionId   = $productOption->j2commerce_productoption_id ?? 0;
         $optionType = $productOption->type ?? '';
-        $optionName = Text::_($productOption->option_name ?? '');
+        $optionName = J2htmlHelper::translateKey($productOption->option_name ?? '');
 
         // Free-text validation - the single-value input types share the length rules.
         if (\in_array($optionType, ['text', 'textarea', 'number', 'email', 'url'], true)) {

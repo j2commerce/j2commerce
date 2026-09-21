@@ -12,6 +12,7 @@ declare(strict_types=1);
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 
 $optionId    = (int) ($displayData['productOptionId'] ?? 0);
 $required    = (bool) ($displayData['required'] ?? false);
@@ -26,7 +27,7 @@ $esc         = static fn(string $value): string => htmlspecialchars($value, ENT_
 ?>
 <div id="option-<?php echo $optionId; ?>" class="option uk-margin-small-bottom">
     <span class="uk-form-label uk-text-bold uk-display-block uk-margin-small-bottom">
-        <?php echo $esc(Text::_($optionName)); ?><?php if ($required) : ?>
+        <?php echo $esc(J2htmlHelper::translateKey($optionName)); ?><?php if ($required) : ?>
             <span class="uk-text-danger" aria-hidden="true">*</span>
             <span class="uk-hidden-visually"><?php echo Text::_('JFIELD_FIELD_REQUIRED_LABEL'); ?></span>
         <?php endif; ?>

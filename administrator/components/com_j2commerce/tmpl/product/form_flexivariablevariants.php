@@ -17,6 +17,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 
@@ -46,9 +47,9 @@ $ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                 <div class="input-group">
                     <?php foreach ($item->product_options as $product_option): ?>
                         <select name="variant_combin[<?php echo $product_option->j2commerce_productoption_id;?>]" class="form-select">
-                            <option value="0"><?php echo substr(Text::_('COM_J2COMMERCE_ANY').' '.$this->escape(Text::_($product_option->option_name)),0,10).'...';?></option>
+                            <option value="0"><?php echo substr(Text::_('COM_J2COMMERCE_ANY').' '.$this->escape(J2htmlHelper::translateKey($product_option->option_name)),0,10).'...';?></option>
                             <?php foreach ($product_option->option_values as $option_value): ?>
-                                <option value="<?php echo $option_value->j2commerce_optionvalue_id;?>"><?php echo $this->escape(Text::_($option_value->optionvalue_name));?></option>
+                                <option value="<?php echo $option_value->j2commerce_optionvalue_id;?>"><?php echo $this->escape(J2htmlHelper::translateKey($option_value->optionvalue_name));?></option>
                             <?php endforeach; ?>
                         </select>
                     <?php endforeach; ?>

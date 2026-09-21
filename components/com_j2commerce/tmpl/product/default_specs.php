@@ -14,6 +14,7 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\LengthHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\WeightHelper;
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 
 /**
  * Helper function to pluralize length unit titles
@@ -53,12 +54,12 @@ $pluralizeWeightUnit = static function (float $value, string $title): string {
     <ul class="j2commerce-product-specifications list-unstyled d-flex flex-column gap-3 fs-xs pb-3 m-0 mb-2 mb-sm-3">
         <?php foreach ($this->filters as $group_id => $rows) : ?>
             <li class="d-flex align-items-center position-relative pe-0">
-                <span class="filter-group-name fw-semibold text-dark"><?php echo $this->escape(Text::_($rows['group_name'])); ?>:</span>
+                <span class="filter-group-name fw-semibold text-dark"><?php echo $this->escape(J2htmlHelper::translateKey($rows['group_name'])); ?>:</span>
                 <span class="d-block flex-grow-1 border-bottom border-dashed px-1 mt-2 mx-2"></span>
                 <?php
                 $filterNames = [];
                 foreach ($rows['filters'] as $filter) {
-                    $filterNames[] = $this->escape(Text::_($filter->filter_name));
+                    $filterNames[] = $this->escape(J2htmlHelper::translateKey($filter->filter_name));
                 }
                 ?>
                 <span class="text-dark-emphasis fw-normal fs-xs text-end"><?php echo implode(', ', $filterNames); ?></span>

@@ -12,6 +12,7 @@ declare(strict_types=1);
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 
 $grouped         = $displayData['grouped'] ?? [];
 $typeRenderers   = $displayData['typeRenderers'] ?? [];
@@ -67,16 +68,16 @@ if ($variant === 'compact') {
             if ($groupType === 'product_children') {
                 $qty = (int) ($gItem['qty'] ?? 1);
                 $label = $qty > 1
-                    ? '(' . $qty . ') ' . htmlspecialchars(Text::_($gItem['name']), ENT_QUOTES, 'UTF-8')
-                    : htmlspecialchars(Text::_($gItem['name']), ENT_QUOTES, 'UTF-8');
+                    ? '(' . $qty . ') ' . htmlspecialchars(J2htmlHelper::translateKey($gItem['name']), ENT_QUOTES, 'UTF-8')
+                    : htmlspecialchars(J2htmlHelper::translateKey($gItem['name']), ENT_QUOTES, 'UTF-8');
                 ?>
                 <small class="<?php echo $mutedClass; ?>"><?php echo $label; ?></small>
                 <?php
                 continue;
             }
 
-            $name      = htmlspecialchars(Text::_($gItem['name'] ?? ''), ENT_QUOTES, 'UTF-8');
-            $value     = htmlspecialchars(Text::_($gItem['value'] ?? ''), ENT_QUOTES, 'UTF-8');
+            $name      = htmlspecialchars(J2htmlHelper::translateKey($gItem['name'] ?? ''), ENT_QUOTES, 'UTF-8');
+            $value     = htmlspecialchars(J2htmlHelper::translateKey($gItem['value'] ?? ''), ENT_QUOTES, 'UTF-8');
             $mangled   = (string) ($gItem['mangled_name'] ?? '');
             $itemType  = (string) ($gItem['type'] ?? '');
             ?>
@@ -108,15 +109,15 @@ if ($variant === 'compact') {
             if ($groupType === 'product_children'):
                 $qty = (int) ($gItem['qty'] ?? 1);
                 $label = $qty > 1
-                    ? '(' . $qty . ') ' . htmlspecialchars(Text::_($gItem['name']), ENT_QUOTES, 'UTF-8')
-                    : htmlspecialchars(Text::_($gItem['name']), ENT_QUOTES, 'UTF-8');
+                    ? '(' . $qty . ') ' . htmlspecialchars(J2htmlHelper::translateKey($gItem['name']), ENT_QUOTES, 'UTF-8')
+                    : htmlspecialchars(J2htmlHelper::translateKey($gItem['name']), ENT_QUOTES, 'UTF-8');
                 ?>
                 <div class="uk-text-small uk-flex uk-flex-middle">
                     <div class="item-option item-option-name"><?php echo $label; ?></div>
                 </div>
             <?php else:
-                $name      = htmlspecialchars(Text::_($gItem['name'] ?? ''), ENT_QUOTES, 'UTF-8');
-                $value     = htmlspecialchars(Text::_($gItem['value'] ?? ''), ENT_QUOTES, 'UTF-8');
+                $name      = htmlspecialchars(J2htmlHelper::translateKey($gItem['name'] ?? ''), ENT_QUOTES, 'UTF-8');
+                $value     = htmlspecialchars(J2htmlHelper::translateKey($gItem['value'] ?? ''), ENT_QUOTES, 'UTF-8');
                 $mangled   = (string) ($gItem['mangled_name'] ?? '');
                 $itemType  = (string) ($gItem['type'] ?? '');
                 $isFileUpload = $mangled !== '';

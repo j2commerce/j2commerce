@@ -14,6 +14,7 @@ defined('_JEXEC') or die;
 use Joomla\CMS\HTML\HTMLHelper;
 use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
@@ -84,7 +85,7 @@ if (!$hasRenderableOption) {
                 <?php $selectInputId = 'product-option-' . $productId . '-' . $optionId; ?>
                 <div id="option-<?php echo $optionId; ?>" class="option mb-3">
                     <label class="form-label fw-semibold pb-1 mb-1" for="<?php echo $selectInputId; ?>">
-                        <?php echo $esc(Text::_($option['option_name'])); ?>
+                        <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>
                         <?php if ($option['required']) : ?>
                             <span class="text-danger">*</span>
                         <?php endif; ?>
@@ -104,7 +105,7 @@ if (!$hasRenderableOption) {
                         <?php foreach ($option['optionvalue'] as $option_value) : ?>
                             <?php $checked = $option_value['product_optionvalue_default'] ? 'selected="selected"' : ''; ?>
                             <option <?php echo $checked; ?> value="<?php echo (int) $option_value['product_optionvalue_id']; ?>">
-                                <?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>
+                                <?php echo $esc(J2htmlHelper::translateKey($option_value['optionvalue_name'])); ?>
                                 <?php if ($option_value['product_optionvalue_price'] > 0 && $params->get('product_option_price', 1)) : ?>
                                     (<?php if ($params->get('product_option_price_prefix', 1)) : ?><?php echo $esc($option_value['product_optionvalue_prefix']); ?><?php endif; ?><?php echo $productHelper->displayPrice($option_value['product_optionvalue_price'], $product, $params, 'products.view.option'); ?>)
                                 <?php endif; ?>
@@ -117,7 +118,7 @@ if (!$hasRenderableOption) {
             <?php if ($option['type'] == 'radio' && isset($option['optionvalue']) && !empty($option['optionvalue'])) : ?>
                 <fieldset id="option-<?php echo $optionId; ?>" class="option mb-3 j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
                     <legend class="form-label fw-semibold pb-1 mb-1">
-                        <?php echo $esc(Text::_($option['option_name'])); ?>:
+                        <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>:
                         <?php if ($option['required']) : ?>
                             <span class="text-danger">*</span>
                         <?php endif; ?>
@@ -142,13 +143,13 @@ if (!$hasRenderableOption) {
                                 onchange="doAjaxFilter(this.value, <?php echo $productId; ?>, <?php echo $optionId; ?>, '#option-<?php echo $optionId; ?>')" />
 
                             <?php if ($showOptionImages && !empty($option_value['optionvalue_image'])) : ?>
-                                <label class="btn btn-image p-0 form-check-label fs-xs" for="<?php echo $optionValueInputId; ?>" data-label="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>">
-                                    <img class="optionvalue-image me-1" src="<?php echo $esc(ImageHelper::getImageUrl($option_value['optionvalue_image'])); ?>" alt="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" width="56" style="width:56px;" />
-                                    <span class="visually-hidden"><?php echo $esc(Text::_($option_value['optionvalue_name'])); ?></span>
+                                <label class="btn btn-image p-0 form-check-label fs-xs" for="<?php echo $optionValueInputId; ?>" data-label="<?php echo $esc(J2htmlHelper::translateKey($option_value['optionvalue_name'])); ?>">
+                                    <img class="optionvalue-image me-1" src="<?php echo $esc(ImageHelper::getImageUrl($option_value['optionvalue_image'])); ?>" alt="<?php echo $esc(J2htmlHelper::translateKey($option_value['optionvalue_name'])); ?>" width="56" style="width:56px;" />
+                                    <span class="visually-hidden"><?php echo $esc(J2htmlHelper::translateKey($option_value['optionvalue_name'])); ?></span>
                                 </label>
                             <?php else : ?>
-                                <label class="btn btn-sm btn-outline-secondary form-check-label fs-xs" for="<?php echo $optionValueInputId; ?>" data-label="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>">
-                                    <?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>
+                                <label class="btn btn-sm btn-outline-secondary form-check-label fs-xs" for="<?php echo $optionValueInputId; ?>" data-label="<?php echo $esc(J2htmlHelper::translateKey($option_value['optionvalue_name'])); ?>">
+                                    <?php echo $esc(J2htmlHelper::translateKey($option_value['optionvalue_name'])); ?>
                                     <?php if ($option_value['product_optionvalue_price'] > 0 && $params->get('product_option_price', 1)) : ?>
                                         <?php if ($params->get('product_option_price_prefix', 1)) : ?>
                                             <?php echo $esc($option_value['product_optionvalue_prefix']); ?>
@@ -165,7 +166,7 @@ if (!$hasRenderableOption) {
             <?php if ($option['type'] == 'color' && !empty($option['optionvalue'])) : ?>
                 <fieldset id="option-<?php echo $optionId; ?>" class="option mb-3 j2commerce-option-group"<?php echo ProductLayoutService::optionDescribedBy($option); ?>>
                     <legend class="form-label fw-semibold pb-1 mb-1">
-                        <?php echo $esc(Text::_($option['option_name'])); ?>:
+                        <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>:
                         <?php if ($option['required']) : ?>
                             <span class="text-danger">*</span>
                         <?php endif; ?>
@@ -188,8 +189,8 @@ if (!$hasRenderableOption) {
                                 data-option-id="<?php echo $optionId; ?>"
                                 onchange="doAjaxFilter(this.value, <?php echo $productId; ?>, <?php echo $optionId; ?>, '#option-<?php echo $optionId; ?>')" />
                             <?php $swatchColor = ProductHelper::swatchColor($option_value['optionvalue_image']); ?>
-                            <label for="<?php echo $optionValueInputId; ?>" class="btn btn-color fs-xl" title="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" data-label="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>"<?php if ($swatchColor !== '') : ?> style="color:<?php echo $esc($swatchColor); ?>;"<?php endif; ?>>
-                                <span class="visually-hidden"><?php echo $esc(Text::_($option_value['optionvalue_name'])); ?></span>
+                            <label for="<?php echo $optionValueInputId; ?>" class="btn btn-color fs-xl" title="<?php echo $esc(J2htmlHelper::translateKey($option_value['optionvalue_name'])); ?>" data-label="<?php echo $esc(J2htmlHelper::translateKey($option_value['optionvalue_name'])); ?>"<?php if ($swatchColor !== '') : ?> style="color:<?php echo $esc($swatchColor); ?>;"<?php endif; ?>>
+                                <span class="visually-hidden"><?php echo $esc(J2htmlHelper::translateKey($option_value['optionvalue_name'])); ?></span>
                             </label>
                         <?php endforeach; ?>
                     </div>
@@ -202,7 +203,7 @@ if (!$hasRenderableOption) {
                 <?php if ($option['required']) : ?>
                     <span class="text-danger">*</span>
                 <?php endif; ?>
-                <b><?php echo $esc(Text::_($option['option_name'])); ?>:</b>
+                <b><?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>:</b>
                 </legend>
 <?php echo ProductLayoutService::renderLayout('productoption.description', [
     'description' => $option['option_description'] ?? '',
@@ -217,10 +218,10 @@ if (!$hasRenderableOption) {
                     <?php if ($showOptionImages && !empty($option_value['optionvalue_image'])) : ?>
                         <img class="optionvalue-image-<?php echo (int) $option_value['product_optionvalue_id']; ?>"
                              src="<?php echo $esc(ImageHelper::getImageUrl($option_value['optionvalue_image'])); ?>"
-                             alt="<?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>" />
+                             alt="<?php echo $esc(J2htmlHelper::translateKey($option_value['optionvalue_name'])); ?>" />
                     <?php endif; ?>
                     <label for="<?php echo $optionValueInputId; ?>">
-                        <?php echo $esc(Text::_($option_value['optionvalue_name'])); ?>
+                        <?php echo $esc(J2htmlHelper::translateKey($option_value['optionvalue_name'])); ?>
                         <?php if ($option_value['product_optionvalue_price'] > 0 && $params->get('product_option_price', 1)) : ?>
                             (<?php if ($params->get('product_option_price_prefix', 1)) : ?><?php echo $esc($option_value['product_optionvalue_prefix']); ?><?php endif; ?><?php echo $productHelper->displayPrice($option_value['product_optionvalue_price'], $product, $params, 'products.view.option'); ?>)
                         <?php endif; ?>
@@ -235,7 +236,7 @@ if (!$hasRenderableOption) {
             <?php $textInputId = 'product-option-text-' . $productId . '-' . $optionId; ?>
             <div id="option-<?php echo $optionId; ?>" class="option mb-3">
                 <label class="form-label fw-semibold pb-1 mb-1" for="<?php echo $textInputId; ?>">
-                    <?php echo $esc(Text::_($option['option_name'])); ?>
+                    <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>
                     <?php if ($option['required']) : ?>
                         <span class="text-danger">*</span>
                     <?php endif; ?>
@@ -255,7 +256,7 @@ if (!$hasRenderableOption) {
             <?php $textareaInputId = 'product-option-textarea-' . $productId . '-' . $optionId; ?>
             <div id="option-<?php echo $optionId; ?>" class="option mb-3">
                 <label class="form-label fw-semibold pb-1 mb-1" for="<?php echo $textareaInputId; ?>">
-                    <?php echo $esc(Text::_($option['option_name'])); ?>
+                    <?php echo $esc(J2htmlHelper::translateKey($option['option_name'])); ?>
                     <?php if ($option['required']) : ?>
                         <span class="text-danger">*</span>
                     <?php endif; ?>

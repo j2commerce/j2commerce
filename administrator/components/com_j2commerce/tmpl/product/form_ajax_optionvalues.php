@@ -12,6 +12,7 @@
 // phpcs:enable PSR1.Files.SideEffects
 
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 
 /**
  * Layout for AJAX-loaded product option values content.
@@ -34,13 +35,13 @@ $prefix = $displayData['prefix'];
 // Build option values dropdown
 $options = [];
 foreach ($optionValues as $opvalue) {
-    $options[$opvalue->j2commerce_optionvalue_id] = Text::_($opvalue->optionvalue_name);
+    $options[$opvalue->j2commerce_optionvalue_id] = J2htmlHelper::translateKey($opvalue->optionvalue_name);
 }
 
 // Build parent option values dropdown
 $parentOptionArray = [];
 foreach ($parentOptionValues as $parentOpvalue) {
-    $parentOptionArray[$parentOpvalue->j2commerce_product_optionvalue_id] = Text::_($parentOpvalue->optionvalue_name ?? '');
+    $parentOptionArray[$parentOpvalue->j2commerce_product_optionvalue_id] = J2htmlHelper::translateKey($parentOpvalue->optionvalue_name ?? '');
 }
 
 $isVariableType = \in_array($product->product_type, ['variable', 'variablesubscriptionproduct'], true);

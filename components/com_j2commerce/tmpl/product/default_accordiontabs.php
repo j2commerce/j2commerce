@@ -14,6 +14,7 @@
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 
 HTMLHelper::_('bootstrap.collapse', '[data-bs-toggle="collapse"]');
 
@@ -65,10 +66,10 @@ $set_specification_active = !$hasDescription;
                 <div class="accordion-body pt-3">
                     <?php foreach ($productfilters as $group) : ?>
                         <div class="mb-3">
-                            <h6 class="fw-bold mb-2"><?php echo htmlspecialchars(Text::_($group['group_name']), ENT_QUOTES, 'UTF-8'); ?></h6>
+                            <h6 class="fw-bold mb-2"><?php echo htmlspecialchars(J2htmlHelper::translateKey($group['group_name']), ENT_QUOTES, 'UTF-8'); ?></h6>
                             <div class="d-flex flex-wrap gap-2">
                                 <?php foreach ($group['filters'] as $filter) : ?>
-                                    <span class="badge bg-light text-dark border"><?php echo htmlspecialchars(Text::_($filter->filter_name), ENT_QUOTES, 'UTF-8'); ?></span>
+                                    <span class="badge bg-light text-dark border"><?php echo htmlspecialchars(J2htmlHelper::translateKey($filter->filter_name), ENT_QUOTES, 'UTF-8'); ?></span>
                                 <?php endforeach; ?>
                             </div>
                         </div>

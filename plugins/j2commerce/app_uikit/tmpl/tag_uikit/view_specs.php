@@ -14,17 +14,18 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\LengthHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\WeightHelper;
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 
 ?>
 <?php if (isset($this->filters) && count($this->filters)) : ?>
     <div class="j2commerce-product-specifications">
         <?php foreach ($this->filters as $group_id => $rows) : ?>
-            <h4 class="filter-group-name"><?php echo $this->escape(Text::_($rows['group_name'])); ?></h4>
+            <h4 class="filter-group-name"><?php echo $this->escape(J2htmlHelper::translateKey($rows['group_name'])); ?></h4>
             <table class="uk-table uk-table-striped">
                 <?php foreach ($rows['filters'] as $filter) : ?>
                     <tr>
                         <td>
-                            <?php echo $this->escape(Text::_($filter->filter_name)); ?>
+                            <?php echo $this->escape(J2htmlHelper::translateKey($filter->filter_name)); ?>
                         </td>
                     </tr>
                 <?php endforeach; ?>

@@ -14,10 +14,10 @@ namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\GroupedlistField;
 use Joomla\CMS\HTML\HTMLHelper;
-use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
 
 /**
@@ -61,10 +61,10 @@ class ProductfilterField extends GroupedlistField
         foreach ($db->loadObjectList() ?: [] as $row) {
             // Both grouped layouts render option text raw (option.text.toHtml => false), so a
             // name typed into the filter form is escaped here instead of at output.
-            $groups[Text::_((string) $row->group_name)][] = HTMLHelper::_(
+            $groups[J2htmlHelper::translateKey((string) $row->group_name)][] = HTMLHelper::_(
                 'select.option',
                 (string) $row->j2commerce_filter_id,
-                htmlspecialchars(Text::_((string) $row->filter_name), ENT_QUOTES, 'UTF-8')
+                htmlspecialchars(J2htmlHelper::translateKey((string) $row->filter_name), ENT_QUOTES, 'UTF-8')
             );
         }
 

@@ -15,7 +15,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 
@@ -284,7 +283,7 @@ final class OrderItemAttributeHelper
                 continue;
             }
 
-            $optionName = Text::_($optionInfo->option_name ?? '');
+            $optionName = J2htmlHelper::translateKey($optionInfo->option_name ?? '');
             $optionType = $optionInfo->type ?? 'select';
 
             if (\is_array($optionValue)) {
@@ -331,6 +330,6 @@ final class OrderItemAttributeHelper
 
         $db->setQuery($query);
 
-        return Text::_($db->loadResult() ?: '');
+        return J2htmlHelper::translateKey($db->loadResult() ?: '');
     }
 }

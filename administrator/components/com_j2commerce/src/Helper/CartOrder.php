@@ -1750,7 +1750,7 @@ class CartOrder
                 continue;
             }
 
-            $optionName = Text::_($optionInfo->option_name ?? '');
+            $optionName = J2htmlHelper::translateKey($optionInfo->option_name ?? '');
             $optionType = $optionInfo->type ?? 'select';
 
             // Handle array values (multiselect, checkbox)
@@ -1813,7 +1813,7 @@ class CartOrder
 
         $db->setQuery($query);
 
-        return Text::_($db->loadResult() ?? '');
+        return J2htmlHelper::translateKey($db->loadResult() ?? '');
     }
 
     /**

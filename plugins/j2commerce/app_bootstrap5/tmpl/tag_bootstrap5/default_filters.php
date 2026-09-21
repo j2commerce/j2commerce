@@ -18,6 +18,7 @@ use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Uri\Uri;
 
@@ -215,7 +216,7 @@ HTMLHelper::_('bootstrap.collapse');
                         <div class="accordion-item border-0 border-bottom">
                             <h3 class="accordion-header">
                                 <button class="accordion-button fw-semibold<?php echo !$pfShowExpanded ? ' collapsed' : ''; ?>" type="button" data-bs-toggle="collapse" data-bs-target="#filterPf-<?php echo $filterScriptId; ?>">
-                                    <?php echo $this->escape(Text::_($filtergroup['group_name'])); ?>
+                                    <?php echo $this->escape(J2htmlHelper::translateKey($filtergroup['group_name'])); ?>
                                 </button>
                             </h3>
                             <div id="filterPf-<?php echo $filterScriptId; ?>" class="accordion-collapse collapse<?php echo $pfShowExpanded ? ' show' : ''; ?>">
@@ -230,16 +231,16 @@ HTMLHelper::_('bootstrap.collapse');
                                             <?php if ($pfInputType === 'multiselect') : ?>
                                                 <joomla-field-fancy-select placeholder="<?php echo $this->escape(Text::_('JGLOBAL_TYPE_OR_SELECT_SOME_OPTIONS')); ?>">
                                             <?php endif; ?>
-                                            <select class="form-select j2commerce-pfilter-select j2commerce-pfilter-select-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" aria-label="<?php echo $this->escape(Text::_($filtergroup['group_name'])); ?>"<?php echo $pfInputType === 'multiselect' ? ' multiple' : ''; ?>>
+                                            <select class="form-select j2commerce-pfilter-select j2commerce-pfilter-select-<?php echo $filterScriptId; ?>" name="productfilter_ids[]" aria-label="<?php echo $this->escape(J2htmlHelper::translateKey($filtergroup['group_name'])); ?>"<?php echo $pfInputType === 'multiselect' ? ' multiple' : ''; ?>>
                                                 <?php if ($pfInputType === 'select') : ?>
                                                     <option class="j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" value=""><?php echo $this->escape(Text::_('COM_J2COMMERCE_FILTER_ANY')); ?></option>
                                                 <?php endif; ?>
                                                 <?php foreach ($filtergroup['filters'] as $filter) : ?>
                                                     <?php
                                                     $checked = (!empty($sessionProductfilterIds) && in_array($filter->filter_id, $sessionProductfilterIds));
-                                                    $filterAlias = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(Text::_($filter->filter_name));
+                                                    $filterAlias = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(J2htmlHelper::translateKey($filter->filter_name));
                                                     $filterCount = (int) ($filter->product_count ?? 0);
-                                                    $filterLabel = Text::_($filter->filter_name);
+                                                    $filterLabel = J2htmlHelper::translateKey($filter->filter_name);
                                                     ?>
                                                     <option class="j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" value="<?php echo $filter->filter_id; ?>" data-alias="<?php echo $this->escape($filterAlias); ?>" data-count="<?php echo $filterCount; ?>" data-label="<?php echo $this->escape($filterLabel); ?>"<?php echo $checked ? ' selected' : ''; ?><?php echo $filterCount === 0 && !$checked ? ' disabled' : ''; ?>><?php echo $this->escape($filterLabel); ?> (<?php echo $filterCount; ?>)</option>
                                                 <?php endforeach; ?>
@@ -259,9 +260,9 @@ HTMLHelper::_('bootstrap.collapse');
                                             <?php foreach ($filtergroup['filters'] as $filter) : ?>
                                                 <?php
                                                 $checked = (!empty($sessionProductfilterIds) && in_array($filter->filter_id, $sessionProductfilterIds));
-                                                $filterAlias = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(Text::_($filter->filter_name));
+                                                $filterAlias = \Joomla\CMS\Filter\OutputFilter::stringURLSafe(J2htmlHelper::translateKey($filter->filter_name));
                                                 $filterCount = (int) ($filter->product_count ?? 0);
-                                                $filterLabel = Text::_($filter->filter_name);
+                                                $filterLabel = J2htmlHelper::translateKey($filter->filter_name);
                                                 // A ticked value stays operable at zero, or the selection that emptied
                                                 // the listing could not be undone from here.
                                                 $filterUnavailable = $filterCount === 0 && !$checked;
