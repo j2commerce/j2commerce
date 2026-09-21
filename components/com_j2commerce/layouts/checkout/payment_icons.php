@@ -11,7 +11,10 @@
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
+use Joomla\CMS\Application\SiteApplication;
+use Joomla\CMS\Factory;
 
 /**
  * Framework-neutral shim. Delegates to the shared layout resolver, which picks
@@ -20,4 +23,14 @@ use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
  *
  * @var array $displayData
  */
-echo ProductLayoutService::renderLayout('checkout.payment_icons', $displayData);
+// J2CommerceHelper::getPaymentCardIcons() passes no framework, so resolve it the way the
+// checkout-family views pick their tmpl folder. A bootstrap5 guess would lead the chain on a
+// UIkit store, because buildFolderChain() puts the fallback first when the active folder is a
+// framework folder.
+$app          = Factory::getApplication();
+$rawFramework = $displayData['framework']
+    ?? ($app instanceof SiteApplication ? SubtemplateHelper::framework($app->getParams()) : '');
+$framework    = ($rawFramework === 'uikit3' || $rawFramework === 'uikit') ? 'uikit' : 'bootstrap5';
+
+// The framework folder is a fallback, not an override — see product/quantity.php.
+echo ProductLayoutService::renderLayout('checkout.payment_icons', $displayData, [$framework]);
