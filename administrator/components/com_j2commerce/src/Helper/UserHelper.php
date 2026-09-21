@@ -220,6 +220,16 @@ class UserHelper
         return $db->loadObjectList() ?: [];
     }
 
+    /** Never empty: a company-only address falls back to company, then tax number, then its id. */
+    public static function getAddressLabel(object $address): string
+    {
+        $name  = trim(($address->first_name ?? '') . ' ' . ($address->last_name ?? ''));
+        $head  = $name ?: trim((string) ($address->company ?? '')) ?: trim((string) ($address->tax_number ?? ''));
+        $parts = array_filter([$head, trim((string) ($address->address_1 ?? '')), trim((string) ($address->city ?? ''))]);
+
+        return $parts ? implode(', ', $parts) : '#' . (int) ($address->j2commerce_address_id ?? $address->id ?? 0);
+    }
+
     // =========================================================================
     // USER EXISTENCE CHECK METHODS
     // =========================================================================

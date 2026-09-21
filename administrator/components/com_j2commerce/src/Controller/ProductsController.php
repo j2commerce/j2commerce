@@ -1889,7 +1889,7 @@ class ProductsController extends AdminController
 
         $response['success']    = true;
         $response['html']       = $html;
-        $response['optionName'] = $productOption->option_name ?? '';
+        $response['optionName'] = Text::_($productOption->option_name ?? '');
 
         $this->sendJson($response);
     }
@@ -3632,7 +3632,7 @@ class ProductsController extends AdminController
 
         $response['success']            = true;
         $response['productoption_id']   = $poTable->j2commerce_productoption_id;
-        $response['option_name']        = $optionMeta->option_name ?? '';
+        $response['option_name']        = Text::_($optionMeta->option_name ?? '');
         $response['option_unique_name'] = $optionMeta->option_unique_name ?? '';
         $response['option_type']        = $optionMeta->type ?? '';
         $response['ordering']           = $nextOrdering;

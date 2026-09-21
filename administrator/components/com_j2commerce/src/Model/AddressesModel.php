@@ -34,10 +34,8 @@ class AddressesModel extends ListModel
         parent::__construct($config);
     }
 
-    /**
-     * Get all addresses for a specific user with country and zone names.
-     */
-    public function getAddressesByUser(?int $userId = null): array
+    /** Optional $type ('billing'/'shipping') limits the list to that address type. */
+    public function getAddressesByUser(?int $userId = null, ?string $type = null): array
     {
         if ($userId === null) {
             $user   = Factory::getApplication()->getIdentity();
@@ -71,6 +69,11 @@ class AddressesModel extends ListModel
             ->where($db->quoteName('a.user_id') . ' = :userId')
             ->bind(':userId', $userId, ParameterType::INTEGER)
             ->order($db->quoteName('a.j2commerce_address_id') . ' ASC');
+
+        if ($type !== null) {
+            $query->where($db->quoteName('a.type') . ' = :type')
+                ->bind(':type', $type);
+        }
 
         $db->setQuery($query);
 

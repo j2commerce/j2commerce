@@ -508,7 +508,8 @@ class CheckoutController extends BaseController
         $email     = trim($formData['email'] ?? '');
         $firstName = trim($formData['first_name'] ?? '');
         $lastName  = trim($formData['last_name'] ?? '');
-        $name      = $firstName . ' ' . $lastName;
+        // First/last name are optional custom fields; a company-only buyer still needs an account name.
+        $name      = trim($firstName . ' ' . $lastName) ?: (trim($formData['company'] ?? '') ?: $email);
 
         // Check if email already exists
         $userFactory  = Factory::getContainer()->get(UserFactoryInterface::class);
@@ -879,7 +880,7 @@ class CheckoutController extends BaseController
             $addressModel = $this->getMvcFactory()->createModel('Addresses', 'Administrator', ['ignore_request' => true]);
 
             if ($addressModel && method_exists($addressModel, 'getAddressesByUser')) {
-                $addresses = $addressModel->getAddressesByUser((int) $user->id);
+                $addresses = $addressModel->getAddressesByUser((int) $user->id, 'billing');
             }
 
             $billingAddressId = $session->get('billing_address_id', '', 'j2commerce');
@@ -925,12 +926,13 @@ class CheckoutController extends BaseController
         if ($billingAddress === 'existing' && $addressId > 0) {
             $addressTable = $this->getMvcFactory()->createTable('Address', 'Administrator');
 
-            // Verify the address loads AND belongs to the current user BEFORE trusting the id.
+            // Verify the address loads, belongs to the current user AND is of this step's type BEFORE trusting the id.
             // The session key must never hold a request id that failed this check.
             if (
                 !$addressTable
                 || !$addressTable->load($addressId)
                 || (int) ($addressTable->user_id ?? 0) !== (int) $user->id
+                || ($addressTable->type ?? '') !== 'billing'
             ) {
                 $session->clear('billing_address_id', 'j2commerce');
                 $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR');
@@ -1046,7 +1048,13 @@ class CheckoutController extends BaseController
             $addressModel = $this->getMvcFactory()->createModel('Addresses', 'Administrator', ['ignore_request' => true]);
 
             if ($addressModel && method_exists($addressModel, 'getAddressesByUser')) {
-                $addresses = $addressModel->getAddressesByUser((int) $user->id);
+                $billingAddressId = (int) $session->get('billing_address_id', 0, 'j2commerce');
+
+                // "Same as billing" stores the billing row as the ship-to, so it stays selectable here.
+                $addresses = array_values(array_filter(
+                    $addressModel->getAddressesByUser((int) $user->id),
+                    static fn ($a) => $a->type === 'shipping' || (int) $a->j2commerce_address_id === $billingAddressId
+                ));
             }
 
             $shippingAddressId = $session->get('shipping_address_id', '', 'j2commerce');
@@ -1096,12 +1104,15 @@ class CheckoutController extends BaseController
         if ($shippingAddress === 'existing' && $addressId > 0) {
             $addressTable = $this->getMvcFactory()->createTable('Address', 'Administrator');
 
-            // Verify the address loads AND belongs to the current user BEFORE trusting the id.
+            // Verify the address loads, belongs to the current user AND is a shipping address (or this
+            // checkout's billing address) BEFORE trusting the id.
             // The session key must never hold a request id that failed this check.
             if (
                 !$addressTable
                 || !$addressTable->load($addressId)
                 || (int) ($addressTable->user_id ?? 0) !== (int) $user->id
+                || (($addressTable->type ?? '') !== 'shipping'
+                    && $addressId !== (int) $session->get('billing_address_id', 0, 'j2commerce'))
             ) {
                 $session->clear('shipping_address_id', 'j2commerce');
                 $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR');

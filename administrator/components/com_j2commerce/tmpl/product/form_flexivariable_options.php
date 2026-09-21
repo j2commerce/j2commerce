@@ -69,7 +69,7 @@ $key = 0;
                             <tr id="pao_flexivar_option_<?php echo $poption->j2commerce_productoption_id;?>">
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <strong><?php echo $this->escape($poption->option_name);?></strong>
+                                        <strong><?php echo $this->escape(Text::_($poption->option_name));?></strong>
                                         <input type="hidden" name="<?php echo $formPrefix.'[item_options]['.$poption->j2commerce_productoption_id.'][j2commerce_productoption_id]';?>" value="<?php echo $poption->j2commerce_productoption_id;?>">
                                         <input type="hidden" name="<?php echo $formPrefix.'[item_options]['.$poption->j2commerce_productoption_id.'][option_id]';?>" value="<?php echo $poption->option_id;?>">
                                         <small class="ms-1">(<?php echo $this->escape($poption->option_unique_name);?>)</small>

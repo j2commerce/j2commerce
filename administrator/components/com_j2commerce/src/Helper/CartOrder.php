@@ -2070,9 +2070,10 @@ class CartOrder
         $userId = ($user && $user->id) ? (int) $user->id : 0;
 
         if ($userId === 0) {
-            $guestData = (array) $app->getSession()->get('guest', [], 'j2commerce');
+            $session = $app->getSession();
+            $email   = (string) (((array) $session->get('guest', [], 'j2commerce'))['email'] ?? '');
 
-            return (string) ($guestData['email'] ?? '');
+            return $email !== '' ? $email : (string) (((array) $session->get('guest_shipping', [], 'j2commerce'))['email'] ?? '');
         }
 
         $email = (string) ($user->email ?? '');
