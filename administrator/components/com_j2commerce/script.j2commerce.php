@@ -19,6 +19,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\StockCommittedSeedHelper;
 use Joomla\CMS\Access\Access;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Filter\InputFilter;
 use Joomla\CMS\Installer\InstallerAdapter;
 use Joomla\CMS\Installer\InstallerScriptInterface;
 use Joomla\CMS\Installer\InstallerScriptTrait;
@@ -206,6 +207,8 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
         $this->removeObsoleteSchemaUpdates($adapter);
 
         $this->seedOrderLedgerOnce();
+
+        $this->filterOfflinePaymentTextsOnce();
 
         $this->migratePaymentDashboardIcons();
 
@@ -536,6 +539,103 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
             ->bind(':type', $type);
         $db->setQuery($update);
         $db->execute();
+    }
+
+    /**
+     * The offline payment plugins' merchant texts gained filter="safehtml" in #2485, which only
+     * runs on save. Apply it once to values stored before that, so they render as they would
+     * after an open-and-save of the plugin. Rows whose values are already clean are not written.
+     */
+    private function filterOfflinePaymentTextsOnce(): void
+    {
+        $db        = Factory::getContainer()->get(DatabaseInterface::class);
+        $component = 'com_j2commerce';
+        $type      = 'component';
+
+        try {
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('params'))
+                ->from($db->quoteName('#__extensions'))
+                ->where($db->quoteName('element') . ' = :element')
+                ->where($db->quoteName('type') . ' = :type')
+                ->bind(':element', $component)
+                ->bind(':type', $type);
+            $componentParams = new Registry((string) ($db->setQuery($query)->loadResult() ?: ''));
+
+            if ($componentParams->get('offline_payment_text_filtered', false)) {
+                return;
+            }
+
+            $elements = ['payment_banktransfer', 'payment_cash', 'payment_moneyorder'];
+            $keys     = ['onselection', 'onbeforepayment', 'onafterpayment', 'onerrorpayment'];
+            $filter   = InputFilter::getInstance([], [], InputFilter::ONLY_BLOCK_DEFINED_TAGS, InputFilter::ONLY_BLOCK_DEFINED_ATTRIBUTES);
+            $folder   = 'j2commerce';
+            $plugin   = 'plugin';
+
+            $query = $db->getQuery(true)
+                ->select($db->quoteName(['extension_id', 'params']))
+                ->from($db->quoteName('#__extensions'))
+                ->where($db->quoteName('type') . ' = :type')
+                ->where($db->quoteName('folder') . ' = :folder')
+                ->whereIn($db->quoteName('element'), $elements, ParameterType::STRING)
+                ->bind(':type', $plugin)
+                ->bind(':folder', $folder);
+            $rows = $db->setQuery($query)->loadObjectList();
+
+            foreach ($rows as $row) {
+                $params  = new Registry((string) $row->params);
+                $changed = false;
+
+                foreach ($keys as $key) {
+                    $value = $params->get($key);
+
+                    if (!\is_string($value) || $value === '') {
+                        continue;
+                    }
+
+                    $clean = $filter->clean($value, 'html');
+
+                    if ($clean !== $value) {
+                        $params->set($key, $clean);
+                        $changed = true;
+                    }
+                }
+
+                if (!$changed) {
+                    continue;
+                }
+
+                $json = $params->toString();
+                $id   = (int) $row->extension_id;
+
+                $update = $db->getQuery(true)
+                    ->update($db->quoteName('#__extensions'))
+                    ->set($db->quoteName('params') . ' = :params')
+                    ->where($db->quoteName('extension_id') . ' = :id')
+                    ->bind(':params', $json)
+                    ->bind(':id', $id, ParameterType::INTEGER);
+                $db->setQuery($update)->execute();
+            }
+
+            $componentParams->set('offline_payment_text_filtered', true);
+            $flagged = $componentParams->toString();
+
+            $update = $db->getQuery(true)
+                ->update($db->quoteName('#__extensions'))
+                ->set($db->quoteName('params') . ' = :params')
+                ->where($db->quoteName('element') . ' = :element')
+                ->where($db->quoteName('type') . ' = :type')
+                ->bind(':params', $flagged)
+                ->bind(':element', $component)
+                ->bind(':type', $type);
+            $db->setQuery($update)->execute();
+
+            $this->debugLog('OFFLINE PAYMENT TEXT: filtered');
+        } catch (\Throwable $e) {
+            // Never abort the update; the flag stays unset, so the next update retries.
+            $this->debugLog('OFFLINE PAYMENT TEXT: filter failed (see the j2commerce log)');
+            Log::add('Offline payment text filter failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
+        }
     }
 
     public function uninstall(InstallerAdapter $adapter): bool
