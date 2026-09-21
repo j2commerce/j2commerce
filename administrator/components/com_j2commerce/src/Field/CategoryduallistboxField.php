@@ -15,7 +15,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Field;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
-use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
@@ -26,11 +25,11 @@ use Joomla\Database\DatabaseInterface;
  *
  * @since  6.0.7
  */
-class CategoryduallistboxField extends ListField
+class CategoryduallistboxField extends DuallistboxField
 {
-    use ScriptBlockTrait;
-
     protected $type = 'Categoryduallistbox';
+
+    protected string $listboxClass = 'category-duallistbox';
 
     public function getOptions(): array
     {
@@ -69,118 +68,5 @@ class CategoryduallistboxField extends ListField
         }
 
         return $options;
-    }
-
-    protected function getInput(): string
-    {
-        $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
-        $wa->registerAndUseScript('com_j2commerce.vendor.dual-listbox', 'media/com_j2commerce/vendor/dual-listbox/js/dual-listbox.js', [], ['defer' => true]);
-        $wa->registerAndUseStyle('com_j2commerce.vendor.dual-listbox.css', 'media/com_j2commerce/vendor/dual-listbox/css/dual-listbox.css');
-
-        $options        = $this->getOptions();
-        $selectedValues = $this->processValue($this->value);
-
-        $class = $this->element['class'] ? (string) $this->element['class'] : 'form-select';
-        $size  = $this->element['size'] ? (int) $this->element['size'] : 10;
-
-        $attributes = [
-            'id="' . htmlspecialchars($this->id, ENT_COMPAT, 'UTF-8') . '"',
-            'name="' . htmlspecialchars($this->name, ENT_COMPAT, 'UTF-8') . '[]"',
-            'class="' . htmlspecialchars($class . ' category-duallistbox', ENT_COMPAT, 'UTF-8') . '"',
-            'multiple="multiple"',
-            'size="' . $size . '"',
-        ];
-
-        if ((string) $this->element['disabled'] === 'true') {
-            $attributes[] = 'disabled="disabled"';
-        }
-
-        if ((string) $this->element['readonly'] === 'true') {
-            $attributes[] = 'readonly="readonly"';
-        }
-
-        if ((string) $this->element['required'] === 'true') {
-            $attributes[] = 'required="required"';
-            $attributes[] = 'aria-required="true"';
-        }
-
-        $html   = [];
-        $html[] = '<div class="dual-listbox-container" id="dual-listbox-container-' . $this->id . '">';
-        $html[] = '<select ' . implode(' ', $attributes) . '>';
-
-        foreach ($options as $option) {
-            $selected = \in_array((string) $option->value, $selectedValues, true) ? ' selected="selected"' : '';
-            $html[]   = '<option value="' . htmlspecialchars((string) $option->value, ENT_COMPAT, 'UTF-8') . '"' . $selected . '>';
-            $html[]   = htmlspecialchars((string) $option->text, ENT_COMPAT, 'UTF-8');
-            $html[]   = '</option>';
-        }
-
-        $html[] = '</select>';
-        $html[] = '</div>';
-        $html[] = $this->getInitScript($selectedValues);
-
-        return implode('', $html);
-    }
-
-    protected function processValue($value): array
-    {
-        if (empty($value)) {
-            return [];
-        }
-
-        if (\is_array($value)) {
-            return array_filter($value);
-        }
-
-        if (\is_string($value)) {
-            return array_filter(array_map('trim', explode(',', $value)));
-        }
-
-        return [];
-    }
-
-    protected function getInitScript(array $selected): string
-    {
-        $selectedJson        = $this->encodeForScript($selected, '[]');
-        $availableLabel      = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_AVAILABLE'), '""');
-        $selectedLabel       = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_SELECTED'), '""');
-        $searchPlaceholder   = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_SEARCH'), '""');
-        $addButtonText       = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_ADD'), '""');
-        $addAllButtonText    = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_ADDALL'), '""');
-        $removeButtonText    = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_REMOVE'), '""');
-        $removeAllButtonText = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_REMOVEALL'), '""');
-
-        return <<<JS
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    if (typeof DualListbox !== 'undefined') {
-        const selectElement = document.getElementById('{$this->id}');
-        if (selectElement) {
-            const dualListbox = new DualListbox(selectElement, {
-                availableTitle: {$availableLabel},
-                selectedTitle: {$selectedLabel},
-                searchPlaceholder: {$searchPlaceholder},
-                addButtonText: {$addButtonText},
-                addAllButtonText: {$addAllButtonText},
-                removeButtonText: {$removeButtonText},
-                removeAllButtonText: {$removeAllButtonText},
-                showAddAllButton: true,
-                showRemoveAllButton: true,
-                showSearchFilter: true,
-                moveOnSelect: false,
-                sortable: false
-            });
-            const selected = {$selectedJson};
-            if (selected && selected.length > 0) {
-                selectElement.value = selected;
-                dualListbox.redraw();
-            }
-        }
-    } else {
-        console.error('DualListbox library not loaded');
-    }
-});
-</script>
-JS;
     }
 }

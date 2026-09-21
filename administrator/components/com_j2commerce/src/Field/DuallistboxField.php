@@ -29,6 +29,8 @@ class DuallistboxField extends ListField
 
     protected $type = 'Duallistbox';
 
+    protected string $listboxClass = 'duallistbox';
+
     protected function getInput(): string
     {
         $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
@@ -44,7 +46,7 @@ class DuallistboxField extends ListField
         $attributes = [
             'id="' . htmlspecialchars($this->id, ENT_COMPAT, 'UTF-8') . '"',
             'name="' . htmlspecialchars($this->name, ENT_COMPAT, 'UTF-8') . '[]"',
-            'class="' . htmlspecialchars($class . ' duallistbox', ENT_COMPAT, 'UTF-8') . '"',
+            'class="' . htmlspecialchars($class . ' ' . $this->listboxClass, ENT_COMPAT, 'UTF-8') . '"',
             'multiple="multiple"',
             'size="' . $size . '"',
         ];
