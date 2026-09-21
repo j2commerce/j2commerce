@@ -28,6 +28,8 @@ use Joomla\Database\DatabaseInterface;
  */
 class CategoryduallistboxField extends ListField
 {
+    use ScriptBlockTrait;
+
     protected $type = 'Categoryduallistbox';
 
     public function getOptions(): array
@@ -139,14 +141,14 @@ class CategoryduallistboxField extends ListField
 
     protected function getInitScript(array $selected): string
     {
-        $selectedJson        = json_encode($selected, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-        $availableLabel      = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_AVAILABLE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-        $selectedLabel       = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_SELECTED'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-        $searchPlaceholder   = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_SEARCH'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-        $addButtonText       = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_ADD'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-        $addAllButtonText    = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_ADDALL'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-        $removeButtonText    = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_REMOVE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-        $removeAllButtonText = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_REMOVEALL'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+        $selectedJson        = $this->encodeForScript($selected, '[]');
+        $availableLabel      = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_AVAILABLE'), '""');
+        $selectedLabel       = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_SELECTED'), '""');
+        $searchPlaceholder   = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_SEARCH'), '""');
+        $addButtonText       = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_ADD'), '""');
+        $addAllButtonText    = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_ADDALL'), '""');
+        $removeButtonText    = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_REMOVE'), '""');
+        $removeAllButtonText = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_REMOVEALL'), '""');
 
         return <<<JS
 <script>

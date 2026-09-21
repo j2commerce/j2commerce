@@ -25,6 +25,8 @@ use Joomla\CMS\Language\Text;
  */
 class DuallistboxField extends ListField
 {
+    use ScriptBlockTrait;
+
     protected $type = 'Duallistbox';
 
     protected function getInput(): string
@@ -66,8 +68,8 @@ class DuallistboxField extends ListField
 
         foreach ($options as $option) {
             $selected = \in_array((string) $option->value, $selectedValues, true) ? ' selected="selected"' : '';
-            $html[]   = '<option value="' . htmlspecialchars($option->value, ENT_COMPAT, 'UTF-8') . '"' . $selected . '>';
-            $html[]   = htmlspecialchars($option->text, ENT_COMPAT, 'UTF-8');
+            $html[]   = '<option value="' . htmlspecialchars((string) $option->value, ENT_COMPAT, 'UTF-8') . '"' . $selected . '>';
+            $html[]   = htmlspecialchars((string) $option->text, ENT_COMPAT, 'UTF-8');
             $html[]   = '</option>';
         }
 
@@ -97,14 +99,14 @@ class DuallistboxField extends ListField
 
     protected function getInitScript(array $selected): string
     {
-        $selectedJson        = json_encode($selected, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-        $availableLabel      = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_AVAILABLE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-        $selectedLabel       = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_SELECTED'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-        $searchPlaceholder   = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_SEARCH'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-        $addButtonText       = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_ADD'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-        $addAllButtonText    = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_ADDALL'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-        $removeButtonText    = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_REMOVE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-        $removeAllButtonText = json_encode(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_REMOVEALL'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+        $selectedJson        = $this->encodeForScript($selected, '[]');
+        $availableLabel      = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_AVAILABLE'), '""');
+        $selectedLabel       = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_SELECTED'), '""');
+        $searchPlaceholder   = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_SEARCH'), '""');
+        $addButtonText       = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_ADD'), '""');
+        $addAllButtonText    = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_ADDALL'), '""');
+        $removeButtonText    = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_REMOVE'), '""');
+        $removeAllButtonText = $this->encodeForScript(Text::_('COM_J2COMMERCE_DUALLISTBOX_BUTTON_REMOVEALL'), '""');
 
         return <<<JS
 <script>
