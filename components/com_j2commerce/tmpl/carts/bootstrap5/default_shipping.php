@@ -11,6 +11,7 @@
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
@@ -65,7 +66,7 @@ $baseUrl = Route::_('index.php');
                             <img src="<?php echo htmlspecialchars($method['image'], ENT_QUOTES, 'UTF-8'); ?>" alt="" class="flex-shrink-0" style="height:20px;">
                         <?php endif; ?>
                         <label class="form-check-label flex-grow-1" for="<?php echo htmlspecialchars($methodId, ENT_QUOTES, 'UTF-8'); ?>">
-                            <?php echo htmlspecialchars(stripslashes(Text::_($method['name'])), ENT_QUOTES, 'UTF-8'); ?>
+                            <?php echo htmlspecialchars(stripslashes(J2htmlHelper::translateKey($method['name'])), ENT_QUOTES, 'UTF-8'); ?>
                             (<?php echo $this->currency->format($method['price']); ?>)
                             <?php if (!empty($method['desc'])) : ?>
                                 <span class="shipping-method-desc d-block"><small class="text-body-secondary"><?php echo htmlspecialchars($method['desc'], ENT_QUOTES, 'UTF-8'); ?></small></span>

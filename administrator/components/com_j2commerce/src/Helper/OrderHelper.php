@@ -172,7 +172,7 @@ class OrderHelper
             $firstShipping = !empty($shippings) ? reset($shippings) : null;
 
             if ($firstShipping && !empty($firstShipping->ordershipping_name)) {
-                $shippingLabel = Text::_(stripslashes($firstShipping->ordershipping_name));
+                $shippingLabel = J2htmlHelper::translateKey(stripslashes($firstShipping->ordershipping_name));
             }
 
             $rows[] = [
@@ -207,7 +207,7 @@ class OrderHelper
                 $rows[] = [
                     'key'    => 'fee_' . $index,
                     'type'   => 'fee',
-                    'label'  => Text::_($fee->name ?: 'COM_J2COMMERCE_CART_SURCHARGE'),
+                    'label'  => J2htmlHelper::translateKey($fee->name ?: 'COM_J2COMMERCE_CART_SURCHARGE'),
                     'amount' => $amount,
                 ];
             }

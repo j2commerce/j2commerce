@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Language\Text;
 
@@ -65,7 +66,7 @@ $fees      = $item->orderfees ?? [];
                         <?php
                         $shippingLabel = Text::_('COM_J2COMMERCE_SHIPPING');
                         if ($shipping && !empty($shipping->ordershipping_name)) {
-                            $shippingLabel = Text::_(stripslashes($shipping->ordershipping_name));
+                            $shippingLabel = J2htmlHelper::translateKey(stripslashes($shipping->ordershipping_name));
                         }
                         ?>
                         <tr>

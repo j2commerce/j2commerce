@@ -3010,7 +3010,7 @@ class CartOrder
         if ($this->order_shipping > 0 || $this->shippingRate !== null) {
             $shippingLabel = Text::_('COM_J2COMMERCE_CART_SHIPPING');
             if ($this->shippingRate && !empty($this->shippingRate->ordershipping_name)) {
-                $shippingLabel = Text::_(stripslashes($this->shippingRate->ordershipping_name));
+                $shippingLabel = J2htmlHelper::translateKey(stripslashes($this->shippingRate->ordershipping_name));
             }
 
             $totals['shipping'] = [
@@ -3033,7 +3033,7 @@ class CartOrder
             foreach ($fees as $fee) {
                 $feeKey          = 'fee_' . preg_replace('/[^a-z0-9_]/', '_', strtolower($fee->name ?? 'custom'));
                 $totals[$feeKey] = [
-                    'label' => Text::_($fee->name),
+                    'label' => J2htmlHelper::translateKey($fee->name),
                     'value' => $currency->format($this->get_formatted_fees($fee, $checkoutPriceDisplay)),
                 ];
             }

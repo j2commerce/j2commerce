@@ -941,8 +941,8 @@ class EmailHelper
             '[SHIPPING_VATID]'            => $orderInfo->shipping_tax_number ?? '',
             '[SHIPPING_PHONE]'            => $orderInfo->shipping_phone_1 ?? '',
             '[SHIPPING_MOBILE]'           => $orderInfo->shipping_phone_2 ?? '',
-            '[SHIPPING_METHOD]'           => $language->_($shipping->ordershipping_name ?? ''),
-            '[SHIPPING_TYPE]'             => $language->_($shipping->ordershipping_name ?? ''),
+            '[SHIPPING_METHOD]'           => self::translateKey($shipping->ordershipping_name ?? '', $language),
+            '[SHIPPING_TYPE]'             => self::translateKey($shipping->ordershipping_name ?? '', $language),
             '[SHIPPING_TRACKING_ID]'      => $shipping->ordershipping_tracking_id ?? '',
             '[CUSTOMER_NOTE]'             => self::encodeTagDelimiters(nl2br(htmlspecialchars((string) ($order->customer_note ?? ''), ENT_QUOTES, 'UTF-8'))),
             '[PAYMENT_TYPE]'              => $this->getPaymentMethodTitle($order->orderpayment_type ?? '', $language),
@@ -1496,6 +1496,14 @@ class EmailHelper
         return empty($attributes) ? '' : OrderItemAttributeHelper::formatForEmail($attributes);
     }
 
+    /** J2htmlHelper::translateKey() in the recipient's language: a bare language key is translated, stored text is kept. */
+    private static function translateKey(?string $text, Language $language): string
+    {
+        $text = trim((string) $text);
+
+        return preg_match('/^[A-Z][A-Z0-9_]*$/', $text) ? $language->_($text) : $text;
+    }
+
     /** Build nested table for tax line items with profile name and amount. */
     private function buildTaxLines(object $order, Language $language): string
     {
@@ -1785,7 +1793,7 @@ class EmailHelper
         if ($shippingAmount > 0 || $shippingName !== '') {
             $shippingLabel = $shippingName === ''
                 ? $language->_('COM_J2COMMERCE_CART_SHIPPING')
-                : $language->_('COM_J2COMMERCE_CART_SHIPPING') . ' (' . $language->_($shippingName) . ')';
+                : $language->_('COM_J2COMMERCE_CART_SHIPPING') . ' (' . self::translateKey($shippingName, $language) . ')';
 
             $rows .= $this->totalsRow($shippingLabel, $fmt($shippingAmount));
         }

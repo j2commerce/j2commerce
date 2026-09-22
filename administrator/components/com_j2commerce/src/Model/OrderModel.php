@@ -2346,7 +2346,7 @@ class OrderModel extends AdminModel
             }
 
             $kept[] = [
-                'label' => Text::_($name),
+                'label' => J2htmlHelper::translateKey($name),
                 'value' => html_entity_decode(\is_scalar($attr->orderitemattribute_value ?? null) ? (string) $attr->orderitemattribute_value : '', ENT_QUOTES | ENT_HTML5, 'UTF-8'),
             ];
         }

@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\ListField;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -119,7 +120,7 @@ class ShippingmethodsField extends ListField
                                 continue;
                             }
 
-                            $options[] = HTMLHelper::_('select.option', $methodName, Text::_($methodName));
+                            $options[] = HTMLHelper::_('select.option', $methodName, J2htmlHelper::translateKey($methodName));
                         }
                     } else {
                         $options[] = HTMLHelper::_('select.option', $plugin->value, Text::_($plugin->text));
