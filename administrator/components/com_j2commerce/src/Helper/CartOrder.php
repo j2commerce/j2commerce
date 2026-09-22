@@ -3069,8 +3069,8 @@ class CartOrder
                         $label = $discountTitle;
                     }
 
-                    // Allow plugins to add content after discount title
-                    $label .= J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayDiscountTitle', [$this, $discount]);
+                    // Plugin markup after the discount title rides in 'link' — templates escape 'label' as plain text
+                    $link = J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayDiscountTitle', [$this, $discount]) . $link;
 
                     $value = '-' . $currency->format($discountAmount);
                     // Allow plugins to add content after discount amount

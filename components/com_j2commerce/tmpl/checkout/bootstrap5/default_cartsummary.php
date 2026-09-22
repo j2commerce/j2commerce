@@ -140,7 +140,10 @@ if ($showItemTax && isset($this->taxes) && \count($this->taxes)) {
                     <?php foreach ($totals as $key => $total) : ?>
                         <tr<?php echo $key === 'grandtotal' ? ' class="fw-bold fs-5"' : ''; ?>>
                             <td colspan="<?php echo $colspan; ?>" class="text-end">
-                                <?php echo $total['label']; ?>
+                                <?php echo htmlspecialchars($total['label'], ENT_QUOTES, 'UTF-8'); ?>
+                                <?php if (!empty($total['link'])) : ?>
+                                    <?php echo $total['link']; ?>
+                                <?php endif; ?>
                             </td>
                             <td class="text-end<?php echo $key === 'subtotal' ? ' fw-bold' : ''; ?>">
                                 <?php echo $total['value']; ?>

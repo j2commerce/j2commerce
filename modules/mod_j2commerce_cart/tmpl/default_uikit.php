@@ -176,7 +176,7 @@ try {
                     <?php foreach ($totals as $total) : ?>
                         <tr>
                             <th scope="row" class="uk-text-muted uk-text-small">
-                                <?php echo $total['label']; ?>
+                                <?php echo htmlspecialchars($total['label'], ENT_QUOTES, 'UTF-8'); ?>
                                 <?php if (isset($total['link'])) : ?>
                                     <?php echo $total['link']; ?>
                                 <?php endif; ?>

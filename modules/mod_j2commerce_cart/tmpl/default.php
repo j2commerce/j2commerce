@@ -168,7 +168,7 @@ try {
             <?php endforeach; ?>
         </ul>
 
-        <?php // label/value are raw — get_formatted_order_totals() returns pre-built HTML (coupon remove link, currency-formatted value).?>
+        <?php // label is plain text and escaped; link/value are raw — get_formatted_order_totals() returns pre-built HTML (remove links, currency-formatted value).?>
         <?php if ($order && method_exists($order, 'get_formatted_order_totals')) : ?>
             <?php $totals = $order->get_formatted_order_totals(); ?>
             <?php if (!empty($totals)) : ?>
@@ -176,7 +176,7 @@ try {
                     <?php foreach ($totals as $total) : ?>
                         <tr>
                             <th scope="row" class="text-muted small">
-                                <?php echo $total['label']; ?>
+                                <?php echo htmlspecialchars($total['label'], ENT_QUOTES, 'UTF-8'); ?>
                                 <?php if (isset($total['link'])) : ?>
                                     <?php echo $total['link']; ?>
                                 <?php endif; ?>

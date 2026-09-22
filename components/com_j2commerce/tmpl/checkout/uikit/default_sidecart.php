@@ -156,13 +156,13 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
                 <?php foreach ($totals as $key => $total): ?>
                     <?php if ($key === 'grandtotal'): ?>
                         <div class="uk-flex uk-flex-between uk-flex-middle uk-margin-small-top j2commerce-sidecart-grandtotal-row">
-                            <span class="uk-text-large uk-text-bold"><?php echo $total['label']; ?></span>
+                            <span class="uk-text-large uk-text-bold"><?php echo htmlspecialchars($total['label'], ENT_QUOTES, 'UTF-8'); ?></span>
                             <span class="uk-text-large uk-text-bold j2commerce-sidecart-grandtotal"><?php echo $total['value']; ?></span>
                         </div>
                     <?php else: ?>
                         <div class="uk-flex uk-flex-between uk-margin-small-bottom">
                             <span class="uk-text-meta">
-                                <?php echo $total['label']; ?>
+                                <?php echo htmlspecialchars($total['label'], ENT_QUOTES, 'UTF-8'); ?>
                                 <?php if (!empty($total['link'])): ?>
                                     <?php echo $total['link']; ?>
                                 <?php endif; ?>
