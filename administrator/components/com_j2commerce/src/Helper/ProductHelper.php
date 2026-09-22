@@ -685,7 +685,9 @@ class ProductHelper
      *
      * @param   int   $productId      The product ID
      * @param   bool  $loadVariants   Whether to load variants (default: true)
-     * @param   bool  $loadOptions    Whether to load options (default: true)
+     * @param   bool  $loadOptions    Whether to load the raw product_options rows (default: true).
+     *                                The processed $product->options array is built either way —
+     *                                the category and tag list layouts render from it.
      *
      * @return  object|null  Full product object or null
      *
@@ -1838,6 +1840,7 @@ class ProductHelper
 
         $query->select($db->quoteName([
                 'po.j2commerce_productoption_id',
+                'po.product_id',
                 'po.option_id',
                 'po.parent_id',
                 'po.ordering',
@@ -1881,6 +1884,22 @@ class ProductHelper
         }
 
         return $options;
+    }
+
+    /** Whether every row in a caller-supplied getTraits() set belongs to $productId. */
+    private static function traitsBelongTo(?array $traits, int $productId): bool
+    {
+        if ($traits === null) {
+            return false;
+        }
+
+        foreach ($traits as $trait) {
+            if ((int) ($trait->product_id ?? 0) !== $productId) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -1991,8 +2010,9 @@ class ProductHelper
 
         $productOptionData = [];
 
-        // Get product options from database
-        $options = $traits ?? self::getTraits($productId);
+        // Get product options from database. Traits handed in by a caller are used only when they
+        // belong to this product - the cache below is keyed on the product id alone.
+        $options = self::traitsBelongTo($traits, $productId) ? $traits : self::getTraits($productId);
 
         foreach ($options as $productOption) {
             $type = $productOption->type ?? '';

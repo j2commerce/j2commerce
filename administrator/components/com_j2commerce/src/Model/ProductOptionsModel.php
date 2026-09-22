@@ -16,6 +16,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\DatabaseQuery;
 use Joomla\Database\ParameterType;
@@ -245,7 +247,8 @@ class ProductOptionsModel extends ListModel
         try {
             return $db->loadObjectList() ?: [];
         } catch (\Exception $e) {
-            Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'), 'error');
             return [];
         }
     }
@@ -297,7 +300,8 @@ class ProductOptionsModel extends ListModel
 
             return $db->loadObjectList() ?: [];
         } catch (\Exception $e) {
-            Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'), 'error');
             return [];
         }
     }
@@ -395,7 +399,8 @@ class ProductOptionsModel extends ListModel
             return true;
         } catch (\Exception $e) {
             $db->transactionRollback();
-            Factory::getApplication()->enqueueMessage($e->getMessage(), 'error');
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'), 'error');
             return false;
         }
     }
