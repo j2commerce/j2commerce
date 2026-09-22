@@ -13,7 +13,6 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Myprofile\HtmlView $this */
@@ -26,17 +25,6 @@ $csrfToken = Session::getFormToken();
 
 <div class="j2commerce-payment-methods" data-csrf-token="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
     <h2 class="mb-4 fs-4"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHODS_TITLE'); ?></h2>
-
-    <?php // One entry point for new cards regardless of how many gateways are enabled —
-          // the Payment Update page handles gateway choice and tokenization itself.
-          // paymentMethodsAddCardHtml (onJ2CommercePaymentMethodsAddCard) stays a
-          // capability signal for tab visibility; provider widgets are not rendered here. ?>
-    <div class="j2commerce-payment-methods-add mb-4">
-        <a class="btn btn-primary" href="<?php echo Route::_('index.php?option=com_j2commerce&view=paymentupdate'); ?>">
-            <span class="fa-solid fa-plus me-1" aria-hidden="true"></span>
-            <?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHODS_ADD_NEW'); ?>
-        </a>
-    </div>
 
     <?php if (empty($groupedMethods)) : ?>
         <div class="alert alert-info" role="alert">
@@ -129,6 +117,18 @@ $csrfToken = Session::getFormToken();
                                                        <span class="fa-solid fa-star fa-fw" aria-hidden="true"></span>
                                                        <span class="ms-1"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHODS_SET_DEFAULT'); ?></span>
                                                   </a>
+                                               <?php endif; ?>
+                                               <?php if ($method->canEdit()) : ?>
+                                                   <a role="button" class="dropdown-item j2commerce-edit-card-btn" href="#" data-provider="<?php echo htmlspecialchars($method->provider, ENT_QUOTES, 'UTF-8'); ?>" data-method-id="<?php echo $methodId; ?>">
+                                                       <span class="fa-solid fa-pen fa-fw" aria-hidden="true"></span>
+                                                       <span class="ms-1"><?php echo Text::_('JACTION_EDIT'); ?></span>
+                                                   </a>
+                                               <?php endif; ?>
+                                               <?php if ($method->canAddCard()) : ?>
+                                                   <a role="button" class="dropdown-item j2commerce-add-card-btn" href="#" data-provider="<?php echo htmlspecialchars($method->provider, ENT_QUOTES, 'UTF-8'); ?>" data-method-id="<?php echo $methodId; ?>">
+                                                       <span class="fa-solid fa-plus fa-fw" aria-hidden="true"></span>
+                                                       <span class="ms-1"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHODS_ADD_CARD'); ?></span>
+                                                   </a>
                                                <?php endif; ?>
                                            </span>
                                         </span>

@@ -125,6 +125,16 @@ final class PaymentMethodData
         return \in_array('delete', $this->actions, true);
     }
 
+    public function canEdit(): bool
+    {
+        return \in_array('edit', $this->actions, true);
+    }
+
+    public function canAddCard(): bool
+    {
+        return \in_array('add_card', $this->actions, true);
+    }
+
     /**
      * Get the AJAX endpoint for this payment method's actions
      *

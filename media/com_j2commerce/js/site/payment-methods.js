@@ -8,7 +8,8 @@
  * Payment Methods Tab - Unified AJAX handlers for all payment providers
  *
  * Handles delete and set-default actions for saved payment methods
- * from multiple payment providers via com_ajax endpoints.
+ * from multiple payment providers via com_ajax endpoints, and signals
+ * edit / add-card to the provider's script via j2commerce:paymentmethod:* events.
  */
 
 (function() {
@@ -64,6 +65,26 @@
             if (setDefaultBtn) {
                 e.preventDefault();
                 handleSetDefault(setDefaultBtn);
+                return;
+            }
+
+            // Edit / Add New Card are handed to the provider's own script, which owns card entry.
+            const providerBtn = e.target.closest('.j2commerce-edit-card-btn, .j2commerce-add-card-btn');
+
+            if (providerBtn) {
+                e.preventDefault();
+                const eventName = providerBtn.classList.contains('j2commerce-edit-card-btn')
+                    ? 'j2commerce:paymentmethod:edit'
+                    : 'j2commerce:paymentmethod:addcard';
+
+                providerBtn.dispatchEvent(new CustomEvent(eventName, {
+                    bubbles: true,
+                    detail: {
+                        provider: providerBtn.dataset.provider,
+                        methodId: providerBtn.dataset.methodId,
+                        trigger: providerBtn
+                    }
+                }));
             }
         });
     }

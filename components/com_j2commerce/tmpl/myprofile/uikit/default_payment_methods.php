@@ -13,7 +13,6 @@ defined('_JEXEC') or die;
 
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 
 /** @var \J2Commerce\Component\J2commerce\Site\View\Myprofile\HtmlView $this */
@@ -24,17 +23,6 @@ $csrfToken = Session::getFormToken();
 
 <div class="j2commerce-payment-methods" data-csrf-token="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
     <h2 class="uk-h4 uk-margin-bottom"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHODS_TITLE'); ?></h2>
-
-    <?php // One entry point for new cards regardless of how many gateways are enabled —
-          // the Payment Update page handles gateway choice and tokenization itself.
-          // paymentMethodsAddCardHtml (onJ2CommercePaymentMethodsAddCard) stays a
-          // capability signal for tab visibility; provider widgets are not rendered here. ?>
-    <div class="j2commerce-payment-methods-add uk-margin-bottom">
-        <a class="uk-button uk-button-primary" href="<?php echo Route::_('index.php?option=com_j2commerce&view=paymentupdate'); ?>">
-            <span uk-icon="icon: plus" class="uk-margin-small-right" aria-hidden="true"></span>
-            <?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHODS_ADD_NEW'); ?>
-        </a>
-    </div>
 
     <?php if (empty($groupedMethods)) : ?>
         <div class="uk-alert uk-alert-primary" uk-alert role="alert">
@@ -130,6 +118,22 @@ $csrfToken = Session::getFormToken();
                                                            <span uk-icon="icon: star" class="uk-margin-small-right" aria-hidden="true"></span>
                                                            <?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHODS_SET_DEFAULT'); ?>
                                                       </a>
+                                                   </li>
+                                               <?php endif; ?>
+                                               <?php if ($method->canEdit()) : ?>
+                                                   <li>
+                                                       <a role="button" class="j2commerce-edit-card-btn" href="#" data-provider="<?php echo htmlspecialchars($method->provider, ENT_QUOTES, 'UTF-8'); ?>" data-method-id="<?php echo $methodId; ?>">
+                                                           <span uk-icon="icon: pencil" class="uk-margin-small-right" aria-hidden="true"></span>
+                                                           <?php echo Text::_('JACTION_EDIT'); ?>
+                                                       </a>
+                                                   </li>
+                                               <?php endif; ?>
+                                               <?php if ($method->canAddCard()) : ?>
+                                                   <li>
+                                                       <a role="button" class="j2commerce-add-card-btn" href="#" data-provider="<?php echo htmlspecialchars($method->provider, ENT_QUOTES, 'UTF-8'); ?>" data-method-id="<?php echo $methodId; ?>">
+                                                           <span uk-icon="icon: plus" class="uk-margin-small-right" aria-hidden="true"></span>
+                                                           <?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHODS_ADD_CARD'); ?>
+                                                       </a>
                                                    </li>
                                                <?php endif; ?>
                                               </ul>
