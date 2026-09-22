@@ -14,6 +14,7 @@ namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Extension;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderTransactionHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
@@ -284,7 +285,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         $result   = $event->getArgument('result', []);
         $result[] = [
             'element' => $this->_name,
-            'name'    => Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_PAYPAL')),
+            'name'    => J2htmlHelper::translateKey($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_PAYPAL')),
             'image'   => $this->params->get('display_image', ''),
         ];
         $event->setArgument('result', $result);
@@ -1763,7 +1764,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         $vars->orderpayment_amount = $data['orderpayment_amount'];
         $vars->orderpayment_type   = $this->_name;
 
-        $vars->display_name         = Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_PAYPAL'));
+        $vars->display_name         = J2htmlHelper::translateKey($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_PAYPAL'));
         $vars->display_image        = $this->params->get('display_image', '');
         $vars->onbeforepayment_text = $this->params->get('onbeforepayment', '');
 

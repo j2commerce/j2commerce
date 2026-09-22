@@ -9,6 +9,7 @@
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Uri\Uri;
 
@@ -28,7 +29,7 @@ $clientId = $vars->client_id ?? '';
     <?php endif; ?>
 
     <p class="j2commerce-payment-display-name">
-        <strong><?php echo htmlspecialchars(Text::_($vars->display_name), ENT_QUOTES, 'UTF-8'); ?></strong>
+        <strong><?php echo htmlspecialchars(J2htmlHelper::translateKey($vars->display_name), ENT_QUOTES, 'UTF-8'); ?></strong>
     </p>
 
     <?php if (!empty($vars->onbeforepayment_text)): ?>

@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace {{namespace}}\Extension;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
@@ -148,7 +149,7 @@ final class Shipping{{Name}} extends CMSPlugin implements SubscriberInterface
         $result   = $event->getArgument('result', []);
         $result[] = [
             'element' => $this->_name,
-            'name'    => Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_SHIPPING_{{NAME}}_DEFAULT')),
+            'name'    => J2htmlHelper::translateKey($this->params->get('display_name', 'PLG_J2COMMERCE_SHIPPING_{{NAME}}_DEFAULT')),
             'code'    => '',
             'price'   => round($cost, 2),
             'tax'     => round($tax, 2),

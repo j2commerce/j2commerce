@@ -142,7 +142,7 @@ $labelStyle = 'font-size:12px;letter-spacing:.5px;';
                     <span class="j2c-icon-tile bg-body-secondary text-body-secondary"><span class="fa-solid fa-credit-card" aria-hidden="true"></span></span>
                     <div class="flex-grow-1" style="min-width:0;line-height:1.4;">
                         <div class="fw-bold" style="font-size:14px;color:#1f2b38;">
-                            <?php echo $this->escape(Text::_($pName)); ?>
+                            <?php echo $this->escape(J2htmlHelper::translateKey($pName)); ?>
                             <?php if ($isOriginal) : ?>
                                 <span class="badge j2c-badge-original ms-2"><?php echo Text::_('COM_J2COMMERCE_ORIGINAL_PAYMENT_METHOD'); ?></span>
                             <?php endif; ?>

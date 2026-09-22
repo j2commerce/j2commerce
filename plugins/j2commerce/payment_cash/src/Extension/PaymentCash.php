@@ -163,7 +163,7 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
         $result   = $event->getArgument('result', []);
         $result[] = [
             'element' => $this->_name,
-            'name'    => Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_CASH')),
+            'name'    => J2htmlHelper::translateKey($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_CASH')),
             'image'   => $this->params->get('display_image', ''),
         ];
         $event->setArgument('result', $result);
@@ -278,7 +278,7 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
         $vars->orderpayment_amount = $data['orderpayment_amount'];
         $vars->orderpayment_type   = $this->_name;
 
-        $vars->display_name         = Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_CASH'));
+        $vars->display_name         = J2htmlHelper::translateKey($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_CASH'));
         $vars->display_image        = $this->params->get('display_image', '');
         $vars->onbeforepayment_text = $this->params->get('onbeforepayment', '');
         $vars->button_text          = $this->params->get('button_text', Text::_('COM_J2COMMERCE_PLACE_ORDER'));

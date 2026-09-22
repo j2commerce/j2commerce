@@ -13,6 +13,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OnboardingHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -95,7 +96,7 @@ foreach ($allPaymentPlugins as $plugin) {
     if ($displayName === '' || str_ends_with(strtoupper($displayName), '_DEFAULT')) {
         $plugin->display_name = Text::_($pluginLangKey);
     } else {
-        $plugin->display_name = Text::_($displayName);
+        $plugin->display_name = J2htmlHelper::translateKey($displayName);
     }
 
     if ((int) $plugin->enabled === 1) {

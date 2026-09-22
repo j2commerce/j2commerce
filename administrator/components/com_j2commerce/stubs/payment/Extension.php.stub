@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace {{namespace}}\Extension;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Base;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Payment;
@@ -172,7 +173,7 @@ final class {{Type}}{{Name}} extends CMSPlugin implements SubscriberInterface
         $result = $event->getArgument('result', []);
         $result[] = [
             'element' => $this->_name,
-            'name'    => Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_{{NAME}}_DEFAULT')),
+            'name'    => J2htmlHelper::translateKey($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_{{NAME}}_DEFAULT')),
             'image'   => $this->params->get('display_image', ''),
         ];
         $event->setArgument('result', $result);
@@ -297,7 +298,7 @@ final class {{Type}}{{Name}} extends CMSPlugin implements SubscriberInterface
         $vars->orderpayment_amount = $data['orderpayment_amount'];
         $vars->orderpayment_type = $this->_name;
 
-        $vars->display_name = Text::_($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_{{NAME}}_DEFAULT'));
+        $vars->display_name = J2htmlHelper::translateKey($this->params->get('display_name', 'PLG_J2COMMERCE_PAYMENT_{{NAME}}_DEFAULT'));
         $vars->display_image = $this->params->get('display_image', '');
         $vars->onbeforepayment_text = $this->params->get('onbeforepayment', '');
 

@@ -28,7 +28,7 @@ $vars = $displayData['vars'];
     <div class="j2commerce-payment-banktransfer note note-<?php echo htmlspecialchars($vars->orderpayment_type, ENT_QUOTES, 'UTF-8'); ?>">
 
         <p class="j2commerce-payment-display-name">
-            <strong><?php echo htmlspecialchars(Text::_($vars->display_name), ENT_QUOTES, 'UTF-8'); ?></strong>
+            <strong><?php echo htmlspecialchars(J2htmlHelper::translateKey($vars->display_name), ENT_QUOTES, 'UTF-8'); ?></strong>
         </p>
 
         <?php if (!empty($vars->bank_information)): ?>

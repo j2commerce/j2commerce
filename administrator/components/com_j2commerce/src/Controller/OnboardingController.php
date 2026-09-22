@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OnboardingHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\Installer;
@@ -643,7 +644,7 @@ class OnboardingController extends BaseController
             if ($displayName === '' || str_ends_with(strtoupper($displayName), '_DEFAULT')) {
                 $displayName = Text::_($pluginLangKey);
             } else {
-                $displayName = Text::_($displayName);
+                $displayName = J2htmlHelper::translateKey($displayName);
             }
 
             if ($plugin->element === $defaultPayment) {

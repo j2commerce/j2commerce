@@ -1080,7 +1080,7 @@ class J2CommerceHelper extends ContentHelper
      * Get the human-readable display name for a payment plugin element.
      *
      * Resolution order:
-     * 1. Plugin's own `display_name` param (a lang key or literal string), via Text::_()
+     * 1. Plugin's own `display_name` param (a lang key or literal string), via J2htmlHelper::translateKey()
      *    — honours language overrides such as PLG_J2COMMERCE_PAYMENT_CASH_DEFAULT.
      * 2. The plugin's language key built from its element: PLG_J2COMMERCE_{ELEMENT}.
      * 3. Humanised fallback: "payment_cash" → "Cash".
@@ -1099,7 +1099,7 @@ class J2CommerceHelper extends ContentHelper
             $params      = new Registry($plugin->params ?? '{}');
             $displayName = (string) $params->get('display_name', '');
             if ($displayName !== '') {
-                $translated = Text::_($displayName);
+                $translated = J2htmlHelper::translateKey($displayName);
                 // Text::_() returns the key unchanged when not found — treat that as a literal string
                 return $translated;
             }
