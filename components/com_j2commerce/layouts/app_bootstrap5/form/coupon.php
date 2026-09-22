@@ -59,7 +59,7 @@ $hasCoupon    = !empty($couponCode);
                 <?php endif; ?>
             </span>
             <button type="button" class="btn btn-sm btn-link text-danger p-0 j2c-remove-coupon"
-                    title="<?php echo Text::_('COM_J2COMMERCE_REMOVE_COUPON'); ?>">
+                    title="<?php echo htmlspecialchars(Text::_('COM_J2COMMERCE_REMOVE_COUPON'), ENT_QUOTES, 'UTF-8'); ?>">
                 <span class="icon-times" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_REMOVE'); ?>
             </button>

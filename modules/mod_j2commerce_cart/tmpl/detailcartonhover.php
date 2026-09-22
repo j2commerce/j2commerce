@@ -154,7 +154,7 @@ $panelId = 'j2commerce-cart-detail-' . $moduleId;
 
                             <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayLineItemTitle', [$item, $order ?? null, &$params]); ?>
 
-                            <div class="text-muted small">
+                            <div class="text-body-secondary small">
                                 <?php if ($showQty) : ?>
                                     <span class="j2commerce-cart-item-qty"><?php echo (int) ($item->orderitem_quantity ?? 0); ?></span> &times;
                                 <?php endif; ?>

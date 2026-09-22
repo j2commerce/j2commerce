@@ -150,7 +150,7 @@ try {
                         <?php endif; ?>
 
                         <div class="d-flex justify-content-between align-items-center mt-1">
-                            <span class="text-muted small">
+                            <span class="text-body-secondary small">
                                 <?php if ($showQty) : ?>
                                     <span class="j2commerce-cart-item-qty"><?php echo $itemQty; ?></span> &times;
                                     <?php echo CurrencyHelper::format($unitPrice); ?>
@@ -175,7 +175,7 @@ try {
                 <table class="table table-sm table-borderless mb-2">
                     <?php foreach ($totals as $total) : ?>
                         <tr>
-                            <th scope="row" class="text-muted small">
+                            <th scope="row" class="text-body-secondary small">
                                 <?php echo htmlspecialchars($total['label'], ENT_QUOTES, 'UTF-8'); ?>
                                 <?php if (isset($total['link'])) : ?>
                                     <?php echo $total['link']; ?>

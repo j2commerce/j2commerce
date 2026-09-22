@@ -3058,13 +3058,17 @@ class CartOrder
                     $discountTitle = $discount->discount_title ?? $discount->discount_code ?? '';
 
                     if ($discountType === 'coupon') {
-                        $label = $discountTitle;
-                        $link  = '<a class="j2commerce-remove j2commerce-remove-coupon remove-icon text-danger ms-2 text-decoration-none" '
-                            . 'href="javascript:void(0)" title="' . Text::_('COM_J2COMMERCE_REMOVE_COUPON') . '">x</a>';
+                        $label  = $discountTitle;
+                        $remove = Text::_('COM_J2COMMERCE_REMOVE_COUPON');
+                        $link   = '<a class="j2commerce-remove j2commerce-remove-coupon remove-icon text-danger ms-2 text-decoration-none" '
+                            . 'href="javascript:void(0)" title="' . htmlspecialchars($remove, ENT_QUOTES, 'UTF-8') . '" '
+                            . 'aria-label="' . htmlspecialchars($remove . ' ' . $discountTitle, ENT_QUOTES, 'UTF-8') . '">x</a>';
                     } elseif ($discountType === 'voucher') {
-                        $label = $discountTitle;
-                        $link  = '<a class="j2commerce-remove j2commerce-remove-voucher remove-icon text-danger ms-2 text-decoration-none" '
-                            . 'href="javascript:void(0)" title="' . Text::_('COM_J2COMMERCE_REMOVE_VOUCHER') . '">x</a>';
+                        $label  = $discountTitle;
+                        $remove = Text::_('COM_J2COMMERCE_REMOVE_VOUCHER');
+                        $link   = '<a class="j2commerce-remove j2commerce-remove-voucher remove-icon text-danger ms-2 text-decoration-none" '
+                            . 'href="javascript:void(0)" title="' . htmlspecialchars($remove, ENT_QUOTES, 'UTF-8') . '" '
+                            . 'aria-label="' . htmlspecialchars($remove . ' ' . $discountTitle, ENT_QUOTES, 'UTF-8') . '">x</a>';
                     } else {
                         $label = $discountTitle;
                     }

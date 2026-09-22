@@ -59,7 +59,7 @@ $hasVoucher   = !empty($voucherCode);
                 <?php endif; ?>
             </span>
             <button type="button" class="btn btn-sm btn-link text-danger p-0 j2c-remove-voucher"
-                    title="<?php echo Text::_('COM_J2COMMERCE_REMOVE_VOUCHER'); ?>">
+                    title="<?php echo htmlspecialchars(Text::_('COM_J2COMMERCE_REMOVE_VOUCHER'), ENT_QUOTES, 'UTF-8'); ?>">
                 <span class="icon-times" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_REMOVE'); ?>
             </button>
