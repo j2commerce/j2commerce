@@ -2026,13 +2026,30 @@ class EmailHelper
 
         // Issue #893: when no template matches the order's status / receiver / payment / group,
         // fall back to the store-owner-pinned default template so order-status notifications
-        // are not silently dropped.
-        if (empty($allTemplates)) {
+        // are not silently dropped. Issue #2523: that substitution is what the Email Template
+        // Mode option chooses between, so it only applies in "Use Default Template" mode. In
+        // "Only When Configured" the empty list stands, and a status with no template of its
+        // own sends nothing.
+        if (empty($allTemplates) && ConfigHelper::getEmailTemplateMode() === 1) {
             $fallback = $db->getQuery(true)
                 ->select('*')
                 ->from($db->quoteName('#__j2commerce_emailtemplates'))
                 ->where($db->quoteName('is_default') . ' = 1')
-                ->where($db->quoteName('enabled') . ' = 1');
+                ->where($db->quoteName('enabled') . ' = 1')
+                ->where($db->quoteName('email_type') . ' = ' . $db->quote('transactional'));
+
+            // The pinned row still has to be addressed to this pass's audience; without it a
+            // row typed for one receiver is handed to the other.
+            $fallback->where(
+                'CASE WHEN ' . $db->quoteName('receiver_type') . ' = :fallback_receiver_type'
+                . ' THEN ' . $db->quoteName('receiver_type') . ' = :fallback_receiver_type2'
+                . ' ELSE ' . $db->quoteName('receiver_type') . ' = ' . $db->quote('*')
+                . ' OR ' . $db->quoteName('receiver_type') . ' = ' . $db->quote('')
+                . ' END'
+            )
+                ->bind(':fallback_receiver_type', $receiverType)
+                ->bind(':fallback_receiver_type2', $receiverType);
+
             $db->setQuery($fallback);
 
             try {
