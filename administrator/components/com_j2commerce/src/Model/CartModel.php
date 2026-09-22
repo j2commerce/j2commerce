@@ -159,6 +159,20 @@ class CartModel extends BaseDatabaseModel
             return $errors;
         }
 
+        // Keep only the options the storefront offers for this product, so a form rendered before
+        // an option was unpublished cannot still add it. Every cart behavior reads this input.
+        if ($app->isClient('site')) {
+            $posted = $app->getInput()->get('product_option', [], 'ARRAY');
+
+            if (\is_array($posted) && $posted !== []) {
+                $offered = array_flip(array_map(
+                    'intval',
+                    array_column($product->product_options ?? [], 'j2commerce_productoption_id')
+                ));
+                $app->getInput()->set('product_option', array_intersect_key($posted, $offered));
+            }
+        }
+
         // Load product type behavior
         $behaviorClass = $this->getBehaviorClass($product->product_type ?: 'simple');
 

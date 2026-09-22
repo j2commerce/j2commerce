@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\DatabaseQuery;
@@ -144,6 +145,8 @@ class ProductOptionsModel extends ListModel
             ' ON ' . $db->quoteName('o.j2commerce_option_id') . ' = ' . $db->quoteName('a.option_id')
         );
 
+        ProductHelper::whereOptionOffered($query, 'a');
+
         // Filter by product_id
         $productId = (int) $this->getState('filter.product_id');
         if ($productId > 0) {
@@ -229,6 +232,8 @@ class ProductOptionsModel extends ListModel
             ->where($db->quoteName('a.product_id') . ' = :productId')
             ->bind(':productId', $productId, ParameterType::INTEGER)
             ->order($db->quoteName('a.ordering') . ' ASC');
+
+        ProductHelper::whereOptionOffered($query, 'a');
 
         $db->setQuery($query);
 

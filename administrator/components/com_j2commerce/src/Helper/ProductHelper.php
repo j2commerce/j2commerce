@@ -25,6 +25,7 @@ use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
+use Joomla\Database\QueryInterface;
 use Joomla\Event\DispatcherInterface;
 use Joomla\Registry\Registry;
 
@@ -1860,6 +1861,8 @@ class ProductHelper
             ->order($db->quoteName('po.ordering') . ' ASC')
             ->bind(':productId', $productId, ParameterType::INTEGER);
 
+        self::whereOptionOffered($query);
+
         $db->setQuery($query);
         $options = $db->loadObjectList() ?: [];
 
@@ -1878,6 +1881,46 @@ class ProductHelper
         }
 
         return $options;
+    }
+
+    /**
+     * Storefront only: an unpublished option is not offered, unless it defines the variant matrix.
+     * Variant-defining uses OrderModel::variantOptionCondition()'s rule, because options stored
+     * before is_variant was written carry 0 there. $po is the query's product_options alias; the
+     * options table must be joined as `o`.
+     */
+    public static function whereOptionOffered(QueryInterface $query, string $po = 'po'): void
+    {
+        if (!Factory::getApplication()->isClient('site')) {
+            return;
+        }
+
+        $db    = self::getDatabase();
+        $types = implode(',', $query->bindArray(self::getVariableProductTypes(), ParameterType::STRING));
+
+        $referenced = $db->getQuery(true)
+            ->select('1')
+            ->from($db->quoteName('#__j2commerce_variants', 'vv'))
+            ->join(
+                'INNER',
+                $db->quoteName('#__j2commerce_product_variant_optionvalues', 'vpo')
+                . ' ON ' . $db->quoteName('vpo.variant_id') . ' = ' . $db->quoteName('vv.j2commerce_variant_id')
+            )
+            ->join(
+                'INNER',
+                $db->quoteName('#__j2commerce_product_optionvalues', 'vpov')
+                . ' ON ' . $db->quoteName('vpov.productoption_id') . ' = ' . $db->quoteName($po . '.j2commerce_productoption_id')
+                . ' AND FIND_IN_SET(' . $db->quoteName('vpov.j2commerce_product_optionvalue_id') . ', ' . $db->quoteName('vpo.product_optionvalue_ids') . ') > 0'
+            )
+            ->where($db->quoteName('vv.product_id') . ' = ' . $db->quoteName($po . '.product_id'));
+
+        $query->join(
+            'LEFT',
+            $db->quoteName('#__j2commerce_products', 'pp') . ' ON '
+            . $db->quoteName('pp.j2commerce_product_id') . ' = ' . $db->quoteName($po . '.product_id')
+        )
+            ->where('(' . $db->quoteName('o.enabled') . ' = 1 OR ' . $db->quoteName($po . '.is_variant') . ' = 1 OR ('
+                . $db->quoteName('pp.product_type') . ' IN (' . $types . ') AND EXISTS (' . $referenced . ')))');
     }
 
     /**
@@ -3528,6 +3571,8 @@ class ProductHelper
             ->order($db->quoteName('po.ordering') . ' ASC')
             ->bind(':productId', $productId, ParameterType::INTEGER)
             ->bind(':parentId', $parentId, ParameterType::INTEGER);
+
+        self::whereOptionOffered($query);
 
         $db->setQuery($query);
         $productOptions = $db->loadObjectList() ?: [];
