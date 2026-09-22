@@ -2326,6 +2326,8 @@ class OrderModel extends AdminModel
                 $selected[(int) ($attr->productattributeoptionvalue_id ?? 0)] = (float) ($attr->orderitemattribute_price ?? 0);
             }
 
+            // The storefront stores text options entity-encoded (ProductHelper); decode once so the
+            // pre-filled field shows the text and a re-save does not encode it a second time.
             $payload[] = self::optionPayload(
                 $option,
                 $selected,
@@ -3072,7 +3074,7 @@ class OrderModel extends AdminModel
         }
     }
 
-    /** Label/value pairs for the order editor's line, grouped and resolved the way the order views render them. */
+    /** Label/value pairs for the order editor's line, grouped and resolved the way the order views render them. Values are decoded plain text: insert with textContent or escape on output. */
     private static function attributePairs(array $attributes): array
     {
         $pairs = [];

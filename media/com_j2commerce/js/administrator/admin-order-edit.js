@@ -261,6 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const searchState = { term: '', page: 1, totalPages: 1 };
 
+    // Some text passed here (e.g. attribute labels/values) is entity-decoded, so it must stay textContent, never markup.
     const el = (tag, className, text) => {
         const node = document.createElement(tag);
         if (className) node.className = className;
