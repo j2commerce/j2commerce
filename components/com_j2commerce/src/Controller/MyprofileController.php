@@ -1075,6 +1075,10 @@ class MyprofileController extends BaseController
             }
         }
 
+        if (isset($data['email'])) {
+            $data['email'] = CustomFieldHelper::normaliseEmail($data['email']);
+        }
+
         return $data;
     }
 }

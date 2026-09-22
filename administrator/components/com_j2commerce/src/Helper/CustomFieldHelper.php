@@ -846,12 +846,22 @@ class CustomFieldHelper
         return max(0, (int) (self::decodeFieldOptions($field)['max_length'] ?? 0));
     }
 
+    /** Edge whitespace from a paste is dropped; whitespace inside the address is left for validation to reject. */
+    public static function normaliseEmail(string $value): string
+    {
+        return trim($value);
+    }
+
     /**
      * Removes the characters the store owner designated for this field. The list is a
      * deny-list, so a script's letters survive unless they were named explicitly.
      */
     public static function sanitiseValue(object $field, string $value): string
     {
+        if (($field->field_type ?? '') === 'email') {
+            return self::normaliseEmail($value);
+        }
+
         if ($value === '' || !\in_array($field->field_type ?? '', self::SANITISABLE_FIELD_TYPES, true)) {
             return $value;
         }
