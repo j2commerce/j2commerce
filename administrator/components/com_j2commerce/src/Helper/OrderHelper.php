@@ -301,10 +301,10 @@ class OrderHelper
                         $priceDisplay
                             ? 'COM_J2COMMERCE_CART_TAX_INCLUDED_TITLE'
                             : 'COM_J2COMMERCE_CART_TAX_EXCLUDED_TITLE',
-                        Text::_($title),
+                        J2htmlHelper::translateKey($title),
                         $percent . '%'
                     )
-                    : Text::_($title),
+                    : J2htmlHelper::translateKey($title),
                 'amount' => $amount,
             ];
         }

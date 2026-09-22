@@ -129,10 +129,10 @@ $fees      = $item->orderfees ?? [];
 
                             if ($taxPercent > 0) {
                                 $taxLabel = $checkoutPriceDisplay
-                                    ? Text::sprintf('COM_J2COMMERCE_CART_TAX_INCLUDED_TITLE', Text::_($taxTitle), $taxPercent . '%')
-                                    : Text::sprintf('COM_J2COMMERCE_CART_TAX_EXCLUDED_TITLE', Text::_($taxTitle), $taxPercent . '%');
+                                    ? Text::sprintf('COM_J2COMMERCE_CART_TAX_INCLUDED_TITLE', J2htmlHelper::translateKey($taxTitle), $taxPercent . '%')
+                                    : Text::sprintf('COM_J2COMMERCE_CART_TAX_EXCLUDED_TITLE', J2htmlHelper::translateKey($taxTitle), $taxPercent . '%');
                             } else {
-                                $taxLabel = Text::_($taxTitle);
+                                $taxLabel = J2htmlHelper::translateKey($taxTitle);
                             }
                             ?>
                             <tr>

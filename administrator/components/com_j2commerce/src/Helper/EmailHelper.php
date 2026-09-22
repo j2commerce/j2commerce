@@ -1754,7 +1754,7 @@ class EmailHelper
                 }
 
                 $percent = (float) $tax->ordertax_percent;
-                $title   = $language->_($tax->ordertax_title);
+                $title   = self::translateKey($tax->ordertax_title, $language);
                 $label   = $percent > 0
                     ? \sprintf($language->_($isIncludingTax ? 'COM_J2COMMERCE_CART_TAX_INCLUDED_TITLE' : 'COM_J2COMMERCE_CART_TAX_EXCLUDED_TITLE'), $title, $percent . '%')
                     : $title;

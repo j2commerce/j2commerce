@@ -3105,9 +3105,9 @@ class CartOrder
                 if ($taxAmount > 0) {
                     // Format label based on price display option (included or excluded)
                     if ($checkoutPriceDisplay) {
-                        $label = Text::sprintf('COM_J2COMMERCE_CART_TAX_INCLUDED_TITLE', Text::_($taxTitle), $taxPercent . '%');
+                        $label = Text::sprintf('COM_J2COMMERCE_CART_TAX_INCLUDED_TITLE', J2htmlHelper::translateKey($taxTitle), $taxPercent . '%');
                     } else {
-                        $label = Text::sprintf('COM_J2COMMERCE_CART_TAX_EXCLUDED_TITLE', Text::_($taxTitle), $taxPercent . '%');
+                        $label = Text::sprintf('COM_J2COMMERCE_CART_TAX_EXCLUDED_TITLE', J2htmlHelper::translateKey($taxTitle), $taxPercent . '%');
                     }
 
                     $taxKey          = 'tax_' . preg_replace('/[^a-z0-9_]/', '_', strtolower($taxTitle)) . '_' . $key;
