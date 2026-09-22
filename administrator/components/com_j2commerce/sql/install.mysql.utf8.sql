@@ -1095,7 +1095,8 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_product_optionvalues` (
   `product_optionvalue_default` int NOT NULL,
   `ordering` int NOT NULL DEFAULT 0,
   `product_optionvalue_attribs` text NOT NULL,
-  PRIMARY KEY (`j2commerce_product_optionvalue_id`)
+  PRIMARY KEY (`j2commerce_product_optionvalue_id`),
+  KEY `idx_productoption_id` (`productoption_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------

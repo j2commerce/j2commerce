@@ -850,7 +850,7 @@ class ProductHelper
         }
 
         // Add processed options array (for frontend price calculations)
-        $product->options = self::getProductOptions($product);
+        $product->options = self::getProductOptions($product, $loadOptions ? $product->product_options : null);
 
         // Add lengths and weights arrays
         $product->lengths = self::getLengthUnits();
@@ -1968,13 +1968,14 @@ class ProductHelper
     /**
      * Get product options with full data for display.
      *
-     * @param   object  $product  Product object with product_options property.
+     * @param   object      $product  Product object with product_options property.
+     * @param   array|null  $traits   getTraits() output the caller already loaded for this product.
      *
      * @return  array  Processed product options data.
      *
      * @since   6.0.3
      */
-    public static function getProductOptions(object $product): array
+    public static function getProductOptions(object $product, ?array $traits = null): array
     {
         static $cache = [];
 
@@ -1991,7 +1992,7 @@ class ProductHelper
         $productOptionData = [];
 
         // Get product options from database
-        $options = self::getTraits($productId);
+        $options = $traits ?? self::getTraits($productId);
 
         foreach ($options as $productOption) {
             $type = $productOption->type ?? '';

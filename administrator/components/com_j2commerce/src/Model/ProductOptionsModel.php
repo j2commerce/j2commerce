@@ -182,8 +182,13 @@ class ProductOptionsModel extends ListModel
 
         // Add ordering clause - always by ordering ASC as primary
         $orderCol = $this->state->get('list.ordering', 'a.ordering');
-        $orderDir = $this->state->get('list.direction', 'ASC');
-        $query->order($db->escape($orderCol) . ' ' . $db->escape($orderDir));
+        $orderDir = strtoupper((string) $this->state->get('list.direction', 'ASC')) === 'DESC' ? 'DESC' : 'ASC';
+
+        if (!\in_array($orderCol, $this->filter_fields, true)) {
+            $orderCol = 'a.ordering';
+        }
+
+        $query->order($db->escape($orderCol) . ' ' . $orderDir);
 
         return $query;
     }
