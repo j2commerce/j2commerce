@@ -2005,6 +2005,25 @@ class EmailHelper
             ->bind(':paymentmethod', $paymentType)
             ->bind(':paymentmethod2', $paymentType);
 
+        // Shipping method filter. ShippingmethodsField emits a mixed option list -- a sub-method
+        // name for the plugins backed by #__j2commerce_shippingmethods, a plugin element for the
+        // rest -- so the stored value is matched against both columns of the order's shipping row.
+        $shipping     = $this->getOrderShipping($order);
+        $shippingType = $shipping->ordershipping_type ?? '';
+        $shippingName = $shipping->ordershipping_name ?? '';
+
+        $query->where(
+            'CASE WHEN ' . $db->quoteName('shippingmethod') . ' IN (:shippingtype, :shippingname)'
+            . ' THEN ' . $db->quoteName('shippingmethod') . ' IN (:shippingtype2, :shippingname2)'
+            . ' ELSE ' . $db->quoteName('shippingmethod') . ' = ' . $db->quote('*')
+            . ' OR ' . $db->quoteName('shippingmethod') . ' = ' . $db->quote('')
+            . ' END'
+        )
+            ->bind(':shippingtype', $shippingType)
+            ->bind(':shippingname', $shippingName)
+            ->bind(':shippingtype2', $shippingType)
+            ->bind(':shippingname2', $shippingName);
+
         // Receiver type filter
         $query->where(
             'CASE WHEN ' . $db->quoteName('receiver_type') . ' = :receiver_type'

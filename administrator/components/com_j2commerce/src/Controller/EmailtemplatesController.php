@@ -401,7 +401,7 @@ class EmailtemplatesController extends AdminController
         $db->setQuery($query);
         $items = $db->loadAssocList();
 
-        $exportFields = ['subject', 'body', 'body_source', 'body_source_file', 'custom_css', 'email_type', 'receiver_type', 'language', 'orderstatus_id', 'group_id', 'paymentmethod', 'enabled', 'ordering'];
+        $exportFields = ['subject', 'body', 'body_source', 'body_source_file', 'custom_css', 'email_type', 'receiver_type', 'language', 'orderstatus_id', 'group_id', 'paymentmethod', 'shippingmethod', 'enabled', 'ordering'];
         $exportData   = [];
 
         foreach ($items as $item) {
@@ -459,7 +459,7 @@ class EmailtemplatesController extends AdminController
         }
 
         $db            = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $allowedFields = ['subject', 'body', 'body_source', 'body_source_file', 'custom_css', 'email_type', 'receiver_type', 'language', 'orderstatus_id', 'group_id', 'paymentmethod', 'enabled', 'ordering'];
+        $allowedFields = ['subject', 'body', 'body_source', 'body_source_file', 'custom_css', 'email_type', 'receiver_type', 'language', 'orderstatus_id', 'group_id', 'paymentmethod', 'shippingmethod', 'enabled', 'ordering'];
         $imported      = 0;
         $userId        = (int) $this->app->getIdentity()->id;
         $now           = Factory::getDate()->toSql();

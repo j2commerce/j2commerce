@@ -441,6 +441,7 @@ $tmpl = $input->get('tmpl', '', 'cmd') === 'component' ? '&tmpl=component' : '';
                     <?php echo $this->form->renderField('orderstatus_id'); ?>
                     <?php echo $this->form->renderField('group_id'); ?>
                     <?php echo $this->form->renderField('paymentmethod'); ?>
+                    <?php echo $this->form->renderField('shippingmethod'); ?>
                 </fieldset>
             </div>
             <div class="col-lg-3">

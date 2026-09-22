@@ -89,6 +89,7 @@ class EmailtemplateTable extends Table
         $this->orderstatus_id = trim($this->orderstatus_id);
         $this->group_id       = trim($this->group_id);
         $this->paymentmethod  = trim($this->paymentmethod);
+        $this->shippingmethod = trim($this->shippingmethod ?? '*');
 
         // Set default values if not provided
         if (!isset($this->enabled)) {

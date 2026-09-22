@@ -93,6 +93,18 @@
             <option value="*">JALL</option>
         </field>
 
+        <field
+            name="shippingmethod"
+            type="Shippingmethods"
+            label="COM_J2COMMERCE_FIELD_SHIPPING_METHOD"
+            description="COM_J2COMMERCE_EMAILTEMPLATE_SHIPPINGMETHOD_DESC"
+            addfieldprefix ="J2Commerce\Component\J2commerce\Administrator\Field"
+            layout="joomla.form.field.list-fancy-select"
+            default="*"
+        >
+            <option value="*">JALL</option>
+        </field>
+
     </fieldset>
 
     <fieldset name="content" label="COM_J2COMMERCE_EMAILTEMPLATE_TAB_CONTENT">

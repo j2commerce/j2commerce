@@ -304,6 +304,7 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_emailtemplates` (
   `orderstatus_id` varchar(255) NOT NULL,
   `group_id` varchar(255) NOT NULL,
   `paymentmethod` varchar(255) NOT NULL,
+  `shippingmethod` varchar(255) NOT NULL DEFAULT '*',
   `subject` varchar(255) NOT NULL,
   `body` text NOT NULL,
   `body_json` mediumtext NULL DEFAULT NULL,
