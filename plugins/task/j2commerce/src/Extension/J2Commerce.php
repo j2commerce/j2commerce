@@ -15,6 +15,7 @@ namespace J2Commerce\Plugin\Task\J2Commerce\Extension;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderCascadeHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\QueueHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Plugin\CMSPlugin;
@@ -136,11 +137,23 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $query = $db->createQuery();
         $now   = $db->quote((new \DateTime('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s'));
 
-        $stateId = 5;
+        // Status ids are install-dependent (see OrderStatusHelper) — resolve by lifecycle type,
+        // never by a literal id, on a task whose selection is what gets deleted.
+        $newStates = OrderStatusHelper::idsOfType(OrderStatusHelper::TYPE_NEW);
+
+        // Handled before the query is built: whereIn() interpolates its bind names, so an empty
+        // array emits `IN ()`, which MySQL rejects rather than reading as "match nothing" — and
+        // the select below sits outside the try/catch guarding the delete, so it would throw
+        // uncaught.
+        if ($newStates === []) {
+            $this->logTask('No order status carries the "new" lifecycle type — nothing to remove.');
+
+            return Status::OK;
+        }
+
         $query->select($db->quoteName(['j2commerce_order_id', 'order_id']))
             ->from($db->quoteName('#__j2commerce_orders'))
-            ->where($db->quoteName('order_state_id') . ' = :stateId')
-            ->bind(':stateId', $stateId, ParameterType::INTEGER);
+            ->whereIn($db->quoteName('order_state_id'), $newStates, ParameterType::INTEGER);
 
         if ($olderThanDays > 0) {
             $days = -1 * $olderThanDays;
