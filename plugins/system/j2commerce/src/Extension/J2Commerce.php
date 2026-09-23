@@ -1418,6 +1418,25 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         $user = $this->getApplication()->getIdentity();
 
+        try {
+            $sefPlugin = $this->getSefPluginNeedingStrictRouting();
+
+            if ($sefPlugin !== null) {
+                $result[] = [
+                    'id'          => 'j2commerce_strict_routing',
+                    'text'        => Text::_('COM_J2COMMERCE_STRICT_ROUTING_DESC'),
+                    'type'        => 'warning',
+                    'icon'        => 'fa-solid fa-link-slash',
+                    'dismissible' => 'session',
+                    'link'        => Route::_('index.php?option=com_plugins&task=plugin.edit&extension_id=' . (int) $sefPlugin->id),
+                    'linkText'    => Text::_('COM_J2COMMERCE_STRICT_ROUTING_BTN'),
+                    'priority'    => 45,
+                ];
+            }
+        } catch (\Throwable $e) {
+            // Fail silently — strict-routing detection must never break the dashboard.
+        }
+
         if ($user !== null && $user->authorise('core.edit.state', 'com_menus')) {
             try {
                 foreach ($this->getOrphanedJ2CommerceMenuItems() as $orphan) {
@@ -1486,6 +1505,39 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         }
 
         $event->setArgument('result', $result);
+    }
+
+    /**
+     * The System - SEF plugin when Strict Routing is off and that actually matters.
+     * Core ships strictrouting="0", and without it the non-SEF form of a product URL
+     * resolves to the default menu item instead of the product's own.
+     */
+    private function getSefPluginNeedingStrictRouting(): ?object
+    {
+        $app  = $this->getApplication();
+        $user = $app->getIdentity();
+
+        if (
+            !$app->get('sef')
+            || $user === null
+            || !$user->authorise('core.manage', 'com_plugins')
+            || !$user->authorise('core.edit', 'com_plugins')
+        ) {
+            return null;
+        }
+
+        // Returns an empty array when the plugin is disabled or absent, never null.
+        $plugin = PluginHelper::getPlugin('system', 'sef');
+
+        if (!\is_object($plugin)) {
+            return null;
+        }
+
+        if ((new Registry($plugin->params))->get('strictrouting', 0)) {
+            return null;
+        }
+
+        return $plugin;
     }
 
     /**
