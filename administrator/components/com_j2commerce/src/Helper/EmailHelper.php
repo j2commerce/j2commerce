@@ -2156,6 +2156,14 @@ class EmailHelper
 
         [$isHTML, $subject, $templateText, $loadLanguage] = $this->loadEmailTemplate($order);
 
+        // Nothing to send: no template matched the order and no substitution applied. Reached
+        // both when the list is empty outside "Use Default Template" mode and when the matched
+        // rows all carry a language outside the preference list. The Mail|false contract says
+        // false here -- without this the caller receives a mailer with a blank subject and body.
+        if ($subject === '' && $templateText === '') {
+            return false;
+        }
+
         // Load language overrides
         $this->loadLanguageOverrides($order);
 
