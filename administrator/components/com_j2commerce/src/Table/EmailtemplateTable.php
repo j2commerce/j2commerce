@@ -88,9 +88,9 @@ class EmailtemplateTable extends Table
         $this->email_type     = trim($this->email_type);
         $this->receiver_type  = trim($this->receiver_type);
         $this->subject        = trim($this->subject);
-        $this->orderstatus_id = trim($this->orderstatus_id);
-        $this->group_id       = trim($this->group_id);
-        $this->paymentmethod  = trim($this->paymentmethod);
+        $this->orderstatus_id = trim($this->orderstatus_id ?? '');
+        $this->group_id       = trim($this->group_id ?? '');
+        $this->paymentmethod  = trim($this->paymentmethod ?? '');
         $this->shippingmethod = trim($this->shippingmethod ?? '*');
 
         // Set default values if not provided
