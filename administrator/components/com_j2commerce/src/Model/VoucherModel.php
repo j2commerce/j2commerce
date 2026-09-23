@@ -585,8 +585,12 @@ class VoucherModel extends AdminModel
             $this->excludeUnplacedOrders($query);
 
             if ($orderId) {
-                $query->where($db->quoteName('o.order_id') . ' != :orderId')
-                    ->bind(':orderId', $orderId);
+                // Same NULL trap as excludeUnplacedOrders(): NULL != :orderId is NULL, which
+                // would drop an orphaned redemption from the very total the balance guard reads.
+                $query->where(
+                    '(' . $db->quoteName('o.order_id') . ' IS NULL OR '
+                    . $db->quoteName('o.order_id') . ' != :orderId)'
+                )->bind(':orderId', $orderId);
             }
 
             $db->setQuery($query);
@@ -819,16 +823,7 @@ class VoucherModel extends AdminModel
             ->bind(':discountType', $discountType)
             ->bind(':id', $id, ParameterType::INTEGER);
 
-        // As excludeUnplacedOrders(), plus an IS NULL leg so a redemption whose order row has
-        // gone still appears in the ledger — NOT IN alone would drop it, since NULL NOT IN (…)
-        // is NULL. The three counting queries above deliberately keep the narrower reading they
-        // already had. (#2545)
-        if ($newStates = OrderStatusHelper::idsOfType(OrderStatusHelper::TYPE_NEW)) {
-            $query->where(
-                '(' . $db->quoteName('o.order_state_id') . ' IS NULL OR '
-                . $db->quoteName('o.order_state_id') . ' NOT IN (' . implode(',', $query->bindArray($newStates)) . '))'
-            );
-        }
+        $this->excludeUnplacedOrders($query);
 
         $db->setQuery($query);
         $redemptions = $db->loadObjectList() ?: [];
@@ -885,11 +880,19 @@ class VoucherModel extends AdminModel
     /**
      * Drops redemptions made against an order the shopper never completed. By lifecycle type,
      * because ids are install-dependent; nothing carrying the type means nothing to exclude.
+     * The IS NULL leg keeps a redemption whose order row is no longer there: the join misses,
+     * and NULL NOT IN (…) is NULL, so without it such a row fails the WHERE and stops counting
+     * against the voucher. (#2549)
      */
     private function excludeUnplacedOrders(QueryInterface $query): void
     {
         if ($newStates = OrderStatusHelper::idsOfType(OrderStatusHelper::TYPE_NEW)) {
-            $query->whereNotIn($this->getDatabase()->quoteName('o.order_state_id'), $newStates);
+            $column = $this->getDatabase()->quoteName('o.order_state_id');
+
+            $query->where(
+                '(' . $column . ' IS NULL OR '
+                . $column . ' NOT IN (' . implode(',', $query->bindArray($newStates)) . '))'
+            );
         }
     }
 
