@@ -23,6 +23,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPayGrantHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
@@ -2534,17 +2535,29 @@ class CheckoutController extends BaseController
         // AfterPayment.  Only fire these for the initial payment path.
         $paction = $this->input->getString('paction', '');
 
-        // A tokenless gateway return that left the order exactly where the confirm step
-        // parked it finalised nothing: hold AfterPayment and the emails for a return that
-        // does. A re-primed session (#1208), a confirmed/terminal state or a settled
-        // transaction status all count as finalised — the plugin may have written those
-        // before the redirect.
-        $orderStateNow    = (int) ($orderTable->order_state_id ?? 0);
-        $gatewayFinalized = !$tokenlessGatewayReturn
-            || $rePrimed
-            || $orderStateNow !== $stateBefore
-            || \in_array($orderStateNow, [1, 2, 7, 8, 9], true)
-            || \in_array(strtolower((string) ($orderTable->transaction_status ?? '')), ['completed', 'authorized'], true);
+        // A payment run that left the order exactly where the confirm step parked it
+        // finalised nothing: hold AfterPayment and the emails for a run that does. A
+        // re-primed session (#1208), a confirmed/terminal state or a settled transaction
+        // status all count as finalised — the plugin may have written those before the
+        // redirect. The PostPayment result is a rendered layout, not an outcome: a plugin
+        // returns its failure markup through the same path as its success markup, so the
+        // branch that reached here cannot stand in for the answer. Read the order row,
+        // which every plugin writes through the model. (#2532)
+        $orderStateNow = (int) ($orderTable->order_state_id ?? 0);
+
+        // Resolved by lifecycle type, not by id: the ids are install-dependent, and an
+        // unclassified status yields null, which leaves the remaining tests to decide.
+        $paymentRejected = \in_array(
+            OrderStatusHelper::getType($orderStateNow),
+            [OrderStatusHelper::TYPE_FAILED, OrderStatusHelper::TYPE_CANCELLED],
+            true
+        );
+
+        $gatewayFinalized = !$paymentRejected
+            && ($rePrimed
+                || $orderStateNow !== $stateBefore
+                || \in_array($orderStateNow, [1, 2, 7, 8, 9], true)
+                || \in_array(strtolower((string) ($orderTable->transaction_status ?? '')), ['completed', 'authorized'], true));
 
         if ($gatewayFinalized && !empty($orderTable->order_id) && $paction !== 'display') {
             $results = J2CommerceHelper::plugin()->eventWithArray('AfterPayment', [$orderTable]);
