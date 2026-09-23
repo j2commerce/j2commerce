@@ -544,8 +544,8 @@ class SetupGuide {
         badge.className = `badge ${allPassed ? 'bg-success' : 'bg-warning'}`;
         badge.textContent = `${group.passed}/${group.total}`;
         badge.setAttribute('aria-label', Joomla.Text._('COM_J2COMMERCE_SETUP_GUIDE_N_OF_M_PASSED')
-            .replace('%d', group.passed)
-            .replace('%d', group.total));
+            .replace('%1$d', group.passed)
+            .replace('%2$d', group.total));
 
         const header = document.createElement('div');
         header.className = 'setup-group-header' + (allPassed ? ' is-collapsed' : '');
