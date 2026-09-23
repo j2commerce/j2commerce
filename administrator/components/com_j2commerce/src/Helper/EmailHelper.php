@@ -713,6 +713,10 @@ class EmailHelper
      * shares. Read by the template editors, whose canvas would otherwise show bracket text, and by
      * the controllers that serve a freshly loaded design.
      *
+     * The wording is decoded, so it is NOT markup-safe: a consumer must escape it (textContent,
+     * escapeHtml) rather than render it as HTML. A store value can survive its filter
+     * double-encoded, and the decode below then revives one level of that.
+     *
      * @return array<string, string>
      */
     public static function collectLangStrings(string $body): array
@@ -731,7 +735,8 @@ class EmailHelper
             //
             // ENT_HTML401 deliberately, matching InputFilter::cleanString(): decoding against a
             // wider table than the sanitiser used would revive markup it left inert. Every
-            // entity the shipped presets carry decodes the same under either table.
+            // entity the shipped presets carry decodes the same under either table; the cost is
+            // that an HTML5-only named entity a merchant types (&apos;, &colon;) stays literal.
             $strings[$key] = html_entity_decode(
                 self::resolveLangTokens('[LANG:' . $key . ']'),
                 \ENT_QUOTES | \ENT_HTML401,
