@@ -451,7 +451,7 @@ final class PayPalWebhooks
         // Prior-state guard: only an order still awaiting payment may be captured; a settled,
         // cancelled or refunded one cannot be flipped. Matches capturePayPalOrder().
         if (
-            !PayPalOrderStates::isAwaitingPayment((int) $orderTable->order_state_id, $params, $this->db)
+            !PayPalOrderStates::isAwaitingPayment((int) $orderTable->order_state_id, $params)
             || (float) ($orderTable->order_refund ?? 0) > 0
         ) {
             return ['status' => 409, 'message' => 'Order not in a capturable state'];
@@ -490,7 +490,7 @@ final class PayPalWebhooks
             );
         }
 
-        $confirmedStateId = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::CONFIRMED);
+        $confirmedStateId = PayPalOrderStates::resolve($params, PayPalOrderStates::CONFIRMED);
 
         // State change and transaction fields are written on the same table instance in one
         // store() so a second, independent load/store pair can't clobber either write.
@@ -549,7 +549,7 @@ final class PayPalWebhooks
             return ['status' => 409, 'message' => 'Order already settled'];
         }
 
-        $pendingStateId = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::PENDING);
+        $pendingStateId = PayPalOrderStates::resolve($params, PayPalOrderStates::PENDING);
 
         // A redelivered or out-of-order event must not rewrite a status the order already
         // holds: OrderTable::store() moves stock and grants downloads on every transition.
@@ -597,7 +597,7 @@ final class PayPalWebhooks
             return ['status' => 409, 'message' => 'Order already settled'];
         }
 
-        $failedStateId = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::FAILED);
+        $failedStateId = PayPalOrderStates::resolve($params, PayPalOrderStates::FAILED);
 
         // A redelivered or out-of-order event must not rewrite a status the order already
         // holds: OrderTable::store() moves stock and grants downloads on every transition.
@@ -654,7 +654,7 @@ final class PayPalWebhooks
 
         $isFullyRefunded = $chargedAmount > 0 && $refundAmount + 0.001 >= $chargedAmount;
         $refundedStateId = $isFullyRefunded
-            ? PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::REFUNDED)
+            ? PayPalOrderStates::resolve($params, PayPalOrderStates::REFUNDED)
             : 0;
 
         if ($refundedStateId > 0 && (int) $order->order_state_id === $refundedStateId) {
@@ -701,7 +701,7 @@ final class PayPalWebhooks
             $this->roundToCurrency((float) ($resource['amount']['value'] ?? 0), $this->orderCurrency($order))
         );
 
-        $failedStateId = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::FAILED);
+        $failedStateId = PayPalOrderStates::resolve($params, PayPalOrderStates::FAILED);
 
         // A redelivered or out-of-order event must not rewrite a status the order already
         // holds: OrderTable::store() moves stock and grants downloads on every transition.
@@ -789,8 +789,8 @@ final class PayPalWebhooks
     private function hasSettled(\stdClass $order, Registry $params): bool
     {
         $current   = (int) $order->order_state_id;
-        $confirmed = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::CONFIRMED);
-        $refunded  = PayPalOrderStates::resolve($params, $this->db, PayPalOrderStates::REFUNDED);
+        $confirmed = PayPalOrderStates::resolve($params, PayPalOrderStates::CONFIRMED);
+        $refunded  = PayPalOrderStates::resolve($params, PayPalOrderStates::REFUNDED);
 
         return ($confirmed > 0 && $current === $confirmed)
             || ($refunded > 0 && $current === $refunded)
