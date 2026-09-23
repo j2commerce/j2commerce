@@ -191,11 +191,38 @@ $doc->getWebAssetManager()
     <?php endif; ?>
 
     <?php if (!empty($this->dashboardMessages)) : ?>
-        <div class="mb-5" id="j2commerce-dashboard-messages-wrap">
-            <div class="swiper j2commerce-dashboard-messages" id="j2commerce-dashboard-messages">
+        <?php $messageCount = \count($this->dashboardMessages); ?>
+        <?php // Carousel semantics only when there is something to rotate: announcing a lone
+              // static notice as a carousel describes controls that are not there. ?>
+        <div class="mb-5 d-flex align-items-center gap-2" id="j2commerce-dashboard-messages-wrap" tabindex="-1"
+            <?php if ($messageCount > 1) : ?>
+                role="region" aria-roledescription="carousel"
+                aria-label="<?php echo $this->escape(Text::_('COM_J2COMMERCE_DASHBOARD_MSG_CAROUSEL')); ?>"
+            <?php endif; ?>>
+            <?php // APG: the rotation control precedes the rotating content in the tab order, so
+                  // it is reachable before the slides. `order-*` keeps the visual layout. ?>
+            <?php if ($messageCount > 1) : ?>
+                <div class="btn-group flex-shrink-0 order-2" id="j2commerce-dashboard-messages-controls">
+                    <button type="button" class="btn btn-sm btn-secondary" id="j2commerce-dashboard-messages-prev"
+                        aria-label="<?php echo $this->escape(Text::_('JPREVIOUS')); ?>">
+                        <span class="fa-solid fa-chevron-left" aria-hidden="true"></span>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-secondary" id="j2commerce-dashboard-messages-rotate"
+                        data-label-stop="<?php echo $this->escape(Text::_('COM_J2COMMERCE_DASHBOARD_MSG_ROTATION_STOP')); ?>"
+                        data-label-start="<?php echo $this->escape(Text::_('COM_J2COMMERCE_DASHBOARD_MSG_ROTATION_START')); ?>"
+                        aria-label="<?php echo $this->escape(Text::_('COM_J2COMMERCE_DASHBOARD_MSG_ROTATION_STOP')); ?>">
+                        <span class="fa-solid fa-pause" aria-hidden="true"></span>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-secondary" id="j2commerce-dashboard-messages-next"
+                        aria-label="<?php echo $this->escape(Text::_('JNEXT')); ?>">
+                        <span class="fa-solid fa-chevron-right" aria-hidden="true"></span>
+                    </button>
+                </div>
+            <?php endif; ?>
+            <div class="swiper j2commerce-dashboard-messages flex-grow-1 order-1" id="j2commerce-dashboard-messages">
                 <div class="swiper-wrapper">
-                    <?php foreach ($this->dashboardMessages as $msg) : ?>
-                        <?php echo LayoutHelper::render('dashboard.message', $msg, JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts'); ?>
+                    <?php foreach (array_values($this->dashboardMessages) as $i => $msg) : ?>
+                        <?php echo LayoutHelper::render('dashboard.message', array_merge($msg, ['position' => $i + 1, 'total' => $messageCount]), JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts'); ?>
                     <?php endforeach; ?>
                 </div>
             </div>

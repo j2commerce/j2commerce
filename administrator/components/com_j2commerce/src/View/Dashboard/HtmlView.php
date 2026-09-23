@@ -241,6 +241,27 @@ class HtmlView extends BaseHtmlView
                 $msg['type'] = 'danger';
             }
 
+            // The layout renders `text` and `link` unescaped so core strings can carry markup.
+            // A plugin's values are not core strings, so they are escaped at this boundary
+            // instead — escaping in the layout would strip the markup core relies on.
+            // Never double-encode: Route::_() already returns `&` as `&amp;`, and re-encoding
+            // it to `&amp;amp;` renames every parameter after the first to `amp;<name>`.
+            $msg['text'] = htmlspecialchars((string) $msg['text'], ENT_QUOTES, 'UTF-8', false);
+
+            if (isset($msg['link'])) {
+                $link = (string) $msg['link'];
+
+                // Encoding is not scheme validation, and this is the boundary a plugin's values
+                // are declared safe at — a half-boundary is the kind that gets relied on.
+                $allowed = str_starts_with($link, 'index.php')
+                    || str_starts_with($link, '/')
+                    || str_starts_with($link, '#')
+                    || str_starts_with($link, 'http://')
+                    || str_starts_with($link, 'https://');
+
+                $msg['link'] = $allowed ? htmlspecialchars($link, ENT_QUOTES, 'UTF-8', false) : '';
+            }
+
             $this->dashboardMessages[] = $msg;
         }
 
@@ -306,12 +327,13 @@ class HtmlView extends BaseHtmlView
 
         usort($this->dashboardMessages, fn ($a, $b) => ($a['priority'] ?? 500) <=> ($b['priority'] ?? 500));
 
+        // Registered here rather than beside the charts: the notices carry their own gates,
+        // none of which is j2commerce.viewreports, so an admin without that permission was
+        // served the markup with no script behind it.
         if (!empty($this->dashboardMessages)) {
             $wa->registerAndUseScript('com_j2commerce.vendor.swiper', 'media/com_j2commerce/vendor/swiper/js/swiper-bundle.min.js', [], ['defer' => true]);
             $wa->registerAndUseStyle('com_j2commerce.vendor.swiper.css', 'media/com_j2commerce/vendor/swiper/css/swiper-bundle.min.css');
-            $this->getDocument()->addScriptOptions('com_j2commerce.dashboardMessages', [
-                'messageIds' => array_column($this->dashboardMessages, 'id'),
-            ]);
+            $wa->registerAndUseScript('com_j2commerce.dashboard.messages', 'media/com_j2commerce/js/administrator/dashboard-messages.js', [], ['defer' => true], ['com_j2commerce.vendor.swiper']);
         }
 
         Text::script('COM_J2COMMERCE_DASHBOARD_SAMPLEDATA_LOADED');

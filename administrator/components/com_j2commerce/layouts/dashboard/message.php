@@ -23,9 +23,14 @@ $icon        = htmlspecialchars($msg['icon'] ?? '', ENT_QUOTES, 'UTF-8');
 $dismissible = $msg['dismissible'] ?? 'session';
 $link        = $msg['link'] ?? '';
 $linkText    = htmlspecialchars($msg['linkText'] ?? '', ENT_QUOTES, 'UTF-8');
+$position    = (int) ($msg['position'] ?? 0);
+$total       = (int) ($msg['total'] ?? 0);
 ?>
-<div class="swiper-slide" data-message-id="<?php echo $id; ?>">
-    <div class="alert alert-<?php echo $type; ?> d-flex align-items-center my-0 position-relative border-0" role="alert">
+<div class="swiper-slide" data-message-id="<?php echo $id; ?>" role="group" aria-roledescription="slide"
+    <?php if ($total > 1) : ?>aria-label="<?php echo htmlspecialchars(Text::sprintf('COM_J2COMMERCE_DASHBOARD_MSG_SLIDE', $position, $total), ENT_QUOTES, 'UTF-8'); ?>"<?php endif; ?>>
+    <?php // role="status" rather than "alert": these are standing maintenance notices rendered
+          // with the page, not time-critical errors that should interrupt. ?>
+    <div class="alert alert-<?php echo $type; ?> d-flex align-items-center my-0 position-relative border-0" role="status">
         <?php if ($icon) : ?>
             <span class="<?php echo $icon; ?> fa-lg me-3 flex-shrink-0" aria-hidden="true"></span>
         <?php endif; ?>
