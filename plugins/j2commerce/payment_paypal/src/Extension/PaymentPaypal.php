@@ -161,6 +161,28 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         Log::add(str_replace(["\r", "\n"], ' ', $message), $priority, self::LOG_CATEGORY);
     }
 
+    /**
+     * Writes the confirmed status only when one resolved. 0 means the store has no status
+     * classified 'complete' and no core row named J2COMMERCE_CONFIRMED, and writing it would
+     * leave a paid order in a status that does not exist. WARNING is in ALWAYS_LOGGED, so the
+     * line survives a debug-off install -- a merchant has to be able to find this.
+     */
+    private function applyConfirmedState(object $orderTable, int $stateId): void
+    {
+        if ($stateId > 0) {
+            $orderTable->order_state_id = $stateId;
+
+            return;
+        }
+
+        $this->log(
+            'Capture completed for order ' . $orderTable->order_id . ' but no order status'
+            . ' resolved, so the status is left unchanged. Classify a status as Complete, or'
+            . ' restore the core Confirmed status.',
+            Log::WARNING
+        );
+    }
+
     public static function getSubscribedEvents(): array
     {
         return [
@@ -470,7 +492,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 ['category' => 'j2commerce.paypal']
             );
 
-            $event->setArgument('result', ['success' => false, 'error' => $e->getMessage()]);
+            $event->setArgument('result', ['success' => false, 'error' => Text::_('COM_J2COMMERCE_ERR_REFUND_FAILED')]);
         }
     }
 
@@ -552,7 +574,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             return [
                 'status'        => 'subscription_cancellation_registered',
                 'paypal_remote' => 'exception-nvp',
-                'error'         => $e->getMessage(),
+                'error'         => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED'),
             ];
         }
     }
@@ -579,7 +601,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             return [
                 'status'        => 'subscription_cancellation_registered',
                 'paypal_remote' => 'exception',
-                'error'         => $e->getMessage(),
+                'error'         => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED'),
             ];
         }
     }
@@ -836,7 +858,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         } catch (\Throwable $e) {
             $this->log('createNvpExpressCheckoutForOrder exception: ' . $e->getMessage(), Log::ERROR);
 
-            return ['success' => false, 'error' => $e->getMessage()];
+            return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
         }
     }
 
@@ -956,10 +978,12 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $details['completed_at']          = date('Y-m-d H:i:s');
 
             $orderTable->orderpayment_type   = $this->_name;
-            $orderTable->order_state_id      = $confirmedStateId;
             $orderTable->transaction_id      = $transId;
             $orderTable->transaction_status  = 'Completed';
             $orderTable->transaction_details = json_encode($details);
+
+            $this->applyConfirmedState($orderTable, $confirmedStateId);
+
             TableSaveHelper::store($orderTable, 'paypal.nvp_payment_completed');
 
             OrderHistoryHelper::add(
@@ -993,7 +1017,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         } catch (\Throwable $e) {
             $this->log('completeNvpExpressCheckoutForOrder exception: ' . $e->getMessage(), Log::ERROR);
 
-            return ['success' => false, 'error' => $e->getMessage()];
+            return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
         }
     }
 
@@ -1084,7 +1108,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             );
         } catch (\Throwable $e) {
             $this->log('NVP DoReferenceTransaction exception: ' . $e->getMessage(), Log::ERROR);
-            return ['no_response', $e->getMessage(), []];
+            return ['no_response', Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED'), []];
         }
 
         if (PayPalNvpClient::isSuccess($response)) {
@@ -1120,7 +1144,9 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $orderTable->transaction_id      = $transactionId;
             $orderTable->transaction_status  = 'Completed';
             $orderTable->orderpayment_type   = $this->_name;
-            $orderTable->order_state_id      = PayPalOrderStates::resolve($this->params, PayPalOrderStates::CONFIRMED);
+
+            $this->applyConfirmedState($orderTable, PayPalOrderStates::resolve($this->params, PayPalOrderStates::CONFIRMED));
+
             $orderTable->transaction_details = json_encode([
                 'transaction_id' => $transactionId,
                 'paymentinfo'    => $nvpResponse['PAYMENTINFO_0_TRANSACTIONID'] ?? null,
@@ -1157,7 +1183,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $outcome = $this->getPayPalSubscriptions()->captureRenewalPayment($subscription, $order, $paypalSubId);
         } catch (\Throwable $e) {
             $this->log('Modern subscription capture exception: ' . $e->getMessage(), Log::ERROR);
-            return ['no_response', $e->getMessage(), []];
+            return ['no_response', Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED'), []];
         }
 
         return [
@@ -1619,7 +1645,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         } catch (\Throwable $e) {
             $this->log('createPayPalSubscriptionForOrder exception: ' . $e->getMessage(), Log::ERROR);
 
-            return ['success' => false, 'error' => $e->getMessage()];
+            return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
         }
     }
 
@@ -1707,9 +1733,10 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $confirmedStateId = PayPalOrderStates::resolve($this->params, PayPalOrderStates::CONFIRMED);
 
             $orderTable->orderpayment_type   = $this->_name;
-            $orderTable->order_state_id      = $confirmedStateId;
             $orderTable->transaction_id      = $paypalSubscriptionId;
             $orderTable->transaction_status  = 'Completed';
+
+            $this->applyConfirmedState($orderTable, $confirmedStateId);
 
             $details['paypal_subscription_id'] = $paypalSubscriptionId;
             $details['subscription_status']    = $status;
@@ -1749,7 +1776,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         } catch (\Throwable $e) {
             $this->log('finalizePayPalSubscriptionApproval exception: ' . $e->getMessage(), Log::ERROR);
 
-            return ['success' => false, 'error' => $e->getMessage()];
+            return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
         }
     }
 
@@ -2034,7 +2061,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 ['category' => 'j2commerce.paypal']
             );
 
-            return ['success' => false, 'error' => $e->getMessage()];
+            return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
         }
     }
 
@@ -2140,10 +2167,10 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                     );
                 }
 
-                $orderStateId                   = PayPalOrderStates::resolve($this->params, PayPalOrderStates::CONFIRMED);
-                $orderTable->order_state_id     = $orderStateId;
                 $orderTable->transaction_id     = $captureId;
                 $orderTable->transaction_status = $captureStatus;
+
+                $this->applyConfirmedState($orderTable, PayPalOrderStates::resolve($this->params, PayPalOrderStates::CONFIRMED));
 
                 $transactionDetails                     = json_decode($orderTable->transaction_details ?? '{}', true);
                 $transactionDetails['capture_id']       = $captureId;
@@ -2188,7 +2215,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 ['category' => 'j2commerce.paypal']
             );
 
-            return ['success' => false, 'error' => $e->getMessage()];
+            return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
         }
     }
 

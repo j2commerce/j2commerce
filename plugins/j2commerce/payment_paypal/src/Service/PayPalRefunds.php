@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 
+\defined('_JEXEC') or die;
+
 final class PayPalRefunds
 {
     public function __construct(private PayPalClient $client)

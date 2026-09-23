@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 
+\defined('_JEXEC') or die;
+
 use Joomla\CMS\Factory;
 use Joomla\CMS\Log\Log;
 

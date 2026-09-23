@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 
+\defined('_JEXEC') or die;
+
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderTransactionHelper;
