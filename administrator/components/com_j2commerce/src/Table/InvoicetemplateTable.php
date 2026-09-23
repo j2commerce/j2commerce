@@ -88,9 +88,9 @@ class InvoicetemplateTable extends Table
         // Trim the title and other text fields
         $this->title          = trim($this->title);
         $this->invoice_type   = trim($this->invoice_type);
-        $this->orderstatus_id = trim($this->orderstatus_id);
-        $this->group_id       = trim($this->group_id);
-        $this->paymentmethod  = trim($this->paymentmethod);
+        $this->orderstatus_id = trim($this->orderstatus_id ?? '');
+        $this->group_id       = trim($this->group_id ?? '');
+        $this->paymentmethod  = trim($this->paymentmethod ?? '');
 
         // Set default values if not provided
         if (!isset($this->enabled)) {

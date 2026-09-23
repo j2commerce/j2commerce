@@ -471,51 +471,66 @@ class EmailtemplatesController extends AdminController
             return;
         }
 
-        $db            = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        // Import writes through the same Table the edit form uses, so the email_type format,
+        // receiver_type / body_source allow-lists and the body_source_file confinement in
+        // EmailtemplateTable::check() apply to an imported row exactly as they do to a saved one.
+        $table         = $this->getModel()->getTable();
         $allowedFields = ['subject', 'body', 'body_source', 'body_source_file', 'custom_css', 'email_type', 'receiver_type', 'language', 'orderstatus_id', 'group_id', 'paymentmethod', 'shippingmethod', 'enabled', 'ordering'];
         $imported      = 0;
-        $userId        = (int) $this->app->getIdentity()->id;
-        $now           = Factory::getDate()->toSql();
+        $skipped       = 0;
 
         // The edit form holds a file-based body source to core.admin; an import writes the same field
         $canUseFileSource = $this->app->getIdentity()->authorise('core.admin');
 
         foreach ($data['templates'] as $template) {
-            $row = new \stdClass();
+            $row = [];
             foreach ($allowedFields as $field) {
-                $row->$field = $template[$field] ?? '';
+                // check() hands most of these to trim()/str_starts_with(), which reject a
+                // non-string under strict_types, so a hand-built file would lose the row
+                // rather than import the value the old insertObject() path accepted.
+                $value       = $template[$field] ?? '';
+                $row[$field] = \is_scalar($value) ? (string) $value : '';
             }
 
             // language is echoed unescaped in the admin list; constrain it to the two shapes
             // a language tag can legitimately take rather than trust the imported file.
-            if ($row->language !== '*' && !preg_match('/^[a-z]{2,3}-[A-Z]{2}$/', (string) $row->language)) {
-                $row->language = '*';
+            if ($row['language'] !== '*' && !preg_match('/^[a-z]{2,3}-[A-Z]{2}$/', (string) $row['language'])) {
+                $row['language'] = '*';
             }
 
             // Clear on the privilege, not on the pairing — body_source has more than one file-ish value
             if (!$canUseFileSource) {
-                $row->body_source_file = '';
+                $row['body_source_file'] = '';
 
-                if ($row->body_source === 'file') {
-                    $row->body_source = 'visual';
+                if ($row['body_source'] === 'file') {
+                    $row['body_source'] = 'visual';
                 }
             }
 
-            $row->j2commerce_emailtemplate_id = 0;
-
             // An imported row repeats the identity fields of whatever it was exported from, so
             // it is stamped as the merchant's own: Sync Core owns the rows it named, never this.
-            $row->core_key                    = CoreTemplateSyncHelper::MERCHANT_KEY;
-            $row->created_on                  = $now;
-            $row->created_by                  = $userId;
-            $row->modified_on                 = $now;
-            $row->modified_by                 = $userId;
+            $row['core_key'] = CoreTemplateSyncHelper::MERCHANT_KEY;
+
+            // reset() restores each column's raw schema default. Two of those need correcting
+            // before the row is bound: the primary key is deliberately left alone, so the second
+            // row of an import would update the first row's record instead of inserting; and
+            // created_on becomes the literal string CURRENT_TIMESTAMP, which store()'s
+            // empty-or-zero-date guard does not replace and a strict-mode server rejects.
+            // modified_on needs no such handling because store() always restamps it.
+            $table->reset();
+            $table->j2commerce_emailtemplate_id = 0;
+            $table->created_on                  = '';
 
             try {
-                $db->insertObject('#__j2commerce_emailtemplates', $row, 'j2commerce_emailtemplate_id');
-                $imported++;
+                if ($table->bind($row) && $table->check() && $table->store()) {
+                    $imported++;
+                } else {
+                    $skipped++;
+                    Log::add('emailtemplates.import skipped a row: ' . $table->getError(), Log::WARNING, 'com_j2commerce');
+                }
             } catch (\Throwable $e) {
-                // Skip invalid rows
+                $skipped++;
+                Log::add('emailtemplates.import skipped a row: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
             }
         }
 
