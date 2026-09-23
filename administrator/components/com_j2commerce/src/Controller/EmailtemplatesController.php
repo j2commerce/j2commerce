@@ -8,6 +8,8 @@
  * @license     GNU General Public License version 2 or later; see LICENSE.txt
  */
 
+declare(strict_types=1);
+
 namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
@@ -421,6 +423,15 @@ class EmailtemplatesController extends AdminController
             'templates' => $exportData,
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
+        // json_encode returns false on malformed UTF-8, which body and custom_css can carry.
+        // Under strict_types that false would reach strlen() below as a TypeError mid-response.
+        if ($json === false) {
+            Log::add('emailtemplates.export: ' . json_last_error_msg(), Log::ERROR, 'com_j2commerce');
+            $this->setMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
+            $this->setRedirect(Route::_('index.php?option=' . $this->option . '&view=' . $this->view_list, false));
+            return;
+        }
+
         $filename = 'j2commerce-emailtemplates-' . date('Y-m-d') . '.json';
 
         header('Content-Type: application/json; charset=utf-8');
@@ -449,8 +460,10 @@ class EmailtemplatesController extends AdminController
             return;
         }
 
+        // An unreadable upload makes file_get_contents return false, which under strict_types
+        // would reach json_decode() as a TypeError instead of the invalid-file branch below.
         $content = file_get_contents($file['tmp_name']);
-        $data    = json_decode($content, true);
+        $data    = $content === false ? null : json_decode($content, true);
 
         if (!$data || !isset($data['type']) || $data['type'] !== 'j2commerce_emailtemplates' || empty($data['templates'])) {
             $this->setMessage(Text::_('COM_J2COMMERCE_EMAILTEMPLATE_IMPORT_INVALID'), 'error');

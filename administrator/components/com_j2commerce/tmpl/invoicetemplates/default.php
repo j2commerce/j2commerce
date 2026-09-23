@@ -93,7 +93,7 @@ $isMultilang = Multilanguage::isEnabled();
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_INVOICETEMPLATE_GROUP_ID', 'a.group_id', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="w-10 d-none d-lg-table-cell">
-                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_INVOICETEMPLATE_PAYMENT_METHOD', 'a.paymentmethod', $listDirn, $listOrder); ?>
+                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_FIELD_PAYMENT_METHOD', 'a.paymentmethod', $listDirn, $listOrder); ?>
                                 </th>
                                 <th scope="col" class="w-3 d-none d-lg-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'JGRID_HEADING_ID', 'a.j2commerce_invoicetemplate_id', $listDirn, $listOrder); ?>

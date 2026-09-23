@@ -75,7 +75,7 @@
         <field
             name="paymentmethod"
             type="Paymentmethods"
-            label="COM_J2COMMERCE_INVOICETEMPLATE_PAYMENT_METHOD"
+            label="COM_J2COMMERCE_FIELD_PAYMENT_METHOD"
             description="COM_J2COMMERCE_INVOICETEMPLATE_PAYMENT_METHOD_DESC"
             addfieldprefix ="J2Commerce\Component\J2commerce\Administrator\Field"
             onchange="this.form.submit();"
