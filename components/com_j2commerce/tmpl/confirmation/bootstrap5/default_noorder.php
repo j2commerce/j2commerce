@@ -53,7 +53,7 @@ use Joomla\CMS\Router\Route;
                         <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=myprofile'); ?>" class="btn btn-outline-secondary">
                             <span class="fa-solid fa-clock-rotate-left me-1" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_VIEW_ALL_ORDERS'); ?>
                         </a>
-                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=products'); ?>" class="btn btn-outline-secondary">
+                        <a href="<?php echo $this->escape($this->continueShoppingUrl); ?>" class="btn btn-outline-secondary">
                             <span class="fa-solid fa-bag-shopping me-1" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_CONFIRMATION_CONTINUE_SHOPPING'); ?>
                         </a>
                     </div>

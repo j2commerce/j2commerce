@@ -363,7 +363,7 @@ if ($info) {
 
                     <?php // Continue shopping + need help ?>
                     <div class="j2c-block-actions d-flex flex-wrap align-items-center justify-content-center gap-3 mb-4">
-                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=products'); ?>" class="btn btn-primary">
+                        <a href="<?php echo $this->escape($this->continueShoppingUrl); ?>" class="btn btn-primary">
                             <?php echo Text::_('COM_J2COMMERCE_CONTINUE_SHOPPING'); ?>
                         </a>
                         <?php if (!empty($this->order_link)) : ?>
@@ -382,7 +382,7 @@ if ($info) {
                 <?php else : ?>
                     <?php // Cancelled order actions ?>
                     <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
-                        <a href="<?php echo Route::_('index.php?option=com_j2commerce&view=products'); ?>" class="btn btn-dark">
+                        <a href="<?php echo $this->escape($this->continueShoppingUrl); ?>" class="btn btn-dark">
                             <?php echo Text::_('COM_J2COMMERCE_CONTINUE_SHOPPING'); ?>
                         </a>
                     </div>

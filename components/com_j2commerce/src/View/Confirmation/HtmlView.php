@@ -20,6 +20,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TrackingHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
@@ -44,6 +45,9 @@ class HtmlView extends BaseHtmlView
     public bool $showingRecent       = false;
     public string $articleHtml       = '';
     public string $trackingScript    = '';
+
+    /** Raw, unescaped — the templates escape it. */
+    public string $continueShoppingUrl = '';
 
     public function display($tpl = null): void
     {
@@ -77,6 +81,9 @@ class HtmlView extends BaseHtmlView
         $this->currency = J2CommerceHelper::currency();
 
         $this->registerFrameworkTemplatePaths($app);
+
+        // Resolved before the no-order branch below returns, so the token layout gets it too.
+        $this->continueShoppingUrl = $this->resolveContinueShoppingUrl();
 
         /** @var \J2Commerce\Component\J2commerce\Site\Model\ConfirmationModel $model */
         $model = $this->getModel();
@@ -156,6 +163,29 @@ class HtmlView extends BaseHtmlView
         $this->_prepareDocument();
 
         parent::display($tpl);
+    }
+
+    /**
+     * The store's Continue Shopping Page destination, as the cart already honours it.
+     * Its 'previous' option means history.back(), which cannot apply here — the previous
+     * entry after a confirmation is the gateway or the checkout step — so that case, and
+     * a destination configured but left empty, fall back to the product list.
+     */
+    private function resolveContinueShoppingUrl(): string
+    {
+        $cartModel = Factory::getApplication()
+            ->bootComponent('com_j2commerce')
+            ->getMVCFactory()
+            ->createModel('Cart', 'Administrator', ['ignore_request' => true]);
+
+        $destination = $cartModel->getContinueShoppingUrl();
+
+        if (($destination->type ?? 'previous') !== 'previous' && !empty($destination->url)) {
+            return (string) $destination->url;
+        }
+
+        // false: every branch above returns an unencoded URL, so the templates escape once.
+        return Route::_(RouteHelper::getProductsRoute(), false);
     }
 
     /**
