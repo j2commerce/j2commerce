@@ -934,6 +934,9 @@
             type="url"
             label="COM_J2COMMERCE_CONFIG_CONTINUE_SHOPPING_URL"
             description="COM_J2COMMERCE_CONFIG_CONTINUE_SHOPPING_URL_DESC"
+            filter="url"
+            validate="url"
+            relative="true"
             showon="config_continue_shopping_page:url"
         />
 
@@ -970,6 +973,9 @@
             type="url"
             label="COM_J2COMMERCE_CONFIG_CART_REDIRECT_URL"
             description="COM_J2COMMERCE_CONFIG_CART_REDIRECT_URL_DESC"
+            filter="url"
+            validate="url"
+            relative="true"
             showon="config_cart_empty_redirect:url"
         />
 
@@ -1558,6 +1564,8 @@
             type="url"
             label="COM_J2COMMERCE_CONFIG_EMAIL_FACEBOOK"
             description="COM_J2COMMERCE_CONFIG_EMAIL_FACEBOOK_DESC"
+            filter="url"
+            validate="url"
             class="w-100"
         />
 
@@ -1566,6 +1574,8 @@
             type="url"
             label="COM_J2COMMERCE_CONFIG_EMAIL_INSTAGRAM"
             description="COM_J2COMMERCE_CONFIG_EMAIL_INSTAGRAM_DESC"
+            filter="url"
+            validate="url"
             class="w-100"
         />
 
@@ -1574,6 +1584,8 @@
             type="url"
             label="COM_J2COMMERCE_CONFIG_EMAIL_TWITTER"
             description="COM_J2COMMERCE_CONFIG_EMAIL_TWITTER_DESC"
+            filter="url"
+            validate="url"
             class="w-100"
         />
     </fieldset>

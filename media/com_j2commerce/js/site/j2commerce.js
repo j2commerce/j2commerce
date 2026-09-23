@@ -1540,6 +1540,15 @@ const J2Commerce = {
             }
         });
 
+        // "Continue shopping" when configured as the previous page. The URL-backed
+        // variants are plain anchors; only this one needs script.
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('[data-j2commerce-history-back]')) {
+                e.preventDefault();
+                window.history.back();
+            }
+        });
+
         // Add to cart form submissions (event delegation for AJAX-replaced content)
         document.addEventListener('submit', (e) => {
             const form = e.target.closest('.j2commerce-addtocart-form');

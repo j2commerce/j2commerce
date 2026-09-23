@@ -49,6 +49,9 @@
 				type="url"
 				label="COM_J2COMMERCE_CONFIG_CART_REDIRECT_URL"
 				description="COM_J2COMMERCE_CONFIG_CART_REDIRECT_URL_DESC"
+				filter="url"
+				validate="url"
+				relative="true"
 				showon="config_cart_empty_redirect:url"
 			/>
 		</fieldset>
