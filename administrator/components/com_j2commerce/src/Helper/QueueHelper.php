@@ -329,25 +329,62 @@ final class QueueHelper
         return $db->getAffectedRows();
     }
 
-    public static function purgeCompleted(int $days = 30): int
+    // Single definition of "old enough to purge", so the preview count and the delete cannot
+    // drift apart on the column, the operator, the timezone or the floor. The default timezone
+    // is deliberate: complete() and fail() stamp processed_at the same way, so reader and writer
+    // agree. Pinning this to UTC without changing them would shift the cutoff off the data.
+    private static function completedCutoff(int $days): string
     {
         // The form's min="1" is render-only and its integer filter keeps a leading minus, so a 0
         // or negative value would put the cutoff at or past now and match every completed row.
-        $days   = max(1, $days);
+        return (new \DateTimeImmutable('-' . max(1, $days) . ' days'))->format('Y-m-d H:i:s');
+    }
+
+    public static function countCompleted(int $days = 30): int
+    {
         $db     = self::db();
-        $cutoff = (new \DateTimeImmutable("-{$days} days"))->format('Y-m-d H:i:s');
+        $cutoff = self::completedCutoff($days);
         $status = 'completed';
 
-        $db->setQuery(
+        return (int) $db->setQuery(
             $db->getQuery(true)
-                ->delete($db->quoteName('#__j2commerce_queues'))
+                ->select('COUNT(*)')
+                ->from($db->quoteName('#__j2commerce_queues'))
                 ->where($db->quoteName('status') . ' = :status')
                 ->where($db->quoteName('processed_at') . ' <= :cutoff')
                 ->bind(':status', $status)
                 ->bind(':cutoff', $cutoff)
-        )->execute();
+        )->loadResult();
+    }
 
-        return $db->getAffectedRows();
+    // Deleted in passes rather than in one statement. The completed partition is now a retention
+    // window deep instead of a single run's work, so the sets that matter here are the first purge
+    // after an upgrade and a retention window being shortened. One statement over either holds
+    // next-key locks across idx_status_processed for the duration, against the same index the
+    // claim loop writes through.
+    private const PURGE_BATCH_SIZE = 1000;
+
+    public static function purgeCompleted(int $days = 30): int
+    {
+        $db     = self::db();
+        $cutoff = self::completedCutoff($days);
+        $status = 'completed';
+        $query  = $db->getQuery(true)
+            ->delete($db->quoteName('#__j2commerce_queues'))
+            ->where($db->quoteName('status') . ' = :status')
+            ->where($db->quoteName('processed_at') . ' <= :cutoff')
+            ->bind(':status', $status)
+            ->bind(':cutoff', $cutoff);
+
+        $deleted = 0;
+
+        do {
+            $db->setQuery($query, 0, self::PURGE_BATCH_SIZE)->execute();
+            $rows     = $db->getAffectedRows();
+            $deleted += $rows;
+        } while ($rows === self::PURGE_BATCH_SIZE);
+
+        return $deleted;
     }
 
     public static function retryItems(array $ids): int

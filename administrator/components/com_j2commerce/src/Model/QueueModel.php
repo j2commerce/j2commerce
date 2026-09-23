@@ -220,7 +220,9 @@ class QueueModel extends AdminModel
     }
 
     /**
-     * Mark a queue item as completed.
+     * Mark a queue item as completed. Delegates to QueueHelper for the same reason markFailed()
+     * does: one writer per terminal state. The helper also stamps processed_at, which is the
+     * column the retention purge selects on — a row completed without it never purges.
      *
      * @param   int  $queueId  The queue item ID
      *
@@ -230,7 +232,13 @@ class QueueModel extends AdminModel
      */
     public function markCompleted(int $queueId): bool
     {
-        return $this->updateStatus($queueId, 'completed');
+        if (!$this->getTable()->load($queueId)) {
+            return false;
+        }
+
+        QueueHelper::complete($queueId);
+
+        return true;
     }
 
     /**
@@ -257,7 +265,10 @@ class QueueModel extends AdminModel
     }
 
     /**
-     * Update the status of a queue item.
+     * Update the status of a queue item. Not for the terminal states — 'completed', 'failed' and
+     * 'dead' go through markCompleted()/markFailed(), because this writes status and modified_on
+     * only and skips QueueHelper's processed_at stamp, attempt and backoff bookkeeping and lock
+     * release. A row completed through here is never eligible for the retention purge.
      *
      * @param   int     $queueId  The queue item ID
      * @param   string  $status   The new status

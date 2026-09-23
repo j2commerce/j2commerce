@@ -1165,6 +1165,7 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_queues` (
   `modified_on` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`j2commerce_queue_id`),
   KEY `idx_status_next` (`status`, `next_attempt_at`),
+  KEY `idx_status_processed` (`status`, `processed_at`),
   KEY `idx_queue_type` (`queue_type`),
   KEY `idx_item_type` (`item_type`),
   KEY `idx_relation` (`relation_id`(50)),

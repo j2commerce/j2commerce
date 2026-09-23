@@ -365,9 +365,8 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $purgeCompletedQueueDays  = (int) ($params->purge_completed_queue_days ?? 30);
         $dryRun                   = (int) ($params->dry_run ?? 1);
 
-        $db          = $this->getDatabase();
-        $logCutoff   = (new \DateTimeImmutable("now -{$olderThanDays} days", new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
-        $queueCutoff = (new \DateTimeImmutable("now -{$purgeCompletedQueueDays} days", new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+        $db        = $this->getDatabase();
+        $logCutoff = (new \DateTimeImmutable("now -{$olderThanDays} days", new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
 
         $query = $db->createQuery()
             ->select('COUNT(*)')
@@ -376,13 +375,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             ->bind(':log_cutoff', $logCutoff);
         $logCount = (int) $db->setQuery($query)->loadResult();
 
-        $query = $db->createQuery()
-            ->select('COUNT(*)')
-            ->from($db->quoteName('#__j2commerce_queues'))
-            ->where($db->quoteName('status') . ' = ' . $db->quote('completed'))
-            ->where($db->quoteName('modified_on') . ' < :queue_cutoff')
-            ->bind(':queue_cutoff', $queueCutoff);
-        $queueCount = (int) $db->setQuery($query)->loadResult();
+        $queueCount = QueueHelper::countCompleted($purgeCompletedQueueDays);
 
         $this->logTask(\sprintf(
             '%s %d log entries older than %d days and %d completed queue items older than %d days.',
@@ -405,12 +398,12 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                 ->bind(':log_cutoff', $logCutoff)
         )->execute();
 
-        QueueHelper::purgeCompleted($purgeCompletedQueueDays);
+        $queueDeleted = QueueHelper::purgeCompleted($purgeCompletedQueueDays);
 
         $this->logTask(\sprintf(
             'Deleted %d log entries and %d completed queue items.',
             $logCount,
-            $queueCount
+            $queueDeleted
         ));
 
         return Status::OK;
