@@ -207,7 +207,7 @@ class AppsModel extends ListModel
         $orderDirn = $this->getState('list.direction', 'ASC');
 
         if ($orderCol && $orderDirn && $orderCol !== 'a.name') {
-            $query->order($db->escape($orderCol . ' ' . $orderDirn));
+            $query->order($db->quoteName($orderCol) . ' ' . $orderDirn);
         } elseif ($orderCol === 'a.name') {
             $query->order($db->quoteName('a.extension_id') . ' ASC');
         }

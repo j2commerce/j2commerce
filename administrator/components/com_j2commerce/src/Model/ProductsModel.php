@@ -230,7 +230,7 @@ class ProductsModel extends ListModel
         $orderCol = $this->state->get('list.ordering', 'a.j2commerce_product_id');
         $orderDir = $this->state->get('list.direction', 'DESC');
 
-        $query->order($db->escape($orderCol) . ' ' . $db->escape($orderDir));
+        $query->order($db->quoteName($orderCol) . ' ' . $orderDir);
 
         return $query;
     }

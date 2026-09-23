@@ -126,7 +126,7 @@ class AdvancedpricingModel extends ListModel
         // Ordering
         $orderCol  = $this->state->get('list.ordering', 'v.product_id');
         $orderDir  = $this->state->get('list.direction', 'ASC');
-        $query->order($db->escape($orderCol) . ' ' . $db->escape($orderDir));
+        $query->order($db->quoteName($orderCol) . ' ' . $orderDir);
 
         return $query;
     }

@@ -190,7 +190,7 @@ class ProductOptionsModel extends ListModel
             $orderCol = 'a.ordering';
         }
 
-        $query->order($db->escape($orderCol) . ' ' . $orderDir);
+        $query->order($db->quoteName($orderCol) . ' ' . $orderDir);
 
         return $query;
     }

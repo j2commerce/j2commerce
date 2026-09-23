@@ -147,7 +147,7 @@ class WeightsModel extends ListModel
         // Add ordering clause
         $orderCol  = $this->state->get('list.ordering', 'a.ordering');
         $orderDir  = $this->state->get('list.direction', 'ASC');
-        $ordering  = $db->escape($orderCol) . ' ' . $db->escape($orderDir);
+        $ordering  = $db->quoteName($orderCol) . ' ' . $orderDir;
 
         $query->order($ordering);
 

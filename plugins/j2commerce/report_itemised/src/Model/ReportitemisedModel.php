@@ -212,7 +212,7 @@ class ReportitemisedModel extends BaseReportModel
         }
 
         $orderDir = strtoupper($orderDir) === 'DESC' ? 'DESC' : 'ASC';
-        $query->order($db->escape($orderCol) . ' ' . $orderDir);
+        $query->order($db->quoteName($orderCol) . ' ' . $orderDir);
 
         // Secondary sort by order_id for deterministic results
         $query->order($db->quoteName('oi.order_id'));

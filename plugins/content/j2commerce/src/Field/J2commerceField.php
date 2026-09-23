@@ -103,7 +103,7 @@ final class J2commerceField extends FormField
     {
         $app         = Factory::getApplication();
         $formPrefix  = 'jform[attribs][j2commerce]';
-        $productId   = $product->j2commerce_product_id ?? 0;
+        $productId   = (int) ($product->j2commerce_product_id ?? 0);
         $productType = $product->product_type ?? '';
 
         // Calculate variant statistics

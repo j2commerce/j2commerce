@@ -160,7 +160,7 @@ class ReportsModel extends ListModel
         $orderDirn = $this->getState('list.direction', 'ASC');
 
         if ($orderCol && $orderDirn) {
-            $query->order($db->escape($orderCol . ' ' . $orderDirn));
+            $query->order($db->quoteName($orderCol) . ' ' . $orderDirn);
         }
 
         return $query;

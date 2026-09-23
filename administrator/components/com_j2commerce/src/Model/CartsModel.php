@@ -254,7 +254,7 @@ class CartsModel extends ListModel
             $orderCol = 'tbl.j2commerce_cart_id';
         }
 
-        $query->order($db->escape($orderCol) . ' ' . $db->escape($orderDir));
+        $query->order($db->quoteName($orderCol) . ' ' . $orderDir);
 
         return $query;
     }

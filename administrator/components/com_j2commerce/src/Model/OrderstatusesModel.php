@@ -148,7 +148,7 @@ class OrderstatusesModel extends ListModel
         // Add ordering clause
         $orderCol  = $this->state->get('list.ordering', 'a.orderstatus_name');
         $orderDir  = $this->state->get('list.direction', 'ASC');
-        $ordering  = $db->escape($orderCol) . ' ' . $db->escape($orderDir);
+        $ordering  = $db->quoteName($orderCol) . ' ' . $orderDir;
 
         $query->order($ordering);
 

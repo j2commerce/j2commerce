@@ -2000,7 +2000,7 @@ class ProductHelper
     {
         static $cache = [];
 
-        $productId = $product->j2commerce_product_id ?? 0;
+        $productId = (int) ($product->j2commerce_product_id ?? 0);
 
         if (!$productId) {
             return [];
@@ -4257,8 +4257,8 @@ class ProductHelper
      */
     public function getProductLink(object &$product): void
     {
-        $productId             = $product->j2commerce_product_id ?? 0;
-        $product->product_link = J2CommerceHelper::platform()->getProductUrl(['task' => 'view','id' => (int) $productId]);
+        $productId             = (int) ($product->j2commerce_product_id ?? 0);
+        $product->product_link = J2CommerceHelper::platform()->getProductUrl(['task' => 'view','id' => $productId]);
     }
 
     /**

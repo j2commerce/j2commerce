@@ -324,10 +324,10 @@ class OrdersModel extends ListModel
         }
 
         if ($orderCol === 'invoice') {
-            $query->order($db->quoteName('a.invoice_prefix') . ' ' . $db->escape($orderDir))
-                ->order($db->quoteName('a.j2commerce_order_id') . ' ' . $db->escape($orderDir));
+            $query->order($db->quoteName('a.invoice_prefix') . ' ' . $orderDir)
+                ->order($db->quoteName('a.j2commerce_order_id') . ' ' . $orderDir);
         } else {
-            $query->order($db->escape($orderCol) . ' ' . $db->escape($orderDir));
+            $query->order($db->quoteName($orderCol) . ' ' . $orderDir);
         }
 
         return $query;

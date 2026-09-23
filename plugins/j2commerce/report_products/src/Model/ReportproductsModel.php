@@ -168,7 +168,7 @@ class ReportproductsModel extends BaseReportModel
         }
 
         $orderDir = strtoupper($orderDir) === 'DESC' ? 'DESC' : 'ASC';
-        $query->order($db->escape($orderCol) . ' ' . $orderDir);
+        $query->order($db->quoteName($orderCol) . ' ' . $orderDir);
 
         return $query;
     }

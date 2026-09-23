@@ -129,7 +129,7 @@ class QueuesModel extends ListModel
 
         $orderCol = $this->state->get('list.ordering', 'a.created_on');
         $orderDir = $this->state->get('list.direction', 'DESC');
-        $query->order($db->escape($orderCol) . ' ' . $db->escape($orderDir));
+        $query->order($db->quoteName($orderCol) . ' ' . $orderDir);
 
         return $query;
     }

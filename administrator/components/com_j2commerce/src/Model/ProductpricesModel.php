@@ -121,7 +121,7 @@ class ProductpricesModel extends ListModel
         $orderCol  = $this->state->get('list.ordering', 'pp.customer_group_id');
         $orderDirn = $this->state->get('list.direction', 'ASC');
 
-        $query->order($db->escape($orderCol) . ' ' . $db->escape($orderDirn));
+        $query->order($db->quoteName($orderCol) . ' ' . $orderDirn);
 
         // Secondary ordering by quantity
         $query->order($db->quoteName('pp.quantity_from') . ' ASC');

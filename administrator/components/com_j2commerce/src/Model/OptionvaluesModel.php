@@ -117,7 +117,7 @@ class OptionvaluesModel extends ListModel
         // Ordering
         $orderCol = $this->state->get('list.ordering', 'a.ordering');
         $orderDir = $this->state->get('list.direction', 'ASC');
-        $query->order($db->escape($orderCol) . ' ' . $db->escape($orderDir));
+        $query->order($db->quoteName($orderCol) . ' ' . $orderDir);
 
         return $query;
     }
