@@ -15,6 +15,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Plugin\System\J2Commerce\Helper\LeafletMapHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -421,6 +422,15 @@ if ($info) {
                                 <?php
                                 $params   = json_decode($item->orderitem_params ?? '{}', true) ?: [];
                                 $rawThumb = (string) ($params['thumb_image'] ?? '');
+
+                                // The line snapshot carries no thumb_image for orders placed before it
+                                // was recorded, for product types that never record one, and for products
+                                // that only ever had a main image. Fall back to the product's own images.
+                                if ($rawThumb === '' && (int) ($item->product_id ?? 0) > 0) {
+                                    $productImages = ProductHelper::getProductImages((int) $item->product_id);
+                                    $rawThumb      = $productImages ? ProductHelper::getGalleryThumbSource($productImages) : '';
+                                }
+
                                 $thumb    = $rawThumb !== ''
                                     ? HTMLHelper::_('cleanImageURL', $platform->getImagePath($rawThumb))->url
                                     : '';

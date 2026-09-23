@@ -997,7 +997,9 @@ class ProductHelper
     {
         static $cache = [];
 
-        if (isset($cache[$productId])) {
+        // array_key_exists, not isset: a product with no images row is cached as null below,
+        // which isset() reports as a miss, so it would be re-queried on every call.
+        if (\array_key_exists($productId, $cache)) {
             return $cache[$productId];
         }
 

@@ -13,6 +13,7 @@ defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -176,17 +177,30 @@ $statusName = Text::_($order->orderstatus_name ?? '');
             <tbody>
                 <?php foreach ($items as $lineItem): ?>
                 <?php
-                $itemParams = !empty($lineItem->orderitem_params) ? json_decode($lineItem->orderitem_params, true) : [];
-                $rawThumb = (string) ($itemParams['thumb_image'] ?? '');
-                $thumb = $rawThumb !== ''
-                    ? HTMLHelper::_('cleanImageURL', $platform->getImagePath($rawThumb))->url
-                    : '';
+                $thumb = '';
+
+                if ($params->get('show_thumb_cart', 0)) {
+                    $itemParams = !empty($lineItem->orderitem_params) ? json_decode($lineItem->orderitem_params, true) : [];
+                    $rawThumb   = (string) ($itemParams['thumb_image'] ?? '');
+
+                    // The line snapshot carries no thumb_image for orders placed before it was
+                    // recorded, for product types that never record one, and for products that
+                    // only ever had a main image. Fall back to the product's own images.
+                    if ($rawThumb === '' && (int) ($lineItem->product_id ?? 0) > 0) {
+                        $productImages = ProductHelper::getProductImages((int) $lineItem->product_id);
+                        $rawThumb      = $productImages ? ProductHelper::getGalleryThumbSource($productImages) : '';
+                    }
+
+                    $thumb = $rawThumb !== ''
+                        ? HTMLHelper::_('cleanImageURL', $platform->getImagePath($rawThumb))->url
+                        : '';
+                }
                 ?>
                 <tr>
                     <?php if ($params->get('show_thumb_cart', 0)): ?>
                     <td>
                         <?php if ($thumb): ?>
-                        <img src="<?php echo $this->escape($thumb); ?>" alt="" style="max-width:50px;max-height:50px;">
+                        <img src="<?php echo $this->escape($thumb); ?>" alt="<?php echo $this->escape($lineItem->orderitem_name); ?>" style="max-width:50px;max-height:50px;">
                         <?php endif; ?>
                     </td>
                     <?php endif; ?>
