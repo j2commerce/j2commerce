@@ -25,6 +25,7 @@ use Joomla\CMS\Router\Route;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
+use Joomla\Database\QueryInterface;
 use Joomla\Registry\Registry;
 
 // No direct access
@@ -1963,15 +1964,12 @@ class EmailHelper
             ->where($db->quoteName('email_type') . ' = ' . $db->quote('transactional'));
 
         // Order status filter with CASE statement
-        $query->where(
-            'CASE WHEN ' . $db->quoteName('orderstatus_id') . ' = :orderstatus_id'
-            . ' THEN ' . $db->quoteName('orderstatus_id') . ' = :orderstatus_id2'
-            . ' ELSE ' . $db->quoteName('orderstatus_id') . ' = ' . $db->quote('*')
-            . ' OR ' . $db->quoteName('orderstatus_id') . ' = ' . $db->quote('')
-            . ' END'
-        )
-            ->bind(':orderstatus_id', $orderStateId, ParameterType::INTEGER)
-            ->bind(':orderstatus_id2', $orderStateId, ParameterType::INTEGER);
+        $this->whereExactOrWildcard(
+            $query,
+            'orderstatus_id',
+            ['orderstatus_id' => $orderStateId],
+            ParameterType::INTEGER
+        );
 
         // Customer group filter — parse to integers to prevent SQL injection
         if (!empty($customerGroup)) {
@@ -1995,15 +1993,7 @@ class EmailHelper
         }
 
         // Payment method filter
-        $query->where(
-            'CASE WHEN ' . $db->quoteName('paymentmethod') . ' = :paymentmethod'
-            . ' THEN ' . $db->quoteName('paymentmethod') . ' = :paymentmethod2'
-            . ' ELSE ' . $db->quoteName('paymentmethod') . ' = ' . $db->quote('*')
-            . ' OR ' . $db->quoteName('paymentmethod') . ' = ' . $db->quote('')
-            . ' END'
-        )
-            ->bind(':paymentmethod', $paymentType)
-            ->bind(':paymentmethod2', $paymentType);
+        $this->whereExactOrWildcard($query, 'paymentmethod', ['paymentmethod' => $paymentType]);
 
         // Shipping method filter. ShippingmethodsField emits a mixed option list -- a sub-method
         // name for the plugins backed by #__j2commerce_shippingmethods, a plugin element for the
@@ -2012,28 +2002,14 @@ class EmailHelper
         $shippingType = $shipping->ordershipping_type ?? '';
         $shippingName = $shipping->ordershipping_name ?? '';
 
-        $query->where(
-            'CASE WHEN ' . $db->quoteName('shippingmethod') . ' IN (:shippingtype, :shippingname)'
-            . ' THEN ' . $db->quoteName('shippingmethod') . ' IN (:shippingtype2, :shippingname2)'
-            . ' ELSE ' . $db->quoteName('shippingmethod') . ' = ' . $db->quote('*')
-            . ' OR ' . $db->quoteName('shippingmethod') . ' = ' . $db->quote('')
-            . ' END'
-        )
-            ->bind(':shippingtype', $shippingType)
-            ->bind(':shippingname', $shippingName)
-            ->bind(':shippingtype2', $shippingType)
-            ->bind(':shippingname2', $shippingName);
+        $this->whereExactOrWildcard(
+            $query,
+            'shippingmethod',
+            ['shippingtype' => $shippingType, 'shippingname' => $shippingName]
+        );
 
         // Receiver type filter
-        $query->where(
-            'CASE WHEN ' . $db->quoteName('receiver_type') . ' = :receiver_type'
-            . ' THEN ' . $db->quoteName('receiver_type') . ' = :receiver_type2'
-            . ' ELSE ' . $db->quoteName('receiver_type') . ' = ' . $db->quote('*')
-            . ' OR ' . $db->quoteName('receiver_type') . ' = ' . $db->quote('')
-            . ' END'
-        )
-            ->bind(':receiver_type', $receiverType)
-            ->bind(':receiver_type2', $receiverType);
+        $this->whereExactOrWildcard($query, 'receiver_type', ['receiver_type' => $receiverType]);
 
         $db->setQuery($query);
 
@@ -2059,15 +2035,11 @@ class EmailHelper
 
             // The pinned row still has to be addressed to this pass's audience; without it a
             // row typed for one receiver is handed to the other.
-            $fallback->where(
-                'CASE WHEN ' . $db->quoteName('receiver_type') . ' = :fallback_receiver_type'
-                . ' THEN ' . $db->quoteName('receiver_type') . ' = :fallback_receiver_type2'
-                . ' ELSE ' . $db->quoteName('receiver_type') . ' = ' . $db->quote('*')
-                . ' OR ' . $db->quoteName('receiver_type') . ' = ' . $db->quote('')
-                . ' END'
-            )
-                ->bind(':fallback_receiver_type', $receiverType)
-                ->bind(':fallback_receiver_type2', $receiverType);
+            $this->whereExactOrWildcard(
+                $fallback,
+                'receiver_type',
+                ['fallback_receiver_type' => $receiverType]
+            );
 
             $db->setQuery($fallback);
 
@@ -2079,6 +2051,37 @@ class EmailHelper
         }
 
         return $allTemplates;
+    }
+
+    /** THEN restates the WHEN comparison under a second placeholder set — bind() cannot reuse one. */
+    private function whereExactOrWildcard(
+        QueryInterface $query,
+        string $column,
+        array $params,
+        string $type = ParameterType::STRING
+    ): void {
+        $db   = self::getDatabase();
+        $col  = $db->quoteName($column);
+        $keys = array_keys($params);
+
+        $compare = static fn (string $suffix): string => \count($keys) === 1
+            ? $col . ' = :' . $keys[0] . $suffix
+            : $col . ' IN (:' . implode($suffix . ', :', $keys) . $suffix . ')';
+
+        $query->where(
+            'CASE WHEN ' . $compare('')
+            . ' THEN ' . $compare('2')
+            . ' ELSE ' . $col . ' = ' . $db->quote('*')
+            . ' OR ' . $col . ' = ' . $db->quote('')
+            . ' END'
+        );
+
+        foreach ($keys as $name) {
+            // bind() takes its value by reference, so it must reach a variable that outlives
+            // this loop — the array element, never the foreach value.
+            $query->bind(':' . $name, $params[$name], $type)
+                ->bind(':' . $name . '2', $params[$name], $type);
+        }
     }
 
     /**
@@ -2229,7 +2232,10 @@ class EmailHelper
                     $isHTML         = true;
                 }
             }
-        } else {
+        } elseif (ConfigHelper::getEmailTemplateMode() === 1) {
+            // The third of the three places that substitute a template for an empty list, and
+            // the last still doing it unconditionally (issues #2523, #2530). In "Only When
+            // Configured" the empty list stands here too, so this method returns empty content.
             $isHTML       = true;
             $templateText = Text::_('COM_J2COMMERCE_ORDER_EMAIL_TEMPLATE_STANDARD_BODY');
             $subject      = Text::_('COM_J2COMMERCE_ORDER_EMAIL_TEMPLATE_STANDARD_SUBJECT');
