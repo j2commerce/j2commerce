@@ -331,6 +331,9 @@ final class QueueHelper
 
     public static function purgeCompleted(int $days = 30): int
     {
+        // The form's min="1" is render-only and its integer filter keeps a leading minus, so a 0
+        // or negative value would put the cutoff at or past now and match every completed row.
+        $days   = max(1, $days);
         $db     = self::db();
         $cutoff = (new \DateTimeImmutable("-{$days} days"))->format('Y-m-d H:i:s');
         $status = 'completed';

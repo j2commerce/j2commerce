@@ -509,38 +509,7 @@ class VoucherModel extends AdminModel
      */
     public function getVoucherHistoryTotal(int $voucherId): ?float
     {
-        if (!isset($this->history[$voucherId])) {
-            $db     = $this->getDatabase();
-            $query  = $db->getQuery(true);
-            $config = J2CommerceHelper::config();
-
-            if ($config->get('config_including_tax', 0)) {
-                $query->select('ROUND(SUM(' . $db->quoteName('discount_amount') . ') + SUM(' . $db->quoteName('discount_tax') . '), 2) AS ' . $db->quoteName('total'));
-            } else {
-                $query->select('ROUND(SUM(' . $db->quoteName('discount_amount') . '), 2) AS ' . $db->quoteName('total'));
-            }
-
-            $discountType = 'voucher';
-
-            $query->from($db->quoteName('#__j2commerce_orderdiscounts', 'od'))
-                ->join(
-                    'LEFT',
-                    $db->quoteName('#__j2commerce_orders', 'o'),
-                    $db->quoteName('od.order_id') . ' = ' . $db->quoteName('o.order_id')
-                )
-                ->where($db->quoteName('od.discount_entity_id') . ' = :voucherId')
-                ->where($db->quoteName('od.discount_type') . ' = :discountType')
-                ->group($db->quoteName('od.discount_entity_id'))
-                ->bind(':voucherId', $voucherId, ParameterType::INTEGER)
-                ->bind(':discountType', $discountType);
-
-            $this->excludeUnplacedOrders($query);
-
-            $db->setQuery($query);
-            $this->history[$voucherId] = $db->loadResult();
-        }
-
-        return $this->history[$voucherId] !== null ? (float) $this->history[$voucherId] : null;
+        return $this->getAdminVoucherHistoryTotal($voucherId);
     }
 
     /**

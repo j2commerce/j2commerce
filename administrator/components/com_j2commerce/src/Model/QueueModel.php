@@ -279,34 +279,4 @@ class QueueModel extends AdminModel
 
         return $table->store();
     }
-
-    /**
-     * Delete completed queue items older than specified days.
-     *
-     * Used for queue maintenance/cleanup.
-     *
-     * @param   int  $daysOld  Delete items older than this many days (default: 30)
-     *
-     * @return  int  Number of items deleted
-     *
-     * @since   6.0.0
-     */
-    public function purgeCompleted(int $daysOld = 30): int
-    {
-        $db    = $this->getDatabase();
-        $query = $db->getQuery(true);
-
-        $cutoffDate = date('Y-m-d H:i:s', strtotime("-{$daysOld} days"));
-
-        $query->delete($db->quoteName('#__j2commerce_queues'))
-            ->where($db->quoteName('status') . ' = :status')
-            ->where($db->quoteName('modified_on') . ' < :cutoff')
-            ->bind(':status', $completed = 'completed')
-            ->bind(':cutoff', $cutoffDate);
-
-        $db->setQuery($query);
-        $db->execute();
-
-        return $db->getAffectedRows();
-    }
 }

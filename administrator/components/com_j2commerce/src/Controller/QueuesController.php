@@ -28,6 +28,9 @@ class QueuesController extends AdminController
 {
     use WriteAccessTrait;
 
+    /** Mirrors the default on plugins/task/j2commerce/forms/cleanupQueueLogs.xml. */
+    private const DEFAULT_COMPLETED_RETENTION_DAYS = 30;
+
     protected string $writeAction = 'j2commerce.editsetup';
 
     protected $text_prefix = 'COM_J2COMMERCE';
@@ -72,10 +75,34 @@ class QueuesController extends AdminController
             return false;
         }
 
-        $count = QueueHelper::purgeCompleted(30);
+        $count = QueueHelper::purgeCompleted($this->getCompletedRetentionDays());
         $this->app->enqueueMessage(Text::sprintf('COM_J2COMMERCE_QUEUE_N_ITEMS_PURGED', $count));
         $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=queues', false));
         return true;
+    }
+
+    /** Reads the cleanupQueueLogs task's own window so the manual purge matches the scheduled one. */
+    private function getCompletedRetentionDays(): int
+    {
+        $db   = Factory::getContainer()->get(DatabaseInterface::class);
+        $type = 'j2commerce.cleanupQueueLogs';
+
+        $params = $db->setQuery(
+            $db->getQuery(true)
+                ->select($db->quoteName('params'))
+                ->from($db->quoteName('#__scheduler_tasks'))
+                ->where($db->quoteName('type') . ' = :type')
+                ->where($db->quoteName('state') . ' <> -2')
+                ->order($db->quoteName('id') . ' ASC')
+                ->bind(':type', $type),
+            0,
+            1
+        )->loadResult();
+
+        $decoded = json_decode((string) $params, true);
+        $days    = \is_array($decoded) ? (int) ($decoded['purge_completed_queue_days'] ?? 0) : 0;
+
+        return $days > 0 ? $days : self::DEFAULT_COMPLETED_RETENTION_DAYS;
     }
 
     public function purgeDead(): bool
@@ -239,13 +266,8 @@ class QueuesController extends AdminController
 
         $db->setQuery($query)->execute();
 
-        $completedStatus = 'completed';
-        $deleteQuery     = $db->getQuery(true)
-            ->delete($db->quoteName('#__j2commerce_queues'))
-            ->where($db->quoteName('status') . ' = :status')
-            ->bind(':status', $completedStatus);
-        $db->setQuery($deleteQuery)->execute();
-
+        // Completed rows are left in place: retention is owned solely by the cleanupQueueLogs
+        // task, which honours purge_completed_queue_days. Deleting them here pre-empted it.
         $this->app->enqueueMessage(
             Text::sprintf('COM_J2COMMERCE_QUEUE_PROCESS_SUMMARY', $success, $failed, $skipped),
             $failed > 0 ? 'warning' : 'message'

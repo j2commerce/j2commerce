@@ -344,21 +344,14 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         $db->setQuery($query)->execute();
 
-        $completedStatus = 'completed';
-        $deleteQuery     = $db->createQuery()
-            ->delete($db->quoteName('#__j2commerce_queues'))
-            ->where($db->quoteName('status') . ' = :status')
-            ->bind(':status', $completedStatus);
-        $db->setQuery($deleteQuery)->execute();
-        $deleted = $db->getAffectedRows();
-
+        // Completed rows are left in place: retention is owned solely by cleanupQueueLogs, which
+        // honours purge_completed_queue_days. Deleting them here pre-empted that window entirely.
         $this->logTask(\sprintf(
-            'Processed %d item(s): %d success, %d failed, %d skipped. Removed %d completed. Duration: %dms.',
+            'Processed %d item(s): %d success, %d failed, %d skipped. Duration: %dms.',
             $itemsTotal,
             $success,
             $failed,
             $skipped,
-            $deleted,
             $durationMs
         ));
 
