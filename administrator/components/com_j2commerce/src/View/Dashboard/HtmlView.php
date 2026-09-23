@@ -272,25 +272,34 @@ class HtmlView extends BaseHtmlView
         // A DB-stored template body is never rewritten by an update, so the shipped email and
         // print presets can move ahead of what a store actually sends. Sync Core Templates is
         // the action that closes that gap, and nothing else tells the merchant to run it.
+        // Each half has its own Sync button on its own screen, so each gets its own message:
+        // one notice covering both counts outlives the sync the merchant just ran.
         if ($this->getCurrentUser()->authorise('core.edit', 'com_j2commerce')) {
             $outdatedTemplates = (new CoreTemplateSyncHelper())->countTemplatesWithOutdatedLogo();
 
-            if (array_sum($outdatedTemplates) > 0) {
-                $text = Text::_('COM_J2COMMERCE_DASHBOARD_EMAIL_TEMPLATES_OUTDATED');
-
-                if ($outdatedTemplates['invoice'] > 0) {
-                    $text .= ' ' . Text::_('COM_J2COMMERCE_DASHBOARD_PRINT_TEMPLATES_OUTDATED');
-                }
-
+            if ($outdatedTemplates['email'] > 0) {
                 $this->dashboardMessages[] = [
-                    'id'          => 'com_j2commerce_core_templates_logo',
-                    'text'        => $text,
+                    'id'          => 'com_j2commerce_core_email_templates_logo',
+                    'text'        => Text::_('COM_J2COMMERCE_DASHBOARD_EMAIL_TEMPLATES_OUTDATED'),
                     'type'        => 'warning',
                     'icon'        => 'fa-solid fa-envelope-open-text',
                     'dismissible' => 'session',
                     'link'        => Route::_('index.php?option=com_j2commerce&view=emailtemplates'),
                     'linkText'    => Text::_('COM_J2COMMERCE_DASHBOARD_EMAIL_TEMPLATES_REVIEW'),
                     'priority'    => 40,
+                ];
+            }
+
+            if ($outdatedTemplates['invoice'] > 0) {
+                $this->dashboardMessages[] = [
+                    'id'          => 'com_j2commerce_core_print_templates_logo',
+                    'text'        => Text::_('COM_J2COMMERCE_DASHBOARD_PRINT_TEMPLATES_OUTDATED'),
+                    'type'        => 'warning',
+                    'icon'        => 'fa-solid fa-file-invoice',
+                    'dismissible' => 'session',
+                    'link'        => Route::_('index.php?option=com_j2commerce&view=invoicetemplates'),
+                    'linkText'    => Text::_('COM_J2COMMERCE_INVOICETEMPLATES'),
+                    'priority'    => 41,
                 ];
             }
         }
