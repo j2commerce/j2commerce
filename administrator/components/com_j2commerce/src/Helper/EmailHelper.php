@@ -724,7 +724,19 @@ class EmailHelper
         $strings = [];
 
         foreach (array_unique($matches[1]) as $key) {
-            $strings[$key] = self::resolveLangTokens('[LANG:' . $key . ']');
+            // The GrapesJS canvas prints this wording via textContent/escapeHtml(), so a
+            // language value authored as an HTML fragment (&nbsp;, &bull;, &lt;) would show
+            // its literal entities. Decode here for display only — the editor always exports
+            // the [LANG:KEY] token, never this resolved text, so nothing is written back.
+            //
+            // ENT_HTML401 deliberately, matching InputFilter::cleanString(): decoding against a
+            // wider table than the sanitiser used would revive markup it left inert. Every
+            // entity the shipped presets carry decodes the same under either table.
+            $strings[$key] = html_entity_decode(
+                self::resolveLangTokens('[LANG:' . $key . ']'),
+                \ENT_QUOTES | \ENT_HTML401,
+                'UTF-8'
+            );
         }
 
         return $strings;
