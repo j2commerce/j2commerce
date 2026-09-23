@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 use J2Commerce\Component\J2commerce\Administrator\Exception\VoucherRejection;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\Trait\CascadingDeleteTrait;
 use J2Commerce\Component\J2commerce\Administrator\Table\VoucheradjustmentTable;
 use Joomla\CMS\Component\ComponentHelper;
@@ -28,6 +29,7 @@ use Joomla\CMS\MVC\Model\AdminModel;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\ParameterType;
+use Joomla\Database\QueryInterface;
 
 /**
  * Voucher item model class.
@@ -476,13 +478,14 @@ class VoucherModel extends AdminModel
                 $db->quoteName('#__j2commerce_orders', 'o'),
                 $db->quoteName('od.order_id') . ' = ' . $db->quoteName('o.order_id')
             )
-            ->where($db->quoteName('o.order_state_id') . ' != 5')
             ->where($db->quoteName('od.discount_entity_id') . ' = :voucherId')
             ->where($db->quoteName('od.discount_type') . ' = :discountType')
             ->group($db->quoteName('od.discount_entity_id'))
             ->order($db->quoteName('o.created_on') . ' DESC')
             ->bind(':voucherId', $voucherId, ParameterType::INTEGER)
             ->bind(':discountType', $discountType);
+
+        $this->excludeUnplacedOrders($query);
 
         try {
             $db->setQuery($query);
@@ -525,12 +528,13 @@ class VoucherModel extends AdminModel
                     $db->quoteName('#__j2commerce_orders', 'o'),
                     $db->quoteName('od.order_id') . ' = ' . $db->quoteName('o.order_id')
                 )
-                ->where($db->quoteName('o.order_state_id') . ' != 5')
                 ->where($db->quoteName('od.discount_entity_id') . ' = :voucherId')
                 ->where($db->quoteName('od.discount_type') . ' = :discountType')
                 ->group($db->quoteName('od.discount_entity_id'))
                 ->bind(':voucherId', $voucherId, ParameterType::INTEGER)
                 ->bind(':discountType', $discountType);
+
+            $this->excludeUnplacedOrders($query);
 
             $db->setQuery($query);
             $this->history[$voucherId] = $db->loadResult();
@@ -572,12 +576,13 @@ class VoucherModel extends AdminModel
                     $db->quoteName('#__j2commerce_orders', 'o'),
                     $db->quoteName('od.order_id') . ' = ' . $db->quoteName('o.order_id')
                 )
-                ->where($db->quoteName('o.order_state_id') . ' != 5')
                 ->where($db->quoteName('od.discount_entity_id') . ' = :voucherId')
                 ->where($db->quoteName('od.discount_type') . ' = :discountType')
                 ->group($db->quoteName('od.discount_entity_id'))
                 ->bind(':voucherId', $voucherId, ParameterType::INTEGER)
                 ->bind(':discountType', $discountType);
+
+            $this->excludeUnplacedOrders($query);
 
             if ($orderId) {
                 $query->where($db->quoteName('o.order_id') . ' != :orderId')
@@ -811,9 +816,19 @@ class VoucherModel extends AdminModel
             ->join('LEFT', $db->quoteName('#__j2commerce_orders', 'o') . ' ON ' . $db->quoteName('od.order_id') . ' = ' . $db->quoteName('o.order_id'))
             ->where($db->quoteName('od.discount_type') . ' = :discountType')
             ->where($db->quoteName('od.discount_entity_id') . ' = :id')
-            ->where('(' . $db->quoteName('o.order_state_id') . ' IS NULL OR ' . $db->quoteName('o.order_state_id') . ' != 5)')
             ->bind(':discountType', $discountType)
             ->bind(':id', $id, ParameterType::INTEGER);
+
+        // As excludeUnplacedOrders(), plus an IS NULL leg so a redemption whose order row has
+        // gone still appears in the ledger — NOT IN alone would drop it, since NULL NOT IN (…)
+        // is NULL. The three counting queries above deliberately keep the narrower reading they
+        // already had. (#2545)
+        if ($newStates = OrderStatusHelper::idsOfType(OrderStatusHelper::TYPE_NEW)) {
+            $query->where(
+                '(' . $db->quoteName('o.order_state_id') . ' IS NULL OR '
+                . $db->quoteName('o.order_state_id') . ' NOT IN (' . implode(',', $query->bindArray($newStates)) . '))'
+            );
+        }
 
         $db->setQuery($query);
         $redemptions = $db->loadObjectList() ?: [];
@@ -865,6 +880,17 @@ class VoucherModel extends AdminModel
         }
 
         return array_reverse($rows);
+    }
+
+    /**
+     * Drops redemptions made against an order the shopper never completed. By lifecycle type,
+     * because ids are install-dependent; nothing carrying the type means nothing to exclude.
+     */
+    private function excludeUnplacedOrders(QueryInterface $query): void
+    {
+        if ($newStates = OrderStatusHelper::idsOfType(OrderStatusHelper::TYPE_NEW)) {
+            $query->whereNotIn($this->getDatabase()->quoteName('o.order_state_id'), $newStates);
+        }
     }
 
     /**

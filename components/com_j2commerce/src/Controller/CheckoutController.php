@@ -2553,11 +2553,17 @@ class CheckoutController extends BaseController
             true
         );
 
+        $transactionSettled = \in_array(
+            strtolower((string) ($orderTable->transaction_status ?? '')),
+            ['completed', 'authorized'],
+            true
+        );
+
         $gatewayFinalized = !$paymentRejected
             && ($rePrimed
                 || $orderStateNow !== $stateBefore
                 || OrderStatusHelper::isFinalized(OrderStatusHelper::getType($orderStateNow))
-                || \in_array(strtolower((string) ($orderTable->transaction_status ?? '')), ['completed', 'authorized'], true));
+                || $transactionSettled);
 
         if ($gatewayFinalized && !empty($orderTable->order_id) && $paction !== 'display') {
             $results = J2CommerceHelper::plugin()->eventWithArray('AfterPayment', [$orderTable]);
@@ -2596,7 +2602,19 @@ class CheckoutController extends BaseController
 
         // Finalised states an on-site gateway reaches inline (excludes the open ones, which
         // at process-time mean an off-site gateway is still awaiting its return trip).
-        $finalizedInline = OrderStatusHelper::isFinalized(OrderStatusHelper::getType($orderStateNow));
+        //
+        // A merchant-defined status carries no type, so the classification test alone is
+        // false for it and such an order would never clear its cart here. The settled
+        // transaction status is the second reading, and it separates the two gateway kinds
+        // on its own: an off-site gateway has not been paid yet on the process request.
+        //
+        // That last sentence holds for every core plugin — three write no transaction_status
+        // at all and PayPal writes it only on paths that carry no paction=process — but it is
+        // a property of those plugins, not something this branch enforces. A plugin that both
+        // posts paction=process and records a settlement synchronously before redirecting
+        // would clear the cart early; audit any non-core gateway against this. (#2545)
+        $finalizedInline = !$paymentRejected
+            && (OrderStatusHelper::isFinalized(OrderStatusHelper::getType($orderStateNow)) || $transactionSettled);
 
         if (!$cartCleared && $orderPlaced && ($paction !== 'process' || $finalizedInline)) {
             $this->clearCartAndSession($orderId, $session);

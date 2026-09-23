@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
@@ -111,8 +112,18 @@ class VoucherhistoryModel extends ListModel
             ->from($db->quoteName('#__j2commerce_orderdiscounts', 'od'))
             ->leftJoin($db->quoteName('#__j2commerce_orders', 'o') . ' ON ' . $db->quoteName('od.order_id') . ' = ' . $db->quoteName('o.order_id'))
             ->where($db->quoteName('od.discount_type') . ' = ' . $db->quote('voucher'))
-            ->where($db->quoteName('od.discount_entity_id') . ' = ' . (int) $id)
-            ->where('(' . $db->quoteName('o.order_state_id') . ' IS NULL OR ' . $db->quoteName('o.order_state_id') . ' != 5)');
+            ->where($db->quoteName('od.discount_entity_id') . ' = ' . (int) $id);
+
+        // Exclude never-completed orders by lifecycle type rather than by id — ids are
+        // install-dependent. The IS NULL leg keeps redemptions whose order row has gone;
+        // NOT IN would drop them, since NULL NOT IN (…) is NULL. The ids are interpolated
+        // because this is a stringified UNION arm, where binds do not propagate. (#2545)
+        if ($newStates = OrderStatusHelper::idsOfType(OrderStatusHelper::TYPE_NEW)) {
+            $redemptions->where(
+                '(' . $db->quoteName('o.order_state_id') . ' IS NULL OR '
+                . $db->quoteName('o.order_state_id') . ' NOT IN (' . implode(',', array_map('intval', $newStates)) . '))'
+            );
+        }
 
         $adjustments = $db->getQuery(true)
             ->select([

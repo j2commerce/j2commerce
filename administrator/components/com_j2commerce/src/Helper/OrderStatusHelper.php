@@ -156,6 +156,35 @@ final class OrderStatusHelper
         return $ids;
     }
 
+    /**
+     * The single status id to WRITE for $type. Only an unambiguous mapping answers: where a
+     * merchant has classified several rows the same way, picking one of them would be a guess,
+     * so the core row named $coreName decides instead. 0 means "leave the status alone" and
+     * every caller has to handle it.
+     */
+    public static function idOfType(string $type, string $coreName = ''): int
+    {
+        $ids = self::idsOfType($type);
+
+        if (\count($ids) === 1) {
+            return $ids[0];
+        }
+
+        if ($coreName === '') {
+            return 0;
+        }
+
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('j2commerce_orderstatus_id'))
+            ->from($db->quoteName('#__j2commerce_orderstatuses'))
+            ->where($db->quoteName('orderstatus_core') . ' = 1')
+            ->where($db->quoteName('orderstatus_name') . ' = :name')
+            ->bind(':name', $coreName);
+
+        return (int) $db->setQuery($query)->loadResult();
+    }
+
     public static function isFinalized(?string $type): bool
     {
         return \in_array($type, self::FINALIZED_TYPES, true);

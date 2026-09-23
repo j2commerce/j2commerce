@@ -1094,16 +1094,17 @@ class ConfigHelper
      * Order states the dashboard and analytics screens count as revenue.
      *
      * An unticked multi-select submits no field at all, so an empty stored value is
-     * indistinguishable from an install that predates the setting. Both fall back to
-     * the historic Confirmed/Processed/Shipped set rather than reporting no revenue.
+     * indistinguishable from an install that predates the setting. Both fall back to the
+     * historic Confirmed/Processed/Shipped set, resolved through the lifecycle types those
+     * rows carry rather than the ids 1, 2 and 7, which mean whatever the store allocated.
      *
-     * @return  array<int>  Array of order status IDs
+     * @return  array<int>  Order status IDs, never empty
      *
      * @since   6.6.0
      */
     public static function getDashboardOrderStatuses(): array
     {
-        $value = self::get('dashboard_orderstatuses', '1,2,7');
+        $value = self::get('dashboard_orderstatuses', '');
         $raw   = \is_array($value) ? $value : explode(',', (string) $value);
 
         $ids = array_values(array_unique(array_filter(
@@ -1111,7 +1112,17 @@ class ConfigHelper
             static fn (int $id): bool => $id > 0
         )));
 
-        return $ids ?: [1, 2, 7];
+        // The id triple is the last-resort backstop, and the reason this method promises a
+        // non-empty result: all eight callers pass it straight to whereIn()/whereNotIn(), and
+        // an empty set reads as "match nothing" to the seven whereIn ones but "exclude nothing"
+        // to the whereNotIn one, so no single value can stand for it here.
+        return $ids
+            ?: OrderStatusHelper::idsOfTypes(
+                OrderStatusHelper::TYPE_COMPLETE,
+                OrderStatusHelper::TYPE_APPROVED,
+                OrderStatusHelper::TYPE_SHIPPED
+            )
+            ?: [1, 2, 7];
     }
 
     /**

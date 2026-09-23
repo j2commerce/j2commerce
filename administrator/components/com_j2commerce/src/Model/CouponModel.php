@@ -538,6 +538,11 @@ class CouponModel extends AdminModel
             return [];
         }
 
+        // Keep orders the shopper never completed out of the report. Resolved by lifecycle
+        // type, not by id: ids are install-dependent. Nothing mapped to it means there is
+        // nothing to exclude, so the predicate is dropped rather than emitted empty. (#2545)
+        $newStates = OrderStatusHelper::idsOfType(OrderStatusHelper::TYPE_NEW);
+
         $db    = $this->getDatabase();
         $query = $db->getQuery(true);
 
@@ -558,9 +563,12 @@ class CouponModel extends AdminModel
             )
             ->where($db->quoteName('od.discount_entity_id') . ' = :couponId')
             ->where($db->quoteName('od.discount_type') . ' = ' . $db->quote('coupon'))
-            ->where($db->quoteName('o.order_state_id') . ' != 5')
             ->order($db->quoteName('o.created_on') . ' DESC')
             ->bind(':couponId', $couponId, ParameterType::INTEGER);
+
+        if ($newStates) {
+            $query->whereNotIn($db->quoteName('o.order_state_id'), $newStates);
+        }
 
         $db->setQuery($query);
 
@@ -591,10 +599,18 @@ class CouponModel extends AdminModel
             $query->select('COUNT(*) AS total')
                 ->from($db->quoteName('#__j2commerce_orderdiscounts', 'od'))
                 ->join('LEFT', $db->quoteName('#__j2commerce_orders', 'o') . ' ON od.order_id = o.order_id')
-                ->whereIn($db->quoteName('o.order_state_id'), $this->getPlacedOrderStates())
                 ->where($db->quoteName('od.discount_entity_id') . ' = :couponId')
                 ->where($db->quoteName('od.discount_type') . ' = ' . $db->quote('coupon'))
                 ->bind(':couponId', $couponId, ParameterType::INTEGER);
+
+            // No placed set to narrow by: count every redemption rather than emitting an
+            // empty IN (), which MySQL rejects and isValid() would turn into every coupon
+            // being refused. Counting failed and abandoned attempts too can still decline a
+            // shopper early against max_customer_uses, so this is the lesser of two wrongs on
+            // a store that has had the classifications stripped, not a correct reading. (#2545)
+            if ($placedStates = $this->getPlacedOrderStates()) {
+                $query->whereIn($db->quoteName('o.order_state_id'), $placedStates);
+            }
 
             if ($currentOrderId !== '') {
                 $query->where($db->quoteName('od.order_id') . ' != :currentOrderId')
@@ -617,6 +633,11 @@ class CouponModel extends AdminModel
     /**
      * Order states that count as a real redemption. Mirrors the clear_cart_states config
      * so a Failed, New or Cancelled attempt never consumes a shopper's budget.
+     *
+     * Can be empty, on a store where the merchant set no clear_cart_states and no row
+     * carries a placed classification — both callers drop the predicate in that case. A
+     * placed status left unclassified is likewise invisible here, so it does not add to
+     * the count; the installer classifies the core rows, so that takes a deliberate blanking.
      */
     private function getPlacedOrderStates(): array
     {
@@ -650,12 +671,16 @@ class CouponModel extends AdminModel
             $query->select('COUNT(*) AS total')
                 ->from($db->quoteName('#__j2commerce_orderdiscounts', 'od'))
                 ->join('LEFT', $db->quoteName('#__j2commerce_orders', 'o') . ' ON od.order_id = o.order_id')
-                ->whereIn($db->quoteName('o.order_state_id'), $this->getPlacedOrderStates())
                 ->where($db->quoteName('od.discount_entity_id') . ' = :couponId')
                 ->where($db->quoteName('od.discount_type') . ' = ' . $db->quote('coupon'))
                 ->where('LOWER(' . $db->quoteName('od.discount_customer_email') . ') = :email')
                 ->bind(':couponId', $couponId, ParameterType::INTEGER)
                 ->bind(':email', $email);
+
+            // Empty placed set: see getCouponHistory(). (#2545)
+            if ($placedStates = $this->getPlacedOrderStates()) {
+                $query->whereIn($db->quoteName('o.order_state_id'), $placedStates);
+            }
 
             if ($currentOrderId !== '') {
                 $query->where($db->quoteName('od.order_id') . ' != :currentOrderId')

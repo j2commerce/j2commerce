@@ -290,7 +290,6 @@
             label="COM_J2COMMERCE_CONFIG_DASHBOARD_STATUSES"
             description="COM_J2COMMERCE_CONFIG_DASHBOARD_STATUSES_DESC"
             multiple="true"
-            default="1,2,7"
             layout="joomla.form.field.list-fancy-select"
         />
 

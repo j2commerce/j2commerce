@@ -27,6 +27,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\OrderCascadeHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderItemAttributeHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderUploadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TaxHelper;
@@ -1463,9 +1464,14 @@ class OrderModel extends AdminModel
             )
             ->where($db->quoteName('a.user_id') . ' = :userId')
             ->where($db->quoteName('a.order_type') . ' = ' . $db->quote('normal'))
-            ->where($db->quoteName('a.order_state_id') . ' != 5') // Exclude incomplete
             ->order($db->quoteName('a.created_on') . ' DESC')
             ->bind(':userId', $userId, ParameterType::INTEGER);
+
+        // Exclude the orders the shopper never completed, by lifecycle type rather than by
+        // id — ids are install-dependent. Nothing mapped to it, nothing to exclude. (#2545)
+        if ($newStates = OrderStatusHelper::idsOfType(OrderStatusHelper::TYPE_NEW)) {
+            $query->whereNotIn($db->quoteName('a.order_state_id'), $newStates);
+        }
 
         $db->setQuery($query);
 
@@ -1497,15 +1503,24 @@ class OrderModel extends AdminModel
             return 0;
         }
 
-        $db              = $this->getDatabase();
-        $excludeStatuses = [5, 6];
-        $query           = $db->getQuery(true)
+        // Neither the orders the shopper never completed nor the ones that were cancelled
+        // count toward their order history. By lifecycle type, not by id. (#2545)
+        $excludeStatuses = OrderStatusHelper::idsOfTypes(
+            OrderStatusHelper::TYPE_NEW,
+            OrderStatusHelper::TYPE_CANCELLED
+        );
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
             ->select('COUNT(*)')
             ->from($db->quoteName('#__j2commerce_orders'))
             ->where($db->quoteName('user_id') . ' = :userId')
             ->where($db->quoteName('order_type') . ' = ' . $db->quote('normal'))
-            ->whereNotIn($db->quoteName('order_state_id'), $excludeStatuses)
             ->bind(':userId', $userId, ParameterType::INTEGER);
+
+        if ($excludeStatuses) {
+            $query->whereNotIn($db->quoteName('order_state_id'), $excludeStatuses);
+        }
 
         $db->setQuery($query);
 

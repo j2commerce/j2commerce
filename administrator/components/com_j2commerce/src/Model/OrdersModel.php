@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -883,8 +884,8 @@ class OrdersModel extends ListModel
     /**
      * Cancel unpaid orders that have exceeded the hold duration.
      *
-     * Orders in pending (4) or incomplete (5) status that haven't been modified
-     * within the configured hold_stock duration will be cancelled.
+     * Orders awaiting payment — the open and new lifecycle types — that haven't been
+     * modified within the configured hold_stock duration will be cancelled.
      *
      * @return  int  Number of orders cancelled.
      */
@@ -900,10 +901,28 @@ class OrdersModel extends ListModel
             return 0;
         }
 
+        // Resolved by lifecycle type: status ids are install-dependent, so a migrated store's
+        // "pending" is whatever id the source store allocated. No mapped row means nothing is
+        // held in an awaiting-payment state and there is nothing to sweep. (#2545)
+        $unpaidStates = OrderStatusHelper::idsOfTypes(
+            OrderStatusHelper::TYPE_OPEN,
+            OrderStatusHelper::TYPE_NEW
+        );
+
+        // 0 = no unambiguous cancelled row to write; there is nothing this sweep could do,
+        // so answer before paying for the orders query and the component boot below.
+        $cancelledStatusId = OrderStatusHelper::idOfType(
+            OrderStatusHelper::TYPE_CANCELLED,
+            'J2COMMERCE_CANCELLED'
+        );
+
+        if (empty($unpaidStates) || $cancelledStatusId < 1) {
+            return 0;
+        }
+
         $db         = $this->getDatabase();
         $cutoffTime = Factory::getDate('-' . $heldDuration . ' minutes')->toSql();
 
-        // Find unpaid orders (pending=4, incomplete=5) older than hold duration.
         // Select the integer PK — updateOrderStatus() keys on j2commerce_order_id,
         // not the varchar order_id.
         $query = $db->getQuery(true)
@@ -911,7 +930,7 @@ class OrdersModel extends ListModel
             ->from($db->quoteName('#__j2commerce_orders'))
             ->where($db->quoteName('modified_on') . ' < :cutoff')
             ->where($db->quoteName('order_type') . ' = ' . $db->quote('normal'))
-            ->where($db->quoteName('order_state_id') . ' IN (4, 5)')
+            ->whereIn($db->quoteName('order_state_id'), $unpaidStates)
             ->bind(':cutoff', $cutoffTime);
 
         $db->setQuery($query);
@@ -931,9 +950,8 @@ class OrdersModel extends ListModel
             return 0;
         }
 
-        $cancelledStatusId = 6;
-        $comment           = Text::_('COM_J2COMMERCE_ORDER_HISTORY_ORDER_CANCELLED');
-        $cancelledCount    = 0;
+        $comment        = Text::_('COM_J2COMMERCE_ORDER_HISTORY_ORDER_CANCELLED');
+        $cancelledCount = 0;
 
         // Route through the model so the status-change event and order history fire
         // instead of a raw UPDATE. $notify stays false: this is an automated
@@ -950,14 +968,17 @@ class OrdersModel extends ListModel
 
     public function getPendingCount(): int
     {
-        $db              = $this->getDatabase();
-        $pendingStatusId = 4;
+        $pendingStates = OrderStatusHelper::idsOfType(OrderStatusHelper::TYPE_OPEN);
 
+        if (empty($pendingStates)) {
+            return 0;
+        }
+
+        $db    = $this->getDatabase();
         $query = $db->getQuery(true)
             ->select('COUNT(*)')
             ->from($db->quoteName('#__j2commerce_orders'))
-            ->where($db->quoteName('order_state_id') . ' = :statusId')
-            ->bind(':statusId', $pendingStatusId, ParameterType::INTEGER);
+            ->whereIn($db->quoteName('order_state_id'), $pendingStates);
 
         return (int) $db->setQuery($query)->loadResult();
     }
