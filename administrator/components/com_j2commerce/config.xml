@@ -1049,7 +1049,6 @@
             description="COM_J2COMMERCE_CONFIG_CLEAR_CART_STATES_DESC"
             multiple="true"
             layout="joomla.form.field.list-fancy-select"
-            default="1,2,4,7,8,9"
             showon="clear_cart:order_confirmed"
         />
 

@@ -74,10 +74,10 @@ final class PayPalOrderStates
      * Each leg goes through resolve(), never through a literal id and never through a bare
      * type union. j2commerce_orderstatus_id is AUTO_INCREMENT and the J2Store migrator
      * preserves source ids, so a literal names the wrong row on a migrated store. A type on
-     * its own is no better here: the shipped taxonomy classifies Confirmed and Processed as
-     * 'open' alongside Pending, so a union over that type would admit the settled rows this
-     * guard exists to exclude. resolve() trusts a type only where it names exactly one row,
-     * and otherwise falls back to the core row's name.
+     * its own is no better here: a merchant may classify any number of their own rows 'open',
+     * so a union over that type would admit rows this guard exists to exclude. resolve()
+     * trusts a type only where it names exactly one row, and otherwise falls back to the core
+     * row's name.
      *
      * An outcome that resolves to nothing contributes nothing, so a partially classified
      * store still matches on its remaining legs.

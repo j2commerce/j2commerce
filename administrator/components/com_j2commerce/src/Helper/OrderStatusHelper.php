@@ -61,6 +61,25 @@ final class OrderStatusHelper
         self::TYPE_REFUNDED  => 'COM_J2COMMERCE_ORDERSTATUS_TYPE_REFUNDED',
     ];
 
+    /**
+     * Lifecycle types meaning the payment run finished. Callers testing "did this payment
+     * complete" resolve through this rather than a status-id list, because ids are
+     * install-dependent and a null type is a first-class state that has to fall out.
+     */
+    public const FINALIZED_TYPES = [
+        self::TYPE_COMPLETE,
+        self::TYPE_APPROVED,
+        self::TYPE_SHIPPED,
+        self::TYPE_DELIVERED,
+    ];
+
+    /**
+     * Finalised, plus the open states an order the shopper has already placed sits in while
+     * it waits on the merchant or the gateway. The set that counts as "placed" rather than
+     * abandoned: a cart clears against it, and a coupon redemption is charged against it.
+     */
+    public const PLACED_TYPES = [...self::FINALIZED_TYPES, self::TYPE_OPEN];
+
     /** @var array<int, string|null>|null Status id => type, for the whole table. */
     private static ?array $map = null;
 
@@ -123,6 +142,23 @@ final class OrderStatusHelper
         }
 
         return array_keys(self::getMap(), $type, true);
+    }
+
+    /** @return int[] Status ids carrying any of $types. */
+    public static function idsOfTypes(string ...$types): array
+    {
+        $ids = [];
+
+        foreach ($types as $type) {
+            $ids = array_merge($ids, self::idsOfType($type));
+        }
+
+        return $ids;
+    }
+
+    public static function isFinalized(?string $type): bool
+    {
+        return \in_array($type, self::FINALIZED_TYPES, true);
     }
 
     /**

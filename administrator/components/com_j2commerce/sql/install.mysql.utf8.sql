@@ -918,7 +918,7 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_orderstatuses` (
 -- Default order statuses
 INSERT IGNORE INTO `#__j2commerce_orderstatuses` (`j2commerce_orderstatus_id`, `orderstatus_name`, `orderstatus_cssclass`, `orderstatus_core`, `enabled`, `ordering`, `orderstatus_type`) VALUES
 (1, 'J2COMMERCE_CONFIRMED', 'badge text-bg-success', 1, 1, 1, 'complete'),
-(2, 'J2COMMERCE_PROCESSED', 'badge text-bg-info', 1, 1, 2, 'open'),
+(2, 'J2COMMERCE_PROCESSED', 'badge text-bg-info', 1, 1, 2, 'approved'),
 (3, 'J2COMMERCE_FAILED', 'badge text-bg-danger', 1, 1, 3, 'failed'),
 (4, 'J2COMMERCE_PENDING', 'badge text-bg-warning', 1, 1, 4, 'open'),
 (5, 'J2COMMERCE_NEW', 'badge text-bg-warning', 1, 1, 5, 'new'),

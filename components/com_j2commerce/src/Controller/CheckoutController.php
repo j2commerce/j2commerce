@@ -2556,7 +2556,7 @@ class CheckoutController extends BaseController
         $gatewayFinalized = !$paymentRejected
             && ($rePrimed
                 || $orderStateNow !== $stateBefore
-                || \in_array($orderStateNow, [1, 2, 7, 8, 9], true)
+                || OrderStatusHelper::isFinalized(OrderStatusHelper::getType($orderStateNow))
                 || \in_array(strtolower((string) ($orderTable->transaction_status ?? '')), ['completed', 'authorized'], true));
 
         if ($gatewayFinalized && !empty($orderTable->order_id) && $paction !== 'display') {
@@ -2573,10 +2573,10 @@ class CheckoutController extends BaseController
         }
 
         // Clear cart only after the order reached one of the configured "placed"
-        // states (clear_cart_states, defaulting to confirmed/processed/pending/
-        // shipped/delivered/scheduled). A failed or still-New order keeps the cart
-        // so the shopper can retry from the failed confirmation page. Skip if already
-        // cleared by order_placed timing. (#1190)
+        // states (clear_cart_states, defaulting to the finalised set plus the open
+        // ones the shopper is still waiting on). A failed or still-New order keeps
+        // the cart so the shopper can retry from the failed confirmation page. Skip
+        // if already cleared by order_placed timing. (#1190)
         //
         // paction handling: an OFF-SITE gateway only moves the order to Pending/New on
         // the initial paction=process request and redirects the shopper away, so its
@@ -2589,14 +2589,14 @@ class CheckoutController extends BaseController
         $clearStates = array_map('intval', (array) $params->get('clear_cart_states', []));
 
         if (empty($clearStates)) {
-            $clearStates = [1, 2, 4, 7, 8, 9];
+            $clearStates = OrderStatusHelper::idsOfTypes(...OrderStatusHelper::PLACED_TYPES);
         }
 
         $orderPlaced = \in_array($orderStateNow, $clearStates, true);
 
-        // Confirmed/terminal states an on-site gateway reaches inline (excludes Pending(4),
-        // which at process-time means an off-site gateway is still awaiting its return trip).
-        $finalizedInline = \in_array($orderStateNow, [1, 2, 7, 8, 9], true);
+        // Finalised states an on-site gateway reaches inline (excludes the open ones, which
+        // at process-time mean an off-site gateway is still awaiting its return trip).
+        $finalizedInline = OrderStatusHelper::isFinalized(OrderStatusHelper::getType($orderStateNow));
 
         if (!$cartCleared && $orderPlaced && ($paction !== 'process' || $finalizedInline)) {
             $this->clearCartAndSession($orderId, $session);

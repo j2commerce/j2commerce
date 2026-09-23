@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 use J2Commerce\Component\J2commerce\Administrator\Exception\CouponRejection;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartOrder;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -621,7 +622,7 @@ class CouponModel extends AdminModel
     {
         $states = array_values(array_filter(array_map('intval', (array) J2CommerceHelper::config()->get('clear_cart_states', []))));
 
-        return $states ?: [1, 2, 4, 7, 8, 9];
+        return $states ?: OrderStatusHelper::idsOfTypes(...OrderStatusHelper::PLACED_TYPES);
     }
 
     /**
