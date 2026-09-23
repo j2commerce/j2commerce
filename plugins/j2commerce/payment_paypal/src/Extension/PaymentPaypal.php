@@ -415,7 +415,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
             if ($result['status'] >= 200 && $result['status'] < 300) {
                 $refundId        = $result['body']['id'] ?? '';
-                $refundedStateId = PayPalOrderStates::resolve($this->params, $this->getDatabase(), PayPalOrderStates::REFUNDED);
+                $refundedStateId = PayPalOrderStates::resolve($this->params, PayPalOrderStates::REFUNDED);
                 $orderPk         = (int) $orderTable->j2commerce_order_id;
                 $refundedAmount  = $amount ?? (float) ($result['body']['amount']['value'] ?? 0);
 
@@ -875,7 +875,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             // Only an order still awaiting payment may be completed. A settled, cancelled or
             // refunded order cannot be flipped.
             if (
-                !PayPalOrderStates::isAwaitingPayment((int) $orderTable->order_state_id, $this->params, $this->getDatabase())
+                !PayPalOrderStates::isAwaitingPayment((int) $orderTable->order_state_id, $this->params)
                 || (float) ($orderTable->order_refund ?? 0) > 0
             ) {
                 $this->log('completeNvpExpressCheckoutForOrder: order not in a completable state - order_id: ' . $orderIdString . ', state: ' . $orderTable->order_state_id, Log::ERROR);
@@ -947,7 +947,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 ];
             }
 
-            $confirmedStateId = PayPalOrderStates::resolve($this->params, $this->getDatabase(), PayPalOrderStates::CONFIRMED);
+            $confirmedStateId = PayPalOrderStates::resolve($this->params, PayPalOrderStates::CONFIRMED);
 
             $details                          = json_decode((string) ($orderTable->transaction_details ?? '{}'), true) ?: [];
             $details['billing_agreement_id']  = $baid;
@@ -1120,7 +1120,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $orderTable->transaction_id      = $transactionId;
             $orderTable->transaction_status  = 'Completed';
             $orderTable->orderpayment_type   = $this->_name;
-            $orderTable->order_state_id      = PayPalOrderStates::resolve($this->params, $this->getDatabase(), PayPalOrderStates::CONFIRMED);
+            $orderTable->order_state_id      = PayPalOrderStates::resolve($this->params, PayPalOrderStates::CONFIRMED);
             $orderTable->transaction_details = json_encode([
                 'transaction_id' => $transactionId,
                 'paymentinfo'    => $nvpResponse['PAYMENTINFO_0_TRANSACTIONID'] ?? null,
@@ -1671,7 +1671,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             // Only an order still awaiting payment may be finalized. A settled, cancelled or
             // refunded order cannot be flipped.
             if (
-                !PayPalOrderStates::isAwaitingPayment((int) $orderTable->order_state_id, $this->params, $this->getDatabase())
+                !PayPalOrderStates::isAwaitingPayment((int) $orderTable->order_state_id, $this->params)
                 || (float) ($orderTable->order_refund ?? 0) > 0
             ) {
                 $this->log('finalizePayPalSubscriptionApproval: order not in a finalizable state - order_id: ' . $orderIdString . ', state: ' . $orderTable->order_state_id, Log::ERROR);
@@ -1704,7 +1704,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 ];
             }
 
-            $confirmedStateId = PayPalOrderStates::resolve($this->params, $this->getDatabase(), PayPalOrderStates::CONFIRMED);
+            $confirmedStateId = PayPalOrderStates::resolve($this->params, PayPalOrderStates::CONFIRMED);
 
             $orderTable->orderpayment_type   = $this->_name;
             $orderTable->order_state_id      = $confirmedStateId;
@@ -2068,7 +2068,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             // Only an order still awaiting payment may be captured. A settled, cancelled or
             // refunded order cannot be flipped.
             if (
-                !PayPalOrderStates::isAwaitingPayment((int) $orderTable->order_state_id, $this->params, $this->getDatabase())
+                !PayPalOrderStates::isAwaitingPayment((int) $orderTable->order_state_id, $this->params)
                 || (float) ($orderTable->order_refund ?? 0) > 0
             ) {
                 $this->log('capturePayPalOrder: Order not in a capturable state - order_id: ' . $orderId . ', state: ' . $orderTable->order_state_id, Log::ERROR);
@@ -2140,7 +2140,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                     );
                 }
 
-                $orderStateId                   = PayPalOrderStates::resolve($this->params, $this->getDatabase(), PayPalOrderStates::CONFIRMED);
+                $orderStateId                   = PayPalOrderStates::resolve($this->params, PayPalOrderStates::CONFIRMED);
                 $orderTable->order_state_id     = $orderStateId;
                 $orderTable->transaction_id     = $captureId;
                 $orderTable->transaction_status = $captureStatus;

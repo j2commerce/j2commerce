@@ -15,7 +15,6 @@ namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
-use Joomla\Database\DatabaseInterface;
 use Joomla\Registry\Registry;
 
 /**
@@ -38,34 +37,13 @@ final class PayPalOrderStates
     private const AWAITING_PAYMENT = [self::NEW, self::PENDING, self::FAILED];
 
     /** @param array{0: string, 1: string, 2: string} $outcome One of the constants above. */
-    public static function resolve(Registry $params, DatabaseInterface $db, array $outcome): int
+    public static function resolve(Registry $params, array $outcome): int
     {
         [$key, $type, $coreName] = $outcome;
 
         $id = (int) $params->get($key, 0);
 
-        if ($id > 0) {
-            return $id;
-        }
-
-        $ids = OrderStatusHelper::idsOfType($type);
-
-        if (\count($ids) === 1) {
-            return $ids[0];
-        }
-
-        if ($coreName === '') {
-            return 0;
-        }
-
-        $query = $db->getQuery(true)
-            ->select($db->quoteName('j2commerce_orderstatus_id'))
-            ->from($db->quoteName('#__j2commerce_orderstatuses'))
-            ->where($db->quoteName('orderstatus_core') . ' = 1')
-            ->where($db->quoteName('orderstatus_name') . ' = :name')
-            ->bind(':name', $coreName);
-
-        return (int) $db->setQuery($query)->loadResult();
+        return $id > 0 ? $id : OrderStatusHelper::idOfType($type, $coreName);
     }
 
     /**
@@ -75,21 +53,20 @@ final class PayPalOrderStates
      * type union. j2commerce_orderstatus_id is AUTO_INCREMENT and the J2Store migrator
      * preserves source ids, so a literal names the wrong row on a migrated store. A type on
      * its own is no better here: a merchant may classify any number of their own rows 'open',
-     * so a union over that type would admit rows this guard exists to exclude. resolve()
-     * trusts a type only where it names exactly one row, and otherwise falls back to the core
-     * row's name.
+     * so a union over that type would admit rows this guard exists to exclude. The
+     * disambiguation rule itself lives once, in OrderStatusHelper::idOfType().
      *
      * An outcome that resolves to nothing contributes nothing, so a partially classified
      * store still matches on its remaining legs.
      */
-    public static function isAwaitingPayment(int $stateId, Registry $params, DatabaseInterface $db): bool
+    public static function isAwaitingPayment(int $stateId, Registry $params): bool
     {
         if ($stateId <= 0) {
             return false;
         }
 
         foreach (self::AWAITING_PAYMENT as $outcome) {
-            if (self::resolve($params, $db, $outcome) === $stateId) {
+            if (self::resolve($params, $outcome) === $stateId) {
                 return true;
             }
         }
