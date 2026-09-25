@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Library\Plugins;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Layout\FileLayout;
@@ -51,7 +52,7 @@ trait PluginLayoutTrait
 
         foreach ([$template->template, $template->parent] as $tpl) {
             if ((string) $tpl !== '') {
-                $roots[] = JPATH_ROOT . '/templates/' . $tpl . '/html/plg_' . $this->_type . '_' . $this->_name;
+                $roots[] = JPATH_THEMES . '/' . $tpl . '/html/plg_' . $this->_type . '_' . $this->_name;
             }
         }
 
@@ -76,11 +77,18 @@ trait PluginLayoutTrait
     /** Any rung may ship the folder, so a site can introduce a subtemplate the plugin does not. */
     private function resolveSubtemplate(array $roots, string $pluginTmpl): string
     {
+        // The Subtemplate field stores 'auto' (follow the menu item) and 'app_'-prefixed names.
         $subtemplate = (string) $this->params->get('subtemplate', '');
 
-        if ($subtemplate === '') {
+        if ($subtemplate === 'auto') {
+            $subtemplate = SubtemplateHelper::fromActiveMenu();
+        }
+
+        if ($subtemplate === '' || $subtemplate === 'auto') {
             $subtemplate = (string) ComponentHelper::getParams('com_j2commerce')->get('subtemplate', '');
         }
+
+        $subtemplate = SubtemplateHelper::normalize(strtolower($subtemplate));
 
         if ($subtemplate !== '' && preg_match('/^[A-Za-z0-9_-]+$/', $subtemplate) === 1) {
             foreach ($roots as $root) {
