@@ -27,40 +27,70 @@ trait PluginLayoutTrait
 
     protected function resolvePluginLayout(string $name, array|object $data): string
     {
-        $tpl     = Factory::getApplication()->getTemplate();
-        $group   = $this->_type;
-        $element = $this->_name;
+        // Core's tpl:layout prefix and its tmpl/default.php fallback are deliberately not reproduced.
+        $layout = new FileLayout($name);
+        $layout->setIncludePaths($this->pluginLayoutIncludePaths());
 
-        $overrideRoot = JPATH_ROOT . '/templates/' . $tpl . '/html/plg_' . $group . '_' . $element;
-        $pluginTmpl   = JPATH_PLUGINS . '/' . $group . '/' . $element . '/tmpl';
+        return $layout->render((array) $data);
+    }
 
-        // Resolution order: per-plugin override -> global component default -> bootstrap5/first folder.
+    /** setIncludePaths, not add: FileLayout's defaults search html/layouts, never html/plg_<group>_<element>. */
+    private function pluginLayoutIncludePaths(): array
+    {
+        $app = Factory::getApplication();
+
+        // Same guard as PluginHelper::getLayoutPath() — ConsoleApplication has no getTemplate().
+        $template = ($app->isClient('site') || $app->isClient('administrator'))
+            ? $app->getTemplate(true)
+            : (object) ['template' => '', 'parent' => ''];
+
+        $pluginTmpl = JPATH_PLUGINS . '/' . $this->_type . '/' . $this->_name . '/tmpl';
+
+        // Rung order per PluginHelper::getLayoutPath(): child template, parent template, plugin tmpl.
+        $roots = [];
+
+        foreach ([$template->template, $template->parent] as $tpl) {
+            if ((string) $tpl !== '') {
+                $roots[] = JPATH_ROOT . '/templates/' . $tpl . '/html/plg_' . $this->_type . '_' . $this->_name;
+            }
+        }
+
+        $roots[] = $pluginTmpl;
+
+        $subtemplate = $this->resolveSubtemplate($roots, $pluginTmpl);
+        $paths       = [];
+
+        // The subtemplate folder is an inner preference within each rung, so a site
+        // override outranks the plugin's own copy at every level.
+        foreach ($roots as $root) {
+            if ($subtemplate !== '') {
+                $paths[] = $root . '/' . $subtemplate;
+            }
+
+            $paths[] = $root;
+        }
+
+        return $paths;
+    }
+
+    /** Any rung may ship the folder, so a site can introduce a subtemplate the plugin does not. */
+    private function resolveSubtemplate(array $roots, string $pluginTmpl): string
+    {
         $subtemplate = (string) $this->params->get('subtemplate', '');
 
         if ($subtemplate === '') {
             $subtemplate = (string) ComponentHelper::getParams('com_j2commerce')->get('subtemplate', '');
         }
 
-        if ($subtemplate === ''
-            || preg_match('/^[A-Za-z0-9_-]+$/', $subtemplate) !== 1
-            || (!is_dir($overrideRoot . '/' . $subtemplate) && !is_dir($pluginTmpl . '/' . $subtemplate))) {
-            $subtemplate = $this->defaultSubtemplate($pluginTmpl);
+        if ($subtemplate !== '' && preg_match('/^[A-Za-z0-9_-]+$/', $subtemplate) === 1) {
+            foreach ($roots as $root) {
+                if (is_dir($root . '/' . $subtemplate)) {
+                    return $subtemplate;
+                }
+            }
         }
 
-        $paths = [];
-
-        if ($subtemplate !== '') {
-            $paths[] = $overrideRoot . '/' . $subtemplate;
-            $paths[] = $pluginTmpl . '/' . $subtemplate;
-        }
-
-        $paths[] = $overrideRoot;
-        $paths[] = $pluginTmpl;
-
-        $layout = new FileLayout($name);
-        $layout->setIncludePaths($paths);
-
-        return $layout->render((array) $data);
+        return $this->defaultSubtemplate($pluginTmpl);
     }
 
     /**

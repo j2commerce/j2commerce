@@ -14,7 +14,6 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\Database\DatabaseAwareTrait;
@@ -555,24 +554,5 @@ final class AppBootstrap5 extends CMSPlugin implements SubscriberInterface
 
         // Subtemplate is set but doesn't match - another plugin should handle it
         return false;
-    }
-
-    /**
-     * Get layout with variables
-     *
-     * @param   string     $layout  Layout name
-     * @param   \stdClass  $vars    Variables to pass to layout
-     *
-     * @return  string
-     *
-     * @since   5.0.0
-     */
-    protected function _getLayout($layout, $vars = null)
-    {
-        $layoutPath = JPATH_PLUGINS . '/' . $this->_type . '/' . $this->_name . '/tmpl';
-
-        $fileLayout = new FileLayout($layout, $layoutPath);
-
-        return $fileLayout->render($vars);
     }
 }

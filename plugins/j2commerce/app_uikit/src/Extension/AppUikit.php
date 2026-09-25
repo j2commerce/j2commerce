@@ -14,7 +14,6 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\Database\DatabaseAwareTrait;
@@ -430,25 +429,6 @@ final class AppUikit extends CMSPlugin implements SubscriberInterface
         // Check if the subtemplate matches our primary or alternate template
         return $subtemplate === $primaryTemplate
             || (!empty($alternateTemplate) && $subtemplate === $alternateTemplate);
-    }
-
-    /**
-     * Get layout with variables
-     *
-     * @param   string     $layout  Layout name
-     * @param   \stdClass  $vars    Variables to pass to layout
-     *
-     * @return  string
-     *
-     * @since   6.0.0
-     */
-    protected function _getLayout($layout, $vars = null)
-    {
-        $layoutPath = JPATH_PLUGINS . '/' . $this->_type . '/' . $this->_name . '/tmpl';
-
-        $fileLayout = new FileLayout($layout, $layoutPath);
-
-        return $fileLayout->render($vars);
     }
 
     /**

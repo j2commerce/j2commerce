@@ -20,7 +20,6 @@ use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\PluginLayoutTr
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Language;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Session\Session;
@@ -227,9 +226,7 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
 
         $vars->hash = $this->getPayment()->generateHash($order);
 
-        $layoutPath = JPATH_PLUGINS . '/' . $this->_type . '/' . $this->_element . '/tmpl';
-
-        return (new FileLayout('prepayment', $layoutPath))->render(['vars' => $vars]);
+        return $this->resolvePluginLayout('prepayment', ['vars' => $vars]);
     }
 
     private function postPayment(object $data): string
@@ -240,19 +237,17 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
         $vars    = new \stdClass();
         $paction = $app->getInput()->getString('paction');
 
-        $layoutPath = JPATH_PLUGINS . '/' . $this->_type . '/' . $this->_element . '/tmpl';
-
         return match ($paction) {
-            'display' => $this->postPaymentDisplay($vars, $layoutPath),
+            'display' => $this->postPaymentDisplay($vars),
             'process' => $this->postPaymentProcess($data),
-            default   => $this->postPaymentError($vars, $layoutPath),
+            default   => $this->postPaymentError($vars),
         };
     }
 
-    private function postPaymentDisplay(\stdClass $vars, string $layoutPath): string
+    private function postPaymentDisplay(\stdClass $vars): string
     {
         $vars->onafterpayment_text = $this->params->get('onafterpayment', '');
-        $html                      = (new FileLayout('postpayment', $layoutPath))->render(['vars' => $vars]);
+        $html                      = $this->resolvePluginLayout('postpayment', ['vars' => $vars]);
         $html .= $this->getBase()->_displayArticle();
 
         return $html;
@@ -267,11 +262,11 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
         return json_encode($this->processPayment());
     }
 
-    private function postPaymentError(\stdClass $vars, string $layoutPath): string
+    private function postPaymentError(\stdClass $vars): string
     {
         $vars->message = $this->params->get('onerrorpayment', Text::_('PLG_J2COMMERCE_PAYMENT_BANKTRANSFER_ORDER_NOT_FOUND'));
 
-        return (new FileLayout('message', $layoutPath))->render(['vars' => $vars]);
+        return $this->resolvePluginLayout('message', ['vars' => $vars]);
     }
 
     private function processPayment(): array

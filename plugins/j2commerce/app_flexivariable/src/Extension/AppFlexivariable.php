@@ -16,7 +16,6 @@ namespace J2Commerce\Plugin\J2Commerce\AppFlexivariable\Extension;
 
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Event\Event;
@@ -233,13 +232,5 @@ final class AppFlexivariable extends CMSPlugin implements SubscriberInterface
         $db->setQuery($query);
 
         return $db->loadObject();
-    }
-
-    protected function _getLayout(string $layout, ?\stdClass $vars = null): string
-    {
-        $layoutPath = JPATH_PLUGINS . '/' . $this->_type . '/' . $this->_name . '/tmpl';
-        $fileLayout = new FileLayout($layout, $layoutPath);
-
-        return $fileLayout->render($vars);
     }
 }

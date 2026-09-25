@@ -18,6 +18,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Language;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 use Joomla\Database\DatabaseAwareTrait;
@@ -363,7 +364,7 @@ final class ReportProducts extends CMSPlugin implements SubscriberInterface
     {
         // Prevent path traversal
         $layout = basename($layout);
-        $path   = JPATH_PLUGINS . '/j2commerce/' . $this->_element . '/tmpl/' . $layout . '.php';
+        $path   = PluginHelper::getLayoutPath('j2commerce', $this->_element, $layout);
 
         if (!is_file($path)) {
             return '';

@@ -18,7 +18,6 @@ namespace J2Commerce\Plugin\J2Commerce\ShippingFree\Extension;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
-use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\PluginLayoutTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\Database\DatabaseAwareTrait;
@@ -40,7 +39,6 @@ use Joomla\Event\SubscriberInterface;
 final class ShippingFree extends CMSPlugin implements SubscriberInterface
 {
     use DatabaseAwareTrait;
-    use PluginLayoutTrait;
 
     protected $autoloadLanguage = true;
 

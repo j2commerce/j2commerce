@@ -17,7 +17,6 @@ namespace J2Commerce\Plugin\J2Commerce\ShippingStandard\Extension;
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
-use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\PluginLayoutTrait;
 use J2Commerce\Plugin\J2Commerce\ShippingStandard\Table\ShippingMethodTable;
 use J2Commerce\Plugin\J2Commerce\ShippingStandard\Table\ShippingRateTable;
 use Joomla\CMS\Component\ComponentHelper;
@@ -27,6 +26,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Pagination\Pagination;
 use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\DatabaseInterface;
@@ -59,7 +59,6 @@ use Joomla\Registry\Registry;
 final class ShippingStandard extends CMSPlugin implements SubscriberInterface
 {
     use DatabaseAwareTrait;
-    use PluginLayoutTrait;
 
     protected $autoloadLanguage = true;
 
@@ -1264,7 +1263,7 @@ final class ShippingStandard extends CMSPlugin implements SubscriberInterface
             return '';
         }
 
-        $templatePath = JPATH_PLUGINS . '/j2commerce/shipping_standard/tmpl/' . $templateName . '.php';
+        $templatePath = PluginHelper::getLayoutPath('j2commerce', 'shipping_standard', $templateName);
 
         if (!file_exists($templatePath)) {
             return '';

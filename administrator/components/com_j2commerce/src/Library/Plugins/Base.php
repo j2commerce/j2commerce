@@ -161,17 +161,7 @@ class Base extends CMSPlugin
      */
     public function _getLayoutPath($plugin, $group, $layout = 'default', $vars = false)
     {
-        $app = Factory::getApplication();
-        // get the template and default paths for the layout
-        $templatePath = JPATH_SITE . '/templates/' . $app->getTemplate() . '/html/plg_' . $group . '_' . $plugin . '/' . $layout . '.php';
-        $defaultPath  = JPATH_SITE . '/plugins/' . $group . '/' . $plugin . '/' . $plugin . '/tmpl/' . $layout . '.php';
-
-        // if the site template has a layout override, use it
-        if (file_exists($templatePath)) {
-            return $templatePath;
-        }
-        return $defaultPath;
-
+        return PluginHelper::getLayoutPath($group, $plugin, $layout);
     }
 
     /**
