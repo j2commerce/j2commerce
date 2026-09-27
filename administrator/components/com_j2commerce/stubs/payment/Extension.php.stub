@@ -15,10 +15,10 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Base;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Payment;
+use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\PluginLayoutTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Language;
 use Joomla\CMS\Language\Text;
-use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Router\Route;
@@ -42,6 +42,7 @@ use Joomla\Event\SubscriberInterface;
 final class {{Type}}{{Name}} extends CMSPlugin implements SubscriberInterface
 {
     use DatabaseAwareTrait;
+    use PluginLayoutTrait;
 
     protected $autoloadLanguage = true;
 
@@ -354,10 +355,7 @@ final class {{Type}}{{Name}} extends CMSPlugin implements SubscriberInterface
 
     protected function _getLayout(string $layout, ?\stdClass $vars = null): string
     {
-        $layoutPath = JPATH_PLUGINS . '/' . $this->_type . '/' . $this->_name . '/tmpl';
-        $fileLayout = new FileLayout($layout, $layoutPath);
-
-        return $fileLayout->render(['vars' => $vars]);
+        return $this->resolvePluginLayout($layout, ['vars' => $vars]);
     }
 
     public function onGetQuickIcons(Event $event): void
