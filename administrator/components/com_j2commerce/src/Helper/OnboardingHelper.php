@@ -385,12 +385,14 @@ class OnboardingHelper
             }
         }
 
-        $defaultLang = ComponentHelper::getParams('com_languages')->get('site', 'en-GB');
+        // Mirrors OnboardingController::installLanguage(), which sets both site and administrator.
+        $langParams = ComponentHelper::getParams('com_languages');
 
         return [
             'site_installed'  => $siteInstalled,
             'admin_installed' => $adminInstalled,
-            'is_default'      => ($defaultLang === $tag),
+            'is_default'      => $langParams->get('site', 'en-GB') === $tag
+                && $langParams->get('administrator', 'en-GB') === $tag,
         ];
     }
 
