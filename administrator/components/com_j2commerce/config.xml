@@ -1608,12 +1608,11 @@
     </fieldset>
 
     <!-- ========================================== -->
-    <!-- FIELDSET: Image Upload                     -->
+    <!-- FIELDSET: Images                           -->
     <!-- ========================================== -->
     <fieldset
         name="image_upload"
-        label="COM_J2COMMERCE_CONFIG_FIELDSET_IMAGE_UPLOAD"
-        description="COM_J2COMMERCE_CONFIG_FIELDSET_IMAGE_UPLOAD_DESC"
+        label="COM_J2COMMERCE_IMAGES"
     >
 
         <field
