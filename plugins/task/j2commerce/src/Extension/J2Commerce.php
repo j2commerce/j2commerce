@@ -361,7 +361,9 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     private function cleanupQueueLogs(ExecuteTaskEvent $event): int
     {
         $params                   = $event->getArgument('params');
-        $olderThanDays            = (int) ($params->older_than_days ?? 90);
+        // min="1" is render-only and the int filter keeps a leading minus; a 0 or negative value
+        // would put the cutoff at or past now and match the whole log table.
+        $olderThanDays            = max(1, (int) ($params->older_than_days ?? 90));
         $purgeCompletedQueueDays  = (int) ($params->purge_completed_queue_days ?? 30);
         $dryRun                   = (int) ($params->dry_run ?? 1);
 

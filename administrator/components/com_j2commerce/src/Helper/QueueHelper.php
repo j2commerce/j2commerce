@@ -418,19 +418,25 @@ final class QueueHelper
         return $db->getAffectedRows();
     }
 
+    // Batched for the same reason as purgeCompleted(): the dead partition is unbounded by date.
     public static function purgeDead(): int
     {
-        $db   = self::db();
-        $dead = 'dead';
+        $db    = self::db();
+        $dead  = 'dead';
+        $query = $db->getQuery(true)
+            ->delete($db->quoteName('#__j2commerce_queues'))
+            ->where($db->quoteName('status') . ' = :status')
+            ->bind(':status', $dead);
 
-        $db->setQuery(
-            $db->getQuery(true)
-                ->delete($db->quoteName('#__j2commerce_queues'))
-                ->where($db->quoteName('status') . ' = :status')
-                ->bind(':status', $dead)
-        )->execute();
+        $deleted = 0;
 
-        return $db->getAffectedRows();
+        do {
+            $db->setQuery($query, 0, self::PURGE_BATCH_SIZE)->execute();
+            $rows     = $db->getAffectedRows();
+            $deleted += $rows;
+        } while ($rows === self::PURGE_BATCH_SIZE);
+
+        return $deleted;
     }
 
     public static function retryDead(string $queueType): int
