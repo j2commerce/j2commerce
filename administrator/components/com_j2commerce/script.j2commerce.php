@@ -17,7 +17,9 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CoreTemplateSyncHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\StockCommittedSeedHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\VersionHelper;
 use Joomla\CMS\Access\Access;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filter\InputFilter;
 use Joomla\CMS\Installer\InstallerAdapter;
@@ -52,7 +54,16 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
     /** Params flag: the asset rules have been settled once, so no later update re-seeds them. */
     private const DEFAULT_ACL_FLAG = 'default_acl_seeded';
 
+    /** First release where checkout registration follows allow_registration alone (#2580). */
+    private const REGISTRATION_SETTING_SPLIT_VERSION = '6.6.4';
+
+    /** Params flag: carryRegistrationSetting() has turned allow_registration off once. */
+    private const REGISTRATION_CARRIED_FLAG = 'registration_setting_carried';
+
     private string $debugLogFile = '';
+
+    /** Installed component version read in preflight, before the update overwrites manifest_cache. */
+    private string $previousVersion = '';
 
     // InstallerScriptTrait declares these as typed properties of its own. Redeclaring one here
     // with a different default is an incompatible trait composition and fatals at class load,
@@ -117,6 +128,7 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
         // before Joomla attempts schema updates on non-existent tables.
         if ($route === 'update') {
             $this->repairMissingTables($adapter);
+            $this->previousVersion = $this->readInstalledVersion();
         }
 
         $this->debugLog("PREFLIGHT: passed all checks");
@@ -211,6 +223,8 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
         $this->filterOfflinePaymentTextsOnce();
 
         $this->migratePaymentDashboardIcons();
+
+        $this->carryRegistrationSetting();
 
         Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_UPDATE_SUCCESS'), 'success');
 
@@ -635,6 +649,90 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
             // Never abort the update; the flag stays unset, so the next update retries.
             $this->debugLog('OFFLINE PAYMENT TEXT: filter failed (see the j2commerce log)');
             Log::add('Offline payment text filter failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
+        }
+    }
+
+    private function readInstalledVersion(): string
+    {
+        $helperFile = JPATH_ADMINISTRATOR . '/components/com_j2commerce/src/Helper/VersionHelper.php';
+
+        if (!class_exists(VersionHelper::class) && file_exists($helperFile)) {
+            require_once $helperFile;
+        }
+
+        try {
+            return class_exists(VersionHelper::class) ? VersionHelper::getInstalledVersion() : '';
+        } catch (\Throwable $e) {
+            return '';
+        }
+    }
+
+    /**
+     * Before REGISTRATION_SETTING_SPLIT_VERSION, the checkout register handler also required com_users
+     * allowUserRegistration. It now follows allow_registration alone (#2580), so a store that relied on
+     * the Joomla switch to stop checkout accounts keeps that result: allow_registration is turned off
+     * once, on the update that crosses the version. Later updates start at or above it and skip this,
+     * so a merchant who switches the setting back on is never overridden. The params flag covers a
+     * downgrade followed by a second crossing, for as long as no Options save has dropped it.
+     */
+    private function carryRegistrationSetting(): void
+    {
+        if ($this->previousVersion === '' || version_compare($this->previousVersion, self::REGISTRATION_SETTING_SPLIT_VERSION, '>=')) {
+            return;
+        }
+
+        try {
+            if ((int) ComponentHelper::getParams('com_users')->get('allowUserRegistration', 1) === 1) {
+                return;
+            }
+
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+            $query = $db->getQuery(true)
+                ->select([$db->quoteName('extension_id'), $db->quoteName('params')])
+                ->from($db->quoteName('#__extensions'))
+                ->where($db->quoteName('element') . ' = ' . $db->quote('com_j2commerce'))
+                ->where($db->quoteName('type') . ' = ' . $db->quote('component'));
+            $extension = $db->setQuery($query)->loadObject();
+
+            if (!$extension) {
+                return;
+            }
+
+            $storedParams = (string) $extension->params;
+            $params       = new Registry($storedParams);
+
+            if ($params->get(self::REGISTRATION_CARRIED_FLAG) || (int) $params->get('allow_registration', 1) === 0) {
+                return;
+            }
+
+            $params->set('allow_registration', 0);
+            $params->set(self::REGISTRATION_CARRIED_FLAG, 1);
+
+            $paramsJson  = $params->toString();
+            $extensionId = (int) $extension->extension_id;
+
+            // Compare and swap on the bytes this ran against, as splitLimitOrderstatuses() does.
+            $update = $db->getQuery(true)
+                ->update($db->quoteName('#__extensions'))
+                ->set($db->quoteName('params') . ' = :params')
+                ->where($db->quoteName('extension_id') . ' = :id')
+                ->where('CAST(' . $db->quoteName('params') . ' AS BINARY) = :expected')
+                ->bind(':params', $paramsJson)
+                ->bind(':expected', $storedParams)
+                ->bind(':id', $extensionId, ParameterType::INTEGER);
+
+            $db->setQuery($update)->execute();
+
+            $this->debugLog(
+                $db->getAffectedRows() === 0
+                    ? 'REGISTRATION: extension params changed while carrying allowUserRegistration — left as saved'
+                    : 'REGISTRATION: allow_registration turned off to match com_users allowUserRegistration'
+            );
+        } catch (\Throwable $e) {
+            // Never abort the update; the setting stays as saved.
+            $this->debugLog('REGISTRATION: carrying allowUserRegistration failed (see the j2commerce log)');
+            Log::add('Registration setting carry failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
     }
 

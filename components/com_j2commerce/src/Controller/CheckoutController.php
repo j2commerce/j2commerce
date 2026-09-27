@@ -502,8 +502,14 @@ class CheckoutController extends BaseController
 
         $usersParams = ComponentHelper::getParams('com_users');
 
-        if (!(int) $usersParams->get('allowUserRegistration', 1)) {
-            $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_REGISTRATION_DISABLED');
+        // Checkout registration follows the store's own setting, the same one the login step renders
+        // from; com_users still supplies the group, activation and password rules below.
+        if (!ConfigHelper::allowRegistration()) {
+            $json['error']['warning'] = Text::_(
+                ConfigHelper::allowGuestCheckout()
+                    ? 'COM_J2COMMERCE_CHECKOUT_REGISTRATION_DISABLED_GUEST'
+                    : 'COM_J2COMMERCE_CHECKOUT_REGISTRATION_DISABLED'
+            );
             $this->jsonResponse($json);
 
             return;

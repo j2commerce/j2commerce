@@ -61,6 +61,13 @@ $showLogin = (int) $this->params->get('show_login_form', 1);
             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE'); ?>
         </button>
     </div>
+    <?php else : ?>
+    <div class="uk-width-1-2@m uk-margin-bottom">
+        <h4><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_NEW_CUSTOMER'); ?></h4>
+        <div class="uk-alert uk-alert-primary" uk-alert>
+            <p><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_LOGIN_REQUIRED_NOTICE'); ?></p>
+        </div>
+    </div>
     <?php endif; ?>
 
     <?php if ($showLogin) : ?>
