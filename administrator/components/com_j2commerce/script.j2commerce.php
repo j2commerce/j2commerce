@@ -62,6 +62,8 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
 
     private string $debugLogFile = '';
 
+    private bool $loggerRegistered = false;
+
     /** Installed component version read in preflight, before the update overwrites manifest_cache. */
     private string $previousVersion = '';
 
@@ -81,11 +83,34 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
         $this->allowDowngrades = true;
     }
 
+    // On a fresh install the PSR-4 map for this namespace is built at the start of the
+    // request, before the component exists, so the helper will not autoload here.
+    private function loadCoreTemplateSyncHelper(): void
+    {
+        $helperFile = JPATH_ADMINISTRATOR . '/components/com_j2commerce/src/Helper/CoreTemplateSyncHelper.php';
+
+        if (!class_exists(CoreTemplateSyncHelper::class) && file_exists($helperFile)) {
+            require_once $helperFile;
+        }
+    }
+    // Log::add(..., 'com_j2commerce') is discarded unless a logger listens for the category.
+    // The formatted-text logger writes a die-guarded .php file under the site's log path.
+    private function registerInstallLogger(): void
+    {
+        if ($this->loggerRegistered) {
+            return;
+        }
+
+        Log::addLogger(['text_file' => 'com_j2commerce.php'], Log::ALL, ['com_j2commerce']);
+        $this->loggerRegistered = true;
+    }
+
     /**
      * Always-on install trace. Written as .php behind Joomla's own die guard, because
      * the log directory ships no .htaccess and a plain .log is served verbatim.
      * Never pass exception text here — use Log::add() for that.
      */
+
     private function debugLog(string $message): void
     {
         if (!$this->debugLogFile) {
@@ -102,6 +127,7 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
 
     public function preflight(string $route, InstallerAdapter $adapter): bool
     {
+        $this->registerInstallLogger();
         $this->debugLog("=== PREFLIGHT START (route={$route}) ===");
 
         // Applies $minimumPhp and $minimumJoomla. Both were previously declared under names the
@@ -1329,7 +1355,7 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
             if ($needsCountries) {
                 $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/countries.sql');
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->debugLog('LOCALISATION: countries error (see the j2commerce log)');
             Log::add('Error installing countries: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
@@ -1349,7 +1375,7 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
             if ($needsZones) {
                 $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/zones.sql');
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->debugLog('LOCALISATION: zones error (see the j2commerce log)');
             Log::add('Error installing zones: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
@@ -1358,7 +1384,7 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
         try {
             $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/lengths.sql');
             $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/weights.sql');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->debugLog('LOCALISATION: metrics error (see the j2commerce log)');
             Log::add('Error installing metrics: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
@@ -1379,6 +1405,8 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
                 $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/emailtemplates.sql');
 
                 // Freshly-seeded rows may lag the currently-installed .html presets — overwrite immediately.
+                $this->loadCoreTemplateSyncHelper();
+
                 try {
                     (new CoreTemplateSyncHelper())->syncEmailTemplates();
                 } catch (\Throwable $e) {
@@ -1386,7 +1414,7 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
                     Log::add('Error syncing core email templates: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->debugLog('LOCALISATION: email templates error (see the j2commerce log)');
             Log::add('Error installing email templates: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
@@ -1407,6 +1435,8 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
                 $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/invoicetemplates.sql');
 
                 // Freshly-seeded rows may lag the currently-installed .html presets — overwrite immediately.
+                $this->loadCoreTemplateSyncHelper();
+
                 try {
                     (new CoreTemplateSyncHelper())->syncInvoiceTemplates();
                 } catch (\Throwable $e) {
@@ -1414,7 +1444,7 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
                     Log::add('Error syncing core invoice templates: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
                 }
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->debugLog('LOCALISATION: invoice templates error (see the j2commerce log)');
             Log::add('Error installing invoice templates: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
@@ -1426,7 +1456,7 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
             if ($guidedToursExist) {
                 $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/guidedtours.sql');
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->debugLog('LOCALISATION: guided tours error (see the j2commerce log)');
             Log::add('Error installing guided tours: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
@@ -1453,7 +1483,7 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
                     $db->setQuery($query);
                     $db->execute();
                     $executed++;
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     $this->debugLog("SQL ERROR in {$sqlPath} (see the j2commerce log)");
                     Log::add('SQL Error: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
                 }

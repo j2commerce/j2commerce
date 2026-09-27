@@ -725,6 +725,14 @@ if ($productEditLinks !== 0) {
     exit(1);
 }
 
+// Install-time email/invoice seed rows must match the .html presets they are generated from.
+passthru('php ' . __DIR__ . '/generate_template_sql.php --check', $templateSqlDrift);
+
+if ($templateSqlDrift !== 0) {
+    echo "Run: php build/generate_template_sql.php\n";
+    exit(1);
+}
+
 @mkdir($outputDir, 0777, true);
 @mkdir($tempDir, 0777, true);
 
