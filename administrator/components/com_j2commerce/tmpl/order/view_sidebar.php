@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Language\Text;
@@ -186,5 +187,37 @@ if ($orderInfo) {
         </div>
     </div>
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAdminOrderBillingAddress', array($item))->getArgument('html', ''); ?>
+<?php endif; ?>
+<?php // === Checkout Fields (merchant-defined, non-core values from the order snapshots) === ?>
+<?php $checkoutFields = $orderInfo ? CustomFieldHelper::describeOrderCustomFields($orderInfo, 'admin') : []; ?>
+<?php if ($checkoutFields) : ?>
+    <div class="checkout-fields-card card mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="icon-list j2c-address-icon text-primary" aria-hidden="true"></span>
+                    <div>
+                        <strong><?php echo Text::_('COM_J2COMMERCE_ORDER_CHECKOUT_FIELDS'); ?></strong>
+                        <div class="text-body-secondary small"><?php echo Text::plural('COM_J2COMMERCE_ORDER_CHECKOUT_FIELDS_N', \count($checkoutFields)); ?></div>
+                    </div>
+                </div>
+                <button class="btn btn-sm btn-primary" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#checkoutFieldsCollapse"
+                        aria-expanded="false" aria-controls="checkoutFieldsCollapse">
+                    <?php echo Text::_('COM_J2COMMERCE_VIEW_MORE'); ?>
+                </button>
+            </div>
+            <div class="collapse mt-2" id="checkoutFieldsCollapse">
+                <ul class="j2c-address-detail list-unstyled mb-0 ps-4 ms-2 border-start border-primary">
+                    <?php foreach ($checkoutFields as $checkoutField) : ?>
+                        <li>
+                            <strong><?php echo $this->escape($checkoutField['label']); ?>:</strong>
+                            <span><?php echo $checkoutField['multiline'] ? nl2br($this->escape($checkoutField['value'])) : $this->escape($checkoutField['value']); ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        </div>
+    </div>
 <?php endif; ?>
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('AdminOrderAfterGeneralInformation', array($item))->getArgument('html', ''); ?>

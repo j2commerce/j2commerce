@@ -2979,21 +2979,7 @@ class EmailHelper
      */
     public function getCountryName(int $countryId): string
     {
-        if ($countryId <= 0) {
-            return '';
-        }
-
-        $db    = self::getDatabase();
-        $query = $db->getQuery(true);
-
-        $query->select($db->quoteName('country_name'))
-            ->from($db->quoteName('#__j2commerce_countries'))
-            ->where($db->quoteName('j2commerce_country_id') . ' = :id')
-            ->bind(':id', $countryId, ParameterType::INTEGER);
-
-        $db->setQuery($query);
-
-        return $db->loadResult() ?: '';
+        return CustomFieldHelper::getZoneOrCountryName('country', $countryId);
     }
 
     /**
@@ -3007,21 +2993,7 @@ class EmailHelper
      */
     public function getZoneName(int $zoneId): string
     {
-        if ($zoneId <= 0) {
-            return '';
-        }
-
-        $db    = self::getDatabase();
-        $query = $db->getQuery(true);
-
-        $query->select($db->quoteName('zone_name'))
-            ->from($db->quoteName('#__j2commerce_zones'))
-            ->where($db->quoteName('j2commerce_zone_id') . ' = :id')
-            ->bind(':id', $zoneId, ParameterType::INTEGER);
-
-        $db->setQuery($query);
-
-        return $db->loadResult() ?: '';
+        return CustomFieldHelper::getZoneOrCountryName('zone', $zoneId);
     }
 
     /**

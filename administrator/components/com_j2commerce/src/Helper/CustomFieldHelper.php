@@ -1065,6 +1065,113 @@ class CustomFieldHelper
         return \is_array($decoded) ? $decoded : [];
     }
 
+    /** Merchant-defined (field_core = 0) values an order's snapshots carry, as plain-text rows the caller escapes. */
+    public static function describeOrderCustomFields(object $orderInfo, string $surface = 'admin'): array
+    {
+        $flag   = $surface === 'site' ? 'field_frontend' : 'field_backend';
+        $titles = ['billing' => 'COM_J2COMMERCE_ORDER_BILLING', 'shipping' => 'COM_J2COMMERCE_ORDER_SHIPPING', 'payment' => 'COM_J2COMMERCE_PAYMENT'];
+        $rows   = [];
+        $seen   = [];
+
+        foreach ($titles as $type => $title) {
+            $values = self::decodeOrderSnapshot($orderInfo->{'all_' . $type} ?? null);
+
+            if (!$values) {
+                continue;
+            }
+
+            foreach (self::getOrderFields($type) as $namekey => $field) {
+                if (
+                    (int) $field->field_core === 1
+                    || !(int) ($field->{$flag} ?? 0)
+                    || \in_array($field->field_type, ['multiuploader', 'customtext'], true)
+                    || !\array_key_exists($namekey, $values)
+                ) {
+                    continue;
+                }
+
+                $value = self::formatOrderValue($field, $values[$namekey]);
+
+                if ($value === '' || ($seen[$namekey] ?? null) === $value) {
+                    continue;
+                }
+
+                $label = Text::_((string) ($field->field_name ?: $namekey));
+
+                if (isset($seen[$namekey])) {
+                    $label .= ' (' . Text::_($title) . ')';
+                }
+
+                $seen[$namekey] = $value;
+                $rows[]         = ['label' => $label, 'value' => $value, 'multiline' => $field->field_type === 'textarea'];
+            }
+        }
+
+        return $rows;
+    }
+
+    /** A stored snapshot value as display text; '' means nothing to show. */
+    private static function formatOrderValue(object $field, mixed $value): string
+    {
+        $type    = (string) $field->field_type;
+        $scalars = array_values(array_filter(
+            array_map(static fn ($v) => \is_scalar($v) ? trim((string) $v) : '', \is_array($value) || \is_object($value) ? (array) $value : [$value]),
+            'strlen'
+        ));
+
+        if ($type === 'checkbox') {
+            return $scalars ? Text::_($scalars[0] === '0' ? 'JNO' : 'JYES') : '';
+        }
+
+        if (!$scalars) {
+            return '';
+        }
+
+        if (\in_array($type, ['select', 'singledropdown', 'radio'], true)) {
+            $names   = array_column(self::getFieldOptions($field), 'name', 'value');
+            $scalars = array_map(static fn ($v) => Text::_($names[$v] ?? $v), $scalars);
+        } elseif ($type === 'zone') {
+            $zoneType = (string) (json_decode((string) ($field->field_options ?? ''), true)['zone_type'] ?? '');
+            $scalars  = array_map(static fn ($v) => self::getZoneOrCountryName($zoneType, (int) $v) ?: $v, $scalars);
+        } elseif ($type === 'date' || $type === 'datetime') {
+            $format  = Text::_($type === 'datetime' ? 'DATE_FORMAT_LC5' : 'DATE_FORMAT_LC4');
+            $scalars = array_map(static function ($v) use ($format) {
+                try {
+                    return HTMLHelper::_('date', $v, $format, null);
+                } catch (\Throwable) {
+                    return $v;
+                }
+            }, $scalars);
+        } elseif ($type === 'wysiwyg') {
+            $scalars = array_map(static fn ($v) => trim(strip_tags(html_entity_decode($v, ENT_QUOTES | ENT_HTML5, 'UTF-8'))), $scalars);
+        }
+
+        return implode(', ', array_filter($scalars, 'strlen'));
+    }
+
+    /** Name of a zone (zone_type 'zone') or country (zone_type 'country') id; '' when unknown. */
+    public static function getZoneOrCountryName(string $zoneType, int $id): string
+    {
+        [$table, $column, $key] = match ($zoneType) {
+            'zone'    => ['#__j2commerce_zones', 'zone_name', 'j2commerce_zone_id'],
+            'country' => ['#__j2commerce_countries', 'country_name', 'j2commerce_country_id'],
+            default   => [null, null, null],
+        };
+
+        if ($table === null || $id <= 0) {
+            return '';
+        }
+
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName($column))
+            ->from($db->quoteName($table))
+            ->where($db->quoteName($key) . ' = :id')
+            ->bind(':id', $id, ParameterType::INTEGER);
+
+        return (string) ($db->setQuery($query)->loadResult() ?? '');
+    }
+
     /**
      * Collect address data from form submission for a specific area.
      */

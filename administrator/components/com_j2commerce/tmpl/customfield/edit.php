@@ -74,7 +74,7 @@ foreach ($translationKeys as $key) {
                         <?php echo $this->form->renderField('field_autocomplete'); ?>
                         <?php echo $this->form->renderField('field_access'); ?>
                         <?php //echo $this->form->renderField('field_frontend'); ?>
-                        <?php //echo $this->form->renderField('field_backend'); ?>
+                        <?php echo $this->form->renderField('field_backend'); ?>
                         <?php echo $this->form->renderField('field_value'); ?>
                         <?php echo $this->form->renderField('field_zonetype'); ?>
                         <?php echo $this->form->renderField('field_default'); ?>
