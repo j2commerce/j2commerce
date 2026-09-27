@@ -105,14 +105,14 @@ if ($orderInfo) {
             <div class="d-flex align-items-center gap-2">
                 <span class="icon-location j2c-address-icon text-primary me-2" aria-hidden="true"></span>
                 <div>
-                    <strong><?php echo Text::_('COM_J2COMMERCE_ORDER_BILLING'); ?></strong>
+                    <h2 class="card-title mb-0 fs-6 fw-bold"><?php echo Text::_('COM_J2COMMERCE_ORDER_BILLING'); ?></h2>
                     <div class="text-body-secondary small"><?php echo $this->escape(($orderInfo->billing_first_name ?? '') . ' ' . ($orderInfo->billing_last_name ?? '')); ?></div>
                 </div>
             </div>
             <button class="btn btn-sm btn-primary" type="button"
                     data-bs-toggle="collapse" data-bs-target="#billingAddressCollapse"
                     aria-expanded="false" aria-controls="billingAddressCollapse">
-                <?php echo Text::_('COM_J2COMMERCE_VIEW_MORE'); ?>
+                <?php echo Text::_('COM_J2COMMERCE_VIEW_MORE'); ?> <span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_ORDER_BILLING'); ?></span>
             </button>
         </div>
         <div class="collapse mt-2" id="billingAddressCollapse">
@@ -149,14 +149,14 @@ if ($orderInfo) {
                 <div class="d-flex align-items-center gap-2">
                     <span class="icon-location j2c-address-icon text-primary" aria-hidden="true"></span>
                     <div>
-                        <strong><?php echo Text::_('COM_J2COMMERCE_ORDER_SHIPPING'); ?></strong>
+                        <h2 class="card-title mb-0 fs-6 fw-bold"><?php echo Text::_('COM_J2COMMERCE_ORDER_SHIPPING'); ?></h2>
                         <div class="text-body-secondary small"><?php echo $this->escape(($orderInfo->shipping_first_name ?? '') . ' ' . ($orderInfo->shipping_last_name ?? '')); ?></div>
                     </div>
                 </div>
                 <button class="btn btn-sm btn-primary" type="button"
                         data-bs-toggle="collapse" data-bs-target="#shippingAddressCollapse"
                         aria-expanded="false" aria-controls="shippingAddressCollapse">
-                    <?php echo Text::_('COM_J2COMMERCE_VIEW_MORE'); ?>
+                    <?php echo Text::_('COM_J2COMMERCE_VIEW_MORE'); ?> <span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_ORDER_SHIPPING'); ?></span>
                 </button>
             </div>
             <div class="collapse mt-2" id="shippingAddressCollapse">
@@ -185,6 +185,6 @@ if ($orderInfo) {
             <?php endif; ?>
         </div>
     </div>
-    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAdminOrderBillingAddress', array($item))->getArgument('html', ''); ?>
+    <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterAdminOrderShippingAddress', array($item))->getArgument('html', ''); ?>
 <?php endif; ?>
 <?php echo J2CommerceHelper::plugin()->eventWithHtml('AdminOrderAfterGeneralInformation', array($item))->getArgument('html', ''); ?>
