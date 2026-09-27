@@ -102,6 +102,40 @@ class J2CommerceHelper extends ContentHelper
         return $layout->render($data);
     }
 
+    /** Core form_<type> first; else onJ2CommerceGetProductFormLayoutPaths dirs (inside JPATH_PLUGINS) appended at lowest priority. */
+    public static function loadProductFormTemplate(string $productType, array $data): string
+    {
+        $dir    = JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product';
+        $layout = new FileLayout('form_' . $productType, $dir);
+
+        if (is_file($dir . '/form_' . $productType . '.php')) {
+            return $layout->render($data);
+        }
+
+        $pluginsRoot = realpath(JPATH_PLUGINS);
+
+        if ($pluginsRoot === false) {
+            return $layout->render($data);
+        }
+
+        $pluginsRoot .= DIRECTORY_SEPARATOR;
+        $dirs         = [];
+
+        foreach (self::plugin()->eventWithArray('GetProductFormLayoutPaths', ['product_type' => $productType]) as $path) {
+            $real = \is_string($path) ? realpath($path) : false;
+
+            if ($real && is_dir($real) && str_starts_with($real, $pluginsRoot)) {
+                $dirs[] = $real;
+            }
+        }
+
+        if ($dirs) {
+            $layout->setIncludePaths(array_merge($layout->getIncludePaths(), $dirs));
+        }
+
+        return $layout->render($data);
+    }
+
     /** Resolves an option-type label from the merged core+plugin map (OptionModel::getOptionTypes), cached per request. */
     public static function getOptionTypeLabel(string $type): string
     {

@@ -357,7 +357,7 @@ if ($app->isClient('administrator')) {
                     <!--<legend><?php /*echo Text::_('COM_J2COMMERCE_PRODUCT_SETTINGS'); */?></legend>-->
                     <input type="hidden" name="<?php echo $formPrefix.'[j2commerce_product_id]'?>" value="<?php echo $item->j2commerce_product_id; ?>" />
 
-                    <?php echo J2CommerceHelper::loadSubTemplate($item->product_type, ['product' => $item, 'form_prefix' => $formPrefix],'form',JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product'); ?>
+                    <?php echo J2CommerceHelper::loadProductFormTemplate($item->product_type, ['product' => $item, 'form_prefix' => $formPrefix]); ?>
 
                     <input type="hidden" name="<?php echo $formPrefix.'[product_type]'?>" value="<?php echo htmlspecialchars($item->product_type ?? '', ENT_QUOTES, 'UTF-8'); ?>" />
 

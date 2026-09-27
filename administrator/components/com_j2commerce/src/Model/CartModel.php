@@ -45,7 +45,13 @@ use Joomla\Registry\Registry;
  */
 class CartModel extends BaseDatabaseModel
 {
+    /** One plugin owns a type's cart behavior; its object is reused for every line, so keep it stateless. Detect with \defined(). */
+    public const PLUGIN_BEHAVIOR_EVENT = 'GetCartBehavior';
+
     private ?int $resolvedCartId = null;
+
+    /** Plugin-supplied cart behaviors per product type, including misses (null). */
+    private array $pluginBehaviors = [];
 
     /**
      * Default behaviors to load for cart item processing.
@@ -174,23 +180,19 @@ class CartModel extends BaseDatabaseModel
         }
 
         // Load product type behavior
-        $behaviorClass = $this->getBehaviorClass($product->product_type ?: 'simple');
+        $behavior = $this->getBehavior($product->product_type ?: 'simple');
 
-        if ($behaviorClass && class_exists($behaviorClass)) {
-            $behavior = new $behaviorClass();
+        if ($behavior && method_exists($behavior, 'onBeforeAddCartItem')) {
+            try {
+                $behavior->onBeforeAddCartItem($this, $product, $json);
+            } catch (\Exception $e) {
+                Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
 
-            if (method_exists($behavior, 'onBeforeAddCartItem')) {
-                try {
-                    $behavior->onBeforeAddCartItem($this, $product, $json);
-                } catch (\Exception $e) {
-                    Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+                $message = Text::_('COM_J2COMMERCE_ERROR_OCCURRED');
+                $this->setError($message);
+                $errors['error'] = ['general' => $message];
 
-                    $message = Text::_('COM_J2COMMERCE_ERROR_OCCURRED');
-                    $this->setError($message);
-                    $errors['error'] = ['general' => $message];
-
-                    return $errors;
-                }
+                return $errors;
             }
         }
 
@@ -512,19 +514,15 @@ class CartModel extends BaseDatabaseModel
 
             // Process each item with product type behavior
             foreach ($items as &$item) {
-                $behaviorClass = $this->getBehaviorClass($item->product_type ?: 'simple');
+                $behavior = $this->getBehavior($item->product_type ?: 'simple');
 
-                if ($behaviorClass && class_exists($behaviorClass)) {
-                    $behavior = new $behaviorClass();
+                if ($behavior && method_exists($behavior, 'onGetCartItems')) {
+                    try {
+                        $behavior->onGetCartItems($this, $item);
+                    } catch (\Exception $e) {
+                        Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
 
-                    if (method_exists($behavior, 'onGetCartItems')) {
-                        try {
-                            $behavior->onGetCartItems($this, $item);
-                        } catch (\Exception $e) {
-                            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
-
-                            $this->setError(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'));
-                        }
+                        $this->setError(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'));
                     }
                 }
             }
@@ -706,21 +704,17 @@ class CartModel extends BaseDatabaseModel
             return true;
         }
 
-        $behaviorClass = $this->getBehaviorClass($cartitem->product_type ?: 'simple');
+        $behavior = $this->getBehavior($cartitem->product_type ?: 'simple');
 
-        if ($behaviorClass && class_exists($behaviorClass)) {
-            $behavior = new $behaviorClass();
+        if ($behavior && method_exists($behavior, 'onValidateCart')) {
+            try {
+                return $behavior->onValidateCart($this, $cartitem, $quantity);
+            } catch (\Exception $e) {
+                Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
 
-            if (method_exists($behavior, 'onValidateCart')) {
-                try {
-                    return $behavior->onValidateCart($this, $cartitem, $quantity);
-                } catch (\Exception $e) {
-                    Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+                $this->setError(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'));
 
-                    $this->setError(Text::_('COM_J2COMMERCE_ERROR_OCCURRED'));
-
-                    return false;
-                }
+                return false;
             }
         }
 
@@ -1198,6 +1192,36 @@ class CartModel extends BaseDatabaseModel
             $this->behavior_prefix . ucfirst($productType);
 
         return class_exists($className) ? $className : null;
+    }
+
+    /** Core behavior first; otherwise the first onJ2CommerceGetCartBehavior result exposing a cart hook. */
+    protected function getBehavior(string $productType): ?object
+    {
+        $behaviorClass = $this->getBehaviorClass($productType);
+
+        if ($behaviorClass) {
+            return new $behaviorClass();
+        }
+
+        if (!\array_key_exists($productType, $this->pluginBehaviors)) {
+            $results = J2CommerceHelper::plugin()->eventWithArray(self::PLUGIN_BEHAVIOR_EVENT, ['product_type' => $productType]);
+
+            $this->pluginBehaviors[$productType] = null;
+
+            foreach ($results as $result) {
+                if (
+                    \is_object($result)
+                    && (method_exists($result, 'onBeforeAddCartItem')
+                        || method_exists($result, 'onGetCartItems')
+                        || method_exists($result, 'onValidateCart'))
+                ) {
+                    $this->pluginBehaviors[$productType] = $result;
+                    break;
+                }
+            }
+        }
+
+        return $this->pluginBehaviors[$productType];
     }
 
     /**
