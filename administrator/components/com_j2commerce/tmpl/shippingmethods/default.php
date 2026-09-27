@@ -136,7 +136,7 @@ $canEditPlugin = $user->authorise('core.manage', 'com_plugins') && $user->author
                             ?>
                             <tr class="row<?php echo $i % 2; ?><?php echo !$item->files_exist ? ' table-warning' : ''; ?>" data-draggable-group="none">
                                 <td class="text-center">
-                                    <?php echo HTMLHelper::_('grid.id', $i, $item->extension_id, false, 'cid', 'cb', $item->name); ?>
+                                    <?php echo HTMLHelper::_('grid.id', $i, $item->extension_id, false, 'cid', 'cb', Text::_($item->name)); ?>
                                 </td>
                                 <td class="order text-center d-none d-md-table-cell">
                                     <?php
