@@ -22,6 +22,7 @@ use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Session\Session;
 use Joomla\CMS\Version;
 use Joomla\Database\DatabaseAwareTrait;
+use Joomla\Database\ParameterType;
 use Joomla\Event\Event;
 use Joomla\Event\SubscriberInterface;
 
@@ -39,6 +40,11 @@ use Joomla\Event\SubscriberInterface;
 final class AppDiagnostics extends CMSPlugin implements SubscriberInterface
 {
     use DatabaseAwareTrait;
+
+    private const CART_GC_BATCH_SIZE = 1000;
+
+    /** Seconds; kept well under common max_execution_time and proxy timeouts. */
+    private const CART_GC_TIME_BUDGET = 20;
 
     protected $autoloadLanguage = true;
 
@@ -282,48 +288,75 @@ final class AppDiagnostics extends CMSPlugin implements SubscriberInterface
 
         $db       = $this->getDatabase();
         $cartType = 'cart';
+        $deadline = microtime(true) + self::CART_GC_TIME_BUDGET;
+        $lastId   = 0;
+        $cleared  = 0;
 
-        // Get old cart IDs
-        $query = $db->getQuery(true)
-            ->select($db->quoteName('j2commerce_cart_id'))
-            ->from($db->quoteName('#__j2commerce_carts'))
-            ->where($db->quoteName('cart_type') . ' = :cartType')
-            ->where($db->quoteName('modified_on') . ' <= :cutoff')
-            ->bind(':cartType', $cartType)
-            ->bind(':cutoff', $cutoffDate);
+        // Bounded batches under a time budget: a backlog of hundreds of thousands of carts
+        // otherwise becomes one IN() list past the placeholder limit and one unbounded DELETE,
+        // the request is killed mid-run, and a scheduler task left locked holds every other task.
+        // Whatever the budget does not reach is picked up on the next run.
+        do {
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('j2commerce_cart_id'))
+                ->from($db->quoteName('#__j2commerce_carts'))
+                ->where($db->quoteName('j2commerce_cart_id') . ' > :lastId')
+                ->where($db->quoteName('cart_type') . ' = :cartType')
+                ->where($db->quoteName('modified_on') . ' <= :cutoff')
+                ->order($db->quoteName('j2commerce_cart_id') . ' ASC')
+                ->setLimit(self::CART_GC_BATCH_SIZE)
+                ->bind(':lastId', $lastId, ParameterType::INTEGER)
+                ->bind(':cartType', $cartType)
+                ->bind(':cutoff', $cutoffDate);
 
-        $db->setQuery($query);
-        $cartIds = $db->loadColumn();
+            try {
+                $cartIds = array_map('intval', $db->setQuery($query)->loadColumn());
 
-        if (empty($cartIds)) {
-            return;
+                if ($cartIds === []) {
+                    break;
+                }
+
+                $this->deleteCartBatch($cartIds);
+            } catch (\Exception $e) {
+                Log::add('clear_cart: batch failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+                break;
+            }
+
+            $lastId = end($cartIds);
+            $cleared += \count($cartIds);
+        } while (\count($cartIds) === self::CART_GC_BATCH_SIZE && microtime(true) < $deadline);
+
+        if ($cleared > 0) {
+            Log::add(\sprintf('clear_cart: cleared %d outdated cart(s).', $cleared), Log::INFO, 'com_j2commerce');
+            CartHelper::flushCartCounts();
         }
+    }
 
-        // Delete cart items belonging to expired carts
-        $query = $db->getQuery(true)
-            ->delete($db->quoteName('#__j2commerce_cartitems'))
-            ->whereIn($db->quoteName('cart_id'), $cartIds);
+    /** @param int[] $cartIds */
+    private function deleteCartBatch(array $cartIds): void
+    {
+        $db = $this->getDatabase();
+
+        $db->transactionStart();
 
         try {
-            $db->setQuery($query)->execute();
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->delete($db->quoteName('#__j2commerce_cartitems'))
+                    ->whereIn($db->quoteName('cart_id'), $cartIds)
+            )->execute();
+
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->delete($db->quoteName('#__j2commerce_carts'))
+                    ->whereIn($db->quoteName('j2commerce_cart_id'), $cartIds)
+            )->execute();
+
+            $db->transactionCommit();
         } catch (\Exception $e) {
-            Log::add('clear_cart: delete cartitems failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $db->transactionRollback();
+
+            throw $e;
         }
-
-        // Delete expired carts
-        $query = $db->getQuery(true)
-            ->delete($db->quoteName('#__j2commerce_carts'))
-            ->where($db->quoteName('cart_type') . ' = :cartType')
-            ->where($db->quoteName('modified_on') . ' <= :cutoff')
-            ->bind(':cartType', $cartType)
-            ->bind(':cutoff', $cutoffDate);
-
-        try {
-            $db->setQuery($query)->execute();
-        } catch (\Exception $e) {
-            Log::add('clear_cart: delete carts failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
-        }
-
-        CartHelper::flushCartCounts();
     }
 }
