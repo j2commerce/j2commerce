@@ -1513,7 +1513,14 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             // The quickview button is absolutely positioned (bottom/end), so the block has to be its
             // containing box — otherwise it anchors to the page body and lands far from the product.
             $hasQuickview = \in_array('quickview', array_map(static fn ($o) => strtolower(trim($o)), $options), true);
-            $html         = '<div class="com_j2commerce j2commerce-single-product j2commerce-shortcode j2commerce-shortcode-article"'
+            // Carries the same j2commerce-product-{id} marker the full item layouts render
+            // (item_simple.php et al.). The storefront JS's AJAX price/option refresh
+            // (updateProductDisplay()) locates the product's live DOM via
+            // form.closest('.j2commerce-product-{id}') — without it here, a shortcode built
+            // from separate option partials (e.g. |price|options|cart) has no such ancestor,
+            // so the price/SKU/stock never update after an option change.
+            $html         = '<div class="com_j2commerce j2commerce-single-product j2commerce-shortcode j2commerce-shortcode-article j2commerce-product-'
+                . $productId . '"'
                 . ($hasQuickview ? ' style="position:relative;min-height:3.5rem"' : '') . '>';
 
             // Apply the shortcode-specific subtemplate override so that
@@ -1699,7 +1706,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             ) ?? $html;
 
             $html = preg_replace(
-                '/(?<![\w-])(href|data-src|data-bs-target|data-target|data-bs-parent|data-parent)="#' . $quoted . '"/',
+                '/(?<![\w-])(href|data-src|data-bs-target|data-target|data-bs-parent|data-parent|data-binded-label)="#' . $quoted . '"/',
                 '${1}="#' . $literal . '"',
                 $html
             ) ?? $html;
