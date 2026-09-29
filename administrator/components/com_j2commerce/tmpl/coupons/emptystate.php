@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die();
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Layout\LayoutHelper;
 
@@ -29,6 +30,10 @@ if ($user->authorise('core.create', 'com_j2commerce')) {
 }
 
 echo $this->navbar ?? '';
+
+if (!(int) J2CommerceHelper::config()->get('enable_coupon', 0)) {
+    echo LayoutHelper::render('alert.featuredisabled', ['message' => 'COM_J2COMMERCE_COUPONS_DISABLED_WARNING'], JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts');
+}
 
 echo LayoutHelper::render('joomla.content.emptystate', $displayData);
 

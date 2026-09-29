@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -58,6 +59,10 @@ if ($saveOrder && !empty($this->items)) {
     <div class="row">
         <div class="col-md-12">
             <div id="j-main-container" class="j-main-container">
+                <?php if (!(int) J2CommerceHelper::config()->get('enable_voucher', 0)) : ?>
+                    <?php echo LayoutHelper::render('alert.featuredisabled', ['message' => 'COM_J2COMMERCE_VOUCHERS_DISABLED_WARNING'], JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts'); ?>
+                <?php endif; ?>
+
                 <?php echo LayoutHelper::render('joomla.searchtools.default', ['view' => $this]); ?>
 
                 <?php if (empty($this->items)) : ?>
