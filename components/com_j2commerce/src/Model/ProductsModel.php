@@ -422,6 +422,9 @@ class ProductsModel extends ListModel
             $db->quoteName('a.fulltext', 'product_long_desc'),
             $db->quoteName('a.catid'),
             $db->quoteName('a.state', 'article_state'),
+            $db->quoteName('a.publish_up'),
+            $db->quoteName('a.publish_down'),
+            $db->quoteName('c.published', 'category_published'),
             $db->quoteName('a.access'),
             $db->quoteName('a.created'),
             $db->quoteName('a.ordering'),
@@ -483,6 +486,9 @@ class ProductsModel extends ListModel
                 )
                 ->bind(':publishUp', $nowDate)
                 ->bind(':publishDown', $nowDate);
+        } else {
+            // Drafts stay previewable, the trash does not — com_content limits editors to [0, 1] too.
+            $query->whereIn($db->quoteName('a.state'), [0, 1]);
         }
 
         // Filter by access level
@@ -635,6 +641,7 @@ class ProductsModel extends ListModel
                 $product->article_ordering = $item->ordering ?? 0;
                 $product->article_hits     = $item->hits ?? 0;
                 $product->article_featured = $item->featured ?? 0;
+                $product->publicly_visible = ProductVisibilityHelper::isPublic($item);
 
                 $hydratedItems[] = $product;
             }

@@ -42,6 +42,18 @@ final class ProductVisibilityHelper
         return $user && ($user->authorise('core.edit', 'com_j2commerce') || $user->authorise('core.edit.state', 'com_j2commerce'));
     }
 
+    /** The listing predicates editors skip; the row must select enabled, article_state, category_published, publish_up, publish_down. */
+    public static function isPublic(object $row): bool
+    {
+        $now = Factory::getDate()->toSql();
+
+        return (int) $row->enabled === 1
+            && (int) $row->article_state === 1
+            && (int) $row->category_published === 1
+            && ($row->publish_up === null || $row->publish_up <= $now)
+            && ($row->publish_down === null || $row->publish_down >= $now);
+    }
+
     /**
      * Carries the same predicates as the product listings, except p.visibility —
      * that hides a product from the catalog only, so a hidden product stays

@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use Joomla\CMS\Language\Text;
+
 extract($displayData);
 
 if (!$showTitle) {
@@ -28,5 +30,10 @@ $productName = htmlspecialchars($product->product_name ?? '', ENT_QUOTES, 'UTF-8
 
     <?php if ($linkTitle): ?>
         </a>
+    <?php endif; ?>
+
+    <?php // Set by the list models; false only on a card an editor sees that the public list hides. ?>
+    <?php if (($product->publicly_visible ?? true) === false): ?>
+        <span class="uk-label uk-label-warning uk-text-emphasis uk-margin-small-left"><?php echo Text::_('JUNPUBLISHED'); ?></span>
     <?php endif; ?>
 </h3>

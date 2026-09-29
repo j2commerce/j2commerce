@@ -197,7 +197,7 @@ class TagsModel extends BaseDatabaseModel
                 'INNER',
                 $db->quoteName('#__content', 'a'),
                 $db->quoteName('a.id') . ' = ' . $db->quoteName('m.content_item_id')
-                    . ($isEditor ? '' : ' AND ' . $db->quoteName('a.state') . ' = 1')
+                    . ' AND ' . $db->quoteName('a.state') . ($isEditor ? ' IN (0, 1)' : ' = 1')
             )
             ->join(
                 'INNER',
@@ -267,7 +267,9 @@ class TagsModel extends BaseDatabaseModel
             ->where($db->quoteName('tag_id') . ' IN (' . implode(',', array_map('intval', $tagIds)) . ')');
 
         $query = $db->getQuery(true)
-            ->select($db->quoteName(['p.j2commerce_product_id', 'a.ordering', 'a.hits', 'a.featured']))
+            ->select($db->quoteName(['p.j2commerce_product_id', 'a.ordering', 'a.hits', 'a.featured', 'p.enabled', 'a.publish_up', 'a.publish_down']))
+            ->select($db->quoteName('a.state', 'article_state'))
+            ->select($db->quoteName('c.published', 'category_published'))
             ->from($db->quoteName('#__j2commerce_products', 'p'))
             ->join(
                 'INNER',
@@ -299,6 +301,9 @@ class TagsModel extends BaseDatabaseModel
                 ->where('(' . $db->quoteName('a.publish_down') . ' IS NULL OR ' . $db->quoteName('a.publish_down') . ' >= :publishDown)')
                 ->bind(':publishUp', $nowDate)
                 ->bind(':publishDown', $nowDate);
+        } else {
+            // Drafts stay previewable, the trash does not — com_content limits editors to [0, 1] too.
+            $query->whereIn($db->quoteName('a.state'), [0, 1]);
         }
 
         if (Multilanguage::isEnabled()) {
@@ -323,6 +328,7 @@ class TagsModel extends BaseDatabaseModel
                 $product->article_ordering = $row->ordering ?? 0;
                 $product->article_hits     = $row->hits ?? 0;
                 $product->article_featured = $row->featured ?? 0;
+                $product->publicly_visible = ProductVisibilityHelper::isPublic($row);
 
                 $products[] = $product;
             }
