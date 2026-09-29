@@ -139,11 +139,15 @@ if ($saveOrder && !empty($this->items)) {
                                 </td>
                                 <td class="d-none d-lg-table-cell">
                                     <small>
-                                        <?php if ($item->value_type === 'percentage') : ?>
-                                            <?php echo Text::_('COM_J2COMMERCE_VALUE_TYPE_PERCENTAGE'); ?>
-                                        <?php else : ?>
-                                            <?php echo Text::_('COM_J2COMMERCE_VALUE_TYPE_FIXED'); ?>
-                                        <?php endif; ?>
+                                        <?php echo Text::_(match ($item->value_type) {
+                                            'fixed_cart'         => 'COM_J2COMMERCE_VALUE_TYPE_FIXED_CART',
+                                            'fixed_product'      => 'COM_J2COMMERCE_VALUE_TYPE_FIXED_PRODUCT',
+                                            'percentage_cart'    => 'COM_J2COMMERCE_VALUE_TYPE_PERCENTAGE_CART',
+                                            'percentage_product' => 'COM_J2COMMERCE_VALUE_TYPE_PERCENTAGE_PRODUCT',
+                                            default              => str_contains((string) $item->value_type, 'percentage')
+                                                ? 'COM_J2COMMERCE_VALUE_TYPE_PERCENTAGE'
+                                                : 'COM_J2COMMERCE_VALUE_TYPE_FIXED',
+                                        }); ?>
                                     </small>
                                 </td>
                                 <td class="d-none d-md-table-cell text-center">
