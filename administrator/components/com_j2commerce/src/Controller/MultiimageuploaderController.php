@@ -119,7 +119,19 @@ class MultiimageuploaderController extends BaseController
         // are sufficient. Joomla's MediaHelper only knows about image/media extensions, so
         // calling it for archives, fonts, etc. would always reject them.
         if ($fileMode === 0 && !(new MediaHelper())->canUpload($file)) {
-            $this->sendJson(false, 'File type not allowed');
+            // canUpload() enqueues the *specific* reason (bad extension, size, or the
+            // sniffed MIME type it rejected) via the app's message queue instead of
+            // returning it — surface that instead of a generic string so a rejection
+            // caused by the server's mime_content_type()/finfo detection disagreeing
+            // with the site's Global Configuration MIME allowlist is diagnosable.
+            $coreReason = '';
+            foreach ($this->app->getMessageQueue() as $queued) {
+                if (($queued['type'] ?? '') === 'error') {
+                    $coreReason = (string) ($queued['message'] ?? '');
+                }
+            }
+
+            $this->sendJson(false, $coreReason !== '' ? $coreReason : 'File type not allowed');
             return;
         }
 
