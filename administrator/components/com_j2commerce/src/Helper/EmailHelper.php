@@ -808,23 +808,22 @@ class EmailHelper
             $subpathURL
         );
 
-        // Guest order URL — deep link that pre-seeds the guest session via order_token + order_email
+        // Guest order URL — deep link carrying the order token, so no login or lookup form is needed
         $orderToken     = (string) ($order->token ?? '');
         $orderEmail     = (string) ($order->user_email ?? '');
-        $guestOrderPath = 'index.php?option=com_j2commerce&view=myprofile&layout=order';
         $linkToConfirm  = $params->get('order_email_link_target', 'confirmation') === 'confirmation';
 
-        // The confirmation target routes through a handler that seeds the same guest session the
-        // My Profile form would, so session-gated controls (downloads, easylinks) keep working.
-        if ($linkToConfirm) {
-            $guestOrderPath = 'index.php?option=com_j2commerce&task=myprofile.guestOrderLink';
-        }
-
+        // The confirmation target links the order's confirmation page directly with its token, which
+        // ConfirmationModel::isAuthorised() accepts, so the link routes through the Confirmation menu item.
         $guestOrderURL = $this->buildSiteUrl(
-            $guestOrderPath
-                . '&order_id=' . urlencode((string) $orderId)
-                . '&order_token=' . urlencode($orderToken)
-                . '&order_email=' . urlencode($orderEmail),
+            $linkToConfirm
+                ? 'index.php?option=com_j2commerce&view=confirmation'
+                    . '&order_id=' . urlencode((string) $orderId)
+                    . '&token=' . urlencode($orderToken)
+                : 'index.php?option=com_j2commerce&view=myprofile&layout=order'
+                    . '&order_id=' . urlencode((string) $orderId)
+                    . '&order_token=' . urlencode($orderToken)
+                    . '&order_email=' . urlencode($orderEmail),
             $siteRoot,
             $subpathURL
         );
