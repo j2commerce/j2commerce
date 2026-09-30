@@ -812,10 +812,11 @@ class EmailHelper
         $orderToken     = (string) ($order->token ?? '');
         $orderEmail     = (string) ($order->user_email ?? '');
         $guestOrderPath = 'index.php?option=com_j2commerce&view=myprofile&layout=order';
+        $linkToConfirm  = $params->get('order_email_link_target', 'confirmation') === 'confirmation';
 
         // The confirmation target routes through a handler that seeds the same guest session the
         // My Profile form would, so session-gated controls (downloads, easylinks) keep working.
-        if ($params->get('order_email_link_target', 'confirmation') === 'confirmation') {
+        if ($linkToConfirm) {
             $guestOrderPath = 'index.php?option=com_j2commerce&task=myprofile.guestOrderLink';
         }
 
@@ -832,6 +833,10 @@ class EmailHelper
         // accepts in place of a session, so every tag carrying that pair answers to one rule rather than to
         // whichever tag the template happened to use. [DOWNLOAD_LINKS] below already states it.
         $isAdminCopy = $receiverType === 'admin';
+
+        // The stock order templates link their View Order button through [INVOICE_URL], so the
+        // link-target setting has to reach it too — held to the same admin rule as [GUEST_ORDER_URL].
+        $invoiceTagURL = $linkToConfirm && !$isAdminCopy ? $guestOrderURL : $invoiceURL;
 
         // Bare myprofile URL — landing page with guest-login form
         $myprofileURL = $this->buildSiteUrl(
@@ -927,7 +932,7 @@ class EmailHelper
             "\\n"                         => "\n",
             '[SITENAME]'                  => $sitename,
             '[SITEURL]'                   => $baseURL,
-            '[INVOICE_URL]'               => $invoiceURL,
+            '[INVOICE_URL]'               => $invoiceTagURL,
             '[ORDERID]'                   => $order->order_id ?? '',
             '[INVOICENO]'                 => $invoiceNumber,
             '[ORDERDATE]'                 => $orderDate,
