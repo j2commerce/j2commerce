@@ -35,7 +35,7 @@ $platform = J2CommerceHelper::platform();
 <div class="j2commerce-shipping-payment">
 
     <?php if ($showShippingMethods && !empty($shippingRates)) : ?>
-    <h5 class="mb-1"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_METHOD'); ?></h5>
+    <h3 class="h5 mb-1"><?php echo Text::_('COM_J2COMMERCE_SHIPPING_METHOD'); ?></h3>
     <div id="shipping_error_div"></div>
 
     <div class="shipping-methods-group list-group mb-4 mt-3" role="radiogroup" aria-label="<?php echo Text::_('COM_J2COMMERCE_SHIPPING_METHOD', true); ?>">
@@ -81,7 +81,7 @@ $platform = J2CommerceHelper::platform();
     <?php endif; ?>
 
     <?php if ($showPayment) : ?>
-        <h5 class="mb-1"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHOD'); ?></h5>
+        <h3 class="h5 mb-1"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHOD'); ?></h3>
         <p class="text-body-secondary small mb-3"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_TRANSACTIONS_SECURE'); ?></p>
 
         <div class="payment-methods-group list-group mb-4" role="radiogroup" aria-label="<?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHOD', true); ?>">

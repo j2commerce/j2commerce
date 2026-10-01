@@ -24,7 +24,7 @@ $showLogin = (int) $this->params->get('show_login_form', 1);
 <div class="uk-grid" uk-grid>
     <?php if ($allowRegistration || $allowGuest) : ?>
     <div class="uk-width-1-2@m uk-margin-bottom">
-        <h4><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_NEW_CUSTOMER'); ?></h4>
+        <h3 class="uk-h4"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_NEW_CUSTOMER'); ?></h3>
         <p><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_OPTIONS'); ?></p>
 
         <?php if ($allowRegistration) : ?>
@@ -63,7 +63,7 @@ $showLogin = (int) $this->params->get('show_login_form', 1);
     </div>
     <?php else : ?>
     <div class="uk-width-1-2@m uk-margin-bottom">
-        <h4><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_NEW_CUSTOMER'); ?></h4>
+        <h3 class="uk-h4"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_NEW_CUSTOMER'); ?></h3>
         <div class="uk-alert uk-alert-primary" uk-alert>
             <p><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_LOGIN_REQUIRED_NOTICE'); ?></p>
         </div>
@@ -72,16 +72,16 @@ $showLogin = (int) $this->params->get('show_login_form', 1);
 
     <?php if ($showLogin) : ?>
     <div id="login" class="uk-width-1-2@m uk-margin-bottom">
-        <h4><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_RETURNING_CUSTOMER'); ?></h4>
+        <h3 class="uk-h4"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_RETURNING_CUSTOMER'); ?></h3>
 
         <div class="uk-margin-bottom">
-            <label class="uk-form-label uk-text-bold"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_USERNAME'); ?></label>
-            <input type="text" name="email" value="" class="uk-input">
+            <label class="uk-form-label uk-text-bold" for="j2c-login-email"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_USERNAME'); ?></label>
+            <input type="text" name="email" id="j2c-login-email" value="" class="uk-input" autocomplete="username">
         </div>
 
         <div class="uk-margin-bottom">
-            <label class="uk-form-label uk-text-bold"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_PASSWORD'); ?></label>
-            <input type="password" name="password" value="" class="uk-input">
+            <label class="uk-form-label uk-text-bold" for="j2c-login-password"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_PASSWORD'); ?></label>
+            <input type="password" name="password" id="j2c-login-password" value="" class="uk-input" autocomplete="current-password">
         </div>
 
         <input type="hidden" name="task" value="checkout.loginValidate">

@@ -165,7 +165,7 @@ if ($showTerms && $termsArticleId) {
     <?php endif; ?>
 
     <?php if (!empty($pluginHtml)) : ?>
-        <h5><?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHOD'); ?></h5>
+        <h3 class="uk-h5"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_METHOD'); ?></h3>
         <div class="payment uk-margin-bottom">
             <?php echo $pluginHtml; ?>
         </div>

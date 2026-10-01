@@ -43,7 +43,7 @@ $asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="text-danger">*<
     </div>
 
     <div class="j2commerce-checkout-password-container">
-        <h5 class="mt-4 mb-3"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SET_PASSWORD'); ?></h5>
+        <h3 class="h5 mt-4 mb-3"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SET_PASSWORD'); ?></h3>
         <div class="row g-3">
             <?php if ($isFloating) : ?>
                 <div class="col-md-6">
@@ -54,8 +54,8 @@ $asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="text-danger">*<
                 </div>
                 <div class="col-md-6">
                     <div class="form-floating">
-                        <input type="password" name="confirm" id="confirm" class="form-control" required autocomplete="new-password" placeholder="<?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM_PASSWORD'); ?>" />
-                        <label for="confirm"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM_PASSWORD'); ?><?php echo $asterisk; ?></label>
+                        <input type="password" name="confirm" id="j2c-register-confirm" class="form-control" required autocomplete="new-password" placeholder="<?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM_PASSWORD'); ?>" />
+                        <label for="j2c-register-confirm"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM_PASSWORD'); ?><?php echo $asterisk; ?></label>
                     </div>
                 </div>
             <?php else : ?>
@@ -67,8 +67,8 @@ $asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="text-danger">*<
                 </div>
                 <div class="col-md-6">
                     <div class="form-normal">
-                        <label for="confirm" class="form-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM_PASSWORD'); ?><?php echo $asterisk; ?></label>
-                        <input type="password" name="confirm" id="confirm" class="form-control" required autocomplete="new-password" />
+                        <label for="j2c-register-confirm" class="form-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM_PASSWORD'); ?><?php echo $asterisk; ?></label>
+                        <input type="password" name="confirm" id="j2c-register-confirm" class="form-control" required autocomplete="new-password" />
                     </div>
                 </div>
             <?php endif; ?>
