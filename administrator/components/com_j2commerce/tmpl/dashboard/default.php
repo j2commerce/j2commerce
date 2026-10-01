@@ -357,7 +357,7 @@ $doc->getWebAssetManager()
 
     <?php echo $this->loadTemplate('databasehealth'); ?>
 
-    <?php if (!J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupGuideHelper::isComplete()) : ?>
+    <?php if ($this->showSetupGuide) : ?>
         <?php echo $this->loadTemplate('setup_guide'); ?>
     <?php endif; ?>
 

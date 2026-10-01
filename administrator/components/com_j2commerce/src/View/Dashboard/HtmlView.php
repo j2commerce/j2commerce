@@ -79,6 +79,8 @@ class HtmlView extends BaseHtmlView
 
     public bool $wizardDisabled = false;
 
+    public bool $showSetupGuide = false;
+
     // Sample data state
     public bool $hasProducts   = false;
     public bool $hasSampleData = false;
@@ -487,7 +489,11 @@ JS);
         Text::script('JGLOBAL_TYPE_OR_SELECT_SOME_OPTIONS');
         Text::script('JGLOBAL_SELECT_NO_RESULTS_MATCH');
 
-        if (!SetupGuideHelper::isComplete()) {
+        // Disable Setup Wizard switches off the onboarding modal and the Setup Guide panel alike.
+        $this->wizardDisabled = (int) ConfigHelper::get('disable_setup_wizard', 0) === 1;
+        $this->showSetupGuide = !$this->wizardDisabled && !SetupGuideHelper::isComplete();
+
+        if ($this->showSetupGuide) {
             HTMLHelper::_('bootstrap.offcanvas', '#j2commerce-setup-guide');
             $wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true]);
             $wa->registerAndUseScript('com_j2commerce.setup-guide', 'media/com_j2commerce/js/administrator/setup-guide.js', [], ['defer' => true], ['com_j2commerce.modal-coordinator', 'com_j2commerce.dom']);
@@ -519,8 +525,7 @@ JS);
         }
 
         // Onboarding wizard — show on first visit or when re-run requested
-        $onboardingComplete   = (int) ConfigHelper::get('onboarding_complete', 0);
-        $this->wizardDisabled = (int) ConfigHelper::get('disable_setup_wizard', 0) === 1;
+        $onboardingComplete = (int) ConfigHelper::get('onboarding_complete', 0);
 
         if (!$this->wizardDisabled && Factory::getApplication()->getInput()->getInt('rerun_onboarding', 0) === 1) {
             OnboardingHelper::persistConfig(['onboarding_complete' => '0', 'onboarding_last_step' => '0']);
@@ -681,7 +686,7 @@ JS);
     {
         ToolbarHelper::title(Text::_('COM_J2COMMERCE_DASHBOARD'), 'fa-solid fa-tachometer-alt');
 
-        if (!SetupGuideHelper::isComplete()) {
+        if ($this->showSetupGuide) {
             $toolbar = $this->getDocument()->getToolbar();
             $toolbar->standardButton('setup-guide', 'COM_J2COMMERCE_SETUP_GUIDE', '')
                 ->icon('fa-solid fa-wand-magic-sparkles text-white')

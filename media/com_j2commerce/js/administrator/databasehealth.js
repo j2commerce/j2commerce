@@ -188,7 +188,8 @@ class DatabaseHealthCard {
             right.appendChild(fixBtn);
         }
 
-        if (state === 'warning' && check.setupGuideLink) {
+        // Only while the Setup Guide panel is on the page: it is absent once complete or disabled.
+        if (state === 'warning' && check.setupGuideLink && document.getElementById('j2commerce-setup-guide')) {
             const guideBtn = document.createElement('button');
             guideBtn.type = 'button';
             guideBtn.className = 'btn btn-sm btn-outline-secondary ms-1 database-health-setup-guide';
