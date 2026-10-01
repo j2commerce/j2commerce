@@ -19,6 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const zoneAjaxUrl     = options.zoneAjaxUrl || '';
 
     let currentStep = parseInt(document.getElementById('ob-resume-step')?.value || '1', 10) || 1;
+    // Step-1 country defaults, held while the en-US prompt waits for an answer.
+    let pendingDefaults = null;
 
     const modalInstance = bootstrap.Modal.getOrCreateInstance(modal);
 
@@ -231,6 +233,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!area) return;
         area.replaceChildren();
         area.classList.add('d-none');
+        modal.querySelector('#ob-status-area')?.replaceChildren();
+    }
+
+    // #ob-status-area is a role="status" region present from page load, so the message is announced.
+    function showStatus(msg) {
+        const area = modal.querySelector('#ob-status-area');
+        if (!area) return;
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-success mb-3';
+        alert.textContent = msg;
+        area.replaceChildren(alert);
     }
 
     function toggleElement(selector, show) {
@@ -609,6 +622,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.languagePrompt === true) {
                     const prompt = modal.querySelector('#ob-lang-prompt');
                     if (prompt) prompt.classList.remove('d-none');
+                    pendingDefaults = data.defaults;
                     // Do NOT advance yet — wait for install-lang or skip-lang click
                 } else {
                     applyDefaults(data.defaults);
@@ -797,13 +811,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const json = await res.json();
                     const prompt = modal.querySelector('#ob-lang-prompt');
                     if (json.success) {
-                        if (prompt) {
-                            const successAlert = document.createElement('div');
-                            successAlert.className = 'alert alert-success';
-                            successAlert.textContent = json.message || Joomla.Text._('COM_J2COMMERCE_ONBOARDING_LANG_SUCCESS');
-                            prompt.replaceChildren(successAlert);
-                        }
-                        applyDefaults(json.data?.defaults);
+                        if (prompt) prompt.classList.add('d-none');
+                        // Text::script() sends the raw key for a locale that has no translation yet.
+                        const reloginKey = 'COM_J2COMMERCE_ONBOARDING_LANG_RELOGIN';
+                        const relogin    = Joomla.Text._(reloginKey) === reloginKey ? '' : Joomla.Text._(reloginKey);
+                        showStatus(`${json.message || Joomla.Text._('COM_J2COMMERCE_ONBOARDING_LANG_SUCCESS')} ${relogin}`.trim());
+                        applyDefaults(pendingDefaults);
                         goToStep(2, 'forward');
                     } else {
                         throw new Error(json.message);
@@ -822,8 +835,7 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'skip-lang': {
                 const prompt = modal.querySelector('#ob-lang-prompt');
                 if (prompt) prompt.classList.add('d-none');
-                const defaults = options.defaults || {};
-                applyDefaults(defaults);
+                applyDefaults(pendingDefaults);
                 goToStep(2, 'forward');
                 break;
             }
