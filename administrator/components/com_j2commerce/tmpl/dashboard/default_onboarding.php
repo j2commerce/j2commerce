@@ -744,6 +744,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 
         <!-- Inline alert area for AJAX errors -->
         <div class="d-none" id="ob-alert-area"></div>
+        <div id="ob-status-area" role="status" aria-atomic="true"></div>
       </div>
 
       <!-- Footer -->
