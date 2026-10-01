@@ -43,15 +43,15 @@ $asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="uk-text-danger"
     </div>
 
     <div class="j2commerce-checkout-password-container">
-        <h5 class="uk-margin-medium-top uk-margin-small-bottom"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SET_PASSWORD'); ?></h5>
+        <h3 class="uk-h5 uk-margin-medium-top uk-margin-small-bottom"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SET_PASSWORD'); ?></h3>
         <div class="uk-grid uk-grid-small" uk-grid>
             <div class="uk-width-1-2@m">
                 <label for="password" class="uk-form-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_ENTER_PASSWORD'); ?><?php echo $asterisk; ?></label>
                 <input type="password" name="password" id="password" class="uk-input" required autocomplete="new-password" />
             </div>
             <div class="uk-width-1-2@m">
-                <label for="confirm" class="uk-form-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM_PASSWORD'); ?><?php echo $asterisk; ?></label>
-                <input type="password" name="confirm" id="confirm" class="uk-input" required autocomplete="new-password" />
+                <label for="j2c-register-confirm" class="uk-form-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM_PASSWORD'); ?><?php echo $asterisk; ?></label>
+                <input type="password" name="confirm" id="j2c-register-confirm" class="uk-input" required autocomplete="new-password" />
             </div>
         </div>
     </div>

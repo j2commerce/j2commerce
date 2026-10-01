@@ -107,7 +107,7 @@ Text::script('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
                     <section id="checkout" role="region" aria-labelledby="checkout-heading-label">
                         <div class="checkout-heading uk-margin-small-bottom uk-flex uk-flex-between uk-flex-middle">
                             <div>
-                                <span id="checkout-heading-label" class="uk-hidden-visually"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_OPTIONS'); ?></span>
+                                <h2 class="checkout-heading__title"><span id="checkout-heading-label" class="uk-hidden-visually"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_OPTIONS'); ?></span></h2>
                             </div>
                             <?php if ($this->logged) : ?>
                                 <a href="<?php echo Route::_('index.php?option=com_j2commerce&task=checkout.logout&' . $token . '=1'); ?>" class="checkout-logout text-danger">
@@ -120,58 +120,58 @@ Text::script('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
 
                     <?php if (!$this->logged) : ?>
                     <section id="billing-address" role="region" aria-labelledby="billing-heading-label">
-                        <div class="checkout-heading uk-margin-small-bottom"><span id="billing-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_ACCOUNT'); ?></span></div>
+                        <div class="checkout-heading uk-margin-small-bottom"><h2 class="checkout-heading__title"><span id="billing-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_ACCOUNT'); ?></span></h2></div>
                         <div class="checkout-content" aria-busy="false"></div>
                     </section>
                     <?php else : ?>
                     <section id="billing-address" role="region" aria-labelledby="billing-heading-label">
-                        <div class="checkout-heading uk-margin-small-bottom"><span id="billing-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS'); ?></span></div>
+                        <div class="checkout-heading uk-margin-small-bottom"><h2 class="checkout-heading__title"><span id="billing-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS'); ?></span></h2></div>
                         <div class="checkout-content" aria-busy="false"></div>
                     </section>
                     <?php endif; ?>
 
                     <section id="custom-steps-after-billing" role="region" aria-labelledby="custom-steps-after-billing-label" style="display:none;">
-                        <div class="checkout-heading uk-margin-small-bottom"><span id="custom-steps-after-billing-label"></span></div>
+                        <div class="checkout-heading uk-margin-small-bottom"><h2 class="checkout-heading__title"><span id="custom-steps-after-billing-label"></span></h2></div>
                         <div class="checkout-content" aria-busy="false"></div>
                     </section>
 
                     <?php if ($this->showShipping) : ?>
                     <section id="shipping-address" role="region" aria-labelledby="shipping-heading-label" style="display:none;">
-                        <div class="checkout-heading uk-margin-small-bottom"><span id="shipping-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_ADDRESS'); ?></span></div>
+                        <div class="checkout-heading uk-margin-small-bottom"><h2 class="checkout-heading__title"><span id="shipping-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_ADDRESS'); ?></span></h2></div>
                         <div class="checkout-content" aria-busy="false"></div>
                     </section>
                     <?php endif; ?>
 
                     <section id="custom-steps-after-shipping" role="region" aria-labelledby="custom-steps-after-shipping-label" style="display:none;">
-                        <div class="checkout-heading uk-margin-small-bottom"><span id="custom-steps-after-shipping-label"></span></div>
+                        <div class="checkout-heading uk-margin-small-bottom"><h2 class="checkout-heading__title"><span id="custom-steps-after-shipping-label"></span></h2></div>
                         <div class="checkout-content" aria-busy="false"></div>
                     </section>
 
                     <section id="custom-steps-before-payment" role="region" aria-labelledby="custom-steps-before-payment-label" style="display:none;">
-                        <div class="checkout-heading uk-margin-small-bottom"><span id="custom-steps-before-payment-label"></span></div>
+                        <div class="checkout-heading uk-margin-small-bottom"><h2 class="checkout-heading__title"><span id="custom-steps-before-payment-label"></span></h2></div>
                         <div class="checkout-content" aria-busy="false"></div>
                     </section>
 
                     <section id="shipping-payment-method" role="region" aria-labelledby="payment-heading-label">
                         <div class="checkout-heading uk-margin-small-bottom">
-                        <span id="payment-heading-label">
+                        <h2 class="checkout-heading__title"><span id="payment-heading-label">
                         <?php if ($this->showShipping) : ?>
                             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_PAYMENT_METHOD'); ?>
                         <?php else : ?>
                             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_PAYMENT_METHOD'); ?>
                         <?php endif; ?>
-                        </span>
+                        </span></h2>
                         </div>
                         <div class="checkout-content" aria-busy="false"></div>
                     </section>
 
                     <section id="custom-steps-before-confirm" role="region" aria-labelledby="custom-steps-before-confirm-label" style="display:none;">
-                        <div class="checkout-heading uk-margin-small-bottom"><span id="custom-steps-before-confirm-label"></span></div>
+                        <div class="checkout-heading uk-margin-small-bottom"><h2 class="checkout-heading__title"><span id="custom-steps-before-confirm-label"></span></h2></div>
                         <div class="checkout-content" aria-busy="false"></div>
                     </section>
 
                     <section id="confirm" role="region" aria-labelledby="confirm-heading-label">
-                        <div class="checkout-heading"><span id="confirm-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM'); ?></span></div>
+                        <div class="checkout-heading"><h2 class="checkout-heading__title"><span id="confirm-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONFIRM'); ?></span></h2></div>
                         <div class="checkout-content" aria-busy="false"></div>
                     </section>
                 </div>
@@ -916,7 +916,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     // Set the heading label dynamically
                     var label = document.getElementById('custom-steps-' + sectionSuffix + '-label');
-                    if (label) label.textContent = json.heading || '';
+                    if (label) {
+                        label.textContent = json.heading || '';
+                        // A step without a title stays out of the heading outline.
+                        label.parentElement.hidden = !json.heading;
+                    }
 
                     var content = getContent(section.id);
                     if (content) {
