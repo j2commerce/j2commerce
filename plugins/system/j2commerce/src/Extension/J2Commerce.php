@@ -1393,7 +1393,11 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             ];
         }
 
-        if (!SetupGuideHelper::isComplete()) {
+        // Its View Tasks link opens the Setup Guide panel, which Disable Setup Wizard removes.
+        if (
+            (int) $params->get('disable_setup_wizard', 0) !== 1
+            && !SetupGuideHelper::isComplete()
+        ) {
             $progress  = SetupGuideHelper::getProgress();
             $remaining = $progress['total'] - $progress['passed'];
             $percent   = $progress['percent'];
