@@ -38,6 +38,7 @@ use Joomla\CMS\Language\Text;
                     <div class="setup-progress-fill rounded-1" style="width: 0%"></div>
                 </div>
             </div>
+            <?php if (!$this->wizardDisabled) : ?>
             <!-- Re-run onboarding link -->
             <div class="px-3 py-2 border-bottom">
                 <a href="index.php?option=com_j2commerce&view=dashboard&rerun_onboarding=1" class="btn btn-sm btn-outline-light w-100 shadow-none">
@@ -45,6 +46,7 @@ use Joomla\CMS\Language\Text;
                     <?php echo Text::_('COM_J2COMMERCE_SETUP_GUIDE_RUN_ONBOARDING'); ?>
                 </a>
             </div>
+            <?php endif; ?>
             <!-- Loading spinner (shown while fetching) -->
             <div class="setup-loading text-center py-5">
                 <div class="spinner-border text-secondary" role="status">

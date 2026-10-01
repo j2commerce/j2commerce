@@ -294,6 +294,19 @@
         />
 
         <field
+            name="disable_setup_wizard"
+            type="radio"
+            layout="joomla.form.field.radio.switcher"
+            label="COM_J2COMMERCE_CONFIG_DISABLE_SETUP_WIZARD"
+            description="COM_J2COMMERCE_CONFIG_DISABLE_SETUP_WIZARD_DESC"
+            default="0"
+            filter="integer"
+        >
+            <option value="0">JNO</option>
+            <option value="1">JYES</option>
+        </field>
+
+        <field
             name="spacer_misc_2"
             type="spacer"
             hr="true"
@@ -665,6 +678,85 @@
 
             <field
                 name="acl_seed_version"
+                type="hidden"
+                default="0"
+                filter="integer"
+            />
+
+            <!-- Setup guide dismissals (and the timezone confirmation), written by
+                 SetupguideController::dismiss(). Declared so an Options save keeps them. -->
+            <field
+                name="setup_dismissed_admin_email"
+                type="hidden"
+                default="0"
+                filter="integer"
+            />
+
+            <field
+                name="setup_dismissed_cart_page"
+                type="hidden"
+                default="0"
+                filter="integer"
+            />
+
+            <field
+                name="setup_dismissed_checkout_page"
+                type="hidden"
+                default="0"
+                filter="integer"
+            />
+
+            <field
+                name="setup_dismissed_confirmation_page"
+                type="hidden"
+                default="0"
+                filter="integer"
+            />
+
+            <field
+                name="setup_dismissed_countries"
+                type="hidden"
+                default="0"
+                filter="integer"
+            />
+
+            <field
+                name="setup_dismissed_myprofile_page"
+                type="hidden"
+                default="0"
+                filter="integer"
+            />
+
+            <field
+                name="setup_dismissed_orderstatustypes"
+                type="hidden"
+                default="0"
+                filter="integer"
+            />
+
+            <field
+                name="setup_dismissed_store_address"
+                type="hidden"
+                default="0"
+                filter="integer"
+            />
+
+            <field
+                name="setup_dismissed_store_logo"
+                type="hidden"
+                default="0"
+                filter="integer"
+            />
+
+            <field
+                name="setup_dismissed_tax_profile"
+                type="hidden"
+                default="0"
+                filter="integer"
+            />
+
+            <field
+                name="setup_dismissed_timezone"
                 type="hidden"
                 default="0"
                 filter="integer"

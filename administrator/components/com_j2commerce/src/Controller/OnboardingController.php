@@ -60,6 +60,16 @@ class OnboardingController extends BaseController
         return true;
     }
 
+    private function requireWizardEnabled(): bool
+    {
+        if ((int) ConfigHelper::get('disable_setup_wizard', 0) === 1) {
+            $this->jsonError(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
+            return false;
+        }
+
+        return true;
+    }
+
     /**
      * Save a single onboarding step.
      * POST params: step (int 1-6) + step-specific form fields.
@@ -71,7 +81,7 @@ class OnboardingController extends BaseController
             return;
         }
 
-        if (!$this->requireAdmin()) {
+        if (!$this->requireAdmin() || !$this->requireWizardEnabled()) {
             return;
         }
 
@@ -129,7 +139,7 @@ class OnboardingController extends BaseController
             return;
         }
 
-        if (!$this->requireAdmin()) {
+        if (!$this->requireAdmin() || !$this->requireWizardEnabled()) {
             return;
         }
 

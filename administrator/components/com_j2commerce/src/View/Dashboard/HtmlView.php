@@ -77,6 +77,8 @@ class HtmlView extends BaseHtmlView
     // Onboarding wizard
     public bool $showOnboarding = false;
 
+    public bool $wizardDisabled = false;
+
     // Sample data state
     public bool $hasProducts   = false;
     public bool $hasSampleData = false;
@@ -517,14 +519,15 @@ JS);
         }
 
         // Onboarding wizard — show on first visit or when re-run requested
-        $onboardingComplete = (int) ConfigHelper::get('onboarding_complete', 0);
+        $onboardingComplete   = (int) ConfigHelper::get('onboarding_complete', 0);
+        $this->wizardDisabled = (int) ConfigHelper::get('disable_setup_wizard', 0) === 1;
 
-        if (Factory::getApplication()->getInput()->getInt('rerun_onboarding', 0) === 1) {
+        if (!$this->wizardDisabled && Factory::getApplication()->getInput()->getInt('rerun_onboarding', 0) === 1) {
             OnboardingHelper::persistConfig(['onboarding_complete' => '0', 'onboarding_last_step' => '0']);
             $onboardingComplete = 0;
         }
 
-        if ($onboardingComplete === 0) {
+        if (!$this->wizardDisabled && $onboardingComplete === 0) {
             $this->showOnboarding = true;
 
             // Init Bootstrap modal JS — MUST be called before parent::display()
