@@ -44,10 +44,11 @@ final class SubtemplateHelper
     /**
      * The subtemplate this request renders in, sanitised but with its view scope intact.
      *
-     * `auto` and an empty value both mean "inherit the active menu item's choice". The result
-     * is concatenated into a filesystem path, so it is reduced to the characters a folder name
-     * may use rather than trusted as stored — the value is administrator-set, not public, but
-     * it is still a stored string reaching a path.
+     * `auto` and an empty value both mean "inherit the active menu item's choice", and a menu
+     * item that names none inherits the store's Subtemplate setting. The result is concatenated
+     * into a filesystem path, so it is reduced to the characters a folder name may use rather
+     * than trusted as stored — the value is administrator-set, not public, but it is still a
+     * stored string reaching a path.
      *
      * @since   6.6.2
      */
@@ -57,6 +58,10 @@ final class SubtemplateHelper
 
         if ($subtemplate === '' || $subtemplate === 'auto') {
             $subtemplate = self::fromActiveMenu();
+        }
+
+        if ($subtemplate === '' || $subtemplate === 'auto') {
+            $subtemplate = (string) J2CommerceHelper::config()->get('subtemplate', '');
         }
 
         $subtemplate = preg_replace('/[^a-z0-9_-]/', '', strtolower($subtemplate)) ?? '';
