@@ -240,11 +240,17 @@ class Router extends RouterView
             }
         }
 
-        // For categoryalias view, rewrite to products view with correct Itemid
+        // For categoryalias view, rewrite to products view with correct Itemid. A products
+        // menu for this exact catid wins over a categories menu that merely roots it, the
+        // same order the products branch above uses.
         if (($query['view'] ?? '') === 'categoryalias' && !empty($query['id'])) {
             $catid    = (int) $query['id'];
-            $result   = $this->findCategoriesMenuForCategory($catid);
-            $menuItem = $result ? $result['menu'] : $this->findProductsMenuByCatid($catid);
+            $menuItem = $this->findProductsMenuByCatid($catid);
+
+            if (!$menuItem) {
+                $result   = $this->findCategoriesMenuForCategory($catid);
+                $menuItem = $result ? $result['menu'] : null;
+            }
 
             $query['view']  = 'products';
             $query['catid'] = $catid;
