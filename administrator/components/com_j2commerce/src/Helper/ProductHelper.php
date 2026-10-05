@@ -4580,7 +4580,7 @@ class ProductHelper
      *
      * @since   6.0.3
      */
-    public static function getFilters(array $items = [], array $catids = [], ?array $restrictManufacturerIds = null): array
+    public static function getFilters(array $items = [], array $catids = [], ?array $restrictManufacturerIds = null, ?array $restrictVendorIds = null): array
     {
         $filters                      = [];
         $filters['filter_categories'] = [];
@@ -4611,8 +4611,8 @@ class ProductHelper
             $filters['manufacturers'] = [];
         }
 
-        // Get vendors with first_name and last_name
-        $filters['vendors'] = self::getVendorsWithNames();
+        // Vendors follow the same null / array contract as manufacturers above.
+        $filters['vendors'] = $restrictVendorIds === [] ? [] : self::getVendorsWithNames($restrictVendorIds ?? []);
 
         // Get categories (filtered by parent if catids provided)
         $filters['filter_categories'] = self::getCategoriesForFilter($catids);
@@ -4631,12 +4631,13 @@ class ProductHelper
 
     /**
      * Get vendors with first_name and last_name for filter display.
+     * An empty $restrictIds means every enabled vendor (getFilters() handles "none").
      *
      * @return  array  Array of vendor objects with name fields.
      *
      * @since   6.0.3
      */
-    public static function getVendorsWithNames(): array
+    public static function getVendorsWithNames(array $restrictIds = []): array
     {
         $db    = self::getDatabase();
         $query = $db->getQuery(true);
@@ -4655,6 +4656,10 @@ class ProductHelper
             )
             ->where($db->quoteName('v.enabled') . ' = 1')
             ->order($db->quoteName('a.company') . ' ASC');
+
+        if ($restrictIds !== []) {
+            $query->whereIn($db->quoteName('v.j2commerce_vendor_id'), array_map('intval', $restrictIds));
+        }
 
         $db->setQuery($query);
 
