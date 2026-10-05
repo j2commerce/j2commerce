@@ -367,8 +367,8 @@ if ($hasFancySelect) {
                                     <?php foreach ($this->filters['vendors'] as $vendor) : ?>
                                         <?php $checked = (!empty($sessionVendorIds) && \in_array($vendor->j2commerce_vendor_id, $sessionVendorIds)); ?>
                                         <div class="form-check mb-2">
-                                            <input type="checkbox" class="form-check-input j2commerce-vendor-checkboxes" name="vendor_ids[]" id="vendor-input-<?php echo $vendor->j2commerce_vendor_id; ?>" value="<?php echo $vendor->j2commerce_vendor_id; ?>"<?php echo $checked ? ' checked' : ''; ?> />
-                                            <label class="form-check-label small" for="vendor-input-<?php echo $vendor->j2commerce_vendor_id; ?>">
+                                            <input type="checkbox" class="form-check-input j2commerce-vendor-checkboxes" name="vendor_ids[]" id="vendor-input-<?php echo (int) $vendor->j2commerce_vendor_id; ?>" value="<?php echo (int) $vendor->j2commerce_vendor_id; ?>"<?php echo $checked ? ' checked' : ''; ?> />
+                                            <label class="form-check-label small" for="vendor-input-<?php echo (int) $vendor->j2commerce_vendor_id; ?>">
                                                 <?php echo $this->escape($vendor->company); ?>
                                             </label>
                                         </div>

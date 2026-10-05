@@ -314,7 +314,7 @@ if ($hasFancySelect) {
                                     <?php $checked = (!empty($sessionVendorIds) && in_array($vendor->j2commerce_vendor_id, $sessionVendorIds)); ?>
                                     <div class="uk-margin-small-bottom">
                                         <label class="uk-text-small">
-                                            <input type="checkbox" class="uk-checkbox j2commerce-vendor-checkboxes" name="vendor_ids[]" id="vendor-input-<?php echo $vendor->j2commerce_vendor_id; ?>" value="<?php echo $vendor->j2commerce_vendor_id; ?>"<?php echo $checked ? ' checked' : ''; ?> />
+                                            <input type="checkbox" class="uk-checkbox j2commerce-vendor-checkboxes" name="vendor_ids[]" id="vendor-input-<?php echo (int) $vendor->j2commerce_vendor_id; ?>" value="<?php echo (int) $vendor->j2commerce_vendor_id; ?>"<?php echo $checked ? ' checked' : ''; ?> />
                                             <?php echo $this->escape($vendor->company); ?>
                                         </label>
                                     </div>
@@ -526,7 +526,7 @@ if ($hasFancySelect) {
                                 <?php $checked = (!empty($sessionVendorIds) && in_array($vendor->j2commerce_vendor_id, $sessionVendorIds)); ?>
                                 <div class="uk-margin-small-bottom">
                                     <label class="uk-text-small">
-                                        <input type="checkbox" class="uk-checkbox j2commerce-vendor-checkboxes" name="vendor_ids[]" id="vendor-input-<?php echo $vendor->j2commerce_vendor_id; ?>" value="<?php echo $vendor->j2commerce_vendor_id; ?>"<?php echo $checked ? ' checked' : ''; ?> />
+                                        <input type="checkbox" class="uk-checkbox j2commerce-vendor-checkboxes" name="vendor_ids[]" id="vendor-input-<?php echo (int) $vendor->j2commerce_vendor_id; ?>" value="<?php echo (int) $vendor->j2commerce_vendor_id; ?>"<?php echo $checked ? ' checked' : ''; ?> />
                                         <?php echo $this->escape($vendor->company); ?>
                                     </label>
                                 </div>
