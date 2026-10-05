@@ -144,8 +144,8 @@ $thumbsId  = 'product-gallery-thumbs-' . $productId;
     document.addEventListener('DOMContentLoaded', function() {
         if (typeof Swiper === 'undefined') return;
 
-        const mainEl = document.getElementById('<?php echo $mainId; ?>');
-        const thumbsEl = document.getElementById('<?php echo $thumbsId; ?>');
+        const mainEl = document.getElementById(<?php echo json_encode($mainId, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
+        const thumbsEl = document.getElementById(<?php echo json_encode($thumbsId, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
         if (!mainEl) return;
 
         // Hold the pristine slides as nodes for variant gallery restoration
@@ -158,7 +158,7 @@ $thumbsId  = 'product-gallery-thumbs-' . $productId;
 
         let thumbSwiper = null;
         <?php if ($hasMultipleSlides) : ?>
-        thumbSwiper = new Swiper('#<?php echo $thumbsId; ?>', {
+        thumbSwiper = new Swiper(thumbsEl, {
             spaceBetween: 12,
             slidesPerView: 5,
             freeMode: true,
@@ -170,11 +170,11 @@ $thumbsId  = 'product-gallery-thumbs-' . $productId;
         });
         <?php endif; ?>
 
-        const mainSwiper = new Swiper('#<?php echo $mainId; ?>', {
+        const mainSwiper = new Swiper(mainEl, {
             spaceBetween: 0,
             navigation: {
-                nextEl: '#<?php echo $galleryId; ?> .swiper-button-next',
-                prevEl: '#<?php echo $galleryId; ?> .swiper-button-prev'
+                nextEl: <?php echo json_encode('#' . $galleryId . ' .swiper-button-next', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>,
+                prevEl: <?php echo json_encode('#' . $galleryId . ' .swiper-button-prev', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>
             },
             thumbs: thumbSwiper ? { swiper: thumbSwiper } : undefined
         });
