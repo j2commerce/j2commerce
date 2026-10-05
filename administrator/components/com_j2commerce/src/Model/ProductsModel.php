@@ -503,13 +503,18 @@ class ProductsModel extends ListModel
         // tags are the tags of its source article, so the map joins on a.product_source_id.
         $tag = $this->getState('filter.tag');
 
-        // Run simplified query when filtering by one tag.
-        if (\is_array($tag) && \count($tag) === 1) {
-            $tag = $tag[0];
+        // Cast and de-duplicate first, then run the simplified query when one tag is left. Doing it in
+        // this order means a repeated "None" ([0, 0]) collapses to the scalar branch instead of leaving
+        // array_filter() below with nothing, which would emit an empty IN () list.
+        if (\is_array($tag)) {
+            $tag = array_values(array_unique(ArrayHelper::toInteger($tag)));
+
+            if (\count($tag) === 1) {
+                $tag = $tag[0];
+            }
         }
 
         if ($tag && \is_array($tag)) {
-            $tag         = ArrayHelper::toInteger($tag);
             $includeNone = false;
 
             if (\in_array(0, $tag)) {
