@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\FilterSourceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
@@ -127,6 +128,7 @@ class ProductfiltersModel extends ListModel
             $db->quoteName('fg.group_name'),
             $db->quoteName('fg.ordering', 'group_ordering'),
             $db->quoteName('fg.enabled', 'group_enabled'),
+            $db->quoteName('fg.source', 'group_source'),
         ]);
         $query->leftJoin(
             $db->quoteName('#__j2commerce_filtergroups', 'fg') .
@@ -224,8 +226,9 @@ class ProductfiltersModel extends ListModel
 
             if (!isset($grouped[$groupId])) {
                 $grouped[$groupId] = [
-                    'group_name' => $filter->group_name,
-                    'filters'    => [],
+                    'group_name'   => $filter->group_name,
+                    'group_source' => (string) ($filter->group_source ?? ''),
+                    'filters'      => [],
                 ];
             }
 
@@ -247,7 +250,8 @@ class ProductfiltersModel extends ListModel
      */
     public function addFilterToProduct(int $productId, int $filterId): bool
     {
-        if (!$productId || !$filterId) {
+        // A filter source plugin maintains its own values' links; a hand-added one would be overwritten.
+        if (!$productId || !$filterId || FilterSourceHelper::nativeFilterIds([$filterId]) === []) {
             return false;
         }
 
@@ -427,8 +431,9 @@ class ProductfiltersModel extends ListModel
             );
         }
 
-        // Only enabled filtergroups
-        $query->where($db->quoteName('fg.enabled') . ' = 1');
+        // Only enabled filtergroups, and only values assigned by hand (source plugins keep their own)
+        $query->where($db->quoteName('fg.enabled') . ' = 1')
+            ->where(FilterSourceHelper::nativeFilterCondition($query, $db));
 
         $query->order($db->quoteName('fg.group_name') . ' ASC')
             ->order($db->quoteName('f.filter_name') . ' ASC')

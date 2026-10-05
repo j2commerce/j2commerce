@@ -12,6 +12,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\FilterSourceHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -126,6 +127,14 @@ class FiltergroupModel extends AdminModel
         return $form;
     }
 
+    /** Filter source plugins (j2commerce group) add their settings fields through onContentPrepareForm. */
+    protected function preprocessForm(Form $form, $data, $group = 'content')
+    {
+        PluginHelper::importPlugin('j2commerce');
+
+        parent::preprocessForm($form, $data, $group);
+    }
+
     /**
      * Method to get the data that should be injected in the form.
      *
@@ -179,6 +188,8 @@ class FiltergroupModel extends AdminModel
             $item->ordering                  = 0;
             $item->enabled                   = 1;
             $item->published                 = 1;
+            $item->source                    = FilterSourceHelper::NATIVE;
+            $item->source_params             = [];
             $item->filters                   = [];
             return $item;
         }
@@ -215,6 +226,9 @@ class FiltergroupModel extends AdminModel
                 }
             }
 
+            $item->source        = (string) ($item->source ?? '') ?: FilterSourceHelper::NATIVE;
+            $item->source_params = json_decode((string) ($item->source_params ?? ''), true) ?: [];
+
             // Load associated filters
             $item->filters = $this->getFilters($item->j2commerce_filtergroup_id);
         }
@@ -245,6 +259,7 @@ class FiltergroupModel extends AdminModel
                 $db->quoteName('filter_name'),
                 $db->quoteName('filter_color'),
                 $db->quoteName('ordering'),
+                $db->quoteName('source_ref'),
             ])
             ->from($db->quoteName('#__j2commerce_filters'))
             ->where($db->quoteName('group_id') . ' = :groupId')
@@ -326,6 +341,8 @@ class FiltergroupModel extends AdminModel
         $filtersData = $data['filters'] ?? [];
         unset($data['filters']);
 
+        $previousSource = $this->storedSource((int) ($data['j2commerce_filtergroup_id'] ?? 0));
+
         // Include the content plugins for the on save events.
         PluginHelper::importPlugin('content');
 
@@ -371,9 +388,20 @@ class FiltergroupModel extends AdminModel
                 // Set the ID for redirect after save
                 $this->setState('filtergroup.id', $recordId);
 
-                // Save the filters data
+                $storedSource = $this->storedSource($recordId);
+
                 try {
-                    $this->saveFilters($recordId, $filtersData);
+                    if ($storedSource !== FilterSourceHelper::NATIVE) {
+                        // The source plugin owns these values; posted value rows are ignored.
+                        FilterSourceHelper::syncGroup($recordId);
+                    } elseif ($previousSource !== '' && $previousSource !== FilterSourceHelper::NATIVE) {
+                        // Switched back to J2Commerce: the plugin's values stay as values entered
+                        // by hand. The form did not post them (they were read-only), so they are
+                        // released rather than replaced by the empty posted list.
+                        $this->releaseSourceValues($recordId);
+                    } else {
+                        $this->saveFilters($recordId, $filtersData);
+                    }
                 } catch (\RuntimeException $e) {
                     throw new \RuntimeException('Failed to save filter group: ' . $e->getMessage());
                 }
@@ -583,6 +611,42 @@ class FiltergroupModel extends AdminModel
             $db->transactionRollback();
             throw new \RuntimeException('Failed to save filters for group ' . $groupId . ': ' . $e->getMessage());
         }
+    }
+
+    private function storedSource(int $groupId): string
+    {
+        if ($groupId < 1) {
+            return '';
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('source'))
+            ->from($db->quoteName('#__j2commerce_filtergroups'))
+            ->where($db->quoteName('j2commerce_filtergroup_id') . ' = :id')
+            ->bind(':id', $groupId, ParameterType::INTEGER);
+
+        return (string) $db->setQuery($query)->loadResult();
+    }
+
+    private function releaseSourceValues(int $groupId): void
+    {
+        $db    = $this->getDatabase();
+        $empty = '';
+        $query = $db->getQuery(true)
+            ->update($db->quoteName('#__j2commerce_filters'))
+            ->set($db->quoteName('source_ref') . ' = :empty')
+            ->where($db->quoteName('group_id') . ' = :id')
+            ->bind(':empty', $empty)
+            ->bind(':id', $groupId, ParameterType::INTEGER);
+
+        $db->setQuery($query)->execute();
+    }
+
+    /** Toolbar "Rebuild Values"; false when the group has no available source plugin. */
+    public function rebuildSource(int $groupId): bool
+    {
+        return FilterSourceHelper::syncGroup($groupId);
     }
 
     /**

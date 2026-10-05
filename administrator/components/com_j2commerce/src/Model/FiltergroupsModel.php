@@ -39,6 +39,7 @@ class FiltergroupsModel extends ListModel
                 'group_name', 'a.group_name',
                 'ordering', 'a.ordering',
                 'enabled', 'a.enabled',
+                'source', 'a.source',
             ];
         }
 

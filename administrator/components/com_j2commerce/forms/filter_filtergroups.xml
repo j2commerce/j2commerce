@@ -35,6 +35,8 @@
             <option value="a.enabled DESC">COM_J2COMMERCE_HEADING_STATUS_DESC</option>
             <option value="a.group_name ASC">COM_J2COMMERCE_FILTERGROUP_NAME_ASC</option>
             <option value="a.group_name DESC">COM_J2COMMERCE_FILTERGROUP_NAME_DESC</option>
+            <option value="a.source ASC">COM_J2COMMERCE_FILTERGROUP_SOURCE_SORT_ASC</option>
+            <option value="a.source DESC">COM_J2COMMERCE_FILTERGROUP_SOURCE_SORT_DESC</option>
             <option value="a.j2commerce_filtergroup_id ASC">COM_J2COMMERCE_HEADING_ID_ASC</option>
             <option value="a.j2commerce_filtergroup_id DESC">COM_J2COMMERCE_HEADING_ID_DESC</option>
         </field>

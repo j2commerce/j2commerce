@@ -67,6 +67,7 @@
         <field
             name="filter_id"
             type="Productfilter"
+            nativeonly="true"
             label="COM_J2COMMERCE_BATCH_FILTER_LABEL"
             addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
             filter="integer"

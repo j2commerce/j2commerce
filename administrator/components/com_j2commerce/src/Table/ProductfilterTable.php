@@ -12,6 +12,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\FilterSourceHelper;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
 use Joomla\Database\ParameterType;
@@ -64,11 +65,16 @@ class ProductfilterTable extends Table
             $filterIds = array_filter(array_map('intval', explode(',', $filterIds)));
         }
 
-        // Delete existing filter associations for this product
+        // The product form edits hand-entered values only. Links a filter source plugin wrote
+        // (a tag group) are kept here and maintained by that plugin.
+        $filterIds = FilterSourceHelper::nativeFilterIds((array) $filterIds);
+
         $query = $db->getQuery(true)
             ->delete($db->quoteName('#__j2commerce_product_filters'))
             ->where($db->quoteName('product_id') . ' = :productId')
             ->bind(':productId', $productId, ParameterType::INTEGER);
+        $query->where($db->quoteName('filter_id') . ' IN (SELECT ' . $db->quoteName('f.j2commerce_filter_id') . ' FROM ' . $db->quoteName('#__j2commerce_filters', 'f')
+            . ' WHERE ' . FilterSourceHelper::nativeFilterCondition($query, $db) . ')');
 
         $db->setQuery($query);
         $db->execute();
@@ -114,7 +120,7 @@ class ProductfilterTable extends Table
     {
         $productIds = self::cleanIds($productIds);
 
-        if ($filterId < 1 || $productIds === []) {
+        if ($filterId < 1 || $productIds === [] || FilterSourceHelper::nativeFilterIds([$filterId]) === []) {
             return 0;
         }
 
@@ -155,7 +161,7 @@ class ProductfilterTable extends Table
     {
         $productIds = self::cleanIds($productIds);
 
-        if ($filterId < 1 || $productIds === []) {
+        if ($filterId < 1 || $productIds === [] || FilterSourceHelper::nativeFilterIds([$filterId]) === []) {
             return 0;
         }
 

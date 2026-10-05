@@ -32,6 +32,16 @@
             <option value="radio">COM_J2COMMERCE_FILTERGROUP_INPUT_TYPE_RADIO</option>
             <option value="color">COM_J2COMMERCE_FILTERGROUP_INPUT_TYPE_COLOR</option>
         </field>
+
+        <field
+            name="source"
+            type="Filtersource"
+            addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
+            label="COM_J2COMMERCE_FILTERGROUP_SOURCE"
+            description="COM_J2COMMERCE_FILTERGROUP_SOURCE_DESC"
+            default="j2commerce"
+            class="form-select"
+        />
     </fieldset>
 
     <fieldset name="global">

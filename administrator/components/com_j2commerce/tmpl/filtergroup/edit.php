@@ -9,6 +9,7 @@
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\FilterSourceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -31,6 +32,11 @@ $wa->registerAndUseScript(
     ['defer' => true]
 );
 
+// The stored source decides what the value list shows; a source picked but not yet saved
+// takes effect on save, so the hand-entered list stays until then.
+$source    = (string) ($this->item->source ?? FilterSourceHelper::NATIVE);
+$isSourced = $source !== FilterSourceHelper::NATIVE && !empty($this->item->j2commerce_filtergroup_id);
+
 $layout  = 'edit';
 $tmpl    = Factory::getApplication()->input->get('tmpl', '', 'cmd') === 'component' ? '&tmpl=component' : '';
 ?>
@@ -46,11 +52,32 @@ $tmpl    = Factory::getApplication()->input->get('tmpl', '', 'cmd') === 'compone
                             <legend><?php echo Text::_('COM_J2COMMERCE_FILTERGROUP_DETAILS'); ?></legend>
                             <?php echo $this->form->renderField('group_name'); ?>
                             <?php echo $this->form->renderField('filter_input_type'); ?>
+                            <?php echo $this->form->renderField('source'); ?>
+                            <?php // A source plugin's own settings (onContentPrepareForm), shown for its key only. ?>
+                            <?php echo $this->form->renderFieldset('source_params'); ?>
                         </fieldset>
 
-                        <?php if (!empty($this->item->id) || !empty($this->item->j2commerce_filtergroup_id)) : ?>
+                        <?php if ($isSourced && !empty($this->item->filters)) : ?>
                         <fieldset class="options-form">
-                            <legend><?php echo Text::sprintf('COM_J2COMMERCE_FILTERGROUP_FIELDSET_FILTERS', $this->item->group_name); ?> </legend>
+                            <legend><?php echo Text::sprintf('COM_J2COMMERCE_FILTERGROUP_FIELDSET_FILTERS', $this->escape($this->item->group_name)); ?></legend>
+                            <p class="alert alert-info">
+                                <span class="icon-info-circle" aria-hidden="true"></span>
+                                <?php echo Text::sprintf('COM_J2COMMERCE_FILTERGROUP_SOURCE_MANAGED', $this->escape(FilterSourceHelper::label($source))); ?>
+                            </p>
+                            <ul class="list-group">
+                                <?php foreach ($this->item->filters as $filter) : ?>
+                                    <li class="list-group-item"><?php echo $this->escape($filter->filter_name); ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </fieldset>
+                        <?php elseif ($isSourced) : ?>
+                        <div class="alert alert-info">
+                            <span class="icon-info-circle" aria-hidden="true"></span>
+                            <?php echo Text::sprintf('COM_J2COMMERCE_FILTERGROUP_SOURCE_NO_VALUES', $this->escape(FilterSourceHelper::label($source))); ?>
+                        </div>
+                        <?php elseif (!empty($this->item->id) || !empty($this->item->j2commerce_filtergroup_id)) : ?>
+                        <fieldset class="options-form">
+                            <legend><?php echo Text::sprintf('COM_J2COMMERCE_FILTERGROUP_FIELDSET_FILTERS', $this->escape($this->item->group_name)); ?> </legend>
                             <?php echo $this->form->renderField('filters'); ?>
                         </fieldset>
                         <?php else : ?>

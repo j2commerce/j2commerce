@@ -12,6 +12,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\FilterSourceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Table\Table;
@@ -72,6 +73,18 @@ class FiltergroupTable extends Table
             $this->filter_input_type = 'checkbox';
         }
 
+        // A source must be one a plugin answers for, or the one already stored (its plugin may be
+        // disabled for now); anything else falls back to values entered by hand.
+        $source = (string) ($this->source ?? '');
+
+        if ($source !== FilterSourceHelper::NATIVE && !FilterSourceHelper::isRegistered($source) && $source !== $this->storedSource()) {
+            $this->source = FilterSourceHelper::NATIVE;
+        }
+
+        if (\is_array($this->source_params ?? null)) {
+            $this->source_params = json_encode($this->source_params, JSON_UNESCAPED_UNICODE);
+        }
+
         // Verify that the group name is unique
         if ($this->group_name) {
             $db    = Factory::getContainer()->get('DatabaseDriver');
@@ -95,6 +108,24 @@ class FiltergroupTable extends Table
         }
 
         return true;
+    }
+
+    private function storedSource(): string
+    {
+        $id = (int) ($this->j2commerce_filtergroup_id ?? 0);
+
+        if (!$id) {
+            return '';
+        }
+
+        $db    = $this->getDbo();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('source'))
+            ->from($db->quoteName('#__j2commerce_filtergroups'))
+            ->where($db->quoteName('j2commerce_filtergroup_id') . ' = :id')
+            ->bind(':id', $id, ParameterType::INTEGER);
+
+        return (string) $db->setQuery($query)->loadResult();
     }
 
     /**
