@@ -612,10 +612,15 @@ class ProducttagsModel extends ListModel
         // the manufacturer filter to brands represented in the current category listing.
         $manufacturerListType    = $params ? $params->get('list_manufacturer_filter_list_type', 'all') : 'all';
         $restrictManufacturerIds = $manufacturerListType === 'selected'
-            ? $this->getMatchingManufacturerIds()
+            ? $this->getMatchingIds('filter.manufacturer_ids', 'p.manufacturer_id')
             : null;
 
-        $filters = ProductHelper::getFilters($items, [], $restrictManufacturerIds);
+        // `list_vendor_filter_list_type` is the same choice for the vendor filter.
+        $restrictVendorIds = $params && $params->get('list_vendor_filter_list_type', 'all') === 'selected'
+            ? $this->getMatchingIds('filter.vendor_ids', 'p.vendor_id')
+            : null;
+
+        $filters = ProductHelper::getFilters($items, [], $restrictManufacturerIds, $restrictVendorIds);
 
         $filters['sorting'] = ProductsModel::getSortOptions($params ?? new Registry());
 
@@ -704,32 +709,32 @@ class ProducttagsModel extends ListModel
     }
 
     /**
-     * Get the IDs of manufacturers represented in the current tag-matched product set.
+     * Get the distinct values of a product column (manufacturer_id, vendor_id) across the
+     * current tag-matched product set.
      *
-     * Re-uses getListQuery() so the manufacturer list reflects the same tag / search /
-     * price / vendor / product-filter constraints as the listing. Any active manufacturer
-     * selection is intentionally ignored so choosing a brand does not collapse the brand
-     * list to that single brand.
+     * Re-uses getListQuery() so the list reflects the same tag / search / price /
+     * product-filter constraints as the listing. The visitor's own selection for that filter
+     * ($stateKey) is ignored, so choosing a brand or vendor does not collapse its own list.
      *
      * @return  int[]
      *
      * @since   6.0.3
      */
-    protected function getMatchingManufacturerIds(): array
+    protected function getMatchingIds(string $stateKey, string $column): array
     {
         $db = $this->getDatabase();
 
-        $savedManufacturerIds = $this->getState('filter.manufacturer_ids', []);
-        $this->setState('filter.manufacturer_ids', []);
+        $saved = $this->getState($stateKey, []);
+        $this->setState($stateKey, []);
 
         try {
             $query = $this->getListQuery();
         } finally {
-            $this->setState('filter.manufacturer_ids', $savedManufacturerIds);
+            $this->setState($stateKey, $saved);
         }
 
         $query->clear('select')->clear('order')->clear('group')
-            ->select('DISTINCT ' . $db->quoteName('p.manufacturer_id'));
+            ->select('DISTINCT ' . $db->quoteName($column));
 
         $db->setQuery($query);
 
