@@ -70,9 +70,12 @@ $productFilters = (new ProductfiltersModel)->getFiltersByProduct($item->j2commer
                     <td class="text-center small"><?php echo $this->escape(Text::sprintf('COM_J2COMMERCE_FILTERGROUP_SOURCE_SET_BY', FilterSourceHelper::label($groupSource))); ?></td>
                     <?php else : ?>
                     <td class="text-center">
-                                <span class="filterRemove" onclick="removeFilter(<?php echo $filter->filter_id; ?>, <?php echo $item->j2commerce_product_id; ?>);">
-                                    <span class="icon icon-trash text-danger"></span>
-                                </span>
+                        <button type="button" class="btn btn-sm btn-link text-danger filterRemove"
+                                data-filter-id="<?php echo (int) $filter->filter_id; ?>"
+                                data-product-id="<?php echo (int) $item->j2commerce_product_id; ?>"
+                                aria-label="<?php echo $this->escape(Text::_('COM_J2COMMERCE_REMOVE') . ': ' . J2htmlHelper::translateKey($filter->filter_name)); ?>">
+                            <span class="icon icon-trash" aria-hidden="true"></span>
+                        </button>
                         <input type="hidden" value="<?php echo $filter->filter_id;?>" name="<?php echo $formPrefix.'[productfilter_ids]' ;?>[]" />
                     </td>
                     <?php endif; ?>

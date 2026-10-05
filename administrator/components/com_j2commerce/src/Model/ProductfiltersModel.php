@@ -250,7 +250,8 @@ class ProductfiltersModel extends ListModel
      */
     public function addFilterToProduct(int $productId, int $filterId): bool
     {
-        if (!$productId || !$filterId) {
+        // A filter source plugin maintains its own values' links; a hand-added one would be overwritten.
+        if (!$productId || !$filterId || FilterSourceHelper::nativeFilterIds([$filterId]) === []) {
             return false;
         }
 

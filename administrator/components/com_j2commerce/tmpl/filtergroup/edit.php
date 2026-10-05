@@ -77,7 +77,7 @@ $tmpl    = Factory::getApplication()->input->get('tmpl', '', 'cmd') === 'compone
                         </div>
                         <?php elseif (!empty($this->item->id) || !empty($this->item->j2commerce_filtergroup_id)) : ?>
                         <fieldset class="options-form">
-                            <legend><?php echo Text::sprintf('COM_J2COMMERCE_FILTERGROUP_FIELDSET_FILTERS', $this->item->group_name); ?> </legend>
+                            <legend><?php echo Text::sprintf('COM_J2COMMERCE_FILTERGROUP_FIELDSET_FILTERS', $this->escape($this->item->group_name)); ?> </legend>
                             <?php echo $this->form->renderField('filters'); ?>
                         </fieldset>
                         <?php else : ?>

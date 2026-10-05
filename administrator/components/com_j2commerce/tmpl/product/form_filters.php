@@ -57,6 +57,14 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
     document.addEventListener("DOMContentLoaded", function () {
         var filterBlock = document.getElementById("j2commerce-product-filters");
         if (filterBlock) {
+            // Saved rows (server-rendered or re-fetched by the pager) carry their ids on the button.
+            filterBlock.addEventListener('click', function (e) {
+                var btn = e.target.closest('.filterRemove[data-filter-id]');
+                if (btn) {
+                    removeFilter(parseInt(btn.dataset.filterId, 10), parseInt(btn.dataset.productId, 10));
+                }
+            });
+
             var paginationWrapper = document.createElement('nav');
             paginationWrapper.className = 'pagination__wrapper';
             paginationWrapper.setAttribute('aria-label', '<?php echo Text::_('JLIB_HTML_PAGINATION'); ?>');
@@ -214,6 +222,9 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                     if (filterElement) {
                         filterElement.remove();
                     }
+
+                    // The focused button went with its row; hand focus to the filter search instead of the page body.
+                    document.getElementById('J2CommerceproductFilter')?.focus();
                 }
 
                 // Add the notification message
@@ -270,15 +281,20 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
                 var actionCell = document.createElement('td');
                 actionCell.className = 'text-center';
 
-                // Same shape as the server-rendered rows in form_ajax_avfilter.php.
-                var remove = document.createElement('span');
-                remove.className = 'filterRemove';
+                // Same shape as the server-rendered rows in form_ajax_avfilter.php; not saved yet,
+                // so removing it only drops the row (no data-filter-id, so the delegated handler skips it).
+                var remove = document.createElement('button');
+                remove.type = 'button';
+                remove.className = 'btn btn-sm btn-link text-danger filterRemove';
+                remove.setAttribute('aria-label', <?php echo json_encode(Text::_('COM_J2COMMERCE_REMOVE') . ': ', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?> + label);
                 remove.addEventListener('click', function () {
                     row.remove();
+                    document.getElementById('J2CommerceproductFilter')?.focus();
                 });
 
                 var icon = document.createElement('span');
-                icon.className = 'icon icon-trash text-danger';
+                icon.className = 'icon icon-trash';
+                icon.setAttribute('aria-hidden', 'true');
                 remove.appendChild(icon);
 
                 var hidden = document.createElement('input');
