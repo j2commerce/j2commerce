@@ -9,6 +9,7 @@
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\FilterSourceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -73,6 +74,9 @@ if ($saveOrder && !empty($this->items)) {
                                 <th scope="col">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_FILTERGROUP_NAME', 'a.group_name', $listDirn, $listOrder); ?>
                                 </th>
+                                <th scope="col" class="d-none d-md-table-cell">
+                                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_FILTERGROUP_SOURCE', 'a.source', $listDirn, $listOrder); ?>
+                                </th>
                                 <th scope="col" style="width:5%" class="d-none d-md-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'JGRID_HEADING_ID', 'a.j2commerce_filtergroup_id', $listDirn, $listOrder); ?>
                                 </th>
@@ -124,6 +128,9 @@ if ($saveOrder && !empty($this->items)) {
                                         <span title="<?php echo Text::sprintf('JFIELD_ALIAS_LABEL', $this->escape(J2htmlHelper::translateKey($item->group_name))); ?>"><?php echo $this->escape(J2htmlHelper::translateKey($item->group_name)); ?></span>
                                     <?php endif; ?>
                                 </th>
+                                <td class="d-none d-md-table-cell">
+                                    <?php echo $this->escape(FilterSourceHelper::label((string) ($item->source ?? FilterSourceHelper::NATIVE))); ?>
+                                </td>
                                 <td class="d-none d-md-table-cell">
                                     <?php echo (int) $item->j2commerce_filtergroup_id; ?>
                                 </td>

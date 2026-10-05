@@ -105,6 +105,29 @@ class FiltergroupController extends FormController
         return $result;
     }
 
+    /** Toolbar "Rebuild Values": re-run a plugin-sourced group's sync. */
+    public function rebuildSource(): void
+    {
+        $this->checkToken();
+
+        $recordId = $this->input->getInt('id', 0);
+        $editUrl  = Route::_('index.php?option=' . $this->option . '&view=' . $this->view_item . '&layout=edit&id=' . $recordId, false);
+
+        if (!$recordId || !$this->allowEdit(['id' => $recordId], 'id')) {
+            $this->setRedirect($editUrl, Text::_('JLIB_APPLICATION_ERROR_EDIT_NOT_PERMITTED'), 'error');
+
+            return;
+        }
+
+        $rebuilt = $this->getModel()->rebuildSource($recordId);
+
+        $this->setRedirect(
+            $editUrl,
+            Text::_($rebuilt ? 'COM_J2COMMERCE_FILTERGROUP_REBUILD_DONE' : 'COM_J2COMMERCE_FILTERGROUP_REBUILD_UNAVAILABLE'),
+            $rebuilt ? 'success' : 'warning'
+        );
+    }
+
     /**
      * Method to edit an existing record.
      *

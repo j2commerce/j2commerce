@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Field;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\FilterSourceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Field\GroupedlistField;
@@ -55,6 +56,11 @@ class ProductfilterField extends GroupedlistField
                 $db->quoteName('fg.group_name') . ' ASC',
                 $db->quoteName('f.ordering') . ' ASC',
             ]);
+
+        // The batch control assigns values by hand, so it offers only values the owner enters (nativeonly).
+        if ((string) $this->element['nativeonly'] === 'true') {
+            $query->where(FilterSourceHelper::nativeFilterCondition($query, $db));
+        }
 
         $db->setQuery($query);
 

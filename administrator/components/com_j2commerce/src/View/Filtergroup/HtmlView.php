@@ -12,6 +12,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Filtergroup;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\FilterSourceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
@@ -132,6 +133,11 @@ class HtmlView extends BaseHtmlView
         // If an existing item, can save to a copy.
         if (!$isNew && $canDo->get('core.create')) {
             ToolbarHelper::save2copy('filtergroup.save2copy');
+        }
+
+        // A plugin-sourced group can be rebuilt on demand (e.g. after Joomla's batch tagging, which fires no save event).
+        if (!$isNew && !$checkedOut && $canDo->get('core.edit') && ($this->item->source ?? FilterSourceHelper::NATIVE) !== FilterSourceHelper::NATIVE) {
+            ToolbarHelper::custom('filtergroup.rebuildSource', 'refresh', '', 'COM_J2COMMERCE_FILTERGROUP_REBUILD_VALUES', false);
         }
 
         if ($isNew) {

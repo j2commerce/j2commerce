@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\FilterSourceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
@@ -279,6 +280,9 @@ class ProductsController extends AdminController
                 ->bind(':searchGroup', $search, ParameterType::STRING);
         }
 
+        // Values a filter source plugin maintains are not assigned by hand.
+        $query->where(FilterSourceHelper::nativeFilterCondition($query, $db));
+
         $query->order($db->quoteName('fg.group_name') . ' ASC')
             ->order($db->quoteName('f.filter_name') . ' ASC')
             ->setLimit(20);
@@ -318,7 +322,8 @@ class ProductsController extends AdminController
         $success = false;
         $msg     = Text::_('COM_J2COMMERCE_PRODUCT_FILTER_DELETE_ERROR');
 
-        if ($filterId && $productId) {
+        // A source plugin's link would come straight back on its next sync, so it is not removed by hand.
+        if ($filterId && $productId && FilterSourceHelper::nativeFilterIds([$filterId]) !== []) {
             $db    = Factory::getContainer()->get('DatabaseDriver');
             $query = $db->getQuery(true);
 

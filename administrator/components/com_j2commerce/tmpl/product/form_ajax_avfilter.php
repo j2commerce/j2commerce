@@ -12,6 +12,7 @@
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\FilterSourceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Field\ManufacturersField;
 use J2Commerce\Component\J2commerce\Administrator\Model\ProductfiltersModel;
@@ -54,18 +55,27 @@ $productFilters = (new ProductfiltersModel)->getFiltersByProduct($item->j2commer
             <tr>
                 <td colspan="2"><h4 class="mb-0"><?php echo $this->escape(J2htmlHelper::translateKey($filters['group_name'])); ?></h4></td>
             </tr>
+            <?php
+            // Values a filter source plugin maintains (e.g. a tag group) are shown, not edited here.
+            $groupSource = (string) ($filters['group_source'] ?? '');
+            $isSourced   = $groupSource !== '' && $groupSource !== FilterSourceHelper::NATIVE;
+            ?>
             <?php foreach($filters['filters'] as $filter):
                 ?>
                 <tr id="product_filter_current_option_<?php echo $filter->filter_id;?>">
                     <td class="addedFilter">
                         <?php echo $this->escape(J2htmlHelper::translateKey($filter->filter_name)) ;?>
                     </td>
+                    <?php if ($isSourced) : ?>
+                    <td class="text-center small"><?php echo $this->escape(Text::sprintf('COM_J2COMMERCE_FILTERGROUP_SOURCE_SET_BY', FilterSourceHelper::label($groupSource))); ?></td>
+                    <?php else : ?>
                     <td class="text-center">
                                 <span class="filterRemove" onclick="removeFilter(<?php echo $filter->filter_id; ?>, <?php echo $item->j2commerce_product_id; ?>);">
                                     <span class="icon icon-trash text-danger"></span>
                                 </span>
                         <input type="hidden" value="<?php echo $filter->filter_id;?>" name="<?php echo $formPrefix.'[productfilter_ids]' ;?>[]" />
                     </td>
+                    <?php endif; ?>
                 </tr>
             <?php endforeach;?>
         <?php endforeach;?>
