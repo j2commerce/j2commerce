@@ -1010,7 +1010,7 @@ class J2CommerceFilters {
         remove.className = uikit
             ? 'j2commerce-filter-chip-remove uk-close uk-margin-small-left'
             : 'j2commerce-filter-chip-remove btn-close text-danger ms-1';
-        remove.setAttribute('aria-label', 'Remove');
+        remove.setAttribute('aria-label', Joomla.Text._('COM_J2COMMERCE_FILTER_REMOVE_CHIP', 'Remove filter: %s').replace('%s', () => displayLabel));
         if (!uikit) {
             remove.style.fontSize = '.5rem';
         }
@@ -1027,7 +1027,7 @@ class J2CommerceFilters {
     }
 
     bindActiveFilterTiles() {
-        // Event delegation — survives innerHTML replacement after AJAX
+        // Event delegation — survives the chips being re-rendered after every AJAX response
         document.addEventListener('click', (e) => {
             const removeBtn = e.target.closest('.j2commerce-filter-chip-remove') ?? e.target.closest('.filter-chip .btn-close');
             if (!removeBtn) return;
@@ -1035,6 +1035,12 @@ class J2CommerceFilters {
             if (!chip) return;
 
             e.preventDefault();
+            // The chip is about to be re-rendered away; park focus on its list instead of <body>.
+            const list = chip.parentElement;
+            if (list && chip.contains(document.activeElement)) {
+                list.tabIndex = -1;
+                list.focus();
+            }
             this.removeFilter(chip.dataset.type, chip.dataset.id);
         });
 
