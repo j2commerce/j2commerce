@@ -19,6 +19,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
+use Joomla\Utilities\ArrayHelper;
 
 /**
  * Products list model class.
@@ -100,6 +101,8 @@ class ProductsModel extends ListModel
         $categoryId = $this->getUserStateFromRequest($this->context . '.filter.category_id', 'filter_category_id', '', 'int');
         $this->setState('filter.category_id', $categoryId);
 
+        $this->setState('filter.tag', $this->getUserStateFromRequest($this->context . '.filter.tag', 'filter_tag', ''));
+
         $dateFrom = $this->getUserStateFromRequest($this->context . '.filter.date_from', 'filter_date_from', '', 'string');
         $this->setState('filter.date_from', $dateFrom);
 
@@ -180,6 +183,7 @@ class ProductsModel extends ListModel
         $id .= ':' . $this->getState('filter.visibility');
         $id .= ':' . $this->getState('filter.shipping_state');
         $id .= ':' . $this->getState('filter.category_id');
+        $id .= ':' . serialize($this->getState('filter.tag'));
         $id .= ':' . $this->getState('filter.date_from');
         $id .= ':' . $this->getState('filter.date_to');
         $id .= ':' . $this->getState('filter.product_id_from');
@@ -493,6 +497,87 @@ class ProductsModel extends ListModel
             $priceToFloat = (float) $priceTo;
             $query->where($db->quoteName('v.price') . ' <= :priceTo')
                 ->bind(':priceTo', $priceToFloat);
+        }
+
+        // Filter by a single or group of tags. Same shape as com_content's ArticlesModel; a product's
+        // tags are the tags of its source article, so the map joins on a.product_source_id.
+        $tag = $this->getState('filter.tag');
+
+        // Run simplified query when filtering by one tag.
+        if (\is_array($tag) && \count($tag) === 1) {
+            $tag = $tag[0];
+        }
+
+        if ($tag && \is_array($tag)) {
+            $tag         = ArrayHelper::toInteger($tag);
+            $includeNone = false;
+
+            if (\in_array(0, $tag)) {
+                $tag         = array_filter($tag);
+                $includeNone = true;
+            }
+
+            $subQuery = $db->createQuery()
+                ->select('DISTINCT ' . $db->quoteName('content_item_id'))
+                ->from($db->quoteName('#__contentitem_tag_map'))
+                ->where(
+                    [
+                        $db->quoteName('tag_id') . ' IN (' . implode(',', $query->bindArray($tag)) . ')',
+                        $db->quoteName('type_alias') . ' = ' . $db->quote('com_content.article'),
+                    ]
+                );
+
+            $query->join(
+                $includeNone ? 'LEFT' : 'INNER',
+                '(' . $subQuery . ') AS ' . $db->quoteName('tagmap'),
+                $db->quoteName('tagmap.content_item_id') . ' = ' . $db->quoteName('a.product_source_id')
+            );
+
+            if ($includeNone) {
+                $subQuery2 = $db->createQuery()
+                    ->select('DISTINCT ' . $db->quoteName('content_item_id'))
+                    ->from($db->quoteName('#__contentitem_tag_map'))
+                    ->where($db->quoteName('type_alias') . ' = ' . $db->quote('com_content.article'));
+                $query->join(
+                    'LEFT',
+                    '(' . $subQuery2 . ') AS ' . $db->quoteName('tagmap2'),
+                    $db->quoteName('tagmap2.content_item_id') . ' = ' . $db->quoteName('a.product_source_id')
+                )
+                ->where(
+                    '(' . $db->quoteName('tagmap.content_item_id') . ' IS NOT NULL OR '
+                    . $db->quoteName('tagmap2.content_item_id') . ' IS NULL)'
+                );
+            }
+        } elseif (is_numeric($tag)) {
+            $tag = (int) $tag;
+
+            if ($tag === 0) {
+                $subQuery = $db->createQuery()
+                    ->select('DISTINCT ' . $db->quoteName('content_item_id'))
+                    ->from($db->quoteName('#__contentitem_tag_map'))
+                    ->where($db->quoteName('type_alias') . ' = ' . $db->quote('com_content.article'));
+
+                // Only show products without tags
+                $query->join(
+                    'LEFT',
+                    '(' . $subQuery . ') AS ' . $db->quoteName('tagmap'),
+                    $db->quoteName('tagmap.content_item_id') . ' = ' . $db->quoteName('a.product_source_id')
+                )
+                ->where($db->quoteName('tagmap.content_item_id') . ' IS NULL');
+            } else {
+                $query->join(
+                    'INNER',
+                    $db->quoteName('#__contentitem_tag_map', 'tagmap'),
+                    $db->quoteName('tagmap.content_item_id') . ' = ' . $db->quoteName('a.product_source_id')
+                )
+                ->where(
+                    [
+                        $db->quoteName('tagmap.tag_id') . ' = :tag',
+                        $db->quoteName('tagmap.type_alias') . ' = ' . $db->quote('com_content.article'),
+                    ]
+                )
+                ->bind(':tag', $tag, ParameterType::INTEGER);
+            }
         }
 
         // Filter by the values the product is tagged with, through the storefront's own matching
