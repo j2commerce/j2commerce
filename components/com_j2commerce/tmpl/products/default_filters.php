@@ -72,6 +72,9 @@ foreach (($this->filters['productfilters'] ?? []) as $pfGroup) {
     }
 }
 
+// Accessible name of the active-filter chips' remove buttons (here and in j2commerce-filters.es6.js).
+Text::script('COM_J2COMMERCE_FILTER_REMOVE_CHIP');
+
 if ($hasFancySelect) {
     Text::script('JGLOBAL_SELECT_NO_RESULTS_MATCH');
     Text::script('JGLOBAL_SELECT_PRESS_TO_SELECT');
@@ -150,12 +153,12 @@ if ($hasFancySelect) {
             <?php if ($hasFilterGroups) : ?>
             <div id="j2commerce-active-filters" class="mb-3">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3 class="fw-bold mb-0 fs-5"><?php echo Text::_('COM_J2COMMERCE_FILTER_ACTIVE_TITLE'); ?></h3>
-                    <a href="javascript:void(0);" class="text-danger small text-decoration-none" id="j2commerce-clear-all-filters" style="display:none;">
+                    <h3 class="fw-bold mb-0 fs-5" id="j2commerce-active-filters-title"><?php echo Text::_('COM_J2COMMERCE_FILTER_ACTIVE_TITLE'); ?></h3>
+                    <button type="button" class="btn btn-link btn-sm p-0 text-danger small text-decoration-none" id="j2commerce-clear-all-filters" style="display:none;">
                         <?php echo Text::_('COM_J2COMMERCE_FILTER_CLEAR_ALL'); ?>
-                    </a>
+                    </button>
                 </div>
-                <div id="j2commerce-active-filter-tiles" class="d-flex flex-wrap gap-2"></div>
+                <div id="j2commerce-active-filter-tiles" role="group" aria-labelledby="j2commerce-active-filters-title" tabindex="-1" class="d-flex flex-wrap gap-2"></div>
             </div>
             <?php endif; ?>
 
@@ -413,6 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const pfPicked = el => (el.tagName === 'OPTION' ? el.selected : el.checked);
     const pfPick = (el, on) => { if (el.tagName === 'OPTION') { el.selected = on; } else { el.checked = on; } };
     const pfValued = el => el.value !== '';
+    const removeChipLabel = <?php echo json_encode(Text::_('COM_J2COMMERCE_FILTER_REMOVE_CHIP'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
     const ajaxEnabled = document.querySelector('.j2commerce-product-list')?.dataset.ajaxFilters === 'true';
     if (ajaxEnabled && typeof J2CommerceFilters !== 'undefined') {
@@ -520,7 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
             close.type = 'button';
             close.className = 'btn-close text-danger ms-1';
             close.style.fontSize = '.5rem';
-            close.setAttribute('aria-label', 'Remove');
+            close.setAttribute('aria-label', removeChipLabel.replace('%s', () => label));
             chip.append(label, close);
             tiles.push(chip);
         });
@@ -583,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const formatValue = <?php echo (float) $currencyValue; ?>;
     const decimalPlace = <?php echo (int) $decimalPlace; ?>;
-    const thousandSymbol = '<?php echo $this->escape($thousandSymbol); ?>';
+    const thousandSymbol = <?php echo json_encode((string) $thousandSymbol, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     const minPrice = <?php echo (float) $minPrice; ?>;
     const maxPrice = <?php echo (float) $maxPrice; ?>;
     const currentMin = parseFloat(minPriceEl?.textContent || minPrice);

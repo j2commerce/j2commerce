@@ -62,6 +62,9 @@ foreach (($this->filters['productfilters'] ?? []) as $pfGroup) {
     }
 }
 
+// Accessible name of the active-filter chips' remove buttons (here and in j2commerce-filters.es6.js).
+Text::script('COM_J2COMMERCE_FILTER_REMOVE_CHIP');
+
 if ($hasFancySelect) {
     Text::script('JGLOBAL_SELECT_NO_RESULTS_MATCH');
     Text::script('JGLOBAL_SELECT_PRESS_TO_SELECT');
@@ -128,12 +131,12 @@ if ($hasFancySelect) {
             <?php if ($hasFilterGroups) : ?>
             <div id="j2commerce-active-filters-mobile" class="j2commerce-active-filters uk-margin-small-bottom">
                 <div class="uk-flex uk-flex-between uk-flex-middle uk-margin-small-bottom">
-                    <h3 class="uk-text-bold uk-margin-remove uk-text-small"><?php echo Text::_('COM_J2COMMERCE_FILTER_ACTIVE_TITLE'); ?></h3>
-                    <a href="javascript:void(0);" class="j2commerce-clear-all-filters uk-text-danger uk-text-small" id="j2commerce-clear-all-filters-mobile" style="display:none;">
+                    <h3 class="uk-text-bold uk-margin-remove uk-text-small" id="j2commerce-active-filters-title-mobile"><?php echo Text::_('COM_J2COMMERCE_FILTER_ACTIVE_TITLE'); ?></h3>
+                    <button type="button" class="uk-button uk-button-link j2commerce-clear-all-filters uk-text-danger uk-text-small" id="j2commerce-clear-all-filters-mobile" style="display:none;text-transform:none;">
                         <?php echo Text::_('COM_J2COMMERCE_FILTER_CLEAR_ALL'); ?>
-                    </a>
+                    </button>
                 </div>
-                <div id="j2commerce-active-filter-tiles-mobile" class="j2commerce-active-filter-tiles uk-flex uk-flex-wrap" style="gap:.5rem;"></div>
+                <div id="j2commerce-active-filter-tiles-mobile" role="group" aria-labelledby="j2commerce-active-filters-title-mobile" tabindex="-1" class="j2commerce-active-filter-tiles uk-flex uk-flex-wrap" style="gap:.5rem;"></div>
             </div>
             <?php endif; ?>
 
@@ -349,12 +352,12 @@ if ($hasFancySelect) {
         <?php if ($hasFilterGroups) : ?>
         <div id="j2commerce-active-filters" class="j2commerce-active-filters uk-margin-small-bottom">
             <div class="uk-flex uk-flex-between uk-flex-middle uk-margin-small-bottom">
-                <h3 class="uk-text-bold uk-margin-remove uk-text-small"><?php echo Text::_('COM_J2COMMERCE_FILTER_ACTIVE_TITLE'); ?></h3>
-                <a href="javascript:void(0);" class="j2commerce-clear-all-filters uk-text-danger uk-text-small" id="j2commerce-clear-all-filters" style="display:none;">
+                <h3 class="uk-text-bold uk-margin-remove uk-text-small" id="j2commerce-active-filters-title"><?php echo Text::_('COM_J2COMMERCE_FILTER_ACTIVE_TITLE'); ?></h3>
+                <button type="button" class="uk-button uk-button-link j2commerce-clear-all-filters uk-text-danger uk-text-small" id="j2commerce-clear-all-filters" style="display:none;text-transform:none;">
                     <?php echo Text::_('COM_J2COMMERCE_FILTER_CLEAR_ALL'); ?>
-                </a>
+                </button>
             </div>
-            <div id="j2commerce-active-filter-tiles" class="j2commerce-active-filter-tiles uk-flex uk-flex-wrap" style="gap:.5rem;"></div>
+            <div id="j2commerce-active-filter-tiles" role="group" aria-labelledby="j2commerce-active-filters-title" tabindex="-1" class="j2commerce-active-filter-tiles uk-flex uk-flex-wrap" style="gap:.5rem;"></div>
         </div>
         <?php endif; ?>
 
@@ -552,6 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const pfPicked = el => (el.tagName === 'OPTION' ? el.selected : el.checked);
     const pfPick = (el, on) => { if (el.tagName === 'OPTION') { el.selected = on; } else { el.checked = on; } };
     const pfValued = el => el.value !== '';
+    const removeChipLabel = <?php echo json_encode(Text::_('COM_J2COMMERCE_FILTER_REMOVE_CHIP'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
     const ajaxEnabled = document.querySelector('.j2commerce-product-list')?.dataset.ajaxFilters === 'true';
     if (ajaxEnabled && typeof J2CommerceFilters !== 'undefined') {
@@ -656,16 +660,19 @@ document.addEventListener('DOMContentLoaded', () => {
             chip.style.gap = '.25rem';
             chip.dataset.type = type;
             chip.dataset.id = cb.value;
-            const close = document.createElement('a');
-            close.setAttribute('uk-close', '');
+            const close = document.createElement('button');
+            close.type = 'button';
             close.className = 'uk-close';
+            close.setAttribute('uk-close', '');
             close.style.fontSize = '.5rem';
-            close.setAttribute('aria-label', 'Remove');
+            close.setAttribute('aria-label', removeChipLabel.replace('%s', () => label));
             chip.append(label, close);
             tiles.push(chip);
         });
 
         container.replaceChildren(...tiles);
+        // The offcanvas (mobile) copy of the list shows the same chips; clone, since a node has one parent.
+        document.getElementById('j2commerce-active-filter-tiles-mobile')?.replaceChildren(...tiles.map(tile => tile.cloneNode(true)));
         if (clearAllBtn) {
             clearAllBtn.style.display = tiles.length > 0 ? '' : 'none';
         }
@@ -715,7 +722,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const formatValue = <?php echo (float) $currencyValue; ?>;
     const decimalPlace = <?php echo (int) $decimalPlace; ?>;
-    const thousandSymbol = '<?php echo $this->escape($thousandSymbol); ?>';
+    const thousandSymbol = <?php echo json_encode((string) $thousandSymbol, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     const minPrice = <?php echo (float) $minPrice; ?>;
     const maxPrice = <?php echo (float) $maxPrice; ?>;
     const currentMin = parseFloat(minPriceEl?.textContent || minPrice);
