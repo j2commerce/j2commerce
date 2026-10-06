@@ -179,7 +179,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
         </fieldset>
         <script type="text/javascript">
             (function() {
-                const poId = '<?php echo (int) $option['productoption_id']; ?>';
+                const poId = <?php echo (int) $option['productoption_id']; ?>;
                 const productId = <?php echo $productId; ?>;
                 const checkboxes = document.querySelectorAll('#option-' + poId + ' input[type="checkbox"]');
                 checkboxes.forEach(function(checkbox) {
