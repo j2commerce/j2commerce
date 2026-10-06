@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
@@ -341,14 +342,17 @@ class ProductpriceController extends FormController
     }
 
     /**
-     * Convert date from form format to MySQL format.
+     * Convert date from form format to MySQL format, in UTC.
      *
-     * Handles conversion from Joomla calendar field format (d-m-Y H:i:s)
-     * to MySQL datetime format (Y-m-d H:i:s). Returns null for empty dates.
+     * Handles conversion from Joomla calendar field format (d-m-Y H:i:s),
+     * entered in the server's local timezone, to a UTC MySQL datetime string.
+     * This mirrors the "server_utc" field filter that productprice.xml declares,
+     * which only runs on Joomla's normal form-save pipeline and is otherwise
+     * skipped by these AJAX handlers. Returns null for empty dates.
      *
      * @param   string  $dateString  The date string from the form
      *
-     * @return  string|null  MySQL formatted date or null if empty
+     * @return  string|null  UTC MySQL formatted date or null if empty
      *
      * @since   6.0.0
      */
@@ -377,8 +381,10 @@ class ProductpriceController extends FormController
             return null;
         }
 
-        // Return in MySQL format
-        return $date->format('Y-m-d H:i:s');
+        // The parsed value is still in the server's local timezone; convert it
+        // to UTC before storage so it matches what convertUtcToCurrent() expects
+        // when redisplaying the row.
+        return UtilitiesHelper::convertCurrentToUtc($date->format('Y-m-d H:i:s'));
     }
 
     /**
