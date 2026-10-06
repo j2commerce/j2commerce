@@ -204,9 +204,9 @@ if ($hasFancySelect) {
                             </a>
                             <div class="uk-accordion-content">
                                 <div class="uk-text-right uk-margin-small-bottom uk-hidden">
-                                    <a href="javascript:void(0);" class="j2commerce-clear-pf-filter uk-text-small" data-filter-class="j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" id="product-filter-group-clear-<?php echo $filterScriptId; ?>"<?php echo $hasSelectedFilters ? '' : ' style="display:none;"'; ?>>
-                                        <?php echo Text::_('COM_J2COMMERCE_CLEAR'); ?>
-                                    </a>
+                                    <button type="button" class="uk-button uk-button-link j2commerce-clear-pf-filter uk-text-small" data-filter-class="j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" id="product-filter-group-clear-<?php echo $filterScriptId; ?>" style="text-transform:none;<?php echo $hasSelectedFilters ? '' : 'display:none;'; ?>">
+                                        <?php echo Text::_('COM_J2COMMERCE_CLEAR'); ?><span class="uk-hidden-visually"> <?php echo $this->escape(J2htmlHelper::translateKey($filtergroup['group_name'])); ?></span>
+                                    </button>
                                 </div>
                                 <div id="j2commerce-pf-filter-<?php echo $filterScriptId; ?>" class="j2commerce-productfilter-list<?php echo $pfInputType === 'color' ? ' j2commerce-color-options j2commerce-filter-swatches' : ''; ?>">
                                     <?php if ($pfIsList) : ?>
@@ -290,9 +290,9 @@ if ($hasFancySelect) {
                         </a>
                         <div class="uk-accordion-content">
                             <div class="uk-text-right uk-margin-small-bottom uk-hidden">
-                                <a href="javascript:void(0);" class="j2commerce-clear-filter uk-text-small" data-filter-type="brand" id="j2commerce-clear-brand"<?php echo empty($sessionManufacturerIds) ? ' style="display:none;"' : ''; ?>>
-                                    <?php echo Text::_('COM_J2COMMERCE_CLEAR'); ?>
-                                </a>
+                                <button type="button" class="uk-button uk-button-link j2commerce-clear-filter uk-text-small" data-filter-type="brand" id="j2commerce-clear-brand" style="text-transform:none;<?php echo empty($sessionManufacturerIds) ? 'display:none;' : ''; ?>">
+                                    <?php echo Text::_('COM_J2COMMERCE_CLEAR'); ?><span class="uk-hidden-visually"> <?php echo Text::_('COM_J2COMMERCE_FILTER_BY_BRAND'); ?></span>
+                                </button>
                             </div>
                             <div id="j2commerce-brand-filter-container">
                                 <?php foreach ($this->filters['manufacturers'] as $brand) : ?>
@@ -316,9 +316,9 @@ if ($hasFancySelect) {
                         </a>
                         <div class="uk-accordion-content">
                             <div class="uk-text-right uk-margin-small-bottom uk-hidden">
-                                <a href="javascript:void(0);" class="j2commerce-clear-filter uk-text-small" data-filter-type="vendor" id="j2commerce-clear-vendor"<?php echo empty($sessionVendorIds) ? ' style="display:none;"' : ''; ?>>
-                                    <?php echo Text::_('COM_J2COMMERCE_CLEAR'); ?>
-                                </a>
+                                <button type="button" class="uk-button uk-button-link j2commerce-clear-filter uk-text-small" data-filter-type="vendor" id="j2commerce-clear-vendor" style="text-transform:none;<?php echo empty($sessionVendorIds) ? 'display:none;' : ''; ?>">
+                                    <?php echo Text::_('COM_J2COMMERCE_CLEAR'); ?><span class="uk-hidden-visually"> <?php echo Text::_('COM_J2COMMERCE_FILTER_BY_VENDOR'); ?></span>
+                                </button>
                             </div>
                             <div id="j2commerce-vendor-filter-container">
                                 <?php foreach ($this->filters['vendors'] as $vendor) : ?>
