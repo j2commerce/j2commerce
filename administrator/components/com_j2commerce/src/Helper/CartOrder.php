@@ -1065,9 +1065,15 @@ class CartOrder
      * The tax rows this order presents, as opposed to the rates it was calculated from.
      *
      * With `combine_tax_calculations` on, shipping tax joins the product tax entry that shares
-     * its profile (or takes an entry of its own where the profile differs) and there is one
-     * tax figure per profile. With it off, shipping tax stays out of these rows and is shown
-     * on its own line from order_shipping_tax.
+     * its profile (or takes an entry of its own where the profile differs), leaving one tax
+     * figure per profile. With it off, shipping tax stays out of these rows and is shown on its
+     * own line from order_shipping_tax instead.
+     *
+     * A taxable payment-method surcharge's tax always joins these rows the same way, regardless
+     * of that setting: unlike shipping it has no dedicated column and line of its own to fall
+     * back to, so folding it into the fee's own displayed amount (as CartOrder::add_fee() does
+     * for the order_surcharge/order_total figures themselves) would be the only alternative, and
+     * that is exactly the "surcharge tax looks missing" presentation this method exists to avoid.
      *
      * One method answers for the live cart, the persisted #__j2commerce_ordertaxes rows and
      * the confirmation page, so a store cannot be quoted a split total and sent a combined one.
@@ -1086,38 +1092,56 @@ class CartOrder
 
         $combineTax = (int) J2CommerceHelper::config()->get('combine_tax_calculations', 1);
 
-        if (!$combineTax || $this->order_shipping_tax <= 0 || !$this->shippingRate) {
-            return $displayRates;
-        }
+        if ($combineTax && $this->order_shipping_tax > 0 && $this->shippingRate) {
+            $shippingTaxClassId = $this->getShippingTaxClassId();
 
-        $shippingTaxClassId = $this->getShippingTaxClassId();
-
-        if ($shippingTaxClassId <= 0) {
-            return $displayRates;
-        }
-
-        foreach ($displayRates as $rate) {
-            if ((int) ($rate->taxprofile_id ?? 0) === $shippingTaxClassId) {
-                $rate->tax_amount += $this->order_shipping_tax;
-
-                return $displayRates;
+            if ($shippingTaxClassId > 0) {
+                $this->mergeTaxAmountIntoDisplayRates($displayRates, $shippingTaxClassId, $this->order_shipping_tax);
             }
         }
 
-        // Shipping uses a different tax profile — give it an entry of its own
-        $profileInfo = $this->getTaxProfileInfo($shippingTaxClassId);
+        foreach ($this->get_fees() as $fee) {
+            $feeTax        = (float) ($fee->tax ?? 0);
+            $feeTaxClassId = (int) ($fee->taxprofile_id ?? 0);
 
-        if ($profileInfo) {
-            $displayRates[] = (object) [
-                'taxprofile_id'   => $shippingTaxClassId,
-                'taxprofile_name' => $profileInfo->taxprofile_name ?? '',
-                'taxrate_name'    => $profileInfo->taxrate_name ?? '',
-                'tax_amount'      => $this->order_shipping_tax,
-                'tax_percent'     => (float) ($profileInfo->tax_percent ?? 0),
-            ];
+            if ($feeTax > 0 && $feeTaxClassId > 0) {
+                $this->mergeTaxAmountIntoDisplayRates($displayRates, $feeTaxClassId, $feeTax);
+            }
         }
 
         return $displayRates;
+    }
+
+    /**
+     * Add $amount to the display row already covering $taxClassId, or append a new row for it
+     * when none of the item-tax rows share its profile (e.g. a surcharge taxed under a profile
+     * nothing else in the order uses).
+     *
+     * @param   array<int, object>  $displayRates  Rows built so far, modified in place.
+     *
+     * @since   6.6.5
+     */
+    private function mergeTaxAmountIntoDisplayRates(array &$displayRates, int $taxClassId, float $amount): void
+    {
+        foreach ($displayRates as $rate) {
+            if ((int) ($rate->taxprofile_id ?? 0) === $taxClassId) {
+                $rate->tax_amount += $amount;
+
+                return;
+            }
+        }
+
+        $profileInfo = $this->getTaxProfileInfo($taxClassId);
+
+        if ($profileInfo) {
+            $displayRates[] = (object) [
+                'taxprofile_id'   => $taxClassId,
+                'taxprofile_name' => $profileInfo->taxprofile_name ?? '',
+                'taxrate_name'    => $profileInfo->taxrate_name ?? '',
+                'tax_amount'      => $amount,
+                'tax_percent'     => (float) ($profileInfo->tax_percent ?? 0),
+            ];
+        }
     }
 
     /**

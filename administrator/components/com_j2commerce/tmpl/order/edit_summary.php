@@ -28,6 +28,20 @@ $currency       = $item->currency_code ?? 'USD';
 $fmt            = static fn (float $amount): string => CurrencyHelper::format($amount, $currency);
 $unitCount      = array_sum(array_map(static fn ($line): int => (int) $line->orderitem_quantity, $orderItems));
 
+$feeBareTotal = array_sum(array_map(static fn ($f): float => max(0.0, (float) ($f->amount ?? 0)), $orderFees));
+$feeTaxTotal  = array_sum(array_map(static fn ($f): float => (float) ($f->tax ?? 0), $orderFees));
+
+// Bare fee total where rows exist (its tax is folded into $displayTax below, matching
+// OrderHelper::getFormattedOrderTotals()'s order-confirmation/order-view rows); otherwise the
+// blended legacy order_surcharge column, which cannot be split after the fact.
+$displaySurcharge = empty($orderFees) ? (float) ($item->order_surcharge ?? 0) : 0.0;
+$displayFees      = empty($orderFees) ? (float) ($item->order_fees ?? 0) : $feeBareTotal;
+
+// order_tax is product tax only — fold in shipping tax and any taxable fee's tax so this
+// panel's Tax row reads the same combined figure the order view/confirmation page shows,
+// rather than only ever naming the product-tax component.
+$displayTax = (float) ($item->order_tax ?? 0) + (float) ($item->order_shipping_tax ?? 0) + $feeTaxTotal;
+
 // Currency affix for the money-modal amount fields (position follows the currency config).
 $currencySymbol = CurrencyHelper::getSymbol($currency) ?: $currency;
 $symbolPre      = CurrencyHelper::getSymbolPosition($currency) !== 'post';
@@ -123,7 +137,7 @@ $symbolPre      = CurrencyHelper::getSymbolPosition($currency) !== 'post';
             <div class="d-flex align-items-center justify-content-between bg-light border rounded-3 px-3 py-2 mt-2">
                 <span class="fw-semibold" style="font-size:13px;color:#3a4757;"><span class="fa-solid fa-tag text-body-secondary me-2" aria-hidden="true"></span><?php echo $this->escape($fee->name ?? ''); ?></span>
                 <div class="d-flex align-items-center gap-3">
-                    <span class="fw-bold" style="font-size:13px;color:#1f2b38;"><?php echo $fmt((float) ($fee->amount ?? 0) + (float) ($fee->tax ?? 0)); ?></span>
+                    <span class="fw-bold" style="font-size:13px;color:#1f2b38;"><?php echo $fmt((float) ($fee->amount ?? 0)); ?></span>
                     <button type="button" class="btn btn-sm text-body-secondary p-1"
                             data-j2c-remove-fee="<?php echo (int) $fee->j2commerce_orderfee_id; ?>"
                             aria-label="<?php echo Text::_('JACTION_DELETE'); ?>">
@@ -151,21 +165,21 @@ $symbolPre      = CurrencyHelper::getSymbolPosition($currency) !== 'post';
                 <span><?php echo Text::_('COM_J2COMMERCE_SHIPPING'); ?></span>
                 <span id="summaryShipping" class="j2c-tabnum"><?php echo $fmt((float) $item->order_shipping); ?></span>
             </div>
-            <div id="summarySurchargeRow" class="d-flex justify-content-between py-1 text-body-secondary <?php echo (float) ($item->order_surcharge ?? 0) > 0 ? '' : 'd-none'; ?>" style="font-size:13px;">
+            <div id="summarySurchargeRow" class="d-flex justify-content-between py-1 text-body-secondary <?php echo $displaySurcharge > 0 ? '' : 'd-none'; ?>" style="font-size:13px;">
                 <span><?php echo Text::_('COM_J2COMMERCE_SURCHARGE'); ?></span>
-                <span id="summarySurcharge" class="j2c-tabnum"><?php echo $fmt((float) $item->order_surcharge); ?></span>
+                <span id="summarySurcharge" class="j2c-tabnum"><?php echo $fmt($displaySurcharge); ?></span>
             </div>
             <div id="summaryDiscountRow" class="d-flex justify-content-between py-1 text-body-secondary <?php echo (float) $item->order_discount > 0 ? '' : 'd-none'; ?>" style="font-size:13px;">
                 <span><?php echo Text::_('COM_J2COMMERCE_DISCOUNT'); ?></span>
                 <span id="summaryDiscount" class="text-danger j2c-tabnum">-<?php echo $fmt((float) $item->order_discount); ?></span>
             </div>
-            <div id="summaryTaxRow" class="d-flex justify-content-between py-1 text-body-secondary <?php echo (float) $item->order_tax > 0 ? '' : 'd-none'; ?>" style="font-size:13px;">
+            <div id="summaryTaxRow" class="d-flex justify-content-between py-1 text-body-secondary <?php echo $displayTax > 0 ? '' : 'd-none'; ?>" style="font-size:13px;">
                 <span><?php echo Text::_('COM_J2COMMERCE_TAX'); ?></span>
-                <span id="summaryTax" class="j2c-tabnum"><?php echo $fmt((float) $item->order_tax); ?></span>
+                <span id="summaryTax" class="j2c-tabnum"><?php echo $fmt($displayTax); ?></span>
             </div>
-            <div id="summaryFeesRow" class="d-flex justify-content-between py-1 text-body-secondary <?php echo (float) ($item->order_fees ?? 0) > 0 ? '' : 'd-none'; ?>" style="font-size:13px;">
+            <div id="summaryFeesRow" class="d-flex justify-content-between py-1 text-body-secondary <?php echo $displayFees > 0 ? '' : 'd-none'; ?>" style="font-size:13px;">
                 <span><?php echo Text::_('COM_J2COMMERCE_FEES'); ?></span>
-                <span id="summaryFees" class="j2c-tabnum"><?php echo $fmt((float) ($item->order_fees ?? 0)); ?></span>
+                <span id="summaryFees" class="j2c-tabnum"><?php echo $fmt($displayFees); ?></span>
             </div>
             <div class="d-flex justify-content-between pt-2 mt-1 border-top fw-bold" style="font-size:18px;color:#1f2b38;">
                 <span><?php echo Text::_('COM_J2COMMERCE_TOTAL'); ?></span>

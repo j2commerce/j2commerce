@@ -1352,21 +1352,33 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             }
 
             foreach ($fees as $fee) {
-                // Add fee to order if the method exists
+                // Add fee to order if the method exists. CartOrder::addFee()'s signature is
+                // (string $key, float $amount, string $label, float $tax, int $taxClassId) —
+                // $fee->fee_type is the original session key (saveOrderFees() persists it from
+                // the 'plugin' field CartOrder::addFee() set when the fee was first calculated),
+                // and $fee->tax is the already-computed, persisted tax for this row: it is
+                // restored as-is rather than passing the taxable flag where $label is expected
+                // (a bool there throws under strict_types) and re-deriving a tax that may no
+                // longer resolve the same way (e.g. the customer's geozone at recalculation time).
                 if (method_exists($order, 'addFee')) {
+                    $key = (string) ($fee->fee_type ?? '') !== ''
+                        ? (string) $fee->fee_type
+                        : 'order_fee_' . (string) ($fee->j2commerce_orderfee_id ?? $fee->name ?? '');
+
                     $order->addFee(
-                        $fee->name ?? '',
+                        $key,
                         (float) ($fee->amount ?? 0),
-                        (bool) ($fee->taxable ?? false),
+                        (string) ($fee->name ?? ''),
+                        (float) ($fee->tax ?? 0),
                         (int) ($fee->tax_class_id ?? 0)
                     );
                 } elseif (method_exists($order, 'add_fee')) {
                     // Legacy method support
                     $order->add_fee(
                         $fee->name ?? '',
-                        $fee->amount ?? 0,
-                        $fee->taxable ?? 0,
-                        $fee->tax_class_id ?? 0
+                        (float) ($fee->amount ?? 0),
+                        (bool) ($fee->taxable ?? false),
+                        (int) ($fee->tax_class_id ?? 0)
                     );
                 }
             }
