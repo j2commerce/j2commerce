@@ -1882,7 +1882,11 @@ class OrderController extends FormController
                 return;
             }
 
-            $totals = $model->recalculateOrderTotals($order->order_id);
+            // A coupon shrinks the taxable base — recomputeOrderTax() (not the plainer
+            // recalculateOrderTotals()) re-derives every line's tax against it, otherwise the
+            // panel keeps showing tax on the pre-discount price until a separate manual
+            // Recalculate.
+            $totals = $model->recomputeOrderTax($order->order_id);
 
             $this->sendJson([
                 'success' => true,
@@ -1923,7 +1927,11 @@ class OrderController extends FormController
                 return;
             }
 
-            $totals = $model->recalculateOrderTotals($order->order_id);
+            // A voucher does not itself change the taxable base (recomputeOrderTax() excludes
+            // it the same way CartOrder::recalculateTaxAfterDiscounts() does), but a coupon may
+            // already be on this order, and that combination needs re-deriving here too —
+            // plain recalculateOrderTotals() would just re-sum whatever tax was last stored.
+            $totals = $model->recomputeOrderTax($order->order_id);
 
             $this->sendJson([
                 'success' => true,
@@ -1958,7 +1966,9 @@ class OrderController extends FormController
                 throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
-            $totals = $model->recalculateOrderTotals($order->order_id);
+            // Removing a coupon widens the taxable base back out — recomputeOrderTax() re-derives
+            // tax against it immediately, same reasoning as ajaxApplyCoupon().
+            $totals = $model->recomputeOrderTax($order->order_id);
 
             $this->sendJson([
                 'success' => true,

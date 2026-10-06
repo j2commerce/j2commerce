@@ -133,7 +133,11 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
         if ($surcharge > 0) {
             $name       = $this->params->get('surcharge_name', Text::_('COM_J2COMMERCE_CART_SURCHARGE'));
             $taxClassId = $this->params->get('surcharge_tax_class_id', '');
-            $taxable    = ($taxClassId > 0);
+            // PHP 8's number/non-numeric-string comparison rules make a bare `$taxClassId > 0`
+            // true for an unset ('') tax class ('' casts the right side to "0" and "0" > "" by
+            // string comparison), the opposite of "no tax class selected". !empty() first,
+            // matching the payment_cash / payment_moneyorder plugins exactly.
+            $taxable    = !empty($taxClassId) && (int) $taxClassId > 0;
             $order->add_fee($name, round($surcharge, 2), $taxable, $taxClassId);
         }
     }

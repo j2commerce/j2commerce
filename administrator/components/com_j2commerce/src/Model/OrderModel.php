@@ -3989,8 +3989,14 @@ class OrderModel extends AdminModel
     }
 
     /**
-     * Recompute per-line and fee tax from tax profiles against the order's own
+     * Recompute per-line, shipping and fee tax from tax profiles against the order's own
      * address, rebuild the ordertaxes rows, then recalculate the totals.
+     *
+     * Shipping tax and any taxable payment-method surcharge are folded into the matching
+     * profile's rebuilt row the same way CartOrder::buildDisplayTaxRates() combines them at
+     * checkout — shipping only when `combine_tax_calculations` is on (it has its own
+     * order_shipping_tax column/line for split mode), the surcharge always (it has none).
+     * Without this, every "Recalculate" wiped both back out of the rebuilt rows.
      */
     public function recomputeOrderTax(string $orderId): array
     {
@@ -4008,6 +4014,36 @@ class OrderModel extends AdminModel
             ->bind(':orderId', $orderId);
         $db->setQuery($query);
         $isIncludingTax = (int) $db->loadResult() === 1;
+
+        // A coupon (or any plugin cart discount persisted as a non-voucher row) reduces the
+        // price, so it shrinks the taxable base the same way CartOrder::
+        // recalculateTaxAfterDiscounts() scales it at checkout — otherwise every line here is
+        // taxed on its full, pre-discount orderitem_finalprice regardless of what the shopper
+        // was actually charged for it. A voucher is a payment instrument, not a price
+        // reduction (it settles what's owed; the goods are still valued, and taxed, in full),
+        // so it is excluded, matching that method's own exclusion.
+        $query = $db->getQuery(true)
+            ->select([
+                'COALESCE(SUM(' . $db->quoteName('orderitem_finalprice') . '), 0) AS subtotal',
+            ])
+            ->from($db->quoteName('#__j2commerce_orderitems'))
+            ->where($db->quoteName('order_id') . ' = :orderId')
+            ->bind(':orderId', $orderId);
+        $db->setQuery($query);
+        $itemSubtotal = (float) ($db->loadResult() ?? 0);
+
+        $query = $db->getQuery(true)
+            ->select('COALESCE(SUM(' . $db->quoteName('discount_amount') . '), 0)')
+            ->from($db->quoteName('#__j2commerce_orderdiscounts'))
+            ->where($db->quoteName('order_id') . ' = :orderId')
+            ->where($db->quoteName('discount_type') . ' != ' . $db->quote('voucher'))
+            ->bind(':orderId', $orderId);
+        $db->setQuery($query);
+        $priceReducingDiscount = (float) ($db->loadResult() ?? 0);
+
+        $discountRatio = $itemSubtotal > 0
+            ? max(0.0, $itemSubtotal - $priceReducingDiscount) / $itemSubtotal
+            : 1.0;
 
         $taxRates = [];
 
@@ -4034,6 +4070,7 @@ class OrderModel extends AdminModel
                     $lineTax = $isIncludingTax
                         ? $lineAmount * $totalPct / (100 + $totalPct)
                         : $lineAmount * ($totalPct / 100);
+                    $lineTax *= $discountRatio;
 
                     foreach ($ratesets as $rate) {
                         $pct     = (float) ($rate->rate ?? $rate->tax_percent ?? 0);
@@ -4042,9 +4079,10 @@ class OrderModel extends AdminModel
 
                         if (!isset($taxRates[$rateKey])) {
                             $taxRates[$rateKey] = (object) [
-                                'title'   => (string) ($rate->name ?? $rate->taxrate_name ?? ''),
-                                'percent' => $pct,
-                                'amount'  => 0.0,
+                                'taxprofile_id' => $taxprofileId,
+                                'title'         => (string) ($rate->name ?? $rate->taxrate_name ?? ''),
+                                'percent'       => $pct,
+                                'amount'        => 0.0,
                             ];
                         }
 
@@ -4075,6 +4113,30 @@ class OrderModel extends AdminModel
             $db->execute();
         }
 
+        $combineTax = (int) J2CommerceHelper::config()->get('combine_tax_calculations', 1);
+
+        if ($combineTax) {
+            $shipping    = $this->getOrderShipping($orderId);
+            $shippingTax = (float) ($shipping->ordershipping_tax ?? 0);
+
+            if ($shippingTax > 0) {
+                $shippingTaxClassId = $this->resolveShippingTaxClassId($shipping);
+
+                if ($shippingTaxClassId > 0) {
+                    $this->mergeRecomputedTaxAmount($taxRates, $shippingTaxClassId, $shippingTax, $geozones);
+                }
+            }
+        }
+
+        foreach ($this->getOrderFees($orderId) as $fee) {
+            $feeTax        = (float) ($fee->tax ?? 0);
+            $feeTaxClassId = (int) ($fee->tax_class_id ?? 0);
+
+            if ($feeTax > 0 && $feeTaxClassId > 0) {
+                $this->mergeRecomputedTaxAmount($taxRates, $feeTaxClassId, $feeTax, $geozones);
+            }
+        }
+
         // Rebuild the per-rate tax summary rows
         $db->setQuery(
             $db->getQuery(true)
@@ -4102,6 +4164,84 @@ class OrderModel extends AdminModel
         // when it comes to nothing — an order recomputed into a geozone that taxes none of it
         // has to be able to reach zero.
         return $this->recalculateOrderTotals($orderId, true);
+    }
+
+    /**
+     * Add $amount to the rebuilt rate row already covering $taxClassId, or resolve and append a
+     * new one for it when none of the item-tax rows share its profile (e.g. a surcharge taxed
+     * under a profile nothing on the order otherwise uses). Mirrors
+     * CartOrder::mergeTaxAmountIntoDisplayRates(), which this schema cannot call directly since
+     * admin recalculation starts from the persisted rows, not a live cart.
+     *
+     * @param   array<string, object>  $taxRates  Rebuilt rate rows so far ([taxprofile_id,
+     *                                             title, percent, amount]), modified in place.
+     * @param   array                  $geozones  Geozone IDs for the order's tax address.
+     *
+     * @since   6.6.5
+     */
+    private function mergeRecomputedTaxAmount(
+        array &$taxRates,
+        int $taxClassId,
+        float $amount,
+        array $geozones
+    ): void {
+        foreach ($taxRates as $rate) {
+            if ((int) ($rate->taxprofile_id ?? 0) === $taxClassId) {
+                $rate->amount += $amount;
+
+                return;
+            }
+        }
+
+        if (empty($geozones)) {
+            return;
+        }
+
+        $rate = TaxHelper::getTaxRateForGeozone($taxClassId, $geozones);
+
+        if ($rate) {
+            $taxRates['profile_' . $taxClassId] = (object) [
+                'taxprofile_id' => $taxClassId,
+                'title'         => (string) ($rate->taxprofile_name ?: ($rate->taxrate_name ?? '')),
+                'percent'       => (float) ($rate->tax_percent ?? 0),
+                'amount'        => $amount,
+            ];
+        }
+    }
+
+    /**
+     * Resolve the tax_class_id for an order's saved shipping row — the direct column a plugin
+     * (e.g. AtoShip) may have set, falling back to the standard shipping method's own tax class.
+     * Mirrors CartOrder::getShippingTaxClassId(), which reads the live shippingRate instead of
+     * a persisted row.
+     *
+     * @since   6.6.5
+     */
+    private function resolveShippingTaxClassId(?object $shipping): int
+    {
+        if (!$shipping) {
+            return 0;
+        }
+
+        if (!empty($shipping->ordershipping_tax_class_id ?? null)) {
+            return (int) $shipping->ordershipping_tax_class_id;
+        }
+
+        $methodId = (int) ($shipping->ordershipping_code ?? 0);
+
+        if ($methodId <= 0) {
+            return 0;
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('tax_class_id'))
+            ->from($db->quoteName('#__j2commerce_shippingmethods'))
+            ->where($db->quoteName('j2commerce_shippingmethod_id') . ' = :methodId')
+            ->bind(':methodId', $methodId, ParameterType::INTEGER);
+        $db->setQuery($query);
+
+        return (int) ($db->loadResult() ?? 0);
     }
 
     /**
@@ -4326,6 +4466,23 @@ class OrderModel extends AdminModel
 
         $db->setQuery($update);
         $db->execute();
+
+        // Display-only overlay for the caller (every one of them feeds this straight into the
+        // admin order-edit panel's single Fees/Surcharge/Tax rows via totalsPayload()): fee
+        // amount bare, its tax folded into Tax, the same convention OrderHelper::
+        // getFormattedOrderTotals() and CartOrder::buildDisplayTaxRates() already use for the
+        // order view, confirmation page and invoices/emails. $storedTax/$feesStr above were
+        // already derived from the pre-overlay $totals and the row is already written, so this
+        // cannot touch order_tax/order_fees/order_surcharge as stored.
+        $feeBareDisplay = $feeRows > 0 ? round((float) ($feeTotals->fee_amount ?? 0), $scale) : (float) ($totals['surcharge'] ?? 0.0);
+        $feeTaxDisplay  = $feeRows > 0 ? round((float) ($feeTotals->fee_tax ?? 0), $scale) : 0.0;
+
+        $totals['fees']      = $feeBareDisplay;
+        $totals['surcharge'] = $feeRows > 0 ? 0.0 : $feeBareDisplay;
+        $totals['tax']       = round(
+            (float) ($totals['tax'] ?? $tax) + (float) ($totals['shipping_tax'] ?? $shippingTax) + $feeTaxDisplay,
+            $scale
+        );
 
         return $totals;
     }

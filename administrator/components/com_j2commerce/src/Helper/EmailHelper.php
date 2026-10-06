@@ -886,6 +886,17 @@ class EmailHelper
         $shippingName   = trim((string) ($shipping->ordershipping_name ?? ''));
         $shippingAmount = (float) ($order->order_shipping ?? 0);
 
+        // [SURCHARGE_AMOUNT]/[TAX_AMOUNT] below are scalar tags a custom (editor-built) invoice
+        // template can use in place of the [TOTALS] block buildTotalsTable() renders — they need
+        // the same bare-fee / tax-inclusive-of-fee convention, or a hand-built template showing
+        // both ends up with the surcharge's tax folded into neither, or both, row depending on
+        // which tag an admin picked.
+        $tagFeeRows     = $this->getOrderFeeRows($order);
+        $tagFeeBare     = array_sum(array_map(static fn (object $f): float => max(0.0, (float) $f->amount), $tagFeeRows));
+        $tagFeeTax      = array_sum(array_map(static fn (object $f): float => (float) $f->tax, $tagFeeRows));
+        $tagSurcharge   = empty($tagFeeRows) ? (float) ($order->order_surcharge ?? 0) : $tagFeeBare;
+        $tagTaxTotal    = (float) ($order->order_tax ?? 0) + (float) ($order->order_shipping_tax ?? 0) + $tagFeeTax;
+
         // Get invoice number
         $invoiceNumber = $this->getInvoiceNumber($order);
 
@@ -979,8 +990,8 @@ class EmailHelper
             '[SHIPPING_TOTAL_WEIGHT]'     => $this->getTotalShippingWeight($order),
             '[SHIPPING_AMOUNT]'           => ($shippingName !== '' || $shippingAmount > 0) ? CurrencyHelper::format($shippingAmount, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
             '[DISCOUNT_AMOUNT]'           => ((float) ($order->order_discount ?? 0)) > 0 ? CurrencyHelper::format((float) $order->order_discount, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
-            '[TAX_AMOUNT]'                => ((float) ($order->order_tax ?? 0) + (float) ($order->order_shipping_tax ?? 0)) > 0 ? CurrencyHelper::format((float) ($order->order_tax ?? 0) + (float) ($order->order_shipping_tax ?? 0), $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
-            '[SURCHARGE_AMOUNT]'          => ((float) ($order->order_surcharge ?? 0) > 0 ? (float) $order->order_surcharge : (float) ($order->order_fees ?? 0)) > 0 ? CurrencyHelper::format((float) ($order->order_surcharge ?? 0) > 0 ? (float) $order->order_surcharge : (float) ($order->order_fees ?? 0), $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
+            '[TAX_AMOUNT]'                => $tagTaxTotal > 0 ? CurrencyHelper::format($tagTaxTotal, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
+            '[SURCHARGE_AMOUNT]'          => $tagSurcharge > 0 ? CurrencyHelper::format($tagSurcharge, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
             '[SUBTOTAL]'                  => CurrencyHelper::format((float) ($order->order_subtotal ?? 0), $order->currency_code ?? '', (float) ($order->currency_value ?? 1)),
             '[ORDER_EXTRA_ROWS]'          => $extraRowsHtml,
             '[TOTALS]'                    => str_contains($text, '[TOTALS]') ? $this->buildTotalsTable($order, $orderExtraRows, $language) : '',
@@ -1720,6 +1731,30 @@ class EmailHelper
     }
 
     /**
+     * Order's #__j2commerce_orderfees rows (amount, tax split apart — unlike the blended
+     * order_surcharge/order_fees columns). Empty on a legacy order that predates fee rows,
+     * which still carries its surcharge+tax blended in those columns.
+     *
+     * @return list<object>
+     */
+    private function getOrderFeeRows(object $order): array
+    {
+        $orderId = $order->order_id ?? '';
+        if ($orderId === '') {
+            return [];
+        }
+
+        $db    = self::getDatabase();
+        $query = $db->getQuery(true)
+            ->select([$db->quoteName('name'), $db->quoteName('amount'), $db->quoteName('tax')])
+            ->from($db->quoteName('#__j2commerce_orderfees'))
+            ->where($db->quoteName('order_id') . ' = :order_id')
+            ->bind(':order_id', $orderId);
+
+        return $db->setQuery($query)->loadObjectList() ?: [];
+    }
+
+    /**
      * Build the full order totals block (subtotal, shipping, surcharge, fees, discount,
      * tax, plugin extra rows, grand total) as a single well-formed table, matching
      * checkout's labels, currency formatting, and tax-inclusive/exclusive relabeling.
@@ -1735,6 +1770,17 @@ class EmailHelper
         $fmt            = static fn (float $amount): string => CurrencyHelper::format($amount, $currencyCode, $currencyValue);
         $isIncludingTax = (int) ($order->is_including_tax ?? 0) === 1;
 
+        // The fee rows are the only place a taxable payment-method surcharge's tax is ever
+        // recorded apart from the blended order_surcharge/order_fees columns — read here so the
+        // fee can be printed bare (matching the Shipping row, and OrderHelper::
+        // getFormattedOrderTotals()'s order-confirmation/order-view rows) with its tax folded
+        // into the Tax row below instead of hidden inside the fee amount. Pre-fee-rows legacy
+        // orders have no rows to read and keep the blended column, same as the fallback in
+        // OrderHelper::getFormattedOrderTotals().
+        $feeRows           = $this->getOrderFeeRows($order);
+        $feeBareAmount      = array_sum(array_map(static fn (object $f): float => max(0.0, (float) $f->amount), $feeRows));
+        $feeTaxAmount       = array_sum(array_map(static fn (object $f): float => (float) $f->tax, $feeRows));
+
         // order_tax / order_shipping_tax are what order_total was actually built from
         // (recalculateOrderTotals(): total = subtotal + itemTax(if exclusive) + shipping
         // + shippingTax + surcharge + fees - discount). #__j2commerce_ordertaxes is NOT a
@@ -1742,7 +1788,7 @@ class EmailHelper
         // tax engine created the order — so it is used below for LABELS only.
         $itemTaxAmount     = (float) ($order->order_tax ?? 0);
         $shippingTaxAmount = (float) ($order->order_shipping_tax ?? 0);
-        $taxTotal          = $itemTaxAmount + $shippingTaxAmount;
+        $taxTotal          = $itemTaxAmount + $shippingTaxAmount + $feeTaxAmount;
 
         // Tax-inclusive stores bake item tax into order_subtotal — print the ex-tax
         // column so this row plus the Tax row(s) below don't double-count it.
@@ -1750,9 +1796,11 @@ class EmailHelper
             ? (float) ($order->order_subtotal_ex_tax ?? ((float) ($order->order_subtotal ?? 0) - $itemTaxAmount))
             : (float) ($order->order_subtotal ?? 0);
 
-        $shippingAmount  = (float) ($order->order_shipping ?? 0);
-        $surchargeAmount = (float) ($order->order_surcharge ?? 0);
-        $feesAmount      = (float) ($order->order_fees ?? 0);
+        $shippingAmount = (float) ($order->order_shipping ?? 0);
+        // Bare fee total where rows exist (its tax already folded into $taxTotal above);
+        // otherwise the blended legacy column, which cannot be split after the fact.
+        $surchargeAmount = empty($feeRows) ? (float) ($order->order_surcharge ?? 0) : 0.0;
+        $feesAmount      = empty($feeRows) ? (float) ($order->order_fees ?? 0) : $feeBareAmount;
         $discountAmount  = (float) ($order->order_discount ?? 0);
         // recalculateOrderTotals() subtracts order_credit when it builds order_total, so this
         // has to as well or the reconciliation below fails on any credited order and throws
@@ -1784,10 +1832,11 @@ class EmailHelper
             }
 
             if ($remainder > 0) {
-                // order_tax + order_shipping_tax exceeds what #__j2commerce_ordertaxes
-                // accounts for (shipping tax computed outside the itemized tax engine
-                // on this order) — show the gap so the rows keep summing to the total.
-                $taxHtml .= $this->totalsRow($language->_('COM_J2COMMERCE_FIELD_SHIPPING_TAX'), $fmt($remainder));
+                // $taxTotal exceeds what #__j2commerce_ordertaxes accounts for — shipping tax
+                // computed outside the itemized tax engine, a taxable surcharge whose tax
+                // predates CartOrder::buildDisplayTaxRates() folding it into that table, or
+                // both. Generic label rather than naming one specific source.
+                $taxHtml .= $this->totalsRow($language->_('COM_J2COMMERCE_CART_TAX'), $fmt($remainder));
             }
         } elseif ($taxTotal > 0) {
             $taxHtml = $this->totalsRow($language->_('COM_J2COMMERCE_CART_TAX'), $fmt($taxTotal));

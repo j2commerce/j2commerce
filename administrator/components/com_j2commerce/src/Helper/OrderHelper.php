@@ -196,6 +196,11 @@ class OrderHelper
 
         // The fee rows and order_surcharge are the same money recorded two ways — rows win where
         // they exist, the column is the only record where they do not.
+        //
+        // The fee's own amount is shown bare, same as shipping's: its tax is not baked in here
+        // because CartOrder::buildDisplayTaxRates() already folds it into the matching tax
+        // profile row in $taxes (persisted to #__j2commerce_ordertaxes the same way shipping tax
+        // is), so it already reads as part of the combined tax total below.
         if (!empty($fees)) {
             foreach ($fees as $index => $fee) {
                 $amount = (float) ($fee->amount ?? 0);
