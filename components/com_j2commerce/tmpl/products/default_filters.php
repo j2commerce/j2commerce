@@ -241,8 +241,8 @@ if ($hasFancySelect) {
                             </h3>
                             <div id="filterPf-<?php echo $filterScriptId; ?>" class="accordion-collapse collapse<?php echo $pfShowExpanded ? ' show' : ''; ?>">
                                 <div class="accordion-body">
-                                    <div class="text-end mb-2 d-none">
-                                        <button type="button" class="btn btn-link btn-sm p-0 j2commerce-clear-pf-filter small text-decoration-none" data-filter-class="j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" id="product-filter-group-clear-<?php echo $filterScriptId; ?>"<?php echo $hasSelectedFilters ? '' : ' style="display:none;"'; ?>>
+                                    <div class="text-end">
+                                        <button type="button" class="btn btn-link btn-sm p-0 mb-2 j2commerce-clear-pf-filter small text-decoration-none" data-filter-class="j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" id="product-filter-group-clear-<?php echo $filterScriptId; ?>"<?php echo $hasSelectedFilters ? '' : ' style="display:none;"'; ?>>
                                             <?php echo Text::_('COM_J2COMMERCE_CLEAR'); ?><span class="visually-hidden"> <?php echo $this->escape(J2htmlHelper::translateKey($filtergroup['group_name'])); ?></span>
                                         </button>
                                     </div>
@@ -331,8 +331,8 @@ if ($hasFancySelect) {
                         </h3>
                         <div id="filterBrand" class="accordion-collapse collapse<?php echo !$filtersCollapsed ? ' show' : ''; ?>">
                             <div class="accordion-body">
-                                <div class="text-end mb-2 d-none">
-                                    <button type="button" class="btn btn-link btn-sm p-0 j2commerce-clear-filter small text-decoration-none" data-filter-type="brand" id="j2commerce-clear-brand"<?php echo empty($sessionManufacturerIds) ? ' style="display:none;"' : ''; ?>>
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-link btn-sm p-0 mb-2 j2commerce-clear-filter small text-decoration-none" data-filter-type="brand" id="j2commerce-clear-brand"<?php echo empty($sessionManufacturerIds) ? ' style="display:none;"' : ''; ?>>
                                         <?php echo Text::_('COM_J2COMMERCE_CLEAR'); ?><span class="visually-hidden"> <?php echo Text::_('COM_J2COMMERCE_FILTER_BY_BRAND'); ?></span>
                                     </button>
                                 </div>
@@ -361,8 +361,8 @@ if ($hasFancySelect) {
                         </h3>
                         <div id="filterVendor" class="accordion-collapse collapse<?php echo !$filtersCollapsed ? ' show' : ''; ?>">
                             <div class="accordion-body">
-                                <div class="text-end mb-2 d-none">
-                                    <button type="button" class="btn btn-link btn-sm p-0 j2commerce-clear-filter small text-decoration-none" data-filter-type="vendor" id="j2commerce-clear-vendor"<?php echo empty($sessionVendorIds) ? ' style="display:none;"' : ''; ?>>
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-link btn-sm p-0 mb-2 j2commerce-clear-filter small text-decoration-none" data-filter-type="vendor" id="j2commerce-clear-vendor"<?php echo empty($sessionVendorIds) ? ' style="display:none;"' : ''; ?>>
                                         <?php echo Text::_('COM_J2COMMERCE_CLEAR'); ?><span class="visually-hidden"> <?php echo Text::_('COM_J2COMMERCE_FILTER_BY_VENDOR'); ?></span>
                                     </button>
                                 </div>

@@ -83,6 +83,7 @@ class J2CommerceFilters {
         this.bindActiveFilterTiles();
         this.bindMobileFooter();
         this.buildActiveFilterTiles();
+        this.updateClearButtonVisibility();
         this.bindHistory();
     }
 
@@ -348,6 +349,7 @@ class J2CommerceFilters {
 
                 if (selector) {
                     document.querySelectorAll(selector).forEach(cb => cb.checked = false);
+                    this.focusGroupControl(btn);
                     this.applyFilters();
                 }
             });
@@ -359,6 +361,7 @@ class J2CommerceFilters {
                 if (filterClass) {
                     document.querySelectorAll('.' + filterClass).forEach(cb => pfilterPick(cb, false));
                     this.syncAnyControls();
+                    this.focusGroupControl(btn);
                     this.applyFilters();
                 }
             });
@@ -867,20 +870,24 @@ class J2CommerceFilters {
         }
     }
 
-    updateClearButtonVisibility() {
-        // Brand/Manufacturer clear button
-        const brandClearBtn = document.getElementById('j2commerce-clear-brand');
-        if (brandClearBtn) {
-            const hasCheckedBrands = document.querySelectorAll('.j2commerce-brand-checkboxes:checked').length > 0;
-            brandClearBtn.style.display = hasCheckedBrands ? '' : 'none';
-        }
+    // Move focus off a Clear button before it hides itself, onto its group's heading toggle: the
+    // group's own controls can be hidden (fancy-select) or disabled by the refreshed counts.
+    focusGroupControl(btn) {
+        const heading = btn.closest('.accordion-collapse, .uk-accordion-content')?.previousElementSibling;
+        (heading?.matches('a, button') ? heading : heading?.querySelector('a, button'))?.focus();
+    }
 
-        // Vendor clear button
-        const vendorClearBtn = document.getElementById('j2commerce-clear-vendor');
-        if (vendorClearBtn) {
-            const hasCheckedVendors = document.querySelectorAll('.j2commerce-vendor-checkboxes:checked').length > 0;
-            vendorClearBtn.style.display = hasCheckedVendors ? '' : 'none';
-        }
+    // Updates every copy of each button: a layout that renders the form twice repeats the ids.
+    updateClearButtonVisibility() {
+        const hasCheckedBrands = document.querySelectorAll('.j2commerce-brand-checkboxes:checked').length > 0;
+        document.querySelectorAll('.j2commerce-clear-filter[data-filter-type="brand"]').forEach(btn => {
+            btn.style.display = hasCheckedBrands ? '' : 'none';
+        });
+
+        const hasCheckedVendors = document.querySelectorAll('.j2commerce-vendor-checkboxes:checked').length > 0;
+        document.querySelectorAll('.j2commerce-clear-filter[data-filter-type="vendor"]').forEach(btn => {
+            btn.style.display = hasCheckedVendors ? '' : 'none';
+        });
 
         // Product filter group clear buttons
         document.querySelectorAll('.j2commerce-productfilter-list').forEach(container => {
@@ -888,7 +895,7 @@ class J2CommerceFilters {
             if (!containerId) return;
 
             const filterScriptId = containerId.replace('j2commerce-pf-filter-', '');
-            const clearBtn = document.getElementById('product-filter-group-clear-' + filterScriptId);
+            const clearBtn = container.parentElement?.querySelector('.j2commerce-clear-pf-filter');
 
             if (clearBtn) {
                 const checkboxClass = 'j2commerce-pfilter-checkboxes-' + filterScriptId;
