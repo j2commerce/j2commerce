@@ -83,6 +83,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         'saleprice'      => 'list.category.item_price',
         'regularprice'   => 'list.category.item_price',
         'sku'            => 'list.category.item_sku',
+        'upc'            => 'list.category.item_upc',
         'stock'          => 'list.category.item_stock',
         'description'    => 'list.category.item_description',
         'desc'           => 'list.category.item_description',
@@ -96,6 +97,16 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         'options'        => 'list.category.item_options',
         'quickview'      => 'list.category.item_quickview',
     ];
+
+    /**
+     * Options rendered together inside the same `.j2commerce-price-sku-container` flex
+     * row the full item layouts use (item_simple.php et al.), so e.g. |price|sku|upc line
+     * up on a shortcode the same way they do on a category/list page.
+     */
+    private const PRICE_SKU_GROUP_OPTIONS = ['price', 'saleprice', 'regularprice', 'sku', 'upc'];
+
+    /** Marks where the price/SKU/UPC group's wrapper div is inserted once its contents are known. */
+    private const PRICE_SKU_GROUP_PLACEHOLDER = '<!--j2commerce-price-sku-group-->';
 
     /** Ids already emitted by earlier {j2commerce} blocks on this page, so a repeat can rename its own. */
     private static array $renderedShortcodeIds = [];
@@ -1519,7 +1530,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             // form.closest('.j2commerce-product-{id}') — without it here, a shortcode built
             // from separate option partials (e.g. |price|options|cart) has no such ancestor,
             // so the price/SKU/stock never update after an option change.
-            $html         = '<div class="com_j2commerce j2commerce-single-product j2commerce-shortcode j2commerce-shortcode-article j2commerce-product-'
+            $html = '<div class="com_j2commerce j2commerce-single-product j2commerce-shortcode j2commerce-shortcode-article j2commerce-product-'
                 . $productId . '"'
                 . ($hasQuickview ? ' style="position:relative;min-height:3.5rem"' : '') . '>';
 
@@ -1565,6 +1576,24 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             // and Hide Intro Text settings — same reasoning as getProductBlock().
             $ownArticleProduct = $this->isOwnArticleProduct($product, $article);
 
+            // Mirrors getProductBlock(): the category/list page loads this via the component's
+            // own addJavaScript()/onJ2CommerceAfterAddJS dispatch (AppFlexivariable::onAfterAddAssets()),
+            // which the content plugin never triggers — only loadCoreAssets() runs here. Registered
+            // unconditionally (not just when the shortcode includes |cart/|cartonly) so a |options-only
+            // or |full/|card shortcode still gets the JS its rendered selects/forms depend on.
+            if ($productType === 'flexivariable') {
+                $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
+                $wa->registerAndUseScript(
+                    'plg_j2commerce_app_flexivariable.flexivariable',
+                    'media/plg_j2commerce_app_flexivariable/js/flexivariable.js',
+                    [],
+                    ['defer' => true]
+                );
+            }
+
+            $priceSkuGroupHtml      = '';
+            $priceSkuGroupInserted  = false;
+
             foreach ($options as $option) {
                 $option = strtolower(trim($option));
 
@@ -1591,6 +1620,18 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                         $layoutId = 'list.category.item_flexiprice';
                     } elseif (\in_array($option, ['full', 'card'], true)) {
                         $layoutId = 'list.category.item';
+                    } elseif ($option === 'options') {
+                        // The generic item_options.php skips any option with a non-empty
+                        // parent_id (it only expects configurable's cascading children) and
+                        // uses an empty-string "unselected" placeholder. Flexivariable's own
+                        // option tree relies on parent_id for its combinations and on a '*'
+                        // sentinel that Flexivariable::onUpdateProduct() specifically checks
+                        // for — rendering through the generic partial here silently drops
+                        // required option fields (or submits '' instead of '*'), so the
+                        // server can never resolve a matching variant and the AJAX price
+                        // refresh (doAjaxFilter, wired by the generic partial) always comes
+                        // back as "variant not found" instead of updated pricing.
+                        $layoutId = 'list.category.item_flexivariableoptions';
                     }
                 }
 
@@ -1619,28 +1660,49 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
                 // item layout that supplies one) — wrap it so the add-to-cart JS submit
                 // handler (which looks for the nearest .j2commerce-addtocart-form) fires.
                 if (\in_array($option, ['cart', 'cartonly'], true) && $layoutId === self::SHORTCODE_LAYOUT_MAP[$option]) {
-                    if ($productType === 'flexivariable') {
-                        $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
-                        $wa->registerAndUseScript(
-                            'plg_j2commerce_app_flexivariable.flexivariable',
-                            'media/plg_j2commerce_app_flexivariable/js/flexivariable.js',
-                            [],
-                            ['defer' => true]
-                        );
-                    }
-
                     // Prepend the option selectors so they land inside the same
-                    // <form> as the Add to Cart button. item_options.php self-gates
-                    // on showOptions / an empty option set, so this is a no-op when
-                    // neither applies. 'cartonly' keeps its no-options contract.
+                    // <form> as the Add to Cart button. item_options.php / item_flexi-
+                    // variableoptions.php both self-gate on showOptions / an empty option
+                    // set, so this is a no-op when neither applies. 'cartonly' keeps its
+                    // no-options contract.
                     if ($option === 'cart') {
-                        $rendered = ProductLayoutService::renderLayout('list.category.item_options', $displayData) . $rendered;
+                        $optionsLayoutId = $productType === 'flexivariable'
+                            ? 'list.category.item_flexivariableoptions'
+                            : 'list.category.item_options';
+                        $rendered        = ProductLayoutService::renderLayout($optionsLayoutId, $displayData) . $rendered;
                     }
 
                     $rendered = $this->wrapCartForm($product, $rendered);
                 }
 
-                $html .= $rendered;
+                // Group price/saleprice/regularprice/sku/upc into the same flex row the
+                // full item layouts use, regardless of where each appears in the shortcode's
+                // own option order — matches item_simple.php et al. visually.
+                if (\in_array($option, self::PRICE_SKU_GROUP_OPTIONS, true)) {
+                    if (!$priceSkuGroupInserted) {
+                        $html .= self::PRICE_SKU_GROUP_PLACEHOLDER;
+                        $priceSkuGroupInserted = true;
+                    }
+
+                    $priceSkuGroupHtml .= $rendered;
+                } else {
+                    $html .= $rendered;
+                }
+            }
+
+            // Rendered through the active subtemplate (same as every other option partial)
+            // rather than a hardcoded class string, so the wrapper matches whichever
+            // framework (uikit, bootstrap5, ...) is actually in play — and rendered before
+            // the override below is cleared, so an inline |subtemplate: token still applies.
+            if ($priceSkuGroupInserted) {
+                $html = str_replace(
+                    self::PRICE_SKU_GROUP_PLACEHOLDER,
+                    ProductLayoutService::renderLayout('list.category.item_price_sku_group', [
+                        'params'    => $this->buildArticleParams(),
+                        'innerHtml' => $priceSkuGroupHtml,
+                    ]),
+                    $html
+                );
             }
 
             if ($shortcodeSubtemplate !== '') {
