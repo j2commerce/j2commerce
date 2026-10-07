@@ -203,8 +203,8 @@ if ($hasFancySelect) {
                                 <?php echo $this->escape(J2htmlHelper::translateKey($filtergroup['group_name'])); ?>
                             </a>
                             <div class="uk-accordion-content">
-                                <div class="uk-text-right uk-margin-small-bottom uk-hidden">
-                                    <button type="button" class="uk-button uk-button-link j2commerce-clear-pf-filter uk-text-small" data-filter-class="j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" id="product-filter-group-clear-<?php echo $filterScriptId; ?>" style="text-transform:none;<?php echo $hasSelectedFilters ? '' : 'display:none;'; ?>">
+                                <div class="uk-text-right">
+                                    <button type="button" class="uk-button uk-button-link uk-margin-small-bottom j2commerce-clear-pf-filter uk-text-small" data-filter-class="j2commerce-pfilter-checkboxes-<?php echo $filterScriptId; ?>" id="product-filter-group-clear-<?php echo $filterScriptId; ?>" style="text-transform:none;<?php echo $hasSelectedFilters ? '' : 'display:none;'; ?>">
                                         <?php echo Text::_('COM_J2COMMERCE_CLEAR'); ?><span class="uk-hidden-visually"> <?php echo $this->escape(J2htmlHelper::translateKey($filtergroup['group_name'])); ?></span>
                                     </button>
                                 </div>
@@ -289,8 +289,8 @@ if ($hasFancySelect) {
                             <?php echo Text::_('COM_J2COMMERCE_FILTER_BY_BRAND'); ?>
                         </a>
                         <div class="uk-accordion-content">
-                            <div class="uk-text-right uk-margin-small-bottom uk-hidden">
-                                <button type="button" class="uk-button uk-button-link j2commerce-clear-filter uk-text-small" data-filter-type="brand" id="j2commerce-clear-brand" style="text-transform:none;<?php echo empty($sessionManufacturerIds) ? 'display:none;' : ''; ?>">
+                            <div class="uk-text-right">
+                                <button type="button" class="uk-button uk-button-link uk-margin-small-bottom j2commerce-clear-filter uk-text-small" data-filter-type="brand" id="j2commerce-clear-brand" style="text-transform:none;<?php echo empty($sessionManufacturerIds) ? 'display:none;' : ''; ?>">
                                     <?php echo Text::_('COM_J2COMMERCE_CLEAR'); ?><span class="uk-hidden-visually"> <?php echo Text::_('COM_J2COMMERCE_FILTER_BY_BRAND'); ?></span>
                                 </button>
                             </div>
@@ -315,8 +315,8 @@ if ($hasFancySelect) {
                             <?php echo Text::_('COM_J2COMMERCE_FILTER_BY_VENDOR'); ?>
                         </a>
                         <div class="uk-accordion-content">
-                            <div class="uk-text-right uk-margin-small-bottom uk-hidden">
-                                <button type="button" class="uk-button uk-button-link j2commerce-clear-filter uk-text-small" data-filter-type="vendor" id="j2commerce-clear-vendor" style="text-transform:none;<?php echo empty($sessionVendorIds) ? 'display:none;' : ''; ?>">
+                            <div class="uk-text-right">
+                                <button type="button" class="uk-button uk-button-link uk-margin-small-bottom j2commerce-clear-filter uk-text-small" data-filter-type="vendor" id="j2commerce-clear-vendor" style="text-transform:none;<?php echo empty($sessionVendorIds) ? 'display:none;' : ''; ?>">
                                     <?php echo Text::_('COM_J2COMMERCE_CLEAR'); ?><span class="uk-hidden-visually"> <?php echo Text::_('COM_J2COMMERCE_FILTER_BY_VENDOR'); ?></span>
                                 </button>
                             </div>
