@@ -133,9 +133,9 @@ HTMLHelper::_('bootstrap.collapse');
     <span class="icon-equalizer me-2" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_FILTER_AND_SORT'); ?>
 </button>
 
-<div class="offcanvas-md offcanvas-start" tabindex="-1" id="j2commerceFilterOffcanvas">
+<div class="offcanvas-md offcanvas-start" tabindex="-1" id="j2commerceFilterOffcanvas" aria-labelledby="j2commerceFilterOffcanvasTitle">
     <div class="offcanvas-header border-bottom d-md-none">
-        <h5 class="offcanvas-title fw-bold"><?php echo Text::_('COM_J2COMMERCE_FILTER_ACTIVE_TITLE'); ?></h5>
+        <h5 class="offcanvas-title fw-bold" id="j2commerceFilterOffcanvasTitle"><?php echo Text::_('COM_J2COMMERCE_FILTER_AND_SORT'); ?></h5>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
     </div>
     <div class="offcanvas-body p-md-0">
@@ -399,7 +399,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const ajaxEnabled = document.querySelector('.j2commerce-product-list')?.dataset.ajaxFilters === 'true';
     if (ajaxEnabled && typeof J2CommerceFilters !== 'undefined') {
         initClearButtonVisibility();
-        bindMobileFooter();
         return;
     }
 
