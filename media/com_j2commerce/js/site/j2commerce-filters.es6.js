@@ -924,8 +924,8 @@ class J2CommerceFilters {
         });
     }
 
-    // A layout may render the filter form twice (UIkit ships a mobile offcanvas copy
-    // alongside the desktop sidebar), so every chip target is addressed as a set.
+    // Every chip target is addressed as a set: a template override made before the uikit
+    // layouts rendered a single form may still carry an off-canvas copy beside the sidebar.
     // The bare ids are kept in the set for template overrides that predate the classes.
     filterChipTargets() {
         const collect = (className, id) => {

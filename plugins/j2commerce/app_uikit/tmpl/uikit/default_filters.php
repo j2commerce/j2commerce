@@ -123,8 +123,8 @@ if ($hasFancySelect) {
 
 <div id="j2commerceFilterOffcanvas" uk-offcanvas="mode: slide; overlay: true">
     <div class="uk-offcanvas-bar">
-        <button class="uk-offcanvas-close" type="button" uk-close></button>
-        <h3 class="uk-offcanvas-bar-title"><?php echo Text::_('COM_J2COMMERCE_FILTER_ACTIVE_TITLE'); ?></h3>
+        <button class="uk-offcanvas-close" type="button" uk-close aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
+        <h3 class="uk-offcanvas-bar-title"><?php echo Text::_('COM_J2COMMERCE_FILTER_AND_SORT'); ?></h3>
 
         <div id="j2commerce-filter-offcanvas-slot"></div>
 
@@ -396,7 +396,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const ajaxEnabled = document.querySelector('.j2commerce-product-list')?.dataset.ajaxFilters === 'true';
     if (ajaxEnabled && typeof J2CommerceFilters !== 'undefined') {
         initClearButtonVisibility();
-        bindMobileFooter();
         return;
     }
 
