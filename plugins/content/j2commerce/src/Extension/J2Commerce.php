@@ -1173,7 +1173,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             $position = $this->params->get('item_product_block_position', 'bottom');
         }
 
-        if (!isset($article->id) || !$article->id || $position === 'afterdisplaycontent') {
+        if (!isset($article->id) || !$article->id || \in_array($position, ['afterdisplaycontent', 'none'], true)) {
             return;
         }
 
