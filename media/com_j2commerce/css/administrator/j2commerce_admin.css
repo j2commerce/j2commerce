@@ -476,6 +476,12 @@ html[data-bs-theme="dark"] {
     overflow: visible;
 }
 
+/* With overflow visible, the flex item's min-width:auto resolves to Swiper's inline slide width,
+   so the carousel cannot shrink and every resize feeds back into a horizontal overflow. */
+#j2commerce-dashboard-messages {
+    min-width: 0;
+}
+
 /* Dashboard Messages — Swiper fade effect (missing from Swiper core-only build) */
 #j2commerce-dashboard-messages.swiper-fade .swiper-slide {
     pointer-events: none;

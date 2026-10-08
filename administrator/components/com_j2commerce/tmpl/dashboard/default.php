@@ -211,7 +211,7 @@ $doc->getWebAssetManager()
                         data-label-stop="<?php echo $this->escape(Text::_('COM_J2COMMERCE_DASHBOARD_MSG_ROTATION_STOP')); ?>"
                         data-label-start="<?php echo $this->escape(Text::_('COM_J2COMMERCE_DASHBOARD_MSG_ROTATION_START')); ?>"
                         aria-label="<?php echo $this->escape(Text::_('COM_J2COMMERCE_DASHBOARD_MSG_ROTATION_STOP')); ?>">
-                        <span class="fa-solid fa-pause" aria-hidden="true"></span>
+                        <span class="fa-solid fa-pause fa-fw" aria-hidden="true"></span>
                     </button>
                     <button type="button" class="btn btn-sm btn-secondary" id="j2commerce-dashboard-messages-next"
                         aria-label="<?php echo $this->escape(Text::_('JNEXT')); ?>">
