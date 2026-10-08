@@ -1,0 +1,105 @@
+# Keeps the public roadmap board in step with issues and releases.
+#
+# Setup (once per repository):
+#   - repository variable ROADMAP_PROJECT_NUMBER: the number of the j2commerce roadmap board
+#   - repository secret ROADMAP_TOKEN: a token of the j2commerce account that can edit that board
+#     (classic token with the "project" scope)
+# Until the variable is set, the board job is skipped and only the milestone job runs.
+#
+# Board status: enhancement/suggestion issues land in Exploring, move to In Progress when given a
+# milestone and to Released when closed as completed. Closed as not planned leaves the board.
+# Release: publishing tag X.Y.Z closes milestone X.Y.Z and opens milestone X.(Y+1).0.
+
+name: Roadmap
+
+on:
+  issues:
+    types: [opened, reopened, labeled, milestoned, demilestoned, closed]
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  board:
+    if: github.event_name == 'issues' && vars.ROADMAP_PROJECT_NUMBER != ''
+    runs-on: ubuntu-latest
+    concurrency: roadmap-issue-${{ github.event.issue.number }}
+    env:
+      GH_TOKEN: ${{ secrets.ROADMAP_TOKEN }}
+      OWNER: j2commerce
+      NUMBER: ${{ vars.ROADMAP_PROJECT_NUMBER }}
+      ISSUE_URL: ${{ github.event.issue.html_url }}
+      LABELS: ${{ toJSON(github.event.issue.labels.*.name) }}
+      STATE: ${{ github.event.issue.state }}
+      REASON: ${{ github.event.issue.state_reason }}
+      MILESTONE: ${{ github.event.issue.milestone.title }}
+    steps:
+      - name: Place the issue on the board
+        run: |
+          set -euo pipefail
+          if ! jq -e 'any(.[]; . == "enhancement" or . == "suggestion")' <<< "$LABELS" > /dev/null; then
+            echo "Not a roadmap issue."
+            exit 0
+          fi
+
+          item=$(gh project item-add "$NUMBER" --owner "$OWNER" --url "$ISSUE_URL" --format json --jq .id)
+
+          if [ "$STATE" = closed ] && [ "$REASON" != completed ]; then
+            gh project item-delete "$NUMBER" --owner "$OWNER" --id "$item"
+            exit 0
+          fi
+
+          if [ "$STATE" = closed ]; then
+            export STATUS=Released
+          elif [ -n "$MILESTONE" ]; then
+            export STATUS="In Progress"
+          else
+            export STATUS=Exploring
+          fi
+
+          project=$(gh project view "$NUMBER" --owner "$OWNER" --format json --jq .id)
+          ids=$(gh project field-list "$NUMBER" --owner "$OWNER" --format json \
+            --jq '.fields[] | select(.name == "Status") | .id + " " + (.options[] | select(.name == env.STATUS) | .id)')
+          if [ -z "$ids" ]; then
+            echo "::error::The board needs a Status field with an option named \"$STATUS\"."
+            exit 1
+          fi
+
+          gh project item-edit --id "$item" --project-id "$project" \
+            --field-id "${ids% *}" --single-select-option-id "${ids#* }"
+          echo "Set to $STATUS."
+
+  milestones:
+    if: github.event_name == 'release' && !github.event.release.prerelease
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.event.release.tag_name }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Close the released milestone and open the next one
+        run: |
+          set -euo pipefail
+          version=${TAG#v}
+          if [[ ! $version =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "Tag $TAG is not a version number."
+            exit 0
+          fi
+          next="${BASH_REMATCH[1]}.$((BASH_REMATCH[2] + 1)).0"
+
+          list=$(gh api "repos/$REPO/milestones?state=all&per_page=100" --paginate \
+            --jq '.[] | "\(.number)\t\(.title)\t\(.state)"')
+
+          released=$(awk -F'\t' -v v="$version" '$2 == v && $3 == "open" {print $1}' <<< "$list")
+          if [ -n "$released" ]; then
+            gh api -X PATCH "repos/$REPO/milestones/$released" -f state=closed > /dev/null
+            echo "Closed milestone $version."
+          fi
+
+          if ! awk -F'\t' -v v="$next" '$2 == v {found = 1} END {exit !found}' <<< "$list"; then
+            gh api -X POST "repos/$REPO/milestones" -f title="$next" > /dev/null
+            echo "Opened milestone $next."
+          fi
