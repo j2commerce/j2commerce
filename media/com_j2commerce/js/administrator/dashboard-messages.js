@@ -139,8 +139,8 @@
             toggle.dataset.running = running ? '1' : '0';
             toggle.setAttribute('aria-label', running ? toggle.dataset.labelStop : toggle.dataset.labelStart);
             toggle.querySelector('span').className = running
-                ? 'fa-solid fa-pause'
-                : 'fa-solid fa-play';
+                ? 'fa-solid fa-pause fa-fw'
+                : 'fa-solid fa-play fa-fw';
         };
 
         setToggleState(true);
