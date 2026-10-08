@@ -366,9 +366,11 @@ if ($info) {
 
                     <?php // Continue shopping + need help ?>
                     <div class="j2c-block-actions uk-flex uk-flex-wrap uk-flex-middle uk-flex-center uk-margin-bottom" style="gap: 12px;">
-                        <a href="<?php echo $this->escape($this->continueShoppingUrl); ?>" class="uk-button uk-button-primary">
-                            <?php echo Text::_('COM_J2COMMERCE_CONTINUE_SHOPPING'); ?>
-                        </a>
+                        <?php if ($this->continueShoppingUrl !== '') : ?>
+                            <a href="<?php echo $this->escape($this->continueShoppingUrl); ?>" class="uk-button uk-button-primary">
+                                <?php echo Text::_('COM_J2COMMERCE_CONTINUE_SHOPPING'); ?>
+                            </a>
+                        <?php endif; ?>
                         <?php if (!empty($this->order_link)) : ?>
                             <a href="<?php echo $this->order_link; ?>" class="uk-button uk-button-default">
                                 <?php echo Text::_('COM_J2COMMERCE_VIEW_ORDER_HISTORY'); ?>
@@ -384,11 +386,13 @@ if ($info) {
 
                 <?php else : ?>
                     <?php // Cancelled order actions ?>
-                    <div class="uk-flex uk-flex-wrap uk-flex-middle uk-margin-bottom" style="gap: 12px;">
-                        <a href="<?php echo $this->escape($this->continueShoppingUrl); ?>" class="uk-button uk-button-secondary">
-                            <?php echo Text::_('COM_J2COMMERCE_CONTINUE_SHOPPING'); ?>
-                        </a>
-                    </div>
+                    <?php if ($this->continueShoppingUrl !== '') : ?>
+                        <div class="uk-flex uk-flex-wrap uk-flex-middle uk-margin-bottom" style="gap: 12px;">
+                            <a href="<?php echo $this->escape($this->continueShoppingUrl); ?>" class="uk-button uk-button-secondary">
+                                <?php echo Text::_('COM_J2COMMERCE_CONTINUE_SHOPPING'); ?>
+                            </a>
+                        </div>
+                    <?php endif; ?>
                 <?php endif; ?>
 
             </div>
