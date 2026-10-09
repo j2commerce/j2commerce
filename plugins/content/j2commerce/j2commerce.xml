@@ -167,6 +167,7 @@
                     <option value="top">PLG_CONTENT_J2COMMERCE_POSITION_TOP</option>
                     <option value="bottom">PLG_CONTENT_J2COMMERCE_POSITION_BOTTOM</option>
                     <option value="afterdisplaycontent">PLG_CONTENT_J2COMMERCE_POSITION_AFTER_DISPLAY</option>
+                    <option value="none">JHIDE</option>
                 </field>
                 <field
                     name="category_display_j2commerce_images"
