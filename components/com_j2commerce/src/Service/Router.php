@@ -379,6 +379,12 @@ class Router extends RouterView
         if (isset($query['view']) && $query['view'] === 'products' && isset($query['catid'])) {
             $catid = (int) $query['catid'];
 
+            // An unavailable category keeps its catid in the query, so the view answers 404
+            // instead of the URL collapsing to the unfiltered listing (and enforceSEF 301-ing there).
+            if ($catid > 1 && !$this->isCategoryAvailable($catid)) {
+                return [];
+            }
+
             // PRIORITY 1: an exact products menu for this catid → clean menu alias URL
             $menuItem = $this->findProductsMenuByCatid($catid);
 
@@ -902,6 +908,14 @@ class Router extends RouterView
 
         $this->db->setQuery($dbquery);
         return $this->db->loadAssoc();
+    }
+
+    /** Published, and inside the visitor's view levels — the same test the category tree applies. */
+    private function isCategoryAvailable(int $catid): bool
+    {
+        $categories = $this->getCategories(['access' => true]);
+
+        return $categories === null || $categories->get($catid) !== null;
     }
 
     private function getCategoryParams(int $catid): array

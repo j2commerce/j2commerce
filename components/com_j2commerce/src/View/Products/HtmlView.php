@@ -158,7 +158,14 @@ class HtmlView extends BaseHtmlView
         $this->params = $app->getParams();
 
         // Load data from model
-        $this->state      = $model->getState();
+        $this->state = $model->getState();
+        $catids      = $this->state->get('filter.catids', []);
+
+        // A category the visitor cannot see (missing, unpublished or outside their view levels) is a 404, as in com_content.
+        if (!empty($catids) && (int) reset($catids) > 1 && $model->getParent() === null) {
+            throw new \Exception(Text::_('JGLOBAL_CATEGORY_NOT_FOUND'), 404);
+        }
+
         $this->items      = $model->getItems();
         $this->products   = $this->items; // Alias for template plugin compatibility
         $this->parent     = $model->getParent();
