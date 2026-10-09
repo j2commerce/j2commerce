@@ -364,9 +364,11 @@ if ($info) {
 
                     <?php // Continue shopping + need help ?>
                     <div class="j2c-block-actions d-flex flex-wrap align-items-center justify-content-center gap-3 mb-4">
-                        <a href="<?php echo $this->escape($this->continueShoppingUrl); ?>" class="btn btn-primary">
-                            <?php echo Text::_('COM_J2COMMERCE_CONTINUE_SHOPPING'); ?>
-                        </a>
+                        <?php if ($this->continueShoppingUrl !== '') : ?>
+                            <a href="<?php echo $this->escape($this->continueShoppingUrl); ?>" class="btn btn-primary">
+                                <?php echo Text::_('COM_J2COMMERCE_CONTINUE_SHOPPING'); ?>
+                            </a>
+                        <?php endif; ?>
                         <?php if (!empty($this->order_link)) : ?>
                             <a href="<?php echo $this->order_link; ?>" class="btn btn-outline-primary">
                                 <?php echo Text::_('COM_J2COMMERCE_VIEW_ORDER_HISTORY'); ?>
@@ -382,11 +384,13 @@ if ($info) {
 
                 <?php else : ?>
                     <?php // Cancelled order actions ?>
-                    <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
-                        <a href="<?php echo $this->escape($this->continueShoppingUrl); ?>" class="btn btn-dark">
-                            <?php echo Text::_('COM_J2COMMERCE_CONTINUE_SHOPPING'); ?>
-                        </a>
-                    </div>
+                    <?php if ($this->continueShoppingUrl !== '') : ?>
+                        <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+                            <a href="<?php echo $this->escape($this->continueShoppingUrl); ?>" class="btn btn-dark">
+                                <?php echo Text::_('COM_J2COMMERCE_CONTINUE_SHOPPING'); ?>
+                            </a>
+                        </div>
+                    <?php endif; ?>
                 <?php endif; ?>
 
             </div>

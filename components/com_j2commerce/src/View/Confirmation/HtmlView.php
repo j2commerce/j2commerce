@@ -20,7 +20,6 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TrackingHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
-use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
@@ -166,10 +165,8 @@ class HtmlView extends BaseHtmlView
     }
 
     /**
-     * The store's Continue Shopping Page destination, as the cart already honours it.
-     * Its 'previous' option means history.back(), which cannot apply here — the previous
-     * entry after a confirmation is the gateway or the checkout step — so that case, and
-     * a destination configured but left empty, fall back to the product list.
+     * Empty string hides the button: 'previous' (history.back) cannot apply after a confirmation,
+     * and a destination that routes to a bare component URL has no menu item behind it.
      */
     private function resolveContinueShoppingUrl(): string
     {
@@ -179,13 +176,13 @@ class HtmlView extends BaseHtmlView
             ->createModel('Cart', 'Administrator', ['ignore_request' => true]);
 
         $destination = $cartModel->getContinueShoppingUrl();
+        $url         = \is_string($destination->url ?? null) ? $destination->url : '';
 
-        if (($destination->type ?? 'previous') !== 'previous' && !empty($destination->url)) {
-            return (string) $destination->url;
+        if (($destination->type ?? 'previous') === 'previous' || $url === '' || str_contains($url, '/component/')) {
+            return '';
         }
 
-        // false: every branch above returns an unencoded URL, so the templates escape once.
-        return Route::_(RouteHelper::getProductsRoute(), false);
+        return $url;
     }
 
     /**
