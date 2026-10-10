@@ -344,6 +344,11 @@ class ShippingpluginController extends BaseController
     {
         $app = Factory::getApplication();
         $app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        // This endpoint is polled via GET (loadRates) with a URL that is otherwise identical
+        // across calls in the same session, so a caching proxy/CDN in front of the admin area
+        // can serve a stale list after a save/delete unless caching is explicitly refused here.
+        $app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $app->setHeader('Pragma', 'no-cache');
         $app->sendHeaders();
 
         echo json_encode(['success' => true, 'data' => $data]);
@@ -363,6 +368,8 @@ class ShippingpluginController extends BaseController
     {
         $app = Factory::getApplication();
         $app->setHeader('Content-Type', 'application/json; charset=utf-8');
+        $app->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+        $app->setHeader('Pragma', 'no-cache');
         $app->sendHeaders();
 
         echo json_encode(['success' => false, 'message' => $message]);
