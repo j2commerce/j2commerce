@@ -430,10 +430,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 body.appendChild(el('h4', 'card-title small mb-1', el('span', `badge rounded-2 px-2 text-bg-${color}`, item.orderstatus_name)));
             }
 
-            if (item.isAdminNote) {
-                body.appendChild(el('strong', '', Joomla.Text._('COM_J2COMMERCE_ORDER_NOTE')));
-            }
-
             if (item.comment) {
                 body.appendChild(el('p', 'card-text text-body-secondary small mb-0', item.comment));
             }
