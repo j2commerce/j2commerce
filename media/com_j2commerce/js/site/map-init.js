@@ -34,12 +34,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    const escapeHtml = function (str) {
-        const div = document.createElement('div');
-        div.textContent = str;
-        return div.innerHTML;
-    };
-
     Object.keys(config.maps).forEach(function (mapId) {
         const mapConfig = config.maps[mapId];
         const container = document.getElementById(mapId);
@@ -69,7 +63,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const map = L.map(mapId, {
             scrollWheelZoom: false,
-            dragging: !L.Browser.mobile
+            dragging: !L.Browser.mobile,
+            // The address is already shown as text; the map is a picture, not a tab stop.
+            keyboard: false
         }).setView([lat, lng], zoom);
 
         L.tileLayer(provider.url, {
@@ -77,12 +73,7 @@ document.addEventListener('DOMContentLoaded', function () {
             maxZoom: provider.maxZoom
         }).addTo(map);
 
-        const marker = L.marker([lat, lng]).addTo(map);
-
-        if (mapConfig.address) {
-            const escapedAddress = escapeHtml(mapConfig.address).replace(/,\s*/g, '<br>');
-            marker.bindPopup('<strong>Delivery Address</strong><br>' + escapedAddress);
-        }
+        const marker = L.marker([lat, lng], { keyboard: false, interactive: false, alt: '' }).addTo(map);
 
         // Fix rendering issues in hidden/tabbed containers
         setTimeout(function () {

@@ -106,6 +106,7 @@ Text::script('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
                      class="img-fluid">
             </div>
             <?php endif; } ?>
+            <div id="j2commerce-sr-announcer" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
             <div class="j2commerce-checkout-row row justify-content-xl-center">
                 <div class="j2commerce-checkout-steps col-lg-8 col-xl-6 order-2 order-lg-1">
                     <section id="checkout" role="region" aria-labelledby="checkout-heading-label">
@@ -377,14 +378,18 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!container || !message) return;
         var field = container.querySelector('#' + fieldId);
         if (field) {
-            var isCheckbox = field.type === 'checkbox' || field.type === 'radio';
+            // A telephone field submits through a hidden input; the shopper types into the
+            // visible national-number input, so that one carries the error state.
+            var phoneInput = field.type === 'hidden' && field.closest('.j2c-telephone-field');
+            var target = (phoneInput && phoneInput.querySelector('.j2c-phone-national')) || field;
+            var isCheckbox = target.type === 'checkbox' || target.type === 'radio';
             // Don't apply j2-invalid to checkboxes/radios: the class injects a background
             // SVG icon sized for text inputs which renders inside the small checkbox.
             if (!isCheckbox) {
-                field.classList.add('j2-invalid');
+                target.classList.add('j2-invalid');
             }
-            field.setAttribute('aria-invalid', 'true');
-            field.setAttribute('aria-describedby', fieldId + '-error');
+            target.setAttribute('aria-invalid', 'true');
+            target.setAttribute('aria-describedby', fieldId + '-error');
             var span = document.createElement('span');
             span.className = 'j2error d-block';
             span.id = fieldId + '-error';
@@ -418,25 +423,19 @@ document.addEventListener('DOMContentLoaded', function() {
         var el = document.querySelector(selector);
         if (!el) return;
         el.setAttribute('tabindex', '-1');
+        // Removing tabindex while the element holds focus would drop focus to <body>.
+        el.addEventListener('blur', function() { el.removeAttribute('tabindex'); }, { once: true });
         el.focus();
-        el.removeAttribute('tabindex');
     }
 
-    // Accessibility: announce to screen readers
+    // Accessibility: announce to screen readers. The region is rendered with the page so
+    // it is already registered as live; clearing first lets a repeated message re-announce.
     function announceToScreenReader(message, priority) {
         var announcer = document.getElementById('j2commerce-sr-announcer');
-        if (!announcer) {
-            announcer = document.createElement('div');
-            announcer.id = 'j2commerce-sr-announcer';
-            announcer.className = 'visually-hidden';
-            announcer.setAttribute('role', 'status');
-            announcer.setAttribute('aria-live', 'polite');
-            announcer.setAttribute('aria-atomic', 'true');
-            document.body.appendChild(announcer);
-        }
+        if (!announcer) return;
         announcer.setAttribute('aria-live', priority || 'polite');
-        announcer.textContent = message;
-        setTimeout(function() { announcer.textContent = ''; }, 1000);
+        announcer.textContent = '';
+        setTimeout(function() { announcer.textContent = message; }, 100);
     }
 
     // Accessibility: trap focus within element

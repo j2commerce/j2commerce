@@ -154,6 +154,10 @@ const J2Commerce = {
     async addToCartForm(form, e) {
         e.preventDefault();
 
+        // Re-entry guard instead of disabling the button: a disabled button drops keyboard focus to <body>.
+        if (form.dataset.j2cAdding === '1') return;
+        form.dataset.j2cAdding = '1';
+
         const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
         const actionAlways = submitBtn?.dataset.cartActionAlways;
         const actionDone = submitBtn?.dataset.cartActionDone;
@@ -162,7 +166,7 @@ const J2Commerce = {
         if (submitBtn) {
             if (submitBtn.tagName === 'BUTTON') submitBtn.textContent = actionAlways;
             else submitBtn.value = actionAlways;
-            submitBtn.disabled = true;
+            submitBtn.setAttribute('aria-disabled', 'true');
         }
 
         const formData = new FormData(form);
@@ -179,7 +183,7 @@ const J2Commerce = {
             });
             const json = await response.json();
 
-            if (submitBtn) submitBtn.disabled = false;
+            if (submitBtn) submitBtn.removeAttribute('aria-disabled');
 
             // Remove previous notifications
             form.querySelectorAll('.j2success, .j2warning, .j2attention, .j2information, .j2error').forEach(el => el.remove());
@@ -273,10 +277,12 @@ const J2Commerce = {
         } catch (error) {
             console.error('Cart form error:', error);
             if (submitBtn) {
-                submitBtn.disabled = false;
+                submitBtn.removeAttribute('aria-disabled');
                 if (submitBtn.tagName === 'BUTTON') submitBtn.textContent = actionDone;
                 else submitBtn.value = actionDone;
             }
+        } finally {
+            delete form.dataset.j2cAdding;
         }
     },
 
