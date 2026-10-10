@@ -1364,10 +1364,10 @@ class CustomFieldHelper
             if ($isUikit) {
                 // data-bs-toggle stripped; UIkit dropdown JS handles uk-dropdown attr.
                 $countryPrefix = '<button type="button" class="uk-button uk-button-default j2c-phone-country-btn" '
-                    . 'aria-expanded="false" '
-                    . 'aria-label="' . Text::_('COM_J2COMMERCE_PHONE_SELECT_COUNTRY') . '">'
+                    . 'aria-expanded="false">'
                     . $flagHtml . ' '
                     . '<span class="j2c-phone-code">+' . $escapedCode . '</span>'
+                    . '<span class="uk-hidden-visually"> ' . htmlspecialchars(Text::_('COM_J2COMMERCE_PHONE_SELECT_COUNTRY'), ENT_QUOTES, 'UTF-8') . '</span>'
                     . '</button>'
                     . '<div uk-dropdown="mode: click" class="uk-dropdown j2c-phone-country-dropdown">'
                     . '<ul class="uk-nav uk-dropdown-nav j2c-phone-country-list" style="max-height:300px;overflow-y:auto;">'
@@ -1378,10 +1378,10 @@ class CustomFieldHelper
                     . '</ul></div>';
             } else {
                 $countryPrefix = '<button type="button" class="btn btn-outline-secondary dropdown-toggle j2c-phone-country-btn" '
-                    . 'data-bs-toggle="dropdown" aria-expanded="false" '
-                    . 'aria-label="' . Text::_('COM_J2COMMERCE_PHONE_SELECT_COUNTRY') . '">'
+                    . 'data-bs-toggle="dropdown" aria-expanded="false">'
                     . $flagHtml . ' '
                     . '<span class="j2c-phone-code">+' . $escapedCode . '</span>'
+                    . '<span class="visually-hidden"> ' . htmlspecialchars(Text::_('COM_J2COMMERCE_PHONE_SELECT_COUNTRY'), ENT_QUOTES, 'UTF-8') . '</span>'
                     . '</button>'
                     . '<ul class="dropdown-menu j2c-phone-country-dropdown" style="max-height:300px;overflow-y:auto;">'
                     . '<li class="px-2 py-1 sticky-top bg-body">'
@@ -1525,10 +1525,10 @@ class CustomFieldHelper
             if ($isUikit) {
                 // data-bs-toggle stripped; UIkit dropdown JS handles uk-dropdown attr.
                 $countryBtn = '<button type="button" class="uk-button uk-button-default j2c-phone-country-btn" '
-                    . 'aria-expanded="false" '
-                    . 'aria-label="' . Text::_('COM_J2COMMERCE_PHONE_SELECT_COUNTRY') . '">'
+                    . 'aria-expanded="false">'
                     . $flagHtml . ' '
                     . '<span class="j2c-phone-code">+' . $escapedCode . '</span>'
+                    . '<span class="uk-hidden-visually"> ' . htmlspecialchars(Text::_('COM_J2COMMERCE_PHONE_SELECT_COUNTRY'), ENT_QUOTES, 'UTF-8') . '</span>'
                     . '</button>'
                     . '<div uk-dropdown="mode: click" class="uk-dropdown j2c-phone-country-dropdown">'
                     . '<ul class="uk-nav uk-dropdown-nav j2c-phone-country-list" style="max-height:300px;overflow-y:auto;">'
@@ -1539,10 +1539,10 @@ class CustomFieldHelper
                     . '</ul></div>';
             } else {
                 $countryBtn = '<button type="button" class="btn btn-outline-secondary dropdown-toggle j2c-phone-country-btn" '
-                    . 'data-bs-toggle="dropdown" aria-expanded="false" '
-                    . 'aria-label="' . Text::_('COM_J2COMMERCE_PHONE_SELECT_COUNTRY') . '">'
+                    . 'data-bs-toggle="dropdown" aria-expanded="false">'
                     . $flagHtml . ' '
                     . '<span class="j2c-phone-code">+' . $escapedCode . '</span>'
+                    . '<span class="visually-hidden"> ' . htmlspecialchars(Text::_('COM_J2COMMERCE_PHONE_SELECT_COUNTRY'), ENT_QUOTES, 'UTF-8') . '</span>'
                     . '</button>'
                     . '<ul class="dropdown-menu j2c-phone-country-dropdown" style="max-height:300px;overflow-y:auto;">'
                     . '<li class="px-2 py-1 sticky-top bg-body">'
@@ -1560,6 +1560,10 @@ class CustomFieldHelper
         $hiddenInput = '<input type="hidden" name="' . $namekey . '" id="' . $id . '" '
             . 'value="' . $escapedValue . '"' . $requiredAttr . '>';
 
+        // The visible input carries the label and required state; the hidden input only submits.
+        $nationalId    = $id . '-national';
+        $nationalAttrs = 'id="' . $nationalId . '" ' . ($requiredAttr !== '' ? 'aria-required="true" ' : '');
+
         if ($isSingleCountry) {
             $singleEntry   = $countries[0];
             $maxLen        = (int) $singleEntry['max'];
@@ -1569,7 +1573,7 @@ class CustomFieldHelper
                 . 'maxlength="' . $maxLen . '" '
                 . 'autocomplete="' . $escapedAc . '" '
                 . 'placeholder="' . Text::_('COM_J2COMMERCE_PHONE_NATIONAL_NUMBER') . '" '
-                . 'aria-label="' . Text::_('COM_J2COMMERCE_PHONE_NATIONAL_NUMBER') . '" '
+                . $nationalAttrs
                 . 'data-dial-code="' . htmlspecialchars($singleEntry['code'], ENT_QUOTES, 'UTF-8') . '" '
                 . 'data-hidden-target="' . $id . '">';
         } else {
@@ -1578,7 +1582,7 @@ class CustomFieldHelper
                 . 'inputmode="numeric" pattern="[0-9]*" '
                 . 'autocomplete="' . $escapedAc . '" '
                 . 'placeholder="' . Text::_('COM_J2COMMERCE_PHONE_NATIONAL_NUMBER') . '" '
-                . 'aria-label="' . Text::_('COM_J2COMMERCE_PHONE_NATIONAL_NUMBER') . '">';
+                . rtrim($nationalAttrs) . '>';
         }
 
         $groupAttrs = ' data-field-id="' . $id . '" data-default-iso="' . $escapedIso . '" data-countries="' . $countriesJson . '"'
@@ -1600,13 +1604,13 @@ class CustomFieldHelper
                 . ($isSingleCountry ? $countryStatic : $countryBtn)
                 . '<div class="form-floating flex-grow-1">'
                 . $nationalInput
-                . '<label>' . $labelHtml . '</label>'
+                . '<label for="' . $nationalId . '">' . $labelHtml . '</label>'
                 . '</div>'
                 . '</div>';
         }
 
         if ($isUikit) {
-            return '<label for="' . $id . '" class="uk-form-label">' . $labelHtml . '</label>'
+            return '<label for="' . $nationalId . '" class="uk-form-label">' . $labelHtml . '</label>'
                 . '<div class="' . $cls . '"' . $groupAttrs . '>'
                 . $hiddenInput
                 . ($isSingleCountry ? $countryStatic : $countryBtn)
@@ -1615,7 +1619,7 @@ class CustomFieldHelper
         }
 
         return '<div class="form-normal">'
-            . '<label for="' . $id . '" class="form-label">' . $labelHtml . '</label>'
+            . '<label for="' . $nationalId . '" class="form-label">' . $labelHtml . '</label>'
             . '<div class="' . $cls . '"' . $groupAttrs . '>'
             . $hiddenInput
             . ($isSingleCountry ? $countryStatic : $countryBtn)

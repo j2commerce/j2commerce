@@ -189,7 +189,7 @@ if ($info) {
                                 <?php echo Text::_($tierMessage); ?>
                             </p>
                             <?php if ($mapLoaded) : ?>
-                                <div id="j2c-confirmation-map" class="leaflet-map-container uk-margin-top" role="img" aria-label="<?php echo $this->escape($mapAddress); ?>"></div>
+                                <div id="j2c-confirmation-map" class="leaflet-map-container uk-margin-top" role="group" aria-label="<?php echo $this->escape($mapAddress); ?>"></div>
                             <?php endif; ?>
                         </div>
                     </div>
