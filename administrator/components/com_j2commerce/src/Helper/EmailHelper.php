@@ -1032,6 +1032,7 @@ class EmailHelper
             if (!str_starts_with($logoUrl, 'http')) {
                 $logoUrl = rtrim($baseURL, '/') . '/' . ltrim($logoUrl, '/');
             }
+            $logoUrl = self::encodeUrlPath($logoUrl);
         }
         // The width that holds the logo's aspect ratio at the configured height. An email client
         // is not required to honour CSS, so the intrinsic width has to reach the markup as an
@@ -1938,6 +1939,50 @@ class EmailHelper
             . '</tr>';
     }
 
+    /**
+     * Percent-encode the path segments of a URL built from a raw filesystem path.
+     *
+     * ImageHelper::getImageUrl() and HTMLHelper::cleanImageURL() never encode the filename they
+     * append -- a storefront page renders fine regardless, because a browser silently encodes an
+     * unescaped space itself when it fetches the src. A mail client's HTML sanitiser or image
+     * proxy is frequently stricter: a raw space is not a legal URI character, and the fetch is
+     * dropped rather than corrected, which is why an item photo named with a space never arrives.
+     * A '%' already present means some segment is pre-encoded (a CDN URL passed through as-is);
+     * encoding again would corrupt it, so the whole URL is left alone rather than guessed at.
+     *
+     * @since 6.6.5
+     */
+    private static function encodeUrlPath(string $url): string
+    {
+        if ($url === '' || str_contains($url, '%')) {
+            return $url;
+        }
+
+        $prefix = '';
+        $rest   = $url;
+
+        if (preg_match('#^(https?://[^/]+)(/.*)?$#i', $url, $m)) {
+            $prefix = $m[1];
+            $rest   = $m[2] ?? '';
+        }
+
+        if ($rest === '') {
+            return $url;
+        }
+
+        // A stored local path never carries one, but strip a query/fragment before encoding
+        // rather than assume -- rawurlencode()'ing a bare '?' or '#' would corrupt either.
+        $path = $rest;
+        $tail = '';
+
+        if (preg_match('~^([^?#]*)([?#].*)?$~', $rest, $pm)) {
+            $path = $pm[1];
+            $tail = $pm[2] ?? '';
+        }
+
+        return $prefix . implode('/', array_map('rawurlencode', explode('/', $path))) . $tail;
+    }
+
     /** Get product thumbnail image URL for email, using ImageHelper for optimal sizing. */
     private function getProductImageForEmail(int $productId, string $baseURL): string
     {
@@ -1975,7 +2020,7 @@ class EmailHelper
             $url = rtrim($baseURL, '/') . '/' . ltrim($url, '/');
         }
 
-        return $url;
+        return self::encodeUrlPath($url);
     }
 
     /** Process [HOOK:POSITION] shortcodes by dispatching positional plugin events. */
