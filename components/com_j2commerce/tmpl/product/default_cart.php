@@ -36,9 +36,9 @@ $disabled        = $purchasable ? '' : ' disabled';
         <p class="text-success">
             <?php echo Text::_('COM_J2COMMERCE_ITEM_ADDED_TO_CART');?>
             <?php if ($this->params->get('list_enable_quickview', 0) && Factory::getApplication()->getInput()->getString('tmpl') === 'component') : ?>
-                <a href="<?php echo $this->item->checkout_link; ?>" class="j2commerce-checkout-link" target="_top">
+                <a href="<?php echo htmlspecialchars($this->item->checkout_link ?? '', ENT_QUOTES, 'UTF-8'); ?>" class="j2commerce-checkout-link" target="_top">
             <?php else:?>
-                <a href="<?php echo $this->item->checkout_link; ?>" class="j2commerce-checkout-link">
+                <a href="<?php echo htmlspecialchars($this->item->checkout_link ?? '', ENT_QUOTES, 'UTF-8'); ?>" class="j2commerce-checkout-link">
             <?php endif;?>
                 <?php echo Text::_('COM_J2COMMERCE_CHECKOUT'); ?>
             </a>

@@ -23,7 +23,7 @@ $chooseBtnClass = htmlspecialchars($params->get('choosebtn_class', 'uk-button uk
 ?>
 <div class="j2commerce-bundle-options">
     <?php if ($showCart && $productHelper->canShowCart($params)): ?>
-        <a href="<?php echo $productLink; ?>" class="<?php echo $chooseBtnClass; ?>">
+        <a href="<?php echo htmlspecialchars($productLink ?? '', ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo $chooseBtnClass; ?>">
             <?php echo Text::_('COM_J2COMMERCE_VIEW_BUNDLE_DETAILS'); ?>
         </a>
     <?php endif; ?>

@@ -24,7 +24,7 @@ $context = J2CommerceHelper::utilities()->getContext('cart');
 <div class="cart-action-complete" style="display:none;">
     <p class="uk-text-success">
         <?php echo Text::_('COM_J2COMMERCE_ITEM_ADDED_TO_CART'); ?>
-        <a href="<?php echo $product->checkout_link; ?>" class="j2commerce-checkout-link">
+        <a href="<?php echo htmlspecialchars($product->checkout_link ?? '', ENT_QUOTES, 'UTF-8'); ?>" class="j2commerce-checkout-link">
             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT'); ?>
         </a>
     </p>
