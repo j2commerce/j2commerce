@@ -137,7 +137,7 @@ PHP,
                 <?php echo ProductLayoutService::renderLayout('list.category.item_options', $displayData); ?>
                 <?php echo ProductLayoutService::renderLayout('list.category.item_cart', $displayData); ?>
             <?php elseif (($cartType == 2 && !empty($product->options)) || $cartType == 3) : ?>
-                <a href="<?php echo $productLink; ?>" class="btn btn-outline-primary">
+                <a href="<?php echo htmlspecialchars($productLink ?? '', ENT_QUOTES, 'UTF-8'); ?>" class="btn btn-outline-primary">
                     <?php echo Text::_('COM_J2COMMERCE_VIEW_PRODUCT_DETAILS'); ?>
                 </a>
             <?php else : ?>

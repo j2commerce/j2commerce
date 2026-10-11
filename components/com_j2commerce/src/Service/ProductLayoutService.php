@@ -423,9 +423,12 @@ final class ProductLayoutService
 
         $rawUrl = RouteHelper::getProductRoute($productId, $alias, $catid ?: null);
 
+        // xhtml=false: every item layout echoes 'productLink' through htmlspecialchars()/
+        // escape() itself; passing the Joomla default (xhtml=true) here would pre-encode
+        // '&' as '&amp;' and the template's own escaping would then double it to '&amp;amp;'.
         // Route::_() returns null on router error today and will throw from Joomla 7.
         try {
-            return (string) (Route::_($rawUrl) ?? $rawUrl);
+            return (string) (Route::_($rawUrl, false) ?? $rawUrl);
         } catch (\RuntimeException) {
             return $rawUrl;
         }

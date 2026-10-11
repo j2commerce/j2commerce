@@ -542,7 +542,12 @@ class PlatformHelper
         $urlParams = array_merge($defaultParams, $params);
         $url       = 'index.php?' . http_build_query($urlParams);
 
-        return $this->routeUrl($url);
+        // xhtml=false: consumers either HTML-escape it themselves (checkout_link in
+        // the item/cart templates) or use it raw for a redirect (Location header,
+        // JSON "redirect" read by window.location.href, or a second Route::_() call
+        // in default_totals.php — all of which would corrupt or double-escape an
+        // already xhtml=true-encoded URL). See getCartUrl() for the same reasoning.
+        return $this->routeUrl($url, false);
     }
 
     /**
@@ -598,7 +603,13 @@ class PlatformHelper
         $urlParams = array_merge($defaultParams, $params);
         $url       = 'index.php?' . http_build_query($urlParams);
 
-        return $this->routeUrl($url);
+        // xhtml=false: every consumer of this URL either HTML-escapes it itself
+        // (cart_form_action in the item layouts, via htmlspecialchars()/escape())
+        // or uses it raw in a redirect (Location header, JSON "redirect" consumed
+        // by window.location.href in cart-ajax.js). xhtml=true would pre-encode
+        // '&' as '&amp;', which templates then double-escape into '&amp;amp;' and
+        // which a raw-URL redirect would send to the browser as literal text.
+        return $this->routeUrl($url, false);
     }
 
     /**
@@ -642,7 +653,11 @@ class PlatformHelper
         $urlParams = array_merge($defaultParams, $params);
         $url       = 'index.php?' . http_build_query($urlParams);
 
-        return $this->routeUrl($url);
+        // xhtml=false: consumers either HTML-escape it themselves (product_link
+        // in the item layouts) or emit it into JSON-LD / an AJAX "redirect" field
+        // (CartsController's product_redirect), neither of which wants a
+        // pre-escaped '&amp;'. See getCartUrl() for the same reasoning.
+        return $this->routeUrl($url, false);
     }
 
     /**
