@@ -136,8 +136,8 @@
 
     function showAppliedState(form, code, type, discountLabel) {
         const removeClass  = type === 'coupon' ? 'j2c-remove-coupon' : 'j2c-remove-voucher';
-        const removeTitle  = type === 'coupon' ? (strings.removeCoupon || 'Remove Coupon') : (strings.removeVoucher || 'Remove Voucher');
-        const removeText   = strings.remove || 'Remove';
+        const removeTitle  = type === 'coupon' ? (strings.removeCoupon || '') : (strings.removeVoucher || '');
+        const removeText   = strings.remove || '';
 
         // The label is a server string, and the form states whether this instance shows one.
         const label = form.dataset.showDiscount === '0' ? '' : (discountLabel || '');
@@ -210,9 +210,9 @@
     function showInputState(form, type) {
         const inputName   = type === 'coupon' ? 'coupon' : 'voucher';
         const applyClass  = type === 'coupon' ? 'j2c-apply-coupon' : 'j2c-apply-voucher';
-        const placeholder = type === 'coupon' ? (strings.enterCoupon || 'Enter coupon code') : (strings.enterVoucher || 'Enter voucher code');
-        const ariaLabel   = type === 'coupon' ? (strings.couponCode || 'Coupon Code') : (strings.voucherCode || 'Voucher Code');
-        const btnText     = type === 'coupon' ? (strings.applyCoupon || 'Apply Coupon') : (strings.applyVoucher || 'Apply Voucher');
+        const placeholder = type === 'coupon' ? (strings.enterCoupon || '') : (strings.enterVoucher || '');
+        const ariaLabel   = type === 'coupon' ? (strings.couponCode || '') : (strings.voucherCode || '');
+        const btnText     = type === 'coupon' ? (strings.applyCoupon || '') : (strings.applyVoucher || '');
 
         // Input element
         const input = document.createElement('input');
@@ -341,6 +341,17 @@
         document.dispatchEvent(new CustomEvent('j2commerce:cart:updated', { bubbles: true }));
     }
 
+    // The event carries the same translated text the shopper sees, so a listener never
+    // receives an empty or untranslated message — including when the request itself fails.
+    function showError(form, input, btn, orig, type, serverMessage) {
+        const message = serverMessage || strings.error || '';
+        showInputError(input, message);
+        btn.disabled = false;
+        btn.replaceChildren(...orig);
+        input.focus();
+        dispatchEvent(form, 'j2commerce:' + type + ':error', { message: message, formId: form.id });
+    }
+
     // --- Apply Coupon ---
 
     document.addEventListener('click', function (e) {
@@ -370,20 +381,11 @@
                     });
                     notifyCartUpdated();
                 } else {
-                    showInputError(input, data.message || strings.error || '');
-                    btn.disabled = false;
-                    btn.replaceChildren(...orig);
-                    input.focus();
-                    dispatchEvent(form, 'j2commerce:coupon:error', {
-                        message: data.message || '', formId: form.id
-                    });
+                    showError(form, input, btn, orig, 'coupon', data.message);
                 }
             })
             .catch(function () {
-                showInputError(input, strings.error || '');
-                btn.disabled = false;
-                btn.replaceChildren(...orig);
-                input.focus();
+                showError(form, input, btn, orig, 'coupon');
             });
     });
 
@@ -445,20 +447,11 @@
                     });
                     notifyCartUpdated();
                 } else {
-                    showInputError(input, data.message || strings.error || '');
-                    btn.disabled = false;
-                    btn.replaceChildren(...orig);
-                    input.focus();
-                    dispatchEvent(form, 'j2commerce:voucher:error', {
-                        message: data.message || '', formId: form.id
-                    });
+                    showError(form, input, btn, orig, 'voucher', data.message);
                 }
             })
             .catch(function () {
-                showInputError(input, strings.error || '');
-                btn.disabled = false;
-                btn.replaceChildren(...orig);
-                input.focus();
+                showError(form, input, btn, orig, 'voucher');
             });
     });
 
