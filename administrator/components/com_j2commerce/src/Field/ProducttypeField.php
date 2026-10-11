@@ -45,6 +45,9 @@ class ProducttypeField extends ListField
      */
     protected static ?array $cachedTypes = null;
 
+    /** getProductTypes() result for the request; list views call it once per row. */
+    private static ?array $resolvedTypes = null;
+
     /**
      * Get the core product types with their language strings.
      *
@@ -57,6 +60,10 @@ class ProducttypeField extends ListField
      */
     public static function getProductTypes(): array
     {
+        if (self::$resolvedTypes !== null) {
+            return self::$resolvedTypes;
+        }
+
         // Define core product types with language string keys
         $types = [
             'simple'       => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_SIMPLE'),
@@ -70,7 +77,7 @@ class ProducttypeField extends ListField
         // $types['mytype'] = Text::_('PLG_J2COMMERCE_MYAPP_PRODUCT_TYPE_MYTYPE');
         J2CommerceHelper::plugin()->event('GetProductTypes', [&$types]);
 
-        return $types;
+        return self::$resolvedTypes = $types;
     }
 
     /**
@@ -124,6 +131,7 @@ class ProducttypeField extends ListField
      */
     public static function clearCache(): void
     {
-        self::$cachedTypes = null;
+        self::$cachedTypes   = null;
+        self::$resolvedTypes = null;
     }
 }
