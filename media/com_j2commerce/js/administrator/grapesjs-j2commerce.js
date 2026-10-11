@@ -794,7 +794,7 @@ function restoreShortcodeSrcInBody() {
 
     // Restore src="[SHORTCODE]" from data-j2c-src and remove the placeholder data URI
     html = html.replace(/(<img[^>]*)\ssrc="data:[^"]*"\s*data-j2c-src="(\[[A-Z_]+\])"/gi, '$1 src="$2"');
-    bodyField.value = html;
+    setJ2cBodyField(html);
 }
 
 function restoreShortcodeSrcInHtml(html) {
@@ -837,14 +837,30 @@ function setupFormSyncHandlers(editor) {
     };
 }
 
+// Writes to the textarea AND to the TinyMCE instance sitting on top of it. jform_body stays
+// type="editor" even in visual mode (see the getEditorContent() comment in emailtemplate's
+// edit.php), so TinyMCE still holds whatever body it was initialised with. Joomla's own form
+// submission flushes every live editor instance back into its field before posting; writing
+// the textarea alone leaves TinyMCE's unrelated buffer in place to be flushed on top of it,
+// silently reverting the save to the pre-GrapesJS body. Routing through the editor API keeps
+// both in agreement so that flush has nothing stale left to restore.
+window.setJ2cBodyField = function setJ2cBodyField(html) {
+    const bodyField = document.getElementById('jform_body');
+    if (bodyField) bodyField.value = html;
+
+    const instance = window.Joomla?.editors?.instances?.['jform_body'];
+    if (instance && typeof instance.setValue === 'function') {
+        instance.setValue(html);
+    }
+}
+
 window.syncGrapesDataToForm = function syncGrapesDataToForm(editor) {
     let html = editor.runCommand('gjs-get-inlined-html');
     html = postprocessHtmlForExport(html);
     const projectData = editor.getProjectData();
     const json = JSON.stringify(projectData);
 
-    const bodyField = document.getElementById('jform_body');
-    if (bodyField) bodyField.value = html;
+    setJ2cBodyField(html);
 
     const bodyJsonField = document.getElementById('jform_body_json');
     if (bodyJsonField) bodyJsonField.value = json;
@@ -941,8 +957,7 @@ function setupTemplateLoading(editor, options) {
                         const bodyJsonField = document.getElementById('jform_body_json');
                         if (bodyJsonField) bodyJsonField.value = '';
                     } else {
-                        const bodyField = document.getElementById('jform_body');
-                        if (bodyField) bodyField.value = json.body;
+                        setJ2cBodyField(json.body);
                     }
 
                     Joomla.renderMessages({ message: ['Template loaded successfully.'] });
@@ -976,7 +991,7 @@ function setupModeSwitching(editor, options) {
         } else if (newMode === 'editor') {
             if (window._j2cGrapesEditor) {
                 const html = postprocessHtmlForExport(window._j2cGrapesEditor.runCommand('gjs-get-inlined-html'));
-                if (bodyField) bodyField.value = html;
+                setJ2cBodyField(html);
             }
             if (container) container.style.display = 'none';
 
