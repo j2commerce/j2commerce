@@ -20,16 +20,29 @@ use Joomla\Database\ParameterType;
 
 final class OrderItemAttributeHelper
 {
-    /** Types that represent bundle/boxbuilder child products (not standard option selections). */
-    private const PRODUCT_CHILD_TYPES = ['bundleproduct', 'boxbuilderproduct', 'bundle', 'boxbuilder']; // product-type-literal-ok: orderitemattribute types, not product types
+    private static ?array $attributeTypes = null;
 
-    /** Types to skip entirely (metadata, not displayable). */
-    private const SKIP_TYPES = ['boxbuilder_selections'];
+    /** Plugin-owned attribute types: 'children' are child products (grouped with counts), 'hidden' metadata is never shown. */
+    private static function attributeTypes(): array
+    {
+        if (self::$attributeTypes === null) {
+            $types = ['children' => [], 'hidden' => []];
+
+            J2CommerceHelper::plugin()->event('GetOrderItemAttributeTypes', [&$types]);
+
+            self::$attributeTypes = [
+                'children' => array_values(array_filter((array) ($types['children'] ?? []), 'is_string')),
+                'hidden'   => array_values(array_filter((array) ($types['hidden'] ?? []), 'is_string')),
+            ];
+        }
+
+        return self::$attributeTypes;
+    }
 
     /**
      * Parse raw orderitem_attributes column into normalized attribute objects.
      *
-     * Handles 3 stored formats: JSON array, pre-resolved base64 (bundle/boxbuilder),
+     * Handles 3 stored formats: JSON array, pre-resolved base64 (child-product types),
      * and legacy option-ID base64 (variable/configurable).
      */
     public static function parseRawAttributes(string $raw, int $productId = 0): array
@@ -55,7 +68,7 @@ final class OrderItemAttributeHelper
             return [];
         }
 
-        // Detect pre-resolved format (bundle/boxbuilder): array of associative arrays with 'name' key
+        // Detect pre-resolved format (child-product types): array of associative arrays with 'name' key
         $firstValue = reset($unserialized);
         if (\is_array($firstValue) && isset($firstValue['name'])) {
             return self::resolvePreResolvedAttributes($unserialized);
@@ -66,7 +79,7 @@ final class OrderItemAttributeHelper
     }
 
     /**
-     * Group attributes by type and deduplicate bundle/boxbuilder entries with quantity counts.
+     * Group attributes by type and deduplicate child-product entries with quantity counts.
      *
      * @return array<int, array{type: string, items: array}>
      */
@@ -77,6 +90,7 @@ final class OrderItemAttributeHelper
         }
 
         $uploadNames = self::resolveUploadNames($attributes);
+        $types       = self::attributeTypes();
         $groups      = [];
         $childItems  = [];
 
@@ -91,7 +105,7 @@ final class OrderItemAttributeHelper
                 $value       = $uploadNames[$value];
             }
 
-            if (\in_array($type, self::SKIP_TYPES, true)) {
+            if (\in_array($type, $types['hidden'], true)) {
                 continue;
             }
 
@@ -99,7 +113,7 @@ final class OrderItemAttributeHelper
                 continue;
             }
 
-            if (\in_array($type, self::PRODUCT_CHILD_TYPES, true)) {
+            if (\in_array($type, $types['children'], true)) {
                 // Deduplicate by name for child product types
                 $key = $name;
                 if (!isset($childItems[$key])) {
@@ -220,6 +234,7 @@ final class OrderItemAttributeHelper
     private static function resolvePreResolvedAttributes(array $options): array
     {
         $attributes = [];
+        $hidden     = self::attributeTypes()['hidden'];
 
         foreach ($options as $option) {
             if (!\is_array($option)) {
@@ -228,7 +243,7 @@ final class OrderItemAttributeHelper
 
             $type = $option['type'] ?? '';
 
-            if (\in_array($type, self::SKIP_TYPES, true)) {
+            if (\in_array($type, $hidden, true)) {
                 continue;
             }
 

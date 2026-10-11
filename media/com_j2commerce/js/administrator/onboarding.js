@@ -711,16 +711,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const isSelected = card.classList.contains('selected');
             card.setAttribute('aria-checked', isSelected ? 'true' : 'false');
 
-            const productType = card.dataset.productType;
-            if (productType === 'subscription') {
+            const storeKind = card.dataset.productType; // what the store sells, not a product type
+            if (storeKind === 'subscription') {
                 const note = modal.querySelector('#ob-note-subscription');
                 if (note) note.classList.toggle('d-none', !isSelected);
             }
-            if (productType === 'digital') {
+            if (storeKind === 'digital') {
                 const note = modal.querySelector('#ob-note-digital');
                 if (note) note.classList.toggle('d-none', !isSelected);
             }
-            if (productType === 'physical') {
+            if (storeKind === 'physical') {
                 const note = modal.querySelector('#ob-shipping-question');
                 if (note) note.classList.toggle('d-none', !isSelected);
 

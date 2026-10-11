@@ -23,7 +23,9 @@
  *   2. two or more comparisons of anything against type-token literals on one line, either order
  *      (`$t === 'variable' || $t === 'flexivariable'`, `'variable' === $t || …`);
  *   3. an SQL IN list of type tokens, as two or more `quote('<type>')` calls on one line or a
- *      literal `IN ('variable', 'flexivariable')` inside a string.
+ *      literal `IN ('variable', 'flexivariable')` inside a string;
+ *   4. a product type compared against a name that is not a core type (`product_type === 'bundle'`,
+ *      `WHEN product_type = 'booking'`). A type a plugin adds is that plugin's to name.
  *
  * An intentional allow-list (a wizard that only knows how to build three types) carries the marker
  * `product-type-literal-ok` with its reason on the line that opens the list.
@@ -35,11 +37,8 @@ declare(strict_types=1);
 
 $root = \dirname(__DIR__);
 
-const TYPE_TOKENS = [
-    'simple', 'variable', 'configurable', 'downloadable', 'flexivariable', 'advancedvariable',
-    'variablesubscriptionproduct', 'subscriptionproduct', 'bundleproduct', 'boxbuilderproduct',
-    'guidedbuilder', 'groupproducts', 'booking', 'bundle',
-];
+/** The types core ships. Every other type belongs to the plugin that registers it. */
+const TYPE_TOKENS = ['simple', 'variable', 'configurable', 'downloadable', 'flexivariable'];
 
 const SCAN_PATHS = [
     'administrator/components/com_j2commerce',
@@ -86,7 +85,7 @@ const OWNER_FILES = [
 ];
 
 $cmd   = 'git -C ' . escapeshellarg($root) . ' ls-files -- ' . implode(' ', array_map('escapeshellarg', SCAN_PATHS));
-$files = array_filter(explode("\n", (string) shell_exec($cmd)), static fn (string $f): bool => preg_match('/\.(php|js)$/', $f) === 1
+$files = array_filter(explode("\n", (string) shell_exec($cmd)), static fn (string $f): bool => preg_match('/\.(php|js|xml)$/', $f) === 1
     && !preg_match('#(/vendor/|\.min\.js$|/language/|/sql/)#', $f)
     && !\in_array($f, OWNER_FILES, true));
 
@@ -99,6 +98,10 @@ $tokenAlt = implode('|', TYPE_TOKENS);
 $quoted   = "['\"](?:{$tokenAlt})['\"]";
 $findings = [];
 
+// A product-type expression compared with a literal, in either order; SQL `=` and `<>` included.
+$typeExpr       = '(?:product_?type|productType)\b[\w\'"\]\)]*';
+$foreignPattern = "/{$typeExpr}\s*(?:[!=]==?|=|<>)\s*['\"]([a-z0-9_]+)['\"]|['\"]([a-z0-9_]+)['\"]\s*[!=]==?\s*[\$\w.>\-]*{$typeExpr}/i";
+
 foreach ($files as $file) {
     $source = @file_get_contents($root . '/' . $file);
 
@@ -106,12 +109,10 @@ foreach ($files as $file) {
         continue;
     }
 
-    $lines = explode("
-", $source);
+    $lines = explode("\n", $source);
 
     // Blank comment-only lines (keeping the newline) so docblocks never match and offsets still map to lines.
-    $code = implode("
-", array_map(
+    $code = implode("\n", array_map(
         static fn (string $line): string => preg_match('#^\s*(\*|//|/\*|<!--)#', $line) ? '' : $line,
         $lines
     ));
@@ -132,14 +133,12 @@ foreach ($files as $file) {
 
         foreach ($lists[0] as [$list, $offset]) {
             if (!str_contains($list, '=>') && preg_match_all("/{$quoted}/", $list) >= 2) {
-                $flag(substr_count($code, "
-", 0, $offset) + 1, 'type-token list');
+                $flag(substr_count($code, "\n", 0, $offset) + 1, 'type-token list');
             }
         }
     }
 
-    foreach (explode("
-", $code) as $i => $line) {
+    foreach (explode("\n", $code) as $i => $line) {
         if ($line === '') {
             continue;
         }
@@ -148,6 +147,14 @@ foreach ($files as $file) {
             $flag($i + 1, 'chained type comparisons');
         } elseif (preg_match_all("/quote\(\s*{$quoted}\s*\)/", $line) >= 2 || preg_match("/\bIN\s*\(\s*{$quoted}\s*,\s*{$quoted}/i", $line)) {
             $flag($i + 1, 'type tokens in an SQL IN list');
+        }
+
+        if (preg_match_all($foreignPattern, $line, $named)) {
+            $foreign = array_diff(array_filter(array_merge($named[1], $named[2])), TYPE_TOKENS);
+
+            if ($foreign !== []) {
+                $flag($i + 1, 'names a type core does not ship (' . implode(', ', array_unique($foreign)) . ')');
+            }
         }
     }
 }

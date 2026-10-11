@@ -62,7 +62,7 @@ const J2Commerce = {
         const types = typeof Joomla !== 'undefined' && Joomla.getOptions
             ? Joomla.getOptions('com_j2commerce.productTypes')?.clientVariant
             : null;
-        return (Array.isArray(types) ? types : ['variable', 'advancedvariable', 'variablesubscriptionproduct']).includes(productType); // product-type-literal-ok: fallback when the page did not publish the list
+        return (Array.isArray(types) ? types : ['variable']).includes(productType);
     },
 
     /**
@@ -532,17 +532,6 @@ const J2Commerce = {
             }
         }
         values.product_id = productId;
-
-        // Handle advanced variable products
-        if (form.dataset.product_type === 'advancedvariable') {
-            const selectedVariant = this.collectVariantCsv(form);
-            const variants = form.dataset.product_variants ? JSON.parse(form.dataset.product_variants) : {};
-            const variantId = this.getMatchingVariant(variants, selectedVariant);
-
-            const variantInput = form.querySelector('input[name="variant_id"]');
-            if (variantInput) variantInput.value = variantId || '';
-            values.variant_id = variantId;
-        }
 
         this.dispatchEvent('beforeAjaxFilter', { form, values });
 
@@ -1196,45 +1185,14 @@ const J2Commerce = {
             this.setCartButtonAvailability(product, Number(response.availability) === 1, String(response.stock_status ?? ''));
         }
 
-        // Subscription duration text (for variablesubscriptionproduct variant switches)
-        if (typeof response.subscription_duration !== 'undefined') {
-            const existing = product.querySelector('.subscriptionproducts');
-            if (existing) {
-                if (response.subscription_duration) {
-                    existing.replaceWith(this.parseHtmlFragment(response.subscription_duration));
-                } else {
-                    existing.remove();
-                }
-            } else if (response.subscription_duration) {
-                const priceContainer = product.querySelector('.j2commerce-product-price-container');
-                if (priceContainer) {
-                    priceContainer.after(this.parseHtmlFragment(response.subscription_duration));
-                }
-            }
-        }
-
-        // Subscription sign-up fee (for variablesubscriptionproduct variant switches)
-        if (typeof response.subscription_signup_fee_html !== 'undefined') {
-            const existing = product.querySelector('.subscription-signup-fee');
-            if (existing) {
-                if (response.subscription_signup_fee_html) {
-                    existing.replaceWith(this.parseHtmlFragment(response.subscription_signup_fee_html));
-                } else {
-                    existing.remove();
-                }
-            } else if (response.subscription_signup_fee_html) {
-                const priceContainer = product.querySelector('.j2commerce-product-price-container');
-                if (priceContainer) {
-                    priceContainer.after(this.parseHtmlFragment(response.subscription_signup_fee_html));
-                }
-            }
-        }
-
         // Variant ID — always update from server response as authoritative fallback
         if (response.variant_id) {
             const vi = form?.querySelector('input[name="variant_id"]');
             if (vi) vi.value = response.variant_id;
         }
+
+        // Product-type plugins update their own markup from their own response keys.
+        this.dispatchEvent('productDisplayUpdated', { productId, product, response, form });
     },
 
 

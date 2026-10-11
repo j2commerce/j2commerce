@@ -3325,7 +3325,6 @@ class ProductHelper
             'simple'       => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_SIMPLE'),
             'configurable' => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_CONFIGURABLE'),
             'downloadable' => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_DOWNLOADABLE'),
-            'bundle'       => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_BUNDLE'),
         ];
 
         J2CommerceHelper::plugin()->event('GetProductTypes', [&$types]);

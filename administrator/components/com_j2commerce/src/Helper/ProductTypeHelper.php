@@ -47,15 +47,16 @@ final class ProductTypeHelper
     /** Bills on a recurring schedule, so it never appears on a guest order. */
     public const SUBSCRIPTION = 'subscription';
 
+    /** Core types only; a plugin that adds a type registers its capabilities through the event. */
     private const DEFAULTS = [
-        self::VARIANTS              => ['variable', 'advancedvariable', 'flexivariable', 'variablesubscriptionproduct'],
-        self::CLIENT_VARIANT        => ['variable', 'advancedvariable', 'variablesubscriptionproduct'],
-        self::DEFAULT_VARIANT_PRICE => ['variable', 'flexivariable', 'variablesubscriptionproduct'],
-        self::VARIANT_OPTION_EDITOR => ['variable', 'variablesubscriptionproduct'],
+        self::VARIANTS              => ['variable', 'flexivariable'],
+        self::CLIENT_VARIANT        => ['variable'],
+        self::DEFAULT_VARIANT_PRICE => ['variable', 'flexivariable'],
+        self::VARIANT_OPTION_EDITOR => ['variable'],
         self::VARIANT_MATRIX        => ['variable', 'flexivariable'],
-        self::OPTION_VALUE_DEFAULT  => ['simple', 'advancedvariable', 'booking', 'configurable'],
-        self::CHOOSE_OPTIONS        => ['variable', 'flexivariable', 'configurable', 'advancedvariable'],
-        self::SUBSCRIPTION          => ['subscriptionproduct', 'variablesubscriptionproduct'],
+        self::OPTION_VALUE_DEFAULT  => ['simple', 'configurable'],
+        self::CHOOSE_OPTIONS        => ['variable', 'flexivariable', 'configurable'],
+        self::SUBSCRIPTION          => [],
     ];
 
     private static ?array $capabilities = null;

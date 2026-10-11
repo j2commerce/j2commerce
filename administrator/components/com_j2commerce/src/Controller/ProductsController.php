@@ -51,6 +51,7 @@ class ProductsController extends AdminController
             'searchproductfilters',
             'getProductFilterListAjax',
             'getRelatedProducts',
+            'searchSingleVariantProducts',
             'getBoxBuilderProducts',
             'getProductOptionValuesAjax',
             'getVariantListAjax',
@@ -447,7 +448,7 @@ class ProductsController extends AdminController
         $app = Factory::getApplication();
 
         // Returns the product catalogue with SKUs. Reached only from the admin product
-        // edit form and the admin selector fields in the bundle/box-builder plugins.
+        // edit form and the product selector fields plugins add to it.
         if (!$this->canDo('core.edit')) {
             $this->sendJson(['products' => []]);
 
@@ -516,7 +517,15 @@ class ProductsController extends AdminController
         $this->sendJson(['products' => $products ?: []]);
     }
 
+    // Renamed to searchSingleVariantProducts(); app_customerbought still posts the old task name.
+    // DELETE WHEN: app_customerbought calls products.searchSingleVariantProducts.
     public function getBoxBuilderProducts(): void
+    {
+        $this->searchSingleVariantProducts();
+    }
+
+    /** Title/SKU search over enabled products of the single-variant core types, for plugin product pickers. */
+    public function searchSingleVariantProducts(): void
     {
         $app = Factory::getApplication();
 
@@ -533,7 +542,7 @@ class ProductsController extends AdminController
         if (\strlen($q) >= 2) {
             $db     = Factory::getContainer()->get('DatabaseDriver');
             $search = '%' . $db->escape($q, true) . '%';
-            $types  = ['simple', 'configurable', 'downloadable']; // product-type-literal-ok: single-variant types a box may contain
+            $types  = ['simple', 'configurable', 'downloadable']; // product-type-literal-ok: the single-variant core types
 
             $query = $db->getQuery(true)
                 ->select([

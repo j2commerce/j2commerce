@@ -17,6 +17,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderTransactionHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductTypeHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Base;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Payment;
@@ -1424,27 +1425,24 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
     }
 
     /**
-     * True when the cart for this order contains at least one subscription product.
-     * Detected via orderitems.product_type IN (subscriptionproduct, variablesubscriptionproduct).
+     * True when the cart for this order contains at least one subscription product
+     * (a type registered with the subscription capability).
      */
     private function isSubscriptionOrder(string $orderIdString): bool
     {
-        if ($orderIdString === '') {
+        $types = ProductTypeHelper::typesWith(ProductTypeHelper::SUBSCRIPTION);
+
+        if ($orderIdString === '' || $types === []) {
             return false;
         }
 
         $db    = $this->getDatabase();
-        $type1 = 'subscriptionproduct';
-        $type2 = 'variablesubscriptionproduct';
-
-        $query = $db->getQuery(true)
-            ->select('COUNT(*)')
+        $query = $db->getQuery(true);
+        $query->select('COUNT(*)')
             ->from($db->quoteName('#__j2commerce_orderitems'))
             ->where($db->quoteName('order_id') . ' = :oid')
-            ->where($db->quoteName('product_type') . ' IN (:t1, :t2)')
-            ->bind(':oid', $orderIdString)
-            ->bind(':t1', $type1)
-            ->bind(':t2', $type2);
+            ->where($db->quoteName('product_type') . ' IN (' . implode(',', $query->bindArray($types, ParameterType::STRING)) . ')')
+            ->bind(':oid', $orderIdString);
 
         $db->setQuery($query);
 
@@ -1461,22 +1459,23 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
      */
     private function buildSubscriptionStubFromOrder(string $orderIdString): ?\stdClass
     {
-        $db    = $this->getDatabase();
-        $type1 = 'subscriptionproduct';
-        $type2 = 'variablesubscriptionproduct';
+        $types = ProductTypeHelper::typesWith(ProductTypeHelper::SUBSCRIPTION);
 
-        $query = $db->getQuery(true)
-            ->select(['oi.product_id', 'oi.orderitem_finalprice', 'oi.orderitem_name', 'p.params'])
+        if ($types === []) {
+            return null;
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true);
+        $query->select(['oi.product_id', 'oi.orderitem_finalprice', 'oi.orderitem_name', 'p.params'])
             ->from($db->quoteName('#__j2commerce_orderitems', 'oi'))
             ->innerJoin(
                 $db->quoteName('#__j2commerce_products', 'p')
                 . ' ON ' . $db->quoteName('p.j2commerce_product_id') . ' = ' . $db->quoteName('oi.product_id')
             )
             ->where($db->quoteName('oi.order_id') . ' = :oid')
-            ->where($db->quoteName('oi.product_type') . ' IN (:t1, :t2)')
+            ->where($db->quoteName('oi.product_type') . ' IN (' . implode(',', $query->bindArray($types, ParameterType::STRING)) . ')')
             ->bind(':oid', $orderIdString)
-            ->bind(':t1', $type1)
-            ->bind(':t2', $type2)
             ->setLimit(1);
 
         $db->setQuery($query);

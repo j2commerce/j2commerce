@@ -26,24 +26,9 @@
 
         <field
             name="product_type"
-            type="sql"
+            type="producttype"
             label="COM_J2COMMERCE_FILTER_SELECT_PRODUCT_TYPE"
-            query="SELECT DISTINCT product_type AS value,
-                   CASE
-                       WHEN product_type = 'simple' THEN 'COM_J2COMMERCE_PRODUCT_TYPE_SIMPLE'
-                       WHEN product_type = 'flexivariable' THEN 'COM_J2COMMERCE_PRODUCT_TYPE_FLEXIVARIABLE'
-                       WHEN product_type = 'bundleproduct' THEN 'COM_J2COMMERCE_PRODUCT_TYPE_BUNDLE'
-                       WHEN product_type = 'downloadable' THEN 'COM_J2COMMERCE_PRODUCT_TYPE_DOWNLOADABLE'
-                       WHEN product_type = 'booking' THEN 'COM_J2COMMERCE_PRODUCT_TYPE_BOOKING'
-                       WHEN product_type = 'subscription' THEN 'COM_J2COMMERCE_PRODUCT_TYPE_SUBSCRIPTION'
-                       ELSE product_type
-                   END AS text
-                   FROM #__j2commerce_cartitems
-                   WHERE product_type IS NOT NULL AND product_type != ''
-                   ORDER BY product_type ASC"
-            key_field="value"
-            value_field="text"
-            translate="true"
+            addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
             onchange="this.form.submit();"
             >
             <option value="">COM_J2COMMERCE_OPTION_SELECT_PRODUCT_TYPE</option>
