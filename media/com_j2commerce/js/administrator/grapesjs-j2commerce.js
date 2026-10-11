@@ -818,6 +818,14 @@ function setupFormSyncHandlers(editor) {
                 const bodySourceField = document.querySelector('select[name="jform[body_source]"]');
                 if (bodySourceField && bodySourceField.value === 'visual' && window._j2cGrapesEditor) {
                     syncGrapesDataToForm(window._j2cGrapesEditor);
+
+                    // Only now, right before the real submit, with nothing left for the admin to
+                    // do with jform_body's editor instance this submit. Removing it any earlier
+                    // (e.g. as soon as visual mode is entered) would leave Editor mode stuck with
+                    // a plain textarea for the rest of the session if the admin switched there
+                    // afterwards -- the form is about to be torn down or reloaded either way, so
+                    // there is nothing left to lose by removing it exactly here.
+                    disableStaleBodyEditor();
                 }
                 // Restore shortcode src attributes from data-j2c-src placeholders (editor/file mode)
                 restoreShortcodeSrcInBody();
@@ -851,6 +859,43 @@ window.setJ2cBodyField = function setJ2cBodyField(html) {
     const instance = window.Joomla?.editors?.instances?.['jform_body'];
     if (instance && typeof instance.setValue === 'function') {
         instance.setValue(html);
+    }
+}
+
+/**
+ * Removes whatever JEditor instance is bound to jform_body, so it has nothing left to flush.
+ * Joomla's core Joomla.submitform flushes every registered editor back into its field right
+ * before form.submit() -- AFTER our override runs syncGrapesDataToForm() and writes the
+ * GrapesJS export into the textarea. In visual mode the field holds an editor instance purely
+ * because jform_body stays type="editor"; that instance's own (untouched, stale) buffer was
+ * winning that flush and silently overwriting the export -- body_json ended up correct, body
+ * (what actually gets emailed) did not. Visual mode has no use for the instance at all, so
+ * removing it outright, rather than racing it, is what makes the textarea's value the only
+ * thing left to submit.
+ *
+ * Deleting the Joomla.editors.instances entry is what matters for any editor: that registry is
+ * the one integration point every editor plugin (TinyMCE, JCE, CodeMirror, ...) must implement,
+ * and whatever core's flush iterates skips an id that is not there. The tinymce.get().remove()
+ * call on top is TinyMCE's own teardown -- JCE has historically been built on TinyMCE and is
+ * likely reached the same way, but that is not guaranteed across every editor or version, so
+ * it is wrapped: a plugin whose API differs must never block the save it runs inside of.
+ */
+function disableStaleBodyEditor() {
+    try {
+        const tinymceApi = window.tinymce || window.tinyMCE;
+        const instance = tinymceApi && typeof tinymceApi.get === 'function' ? tinymceApi.get('jform_body') : null;
+
+        if (instance && typeof instance.remove === 'function') {
+            instance.remove();
+        }
+    } catch (err) {
+        // Best-effort teardown of whatever editor this is. The registry delete below is what
+        // actually has to succeed; failing to also tear down the editor's own UI just leaves a
+        // harmless orphaned instance behind, not a reason to refuse the save.
+    }
+
+    if (window.Joomla?.editors?.instances) {
+        delete window.Joomla.editors.instances['jform_body'];
     }
 }
 
