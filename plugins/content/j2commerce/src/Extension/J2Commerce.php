@@ -37,6 +37,7 @@ use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
+use Joomla\Component\Content\Site\Helper\RouteHelper as ContentRouteHelper;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
 use Joomla\Event\DispatcherInterface;
@@ -1326,7 +1327,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
             if ($linkImage) {
                 // xhtml=false: escape() below handles attribute encoding.
-                $productLink = $product->product_link ?? Route::_(RouteHelper::getProductRoute(
+                $productLink = $this->getArticleLink($product) ?? $product->product_link ?? Route::_(RouteHelper::getProductRoute(
                     (int) $product->j2commerce_product_id,
                     $product->alias ?? null,
                     (int) ($product->catid ?? 0) ?: null
@@ -1979,7 +1980,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             'showQuickview'       => \in_array('quickview', $allOptions, true),
             'linkTitle'           => true,
             'linkImage'           => true,
-            'productLink'         => $product->product_link ?? null,
+            'productLink'         => $this->getArticleLink($product) ?? $product->product_link ?? null,
             'cartText'            => Text::_('COM_J2COMMERCE_ADD_TO_CART'),
             'layoutBasePath'      => '',
             'shortcodeOption'     => $option,
@@ -2223,6 +2224,42 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         self::$articleCache[$articleId] = $article ?: null;
 
         return self::$articleCache[$articleId];
+    }
+
+    /**
+     * Link to the source article for a com_content-sourced product.
+     *
+     * When a product's detail page is really a com_content article (no J2Commerce
+     * "Products" menu item exists), the J2 product route falls back to /component/
+     * and can 404. Building the link via the content router instead (article id +
+     * category) always resolves, with no J2 menu item required.
+     *
+     * Returns null when the product has no source article, so callers fall back
+     * to the normal J2Commerce product link.
+     *
+     * @since   6.6.5
+     */
+    private function getArticleLink(object $product): ?string
+    {
+        if (($product->product_source ?? '') !== 'com_content' || empty($product->product_source_id)) {
+            return null;
+        }
+
+        $article = $this->getArticle((int) $product->product_source_id);
+
+        if (!$article) {
+            return null;
+        }
+
+        // xhtml=false: escape() at the call sites handles attribute encoding.
+        return Route::_(
+            ContentRouteHelper::getArticleRoute(
+                $article->id . ':' . $article->alias,
+                (int) $article->catid,
+                $article->language
+            ),
+            false
+        );
     }
 
     /**
