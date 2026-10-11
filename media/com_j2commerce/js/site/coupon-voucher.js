@@ -51,6 +51,8 @@
 
     // --- Inline error display ---
 
+    let errorSeq = 0;
+
     function showInputError(input, message) {
         clearInputError(input);
         const inner = input.closest('.input-group_inner, .uk-width-expand');
@@ -58,16 +60,24 @@
 
         input.style.borderColor = '#dc3545';
 
-        const xBtn = document.createElement('span');
+        const xBtn = document.createElement('button');
+        xBtn.type = 'button';
         xBtn.className = 'j2c-input-clear';
         xBtn.textContent = '×';
+        xBtn.setAttribute('aria-label', strings.clear || '');
         inner.appendChild(xBtn);
 
         const group = inner.parentElement;
         const errDiv = document.createElement('div');
         errDiv.className = cls('fieldError');
-        errDiv.textContent = message;
+        errDiv.id = 'j2c-field-error-' + (++errorSeq);
+        errDiv.setAttribute('role', 'alert');
         (group || inner).parentElement.appendChild(errDiv);
+        // The live region exists empty first, then gets its text, so assistive tech announces the change.
+        setTimeout(function () { errDiv.textContent = message; }, 50);
+
+        input.setAttribute('aria-invalid', 'true');
+        input.setAttribute('aria-describedby', (input.getAttribute('aria-describedby') || '').split(' ').filter(Boolean).concat(errDiv.id).join(' '));
 
         xBtn.addEventListener('click', function () {
             input.value = '';
@@ -82,9 +92,18 @@
         const xBtn = inner.querySelector('.j2c-input-clear');
         if (xBtn) xBtn.remove();
         input.style.borderColor = '';
+        input.removeAttribute('aria-invalid');
         const group = inner.parentElement;
         const errDiv = (group || inner).parentElement?.querySelector('.j2c-field-error');
-        if (errDiv) errDiv.remove();
+        if (errDiv) {
+            const ids = (input.getAttribute('aria-describedby') || '').split(' ').filter((id) => id && id !== errDiv.id);
+            if (ids.length) {
+                input.setAttribute('aria-describedby', ids.join(' '));
+            } else {
+                input.removeAttribute('aria-describedby');
+            }
+            errDiv.remove();
+        }
     }
 
     // --- Spinner ---
@@ -351,18 +370,20 @@
                     });
                     notifyCartUpdated();
                 } else {
-                    showInputError(input, data.message || 'Invalid coupon code.');
+                    showInputError(input, data.message || strings.error || '');
                     btn.disabled = false;
                     btn.replaceChildren(...orig);
+                    input.focus();
                     dispatchEvent(form, 'j2commerce:coupon:error', {
                         message: data.message || '', formId: form.id
                     });
                 }
             })
             .catch(function () {
-                showInputError(input, 'An error occurred.');
+                showInputError(input, strings.error || '');
                 btn.disabled = false;
                 btn.replaceChildren(...orig);
+                input.focus();
             });
     });
 
@@ -424,18 +445,20 @@
                     });
                     notifyCartUpdated();
                 } else {
-                    showInputError(input, data.message || 'Invalid voucher code.');
+                    showInputError(input, data.message || strings.error || '');
                     btn.disabled = false;
                     btn.replaceChildren(...orig);
+                    input.focus();
                     dispatchEvent(form, 'j2commerce:voucher:error', {
                         message: data.message || '', formId: form.id
                     });
                 }
             })
             .catch(function () {
-                showInputError(input, 'An error occurred.');
+                showInputError(input, strings.error || '');
                 btn.disabled = false;
                 btn.replaceChildren(...orig);
+                input.focus();
             });
     });
 

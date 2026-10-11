@@ -422,6 +422,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function focusElement(selector) {
         var el = document.querySelector(selector);
         if (!el) return;
+        // Land on the step's heading itself so it is announced with its role and level.
+        var heading = el.querySelector('h2');
+        if (heading && heading.textContent.trim()) el = heading;
         el.setAttribute('tabindex', '-1');
         // Removing tabindex while the element holds focus would drop focus to <body>.
         el.addEventListener('blur', function() { el.removeAttribute('tabindex'); }, { once: true });

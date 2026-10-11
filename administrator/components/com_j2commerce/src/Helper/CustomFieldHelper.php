@@ -1333,6 +1333,12 @@ class CustomFieldHelper
         $isSingleCountry  = \count($countries) === 1;
         $nationalInputCls = $isUikit ? 'uk-input j2c-phone-national' : 'form-control j2c-phone-national';
 
+        // The field label targets the hidden value input, so the visible input is named by that
+        // label (Joomla's "<id>-lbl"); the placeholder text stays as the fallback name.
+        $nationalA11y = 'aria-labelledby="' . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . '-lbl" '
+            . 'aria-label="' . $escapedPh . '" '
+            . ($required ? 'aria-required="true" ' : '');
+
         if ($isSingleCountry) {
             $singleCountry = $countries[0];
             $singleFlagUrl = htmlspecialchars($singleCountry['flagUrl'] ?? '', ENT_QUOTES, 'UTF-8');
@@ -1357,7 +1363,7 @@ class CustomFieldHelper
                 . 'maxlength="' . $maxLen . '" '
                 . 'autocomplete="' . $escapedAc . '" '
                 . 'placeholder="' . $escapedPh . '" '
-                . 'aria-label="' . $escapedPh . '" '
+                . $nationalA11y
                 . 'data-dial-code="' . htmlspecialchars($singleCountry['code'], ENT_QUOTES, 'UTF-8') . '" '
                 . 'data-hidden-target="' . $id . '">';
         } else {
@@ -1396,7 +1402,7 @@ class CustomFieldHelper
                 . 'inputmode="numeric" pattern="[0-9]*" '
                 . 'autocomplete="' . $escapedAc . '" '
                 . 'placeholder="' . $escapedPh . '" '
-                . 'aria-label="' . $escapedPh . '">';
+                . rtrim($nationalA11y) . '>';
         }
 
         $countriesJson = htmlspecialchars(json_encode($countries, JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
@@ -1856,8 +1862,9 @@ class CustomFieldHelper
         $entityLabel = ($name === 'country_id') ? Text::_('COM_J2COMMERCE_COUNTRY') : Text::_('COM_J2COMMERCE_ZONE');
         $placeholder = Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', $entityLabel);
 
-        $selectCls = $isUikit ? 'uk-select uk-width-1-1' : 'form-select';
-        $select    = '<select name="' . $name . '" id="' . $id . '" class="' . $selectCls . '"' . $requiredAttr . '>';
+        $selectCls    = $isUikit ? 'uk-select uk-width-1-1' : 'form-select';
+        $autocomplete = $name === 'country_id' ? 'country-name' : 'address-level1';
+        $select       = '<select name="' . $name . '" id="' . $id . '" class="' . $selectCls . '" autocomplete="' . $autocomplete . '"' . $requiredAttr . '>';
 
         if ($value !== '') {
             $select .= '<option value="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '" selected></option>';

@@ -49,6 +49,8 @@ if (!$assetsRegistered) {
             'voucherCode'  => Text::_('COM_J2COMMERCE_VOUCHER_CODE'),
             'removeVoucher'=> Text::_('COM_J2COMMERCE_REMOVE_VOUCHER'),
             'remove'       => Text::_('COM_J2COMMERCE_REMOVE'),
+            'error'        => Text::_('COM_J2COMMERCE_ERR_GENERIC'),
+            'clear'        => Text::_('COM_J2COMMERCE_CLEAR'),
         ],
         'framework' => $isUk ? 'uikit' : 'bootstrap5',
         'classes'   => $isUk ? [
