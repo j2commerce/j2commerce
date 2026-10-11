@@ -77,10 +77,11 @@ trait PluginLayoutTrait
     /** Any rung may ship the folder, so a site can introduce a subtemplate the plugin does not. */
     private function resolveSubtemplate(array $roots, string $pluginTmpl): string
     {
-        // The Subtemplate field stores 'auto' (follow the menu item) and 'app_'-prefixed names.
+        // Default ('' from Pluginsubtemplate, 'auto' from the older Subtemplate field) follows the
+        // menu item, then the J2Commerce configuration. The older field also stores 'app_' names.
         $subtemplate = (string) $this->params->get('subtemplate', '');
 
-        if ($subtemplate === 'auto') {
+        if ($subtemplate === '' || $subtemplate === 'auto') {
             $subtemplate = SubtemplateHelper::fromActiveMenu();
         }
 
