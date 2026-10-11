@@ -16,6 +16,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CategoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductTypeHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
@@ -718,8 +719,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $task = $app->getInput()->getString('task', '');
         if ($task === 'save2copy') {
             // Skip variable product types on copy
-            $variableTypes = ['variable', 'advancedvariable', 'flexivariable', 'variablesubscriptionproduct'];
-            if (\in_array($j2data->product_type, $variableTypes, true)) {
+            if (ProductTypeHelper::has($j2data->product_type, ProductTypeHelper::VARIANTS)) {
                 return;
             }
 

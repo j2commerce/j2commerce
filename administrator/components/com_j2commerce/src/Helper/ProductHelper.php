@@ -3321,12 +3321,16 @@ class ProductHelper
      */
     public static function getProductTypes(): array
     {
-        return [
+        $types = [
             'simple'       => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_SIMPLE'),
             'configurable' => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_CONFIGURABLE'),
             'downloadable' => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_DOWNLOADABLE'),
             'bundle'       => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_BUNDLE'),
         ];
+
+        J2CommerceHelper::plugin()->event('GetProductTypes', [&$types]);
+
+        return $types;
     }
 
     /**
@@ -3338,12 +3342,7 @@ class ProductHelper
      */
     public static function getVariableProductTypes(): array
     {
-        return [
-            'variable',
-            'advancedvariable',
-            'flexivariable',
-            'variablesubscriptionproduct',
-        ];
+        return ProductTypeHelper::typesWith(ProductTypeHelper::VARIANTS);
     }
 
     /**
@@ -3739,7 +3738,7 @@ class ProductHelper
             ->where($db->quoteName('enabled') . ' = 1');
 
         // Filter by product type
-        if (!empty($productType) && \in_array($productType, ['variable', 'flexivariable'])) {
+        if (ProductTypeHelper::has($productType, ProductTypeHelper::VARIANT_MATRIX)) {
             $query->whereIn($db->quoteName('type'), ['select', 'radio', 'checkbox', 'color'], ParameterType::STRING);
         }
 

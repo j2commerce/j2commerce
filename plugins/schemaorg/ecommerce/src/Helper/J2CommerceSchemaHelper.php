@@ -14,6 +14,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductTypeHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Component\ComponentHelper;
@@ -242,9 +243,7 @@ class J2CommerceSchemaHelper
         }
 
         // Load all variants - always check the database for variable products
-        $variableTypes = ['variable', 'advancedvariable', 'flexivariable', 'variablesubscriptionproduct'];
-
-        if (\in_array($product->product_type ?? '', $variableTypes, true)) {
+        if (ProductTypeHelper::has($product->product_type ?? '', ProductTypeHelper::VARIANTS)) {
             // Only load if it is not already populated
             if (!isset($product->variants) || empty($product->variants)) {
                 $product->variants = $this->getAllVariants($productId);
@@ -759,9 +758,7 @@ class J2CommerceSchemaHelper
      */
     public function isVariableProduct(object $product): bool
     {
-        $variableTypes = ['variable', 'advancedvariable', 'flexivariable', 'variablesubscriptionproduct'];
-
-        return \in_array($product->product_type ?? '', $variableTypes, true);
+        return ProductTypeHelper::has($product->product_type ?? '', ProductTypeHelper::VARIANTS);
     }
 
     /**

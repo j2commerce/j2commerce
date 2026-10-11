@@ -169,7 +169,7 @@ final class CategoryWizardHelper
     public static function createProduct(int $articleId, string $productType, DatabaseInterface $db): int
     {
         $now        = date('Y-m-d H:i:s');
-        $hasOptions = \in_array($productType, ['simple', 'variable'], true) ? 0 : 0;
+        $hasOptions = 0;
 
         $product                    = new \stdClass();
         $product->visibility        = 1;

@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductTypeHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Uri\Uri;
@@ -25,7 +26,7 @@ if (!$showCart || !$productHelper->canShowCart($params)) {
 }
 
 $hasOptions = !empty($product->options) ||
-    in_array($product->product_type ?? 'simple', ['variable', 'flexivariable', 'configurable', 'advancedvariable']);
+    ProductTypeHelper::has($product->product_type ?? 'simple', ProductTypeHelper::CHOOSE_OPTIONS);
 
 $cartType = (int) $params->get('list_show_cart', 1);
 $btnClass = htmlspecialchars($params->get('addtocart_button_class', 'btn btn-primary'), ENT_QUOTES, 'UTF-8');

@@ -227,7 +227,7 @@ const J2CommerceFlexivariable = {
             if (qtyInput) {
                 qtyInput.value = response.quantity;
                 const productType = qtyInput.closest('form')?.dataset.product_type;
-                if (['variable', 'advancedvariable', 'variablesubscriptionproduct', 'flexivariable'].includes(productType)) {
+                if (productType === 'flexivariable' || (typeof J2Commerce !== 'undefined' && J2Commerce.resolvesVariant?.(productType))) {
                     qtyInput.setAttribute('value', response.quantity);
                 }
             }

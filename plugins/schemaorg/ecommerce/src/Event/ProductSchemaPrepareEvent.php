@@ -14,6 +14,8 @@ namespace Joomla\Plugin\Schemaorg\Ecommerce\Event;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductTypeHelper;
+
 /**
  * Event triggered when preparing Product schema data.
  *
@@ -128,8 +130,6 @@ class ProductSchemaPrepareEvent extends AbstractSchemaEvent
             return false;
         }
 
-        $variableTypes = ['variable', 'advancedvariable', 'flexivariable', 'variablesubscriptionproduct'];
-
-        return \in_array($product->product_type ?? '', $variableTypes, true);
+        return ProductTypeHelper::has($product->product_type ?? '', ProductTypeHelper::VARIANTS);
     }
 }

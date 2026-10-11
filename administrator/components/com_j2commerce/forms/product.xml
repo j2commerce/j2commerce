@@ -36,17 +36,13 @@
         <!-- Product type -->
         <field
             name="product_type"
-            type="list"
+            type="producttype"
+            addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
             label="COM_J2COMMERCE_FIELD_PRODUCT_TYPE"
             description="COM_J2COMMERCE_FIELD_PRODUCT_TYPE_DESC"
             default="simple"
             class="form-select"
-        >
-            <option value="simple">COM_J2COMMERCE_PRODUCT_TYPE_SIMPLE</option>
-            <option value="variable">COM_J2COMMERCE_PRODUCT_TYPE_VARIABLE</option>
-            <option value="configurable">COM_J2COMMERCE_PRODUCT_TYPE_CONFIGURABLE</option>
-            <option value="downloadable">COM_J2COMMERCE_PRODUCT_TYPE_DOWNLOADABLE</option>
-        </field>
+        />
 
         <!-- Visibility -->
         <field

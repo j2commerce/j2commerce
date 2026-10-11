@@ -21,7 +21,7 @@ use Joomla\Database\ParameterType;
 final class OrderItemAttributeHelper
 {
     /** Types that represent bundle/boxbuilder child products (not standard option selections). */
-    private const PRODUCT_CHILD_TYPES = ['bundleproduct', 'boxbuilderproduct', 'bundle', 'boxbuilder'];
+    private const PRODUCT_CHILD_TYPES = ['bundleproduct', 'boxbuilderproduct', 'bundle', 'boxbuilder']; // product-type-literal-ok: orderitemattribute types, not product types
 
     /** Types to skip entirely (metadata, not displayable). */
     private const SKIP_TYPES = ['boxbuilder_selections'];

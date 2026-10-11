@@ -30,6 +30,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\OrderItemAttributeHelpe
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderUploadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductTypeHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TaxHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UserHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\Trait\CascadingDeleteTrait;
@@ -69,9 +70,6 @@ class OrderModel extends AdminModel
     public $typeAlias = 'com_j2commerce.order';
 
     protected $text_prefix = 'COM_J2COMMERCE_ORDER';
-
-    /** Product types that must never appear on a guest order. */
-    private const SUBSCRIPTION_PRODUCT_TYPES = ['subscriptionproduct', 'variablesubscriptionproduct'];
 
     /** Option types the order editor can change on an existing line; any other type stays as recorded. */
     private const EDITABLE_OPTION_TYPES = ['select', 'radio', 'color', 'checkbox', 'text', 'textarea', 'date', 'time', 'datetime', 'number', 'email', 'url'];
@@ -2027,14 +2025,12 @@ class OrderModel extends AdminModel
             ->setLimit($limit, $offset);
 
         if ($excludeSubscription) {
-            [$subType1, $subType2] = self::SUBSCRIPTION_PRODUCT_TYPES;
+            $subTypes = implode(',', $query->bindArray(ProductTypeHelper::typesWith(ProductTypeHelper::SUBSCRIPTION) ?: [''], ParameterType::STRING));
             // A NULL product_type is not a subscription — keep it (NULL NOT IN (...) is NULL, which would drop the row).
             $query->where(
                 '(' . $db->quoteName('p.product_type') . ' IS NULL'
-                . ' OR ' . $db->quoteName('p.product_type') . ' NOT IN (:subType1, :subType2))'
-            )
-                ->bind(':subType1', $subType1)
-                ->bind(':subType2', $subType2);
+                . ' OR ' . $db->quoteName('p.product_type') . ' NOT IN (' . $subTypes . '))'
+            );
         }
 
         $db->setQuery($query);
@@ -2079,13 +2075,11 @@ class OrderModel extends AdminModel
             ->bind(':title', $search);
 
         if ($excludeSubscription) {
-            [$subType1, $subType2] = self::SUBSCRIPTION_PRODUCT_TYPES;
+            $subTypes = implode(',', $query->bindArray(ProductTypeHelper::typesWith(ProductTypeHelper::SUBSCRIPTION) ?: [''], ParameterType::STRING));
             $query->where(
                 '(' . $db->quoteName('p.product_type') . ' IS NULL'
-                . ' OR ' . $db->quoteName('p.product_type') . ' NOT IN (:subType1, :subType2))'
-            )
-                ->bind(':subType1', $subType1)
-                ->bind(':subType2', $subType2);
+                . ' OR ' . $db->quoteName('p.product_type') . ' NOT IN (' . $subTypes . '))'
+            );
         }
 
         $db->setQuery($query);
@@ -2135,7 +2129,7 @@ class OrderModel extends AdminModel
         }
 
         // Guest orders must never carry subscription products (enforced at add time, not just in search).
-        if ($blockSubscription && \in_array($variant->product_type, self::SUBSCRIPTION_PRODUCT_TYPES, true)) {
+        if ($blockSubscription && ProductTypeHelper::has($variant->product_type, ProductTypeHelper::SUBSCRIPTION)) {
             return null;
         }
 

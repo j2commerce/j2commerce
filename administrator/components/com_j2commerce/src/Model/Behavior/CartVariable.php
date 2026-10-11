@@ -41,6 +41,9 @@ use Joomla\Registry\Registry;
  */
 class CartVariable
 {
+    /** The type token this behavior acts on; a subclass for a plugin-added type overrides it. */
+    protected const PRODUCT_TYPE = 'variable';
+
     /** Option types a variable product's variant combination can be built from. */
     private const VARIANT_OPTION_TYPES = ['select', 'radio', 'checkbox', 'color'];
 
@@ -257,7 +260,7 @@ class CartVariable
      */
     public function onGetCartItems(CartModel &$model, object &$item): void
     {
-        if (($item->product_type ?? '') !== 'variable') {
+        if (($item->product_type ?? '') !== static::PRODUCT_TYPE) {
             return;
         }
 
@@ -422,7 +425,7 @@ class CartVariable
      */
     public function onValidateCart(CartModel &$model, object $cartitem, float $quantity): bool
     {
-        if (($cartitem->product_type ?? '') !== 'variable') {
+        if (($cartitem->product_type ?? '') !== static::PRODUCT_TYPE) {
             return true;
         }
 

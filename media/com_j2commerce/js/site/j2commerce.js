@@ -53,6 +53,19 @@ const J2Commerce = {
     },
 
     /**
+     * Whether this script resolves the selected variant for a product type. The list comes from
+     * ProductTypeHelper (capability client_variant) so plugin-added types are included.
+     * @param {string} productType
+     * @returns {boolean}
+     */
+    resolvesVariant(productType) {
+        const types = typeof Joomla !== 'undefined' && Joomla.getOptions
+            ? Joomla.getOptions('com_j2commerce.productTypes')?.clientVariant
+            : null;
+        return (Array.isArray(types) ? types : ['variable', 'advancedvariable', 'variablesubscriptionproduct']).includes(productType); // product-type-literal-ok: fallback when the page did not publish the list
+    },
+
+    /**
      * Get CSRF token from Joomla
      * @returns {string}
      */
@@ -929,7 +942,7 @@ const J2Commerce = {
 
         // Handle variable product types
         const productType = form.dataset.product_type;
-        if (['variable', 'advancedvariable', 'variablesubscriptionproduct'].includes(productType)) {
+        if (this.resolvesVariant(productType)) {
             const selectedVariant = this.collectVariantCsv(form);
             const variants = form.dataset.product_variants ? JSON.parse(form.dataset.product_variants) : {};
             const variantId = this.getMatchingVariant(variants, selectedVariant);
@@ -1082,7 +1095,7 @@ const J2Commerce = {
             if (qtyInput) {
                 qtyInput.value = response.quantity;
                 const productType = form?.dataset.product_type;
-                if (['variable', 'advancedvariable', 'variablesubscriptionproduct'].includes(productType)) {
+                if (this.resolvesVariant(productType)) {
                     qtyInput.setAttribute('value', response.quantity);
                 }
 

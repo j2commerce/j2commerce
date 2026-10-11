@@ -14,6 +14,7 @@ namespace J2Commerce\Module\Products\Site\Library;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductTypeHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use Joomla\CMS\Categories\Categories;
 use Joomla\CMS\Factory;
@@ -426,7 +427,8 @@ class ProductSourceJoomla implements DatabaseAwareInterface
             $query->where($db->quoteName('variants.is_master') .' = 1');
 
             // Optimized: Use IN clause instead of LIKE for better performance
-            $query->select('CASE WHEN ' . $db->quoteName('p.product_type') . ' IN (' . $db->quote('variable') . ', ' . $db->quote('variablesubscriptionproduct') . ', ' . $db->quote('advancedvariable') . ', ' . $db->quote('flexivariable') . ') THEN ' . $db->quoteName('price_index.min_price') . ' ELSE ' . $db->quoteName('variants.price') . ' END AS ' . $db->quoteName('min_price'));
+            $variantTypes = implode(', ', array_map([$db, 'quote'], ProductTypeHelper::typesWith(ProductTypeHelper::VARIANTS))) ?: $db->quote('');
+            $query->select('CASE WHEN ' . $db->quoteName('p.product_type') . ' IN (' . $variantTypes . ') THEN ' . $db->quoteName('price_index.min_price') . ' ELSE ' . $db->quoteName('variants.price') . ' END AS ' . $db->quoteName('min_price'));
             $query->group($db->quoteName('p.j2commerce_product_id'));
 
             $order = ($sort_by === 'min_price') ? 'ASC' : 'DESC';

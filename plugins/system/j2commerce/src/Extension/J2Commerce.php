@@ -19,6 +19,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ComponentParamsHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductTypeHelper;
 use J2Commerce\Component\J2commerce\Administrator\SetupGuide\SetupGuideHelper;
 use J2Commerce\Component\J2commerce\Site\Context\AdminOrderCheckoutContext;
 use J2Commerce\Component\J2commerce\Site\Event\CheckoutContextEvent;
@@ -2117,6 +2118,15 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         $this->registerCustomerStateAssets($document);
 
+        // isAssetActive() throws for an asset no extension registered on this page.
+        $wa = $document->getWebAssetManager();
+
+        if ($wa->assetExists('script', 'com_j2commerce.site') && $wa->isAssetActive('script', 'com_j2commerce.site')) {
+            $document->addScriptOptions('com_j2commerce.productTypes', [
+                'clientVariant' => ProductTypeHelper::typesWith(ProductTypeHelper::CLIENT_VARIANT),
+            ]);
+        }
+
         $debugMode = (bool) $this->params->get('debug_mode', 0);
         $debugInfo = ['System EcommerceSchema: onBeforeCompileHead'];
 
@@ -3241,9 +3251,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
      */
     private function isVariableProduct(object $product): bool
     {
-        $variableTypes = ['variable', 'advancedvariable', 'flexivariable', 'variablesubscriptionproduct'];
-
-        return \in_array($product->product_type ?? '', $variableTypes, true);
+        return ProductTypeHelper::has($product->product_type ?? '', ProductTypeHelper::VARIANTS);
     }
 
     /**

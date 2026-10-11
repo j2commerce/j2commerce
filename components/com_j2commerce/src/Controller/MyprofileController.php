@@ -815,7 +815,7 @@ class MyprofileController extends BaseController
 
         foreach ($orderItems as $item) {
             // Skip non-product items (like shipping, handling fees)
-            if (!\in_array($item->orderitem_type, ['normal', 'variable', 'flexivariable'])) {
+            if (!\in_array($item->orderitem_type, ['normal', 'variable', 'flexivariable'])) { // product-type-literal-ok: orderitem_type values, not product types
                 continue;
             }
 

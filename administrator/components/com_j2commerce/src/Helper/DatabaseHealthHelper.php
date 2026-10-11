@@ -782,15 +782,13 @@ final class DatabaseHealthHelper
     // ->runIndexes()); it never rebuilds the min/max SQL itself.
     // =========================================================================
 
-    private const VARIANT_FAMILY_TYPES = ['variable', 'flexivariable'];
-
     public static function countPriceIndexStale(DatabaseInterface $db): int
     {
         $query = $db->getQuery(true)
             ->select('COUNT(*)')
             ->from($db->quoteName('#__j2commerce_products', 'p'))
             ->leftJoin($db->quoteName('#__j2commerce_productprice_index', 'idx') . ' ON ' . $db->quoteName('idx.product_id') . ' = ' . $db->quoteName('p.j2commerce_product_id'))
-            ->whereIn($db->quoteName('p.product_type'), self::VARIANT_FAMILY_TYPES, ParameterType::STRING)
+            ->whereIn($db->quoteName('p.product_type'), ProductTypeHelper::typesWith(ProductTypeHelper::VARIANT_MATRIX) ?: [''], ParameterType::STRING)
             ->where($db->quoteName('idx.product_id') . ' IS NULL');
 
         return (int) $db->setQuery($query)->loadResult();
@@ -806,7 +804,7 @@ final class DatabaseHealthHelper
                 ->select([$db->quoteName('p.j2commerce_product_id'), $db->quoteName('p.product_type')])
                 ->from($db->quoteName('#__j2commerce_products', 'p'))
                 ->leftJoin($db->quoteName('#__j2commerce_productprice_index', 'idx') . ' ON ' . $db->quoteName('idx.product_id') . ' = ' . $db->quoteName('p.j2commerce_product_id'))
-                ->whereIn($db->quoteName('p.product_type'), self::VARIANT_FAMILY_TYPES, ParameterType::STRING)
+                ->whereIn($db->quoteName('p.product_type'), ProductTypeHelper::typesWith(ProductTypeHelper::VARIANT_MATRIX) ?: [''], ParameterType::STRING)
                 ->where($db->quoteName('idx.product_id') . ' IS NULL')
                 ->setLimit(self::BATCH_SIZE);
 

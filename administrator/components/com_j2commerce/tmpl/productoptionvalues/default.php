@@ -11,6 +11,7 @@
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductTypeHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -63,11 +64,11 @@ $wa->addInlineStyle($style);
                     <tr>
                         <th scope="col" style="width: 40px;"><?php $conSpan += 1; ?></th>
                         <th scope="col"><?php echo Text::_('COM_J2COMMERCE_PAO_NAME'); $conSpan += 1; ?></th>
-                        <?php if ($this->product->product_type === 'variable' || $this->product->product_type === 'variablesubscriptionproduct'): ?>
+                        <?php if (ProductTypeHelper::has($this->product->product_type, ProductTypeHelper::VARIANT_OPTION_EDITOR)): ?>
                             <th scope="col"><?php echo Text::_('COM_J2COMMERCE_PAO_FIELDATTRIBS'); $conSpan += 1; ?></th>
                         <?php endif; ?>
                         <?php if (($this->productOption->is_variant ?? 0) != 1): ?>
-                            <?php if ($this->product->product_type !== 'variable' && $this->product->product_type !== 'variablesubscriptionproduct'): ?>
+                            <?php if (!ProductTypeHelper::has($this->product->product_type, ProductTypeHelper::VARIANT_OPTION_EDITOR)): ?>
                                 <?php if (!empty($this->parentOptionValues)): ?>
                                     <th scope="col"><?php echo Text::_('COM_J2COMMERCE_PAO_PARENT_OPTION_NAME'); $conSpan += 1; ?></th>
                                 <?php endif; ?>
@@ -94,12 +95,12 @@ $wa->addInlineStyle($style);
                             </select>
                             <?php endif; ?>
                         </td>
-                        <?php if ($this->product->product_type === 'variable' || $this->product->product_type === 'variablesubscriptionproduct'): ?>
+                        <?php if (ProductTypeHelper::has($this->product->product_type, ProductTypeHelper::VARIANT_OPTION_EDITOR)): ?>
                             <td>
                                 <textarea name="product_optionvalue_attribs" class="form-control w-100 d-block" placeholder="<?php echo Text::_('COM_J2COMMERCE_PAO_FIELD_ATTRIBS_STYLE_HELP'); ?>" rows="1"></textarea>
                             </td>
                         <?php endif; ?>
-                        <?php if ($this->product->product_type !== 'variable' && $this->product->product_type !== 'variablesubscriptionproduct'): ?>
+                        <?php if (!ProductTypeHelper::has($this->product->product_type, ProductTypeHelper::VARIANT_OPTION_EDITOR)): ?>
                             <?php if (!empty($this->parentOptionValues)): ?>
                                 <td>
                                     <select name="parent_optionvalue[]" class="form-select" multiple>
@@ -167,10 +168,10 @@ $wa->addInlineStyle($style);
                             <input type="checkbox" id="checkall-toggle" name="checkall-toggle" value="" onclick="Joomla.checkAll(this);">
                         </th>
                         <th scope="col"><?php echo Text::_('COM_J2COMMERCE_PAO_NAME'); ?></th>
-                        <?php if ($this->product->product_type === 'variable' || $this->product->product_type === 'variablesubscriptionproduct'): ?>
+                        <?php if (ProductTypeHelper::has($this->product->product_type, ProductTypeHelper::VARIANT_OPTION_EDITOR)): ?>
                             <th scope="col"><?php echo Text::_('COM_J2COMMERCE_PAO_FIELDATTRIBS'); ?></th>
                         <?php endif; ?>
-                        <?php if ($this->product->product_type !== 'variable' && $this->product->product_type !== 'variablesubscriptionproduct'): ?>
+                        <?php if (!ProductTypeHelper::has($this->product->product_type, ProductTypeHelper::VARIANT_OPTION_EDITOR)): ?>
                             <?php if (!empty($this->parentOptionValues)): ?>
                                 <th scope="col"><?php echo Text::_('COM_J2COMMERCE_PAO_PARENT_OPTION_NAME'); ?></th>
                             <?php endif; ?>
@@ -180,7 +181,7 @@ $wa->addInlineStyle($style);
                                 <th scope="col"><?php echo Text::_('COM_J2COMMERCE_PAO_PRICE'); ?></th>
                                 <th scope="col"><?php echo Text::_('COM_J2COMMERCE_PAO_WEIGHT_PREFIX'); ?></th>
                                 <th scope="col"><?php echo Text::_('COM_J2COMMERCE_PAO_WEIGHT'); ?></th>
-                                <?php if (in_array($this->product->product_type, ['simple', 'advancedvariable', 'booking'])): ?>
+                                <?php if (ProductTypeHelper::has($this->product->product_type, ProductTypeHelper::OPTION_VALUE_DEFAULT)): ?>
                                     <th scope="col"><?php echo Text::_('COM_J2COMMERCE_DEFAULT'); ?></th>
                                 <?php endif; ?>
                             <?php endif; ?>
@@ -209,12 +210,12 @@ $wa->addInlineStyle($style);
                                     </select>
                                     <?php endif; ?>
                                 </td>
-                                <?php if ($this->product->product_type === 'variable' || $this->product->product_type === 'variablesubscriptionproduct'): ?>
+                                <?php if (ProductTypeHelper::has($this->product->product_type, ProductTypeHelper::VARIANT_OPTION_EDITOR)): ?>
                                     <td>
                                         <textarea name="<?php echo $this->prefix . '[' . $poptionvalue->j2commerce_product_optionvalue_id . '][product_optionvalue_attribs]'; ?>" class="form-control w-100 d-block" placeholder="<?php echo Text::_('COM_J2COMMERCE_PAO_FIELD_ATTRIBS_STYLE_HELP'); ?>" rows="1"><?php echo htmlspecialchars($poptionvalue->product_optionvalue_attribs ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
                                     </td>
                                 <?php endif; ?>
-                                <?php if ($this->product->product_type !== 'variable' && $this->product->product_type !== 'variablesubscriptionproduct'): ?>
+                                <?php if (!ProductTypeHelper::has($this->product->product_type, ProductTypeHelper::VARIANT_OPTION_EDITOR)): ?>
                                     <?php if (!empty($this->parentOptionValues)): ?>
                                         <td>
                                             <?php
@@ -247,7 +248,7 @@ $wa->addInlineStyle($style);
                                         <td>
                                             <input type="text" name="<?php echo $this->prefix . '[' . $poptionvalue->j2commerce_product_optionvalue_id . '][product_optionvalue_weight]'; ?>" class="form-control" value="<?php echo htmlspecialchars($poptionvalue->product_optionvalue_weight ?? '0', ENT_QUOTES, 'UTF-8'); ?>">
                                         </td>
-                                        <?php if (in_array($this->product->product_type, ['simple', 'advancedvariable', 'booking'])): ?>
+                                        <?php if (ProductTypeHelper::has($this->product->product_type, ProductTypeHelper::OPTION_VALUE_DEFAULT)): ?>
                                             <td>
                                                 <?php echo HTMLHelper::_('jgrid.isdefault', $poptionvalue->product_optionvalue_default ?? 0, $key, '', true, 'cb'); ?>
                                             </td>

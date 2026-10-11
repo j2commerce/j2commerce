@@ -671,7 +671,7 @@ class SelectHelper
      */
     public static function getProductTypes(): array
     {
-        return [
+        $types = [
             'simple'        => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_SIMPLE'),
             'variable'      => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_VARIABLE'),
             'downloadable'  => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_DOWNLOADABLE'),
@@ -679,6 +679,10 @@ class SelectHelper
             'flexivariable' => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_FLEXIVARIABLE'),
             'bundle'        => Text::_('COM_J2COMMERCE_PRODUCT_TYPE_BUNDLE'),
         ];
+
+        J2CommerceHelper::plugin()->event('GetProductTypes', [&$types]);
+
+        return $types;
     }
 
     /**

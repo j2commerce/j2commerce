@@ -9,6 +9,7 @@
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductTypeHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Factory;
@@ -120,7 +121,7 @@ Text::script('COM_J2COMMERCE_INVENTORY_BATCH_NO_FIELDS');
                                     $form->bind($itemData);
                                 }
                                 $isVariantProduct = $item->has_options == 1
-                                    && \in_array($item->product_type ?? '', ['variable', 'flexivariable'], true);
+                                    && ProductTypeHelper::has($item->product_type ?? '', ProductTypeHelper::VARIANT_MATRIX);
 
                                 // Article state, reported only — publishing stays with com_content.
                                 $articleState = match ((int) ($item->article_state ?? 0)) {

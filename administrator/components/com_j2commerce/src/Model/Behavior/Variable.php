@@ -47,6 +47,9 @@ use Joomla\Registry\Registry;
  */
 class Variable
 {
+    /** The type token this behavior acts on; a subclass for a plugin-added type overrides it. */
+    protected const PRODUCT_TYPE = 'variable';
+
     private array $_rawData = [];
 
     protected MVCFactoryInterface $mvcFactory;
@@ -62,7 +65,7 @@ class Variable
      */
     public function onAfterGetItem(object &$model, object &$record): void
     {
-        if ($record->product_type !== 'variable') {
+        if ($record->product_type !== static::PRODUCT_TYPE) {
             return;
         }
 
@@ -118,7 +121,7 @@ class Variable
      */
     public function onBeforeSave(object &$model, array &$data): void
     {
-        if (!isset($data['product_type']) || $data['product_type'] !== 'variable') {
+        if (!isset($data['product_type']) || $data['product_type'] !== static::PRODUCT_TYPE) {
             return;
         }
 
@@ -213,7 +216,7 @@ class Variable
 
         $table = $model->getTable();
 
-        if ($table->product_type !== 'variable') {
+        if ($table->product_type !== static::PRODUCT_TYPE) {
             return;
         }
 
@@ -465,7 +468,7 @@ class Variable
         $product = $this->mvcFactory->createTable('Product', 'Administrator');
 
         if ($product->load($id)) {
-            if ($product->product_type !== 'variable') {
+            if ($product->product_type !== static::PRODUCT_TYPE) {
                 return;
             }
 
@@ -494,7 +497,7 @@ class Variable
         $model   = $event->getArgument('subject');
         $product = $event->getArgument('product');
 
-        if (!$product || !isset($product->product_type) || $product->product_type !== 'variable') {
+        if (!$product || !isset($product->product_type) || $product->product_type !== static::PRODUCT_TYPE) {
             return;
         }
 
@@ -703,7 +706,7 @@ class Variable
      */
     public function onUpdateProduct(object &$model, object &$product): array|false
     {
-        if ($product->product_type !== 'variable') {
+        if ($product->product_type !== static::PRODUCT_TYPE) {
             return [];
         }
 

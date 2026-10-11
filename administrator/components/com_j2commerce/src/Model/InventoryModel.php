@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductTypeHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\MVC\Model\ListModel;
@@ -280,8 +281,7 @@ class InventoryModel extends ListModel
                 }
 
                 // Pre-load variants only for true variant product types (not configurable/simple with options)
-                $variantTypes = ['variable', 'flexivariable'];
-                if ($item->has_options == 1 && \in_array($item->product_type ?? '', $variantTypes, true)) {
+                if ($item->has_options == 1 && ProductTypeHelper::has($item->product_type ?? '', ProductTypeHelper::VARIANT_MATRIX)) {
                     $item->variants = $this->getProductVariants($item->j2commerce_product_id);
                 } else {
                     $item->variants = [];

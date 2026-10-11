@@ -27,9 +27,6 @@ use Joomla\Database\QueryInterface;
  */
 final class EffectivePriceHelper
 {
-    /** Types whose card prices the default child variant (ProductHelper::getDefaultVariant()). */
-    private const DEFAULT_VARIANT_TYPES = ['variable', 'flexivariable', 'variablesubscriptionproduct'];
-
     private static ?\WeakMap $expressions = null;
 
     /**
@@ -44,7 +41,8 @@ final class EffectivePriceHelper
             return self::$expressions[$query];
         }
 
-        $types = implode(',', array_map(static fn (string $type): string => $db->quote($type), self::DEFAULT_VARIANT_TYPES));
+        // Types whose card prices the default child variant (ProductHelper::getDefaultVariant()).
+        $types = implode(',', array_map(static fn (string $type): string => $db->quote($type), ProductTypeHelper::typesWith(ProductTypeHelper::DEFAULT_VARIANT_PRICE))) ?: $db->quote('');
 
         // Variable drops children with no option mapping before it picks the default; flagged
         // isdefault_variant wins, else the lowest id, the order VariantsModel lists children in.

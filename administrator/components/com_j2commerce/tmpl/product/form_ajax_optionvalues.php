@@ -11,6 +11,7 @@
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductTypeHelper;
 use Joomla\CMS\Language\Text;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 
@@ -44,9 +45,9 @@ foreach ($parentOptionValues as $parentOpvalue) {
     $parentOptionArray[$parentOpvalue->j2commerce_product_optionvalue_id] = J2htmlHelper::translateKey($parentOpvalue->optionvalue_name ?? '');
 }
 
-$isVariableType = \in_array($product->product_type, ['variable', 'variablesubscriptionproduct'], true);
+$isVariableType = ProductTypeHelper::has($product->product_type, ProductTypeHelper::VARIANT_OPTION_EDITOR);
 $hasPriceFields = ($productOption->is_variant ?? 0) != 1;
-$hasDefaultField = \in_array($product->product_type, ['simple', 'advancedvariable', 'booking', 'configurable'], true);
+$hasDefaultField = ProductTypeHelper::has($product->product_type, ProductTypeHelper::OPTION_VALUE_DEFAULT);
 $hasParentField = !$isVariableType && !empty($parentOptionValues);
 
 // Name + actions, plus whichever optional columns this product type renders.

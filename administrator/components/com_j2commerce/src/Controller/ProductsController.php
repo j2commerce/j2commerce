@@ -533,7 +533,7 @@ class ProductsController extends AdminController
         if (\strlen($q) >= 2) {
             $db     = Factory::getContainer()->get('DatabaseDriver');
             $search = '%' . $db->escape($q, true) . '%';
-            $types  = ['simple', 'configurable', 'downloadable'];
+            $types  = ['simple', 'configurable', 'downloadable']; // product-type-literal-ok: single-variant types a box may contain
 
             $query = $db->getQuery(true)
                 ->select([

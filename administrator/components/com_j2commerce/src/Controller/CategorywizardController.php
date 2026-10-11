@@ -123,7 +123,7 @@ class CategorywizardController extends BaseController
         $subtemplate = $input->getString('subtemplate', 'bootstrap5');
 
         // Validate product type
-        $allowedTypes = ['simple', 'variable', 'downloadable'];
+        $allowedTypes = ['simple', 'variable', 'downloadable']; // product-type-literal-ok: the types this wizard knows how to build
 
         if (!\in_array($productType, $allowedTypes, true)) {
             $productType = 'simple';
