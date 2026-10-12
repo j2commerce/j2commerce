@@ -653,6 +653,14 @@ class ProductHelper
 
                 $fakeArticle->text = $text ?? $product->$prop;
 
+                // System - Fields renders every custom field of the article (subforms included) into
+                // jcfields unless it is already set; only the {field}/{fieldgroup} shortcodes read it here.
+                if (stripos($fakeArticle->text, '{field') === false) {
+                    $fakeArticle->jcfields = [];
+                } else {
+                    unset($fakeArticle->jcfields);
+                }
+
                 $dispatcher->dispatch(
                     'onContentPrepare',
                     new ContentPrepareEvent('onContentPrepare', [

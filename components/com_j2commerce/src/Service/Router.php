@@ -70,6 +70,9 @@ class Router extends RouterView
      */
     private array $categoryCache = [];
 
+    /** Per-request memo of category and product rows: a listing builds one URL per product. */
+    private array $lookupCache = [];
+
     /**
      * Remove IDs from URLs (like com_content's sef_ids)
      *
@@ -511,22 +514,34 @@ class Router extends RouterView
      */
     private function lookupProductCategory(int $productId): ?int
     {
-        $dbquery = $this->db->getQuery(true);
-        $dbquery->select($this->db->quoteName('c.catid'))
-            ->from($this->db->quoteName('#__content', 'c'))
-            ->join(
-                'INNER',
-                $this->db->quoteName('#__j2commerce_products', 'p'),
-                $this->db->quoteName('p.product_source_id') . ' = ' . $this->db->quoteName('c.id')
-            )
-            ->where($this->db->quoteName('p.product_source') . ' = ' . $this->db->quote('com_content'))
-            ->where($this->db->quoteName('p.j2commerce_product_id') . ' = :id')
-            ->bind(':id', $productId, ParameterType::INTEGER);
+        $catid = (int) ($this->lookupProductArticle($productId)['catid'] ?? 0);
 
-        $this->db->setQuery($dbquery);
-        $result = $this->db->loadResult();
+        return $catid ?: null;
+    }
 
-        return $result ? (int) $result : null;
+    /** The product's article catid and alias, one query per product per request. */
+    private function lookupProductArticle(int $productId): ?array
+    {
+        $key = 'product:' . $productId;
+
+        if (!\array_key_exists($key, $this->lookupCache)) {
+            $dbquery = $this->db->getQuery(true);
+            $dbquery->select([$this->db->quoteName('c.catid'), $this->db->quoteName('c.alias')])
+                ->from($this->db->quoteName('#__content', 'c'))
+                ->join(
+                    'INNER',
+                    $this->db->quoteName('#__j2commerce_products', 'p'),
+                    $this->db->quoteName('p.product_source_id') . ' = ' . $this->db->quoteName('c.id')
+                )
+                ->where($this->db->quoteName('p.product_source') . ' = ' . $this->db->quote('com_content'))
+                ->where($this->db->quoteName('p.j2commerce_product_id') . ' = :id')
+                ->bind(':id', $productId, ParameterType::INTEGER);
+
+            $this->db->setQuery($dbquery);
+            $this->lookupCache[$key] = $this->db->loadAssoc() ?: null;
+        }
+
+        return $this->lookupCache[$key];
     }
 
     /**
@@ -540,20 +555,7 @@ class Router extends RouterView
      */
     private function lookupProductAlias(int $productId): ?string
     {
-        $dbquery = $this->db->getQuery(true);
-        $dbquery->select($this->db->quoteName('c.alias'))
-            ->from($this->db->quoteName('#__content', 'c'))
-            ->join(
-                'INNER',
-                $this->db->quoteName('#__j2commerce_products', 'p'),
-                $this->db->quoteName('p.product_source_id') . ' = ' . $this->db->quoteName('c.id')
-            )
-            ->where($this->db->quoteName('p.product_source') . ' = ' . $this->db->quote('com_content'))
-            ->where($this->db->quoteName('p.j2commerce_product_id') . ' = :id')
-            ->bind(':id', $productId, ParameterType::INTEGER);
-
-        $this->db->setQuery($dbquery);
-        return $this->db->loadResult() ?: null;
+        return ($this->lookupProductArticle($productId)['alias'] ?? '') ?: null;
     }
 
     /**
@@ -842,6 +844,13 @@ class Router extends RouterView
      */
     private function getCategoryAncestorPath(int $catid): array
     {
+        $key = 'ancestors:' . $catid;
+
+        return $this->lookupCache[$key] ??= $this->loadCategoryAncestorPath($catid);
+    }
+
+    private function loadCategoryAncestorPath(int $catid): array
+    {
         $category = $this->getCategoryById($catid);
 
         if (!$category || empty($category['path'])) {
@@ -894,6 +903,12 @@ class Router extends RouterView
      */
     private function getCategoryById(int $catid): ?array
     {
+        $key = 'category:' . $catid;
+
+        if (\array_key_exists($key, $this->lookupCache)) {
+            return $this->lookupCache[$key];
+        }
+
         $dbquery = $this->db->getQuery(true);
         $dbquery->select([
                 $this->db->quoteName('id'),
@@ -907,7 +922,8 @@ class Router extends RouterView
             ->bind(':id', $catid, ParameterType::INTEGER);
 
         $this->db->setQuery($dbquery);
-        return $this->db->loadAssoc();
+
+        return $this->lookupCache[$key] = $this->db->loadAssoc() ?: null;
     }
 
     /** Published, and inside the visitor's view levels — the same test the category tree applies. */
@@ -1185,15 +1201,7 @@ class Router extends RouterView
 
         // Look up category alias if not provided
         if (!$providedAlias) {
-            $dbquery = $this->db->getQuery(true);
-            $dbquery->select($this->db->quoteName('alias'))
-                ->from($this->db->quoteName('#__categories'))
-                ->where($this->db->quoteName('id') . ' = :id')
-                ->where($this->db->quoteName('extension') . ' = ' . $this->db->quote('com_content'))
-                ->bind(':id', $numericId, ParameterType::INTEGER);
-
-            $this->db->setQuery($dbquery);
-            $providedAlias = $this->db->loadResult();
+            $providedAlias = $this->getCategoryById($numericId)['alias'] ?? null;
         }
 
         // Build segment based on noIDs setting
