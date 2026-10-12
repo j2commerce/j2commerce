@@ -657,7 +657,7 @@ class ProductHelper
                 // jcfields unless it is already set; only the {field}/{fieldgroup} shortcodes read it here.
                 if (stripos($fakeArticle->text, '{field') === false) {
                     $fakeArticle->jcfields = [];
-                } else {
+                } elseif (($fakeArticle->jcfields ?? null) === []) {
                     unset($fakeArticle->jcfields);
                 }
 

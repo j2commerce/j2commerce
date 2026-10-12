@@ -1275,20 +1275,7 @@ class Router extends RouterView
 
         // Look up alias from content article if not provided
         if (!$providedAlias) {
-            $dbquery = $this->db->getQuery(true);
-            $dbquery->select($this->db->quoteName('c.alias'))
-                ->from($this->db->quoteName('#__content', 'c'))
-                ->join(
-                    'INNER',
-                    $this->db->quoteName('#__j2commerce_products', 'p'),
-                    $this->db->quoteName('p.product_source_id') . ' = ' . $this->db->quoteName('c.id')
-                )
-                ->where($this->db->quoteName('p.product_source') . ' = ' . $this->db->quote('com_content'))
-                ->where($this->db->quoteName('p.j2commerce_product_id') . ' = :id')
-                ->bind(':id', $numericId, ParameterType::INTEGER);
-
-            $this->db->setQuery($dbquery);
-            $providedAlias = $this->db->loadResult();
+            $providedAlias = $this->lookupProductAlias((int) $numericId);
         }
 
         // Build segment based on noIDs setting
