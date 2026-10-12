@@ -3113,8 +3113,7 @@ class ProductsController extends AdminController
                     $variantLayout = 'form_ajax_avoptions';
                 }
 
-                $layout           = new FileLayout($variantLayout, JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product');
-                $response['html'] = $layout->render([
+                $response['html'] = J2CommerceHelper::renderProductFormLayout($variantLayout, (string) ($product->product_type ?? ''), [
                     'product'            => $product,
                     'variant_list'       => $variants,
                     'variant_pagination' => null,

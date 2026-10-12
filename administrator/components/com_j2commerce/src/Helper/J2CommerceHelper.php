@@ -102,13 +102,18 @@ class J2CommerceHelper extends ContentHelper
         return $layout->render($data);
     }
 
-    /** Core form_<type> first; else onJ2CommerceGetProductFormLayoutPaths dirs (inside JPATH_PLUGINS) appended at lowest priority. */
     public static function loadProductFormTemplate(string $productType, array $data): string
     {
-        $dir    = JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product';
-        $layout = new FileLayout('form_' . $productType, $dir);
+        return self::renderProductFormLayout('form_' . $productType, $productType, $data);
+    }
 
-        if (is_file($dir . '/form_' . $productType . '.php')) {
+    /** Core tmpl/product first; else onJ2CommerceGetProductFormLayoutPaths dirs (inside JPATH_PLUGINS) appended at lowest priority. */
+    public static function renderProductFormLayout(string $layoutId, string $productType, array $data): string
+    {
+        $dir    = JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product';
+        $layout = new FileLayout($layoutId, $dir);
+
+        if (is_file($dir . '/' . $layoutId . '.php')) {
             return $layout->render($data);
         }
 
