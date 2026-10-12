@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductFilterRequestHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use J2Commerce\Component\J2commerce\Site\View\CustomSubtemplateTrait;
+use Joomla\CMS\Categories\Categories;
 use Joomla\CMS\Categories\CategoryNode;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -160,10 +161,17 @@ class HtmlView extends BaseHtmlView
         // Load data from model
         $this->state = $model->getState();
         $catids      = $this->state->get('filter.catids', []);
+        $catid       = (int) reset($catids);
 
-        // A category the visitor cannot see (missing, unpublished or outside their view levels) is a 404, as in com_content.
-        if (!empty($catids) && (int) reset($catids) > 1 && $model->getParent() === null) {
-            throw new \Exception(Text::_('JGLOBAL_CATEGORY_NOT_FOUND'), 404);
+        // As core CategoryView: a 403 when the visitor lacks the category's own access level, otherwise a 404.
+        if ($catid > 1 && $model->getParent() === null) {
+            $node = Categories::getInstance('Content', ['access' => false])->get($catid);
+
+            if ($node !== null && !\in_array($node->access, $this->getCurrentUser()->getAuthorisedViewLevels())) {
+                throw new \RuntimeException(Text::_('JERROR_ALERTNOAUTHOR'), 403);
+            }
+
+            throw new \InvalidArgumentException(Text::_('JGLOBAL_CATEGORY_NOT_FOUND'), 404);
         }
 
         $this->items      = $model->getItems();
