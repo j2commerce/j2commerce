@@ -48,6 +48,9 @@ class CartModel extends BaseDatabaseModel
     /** One plugin owns a type's cart behavior; its object is reused for every line, so keep it stateless. Detect with \defined(). */
     public const PLUGIN_BEHAVIOR_EVENT = 'GetCartBehavior';
 
+    /** Largest line quantity the decimal(12,4) product_qty column holds. */
+    public const MAX_LINE_QTY = 99999999;
+
     private ?int $resolvedCartId = null;
 
     /** Plugin-supplied cart behaviors per product type, including misses (null). */
@@ -273,9 +276,15 @@ class CartModel extends BaseDatabaseModel
         // Trigger plugin event
         J2CommerceHelper::plugin()->event('BeforeLoadCartItemForAdd', [&$item]);
 
+        // A quantity that rounds to zero at the column's 4 decimals would store an empty line.
+        if (round((float) ($item->product_qty ?? 0), 4) <= 0) {
+            $this->setError(Text::_('COM_J2COMMERCE_CART_ERROR'));
+            return false;
+        }
+
         if ($existingItem) {
             // Update existing item quantity
-            $newQty = (float) $existingItem->product_qty + (float) $item->product_qty;
+            $newQty = min(self::MAX_LINE_QTY, (float) $existingItem->product_qty + (float) $item->product_qty);
 
             // Merge params
             $existingParams = new Registry($existingItem->cartitem_params);
@@ -301,7 +310,7 @@ class CartModel extends BaseDatabaseModel
             $productId   = (int) $item->product_id;
             $vendorId    = (int) ($item->vendor_id ?? 0);
             $productType = $itemProductType;
-            $productQty  = (float) $item->product_qty;
+            $productQty  = min(self::MAX_LINE_QTY, (float) $item->product_qty);
 
             $insertQuery = $db->getQuery(true)
                 ->insert($db->quoteName('#__j2commerce_cartitems'))
