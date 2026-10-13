@@ -1778,7 +1778,7 @@ class EmailHelper
         // into the Tax row below instead of hidden inside the fee amount. Pre-fee-rows legacy
         // orders have no rows to read and keep the blended column, same as the fallback in
         // OrderHelper::getFormattedOrderTotals().
-        $feeRows           = $this->getOrderFeeRows($order);
+        $feeRows            = $this->getOrderFeeRows($order);
         $feeBareAmount      = array_sum(array_map(static fn (object $f): float => max(0.0, (float) $f->amount), $feeRows));
         $feeTaxAmount       = array_sum(array_map(static fn (object $f): float => (float) $f->tax, $feeRows));
 
@@ -3589,7 +3589,7 @@ class EmailHelper
         $root       = $uri !== null
             ? rtrim($uri->toString(['scheme', 'host', 'port', 'path']), '/')
             : rtrim(Uri::root(), '/');
-        $subpath    = $uri !== null ? rtrim($uri->getPath(), '/') : rtrim(Uri::root(true), '/');
+        $subpath    = $uri !== null ? rtrim((string) $uri->getPath(), '/') : rtrim(Uri::root(true), '/');
 
         return [
             (string) preg_replace('#/administrator$#', '', $root),
