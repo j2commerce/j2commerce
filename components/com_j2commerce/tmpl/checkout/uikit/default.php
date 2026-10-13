@@ -106,6 +106,9 @@ Text::script('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
             <div class="j2commerce-checkout-row uk-grid" uk-grid>
                 <div class="j2commerce-checkout-steps uk-width-2-3@l">
                     <section id="checkout" role="region" aria-labelledby="checkout-heading-label">
+                        <?php if ($this->logged && !$this->params->get('show_logout_link', 1)) : ?>
+                        <h2 class="uk-hidden-visually"><span id="checkout-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_OPTIONS'); ?></span></h2>
+                        <?php else : ?>
                         <div class="checkout-heading uk-margin-small-bottom uk-flex uk-flex-between uk-flex-middle">
                             <div>
                                 <h2 class="checkout-heading__title"><span id="checkout-heading-label" class="uk-hidden-visually"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_OPTIONS'); ?></span></h2>
@@ -116,6 +119,7 @@ Text::script('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
                                 </a>
                             <?php endif; ?>
                         </div>
+                        <?php endif; ?>
                         <div class="checkout-content" aria-busy="false"></div>
                     </section>
 

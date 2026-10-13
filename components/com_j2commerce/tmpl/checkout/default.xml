@@ -54,6 +54,19 @@
 				relative="true"
 				showon="config_cart_empty_redirect:url"
 			/>
+
+			<field
+				name="show_logout_link"
+				type="radio"
+				layout="joomla.form.field.radio.switcher"
+				label="COM_J2COMMERCE_CONFIG_SHOW_LOGOUT_LINK"
+				description="COM_J2COMMERCE_CHECKOUT_SHOW_LOGOUT_LINK_DESC"
+				default="1"
+				filter="integer"
+			>
+				<option value="0">JHIDE</option>
+				<option value="1">JSHOW</option>
+			</field>
 		</fieldset>
 		<fieldset name="tracking" label="COM_J2COMMERCE_TRACKING_FIELDSET_LABEL"
 			addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field">

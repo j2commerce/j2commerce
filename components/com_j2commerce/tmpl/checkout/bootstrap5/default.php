@@ -110,6 +110,9 @@ Text::script('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
             <div class="j2commerce-checkout-row row justify-content-xl-center">
                 <div class="j2commerce-checkout-steps col-lg-8 col-xl-6 order-2 order-lg-1">
                     <section id="checkout" role="region" aria-labelledby="checkout-heading-label">
+                        <?php if ($this->logged && !$this->params->get('show_logout_link', 1)) : ?>
+                        <h2 class="visually-hidden"><span id="checkout-heading-label"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_OPTIONS'); ?></span></h2>
+                        <?php else : ?>
                         <div class="checkout-heading mb-2 d-flex justify-content-between align-items-center">
                             <div>
                                 <h2 class="checkout-heading__title"><span id="checkout-heading-label" class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_OPTIONS'); ?></span></h2>
@@ -120,6 +123,7 @@ Text::script('COM_J2COMMERCE_CHECKOUT_ERROR_AGREE_TERMS');
                                 </a>
                             <?php endif; ?>
                         </div>
+                        <?php endif; ?>
                         <div class="checkout-content" aria-busy="false"></div>
                     </section>
 
