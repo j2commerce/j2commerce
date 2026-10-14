@@ -1175,7 +1175,7 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_queues` (
   KEY `idx_item_type` (`item_type`),
   KEY `idx_relation` (`relation_id`(50)),
   KEY `idx_locked` (`locked_at`),
-  KEY `idx_priority` (`priority` DESC)
+  KEY `idx_queue_priority` (`priority`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
