@@ -93,9 +93,11 @@ class PaymentupdateController extends BaseController
         // Relink event: the gateway's own renewal-profile handler owns
         // tokenization (vault a new card, or accept a posted saved-profile id
         // as-is) and rewiring its own renewal linkage. Same contract the
-        // in-portal saved-card picker already drives.
+        // in-portal saved-card picker already drives. entity_type names the id
+        // space of subscription_id, so a gateway links only the type it owns.
         $relinkEvent = J2CommerceHelper::plugin()->event('SetSubscriptionRenewalProfile', [
             'element'         => $selectedMethod,
+            'entity_type'     => (string) $context['entityType'],
             'subscription_id' => (int) $context['entityId'],
             'user_id'         => (int) $context['ownerUserId'],
             'profile_id'      => $profileId,
