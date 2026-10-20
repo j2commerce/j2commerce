@@ -275,6 +275,9 @@ class HtmlView extends BaseHtmlView
 
         $this->registerFrameworkTemplatePaths($app);
 
+        // The page-level AfterDisplayOrder call display() makes; its HTML goes unused there too.
+        J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayOrder', [$this->orders]);
+
         return $this->loadTemplate('orderslist');
     }
 
