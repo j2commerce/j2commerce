@@ -12,6 +12,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Factory;
@@ -127,6 +128,22 @@ $statusName = Text::_($order->orderstatus_name ?? '');
                     <?php if (!empty($info->billing_email)): ?><br><?php echo $this->escape($info->billing_email); ?><?php endif; ?>
                 </div>
             </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Checkout fields: merchant-defined values switched on for the customer order view -->
+    <?php $checkoutFields = $info ? CustomFieldHelper::describeOrderCustomFields($info, 'site') : []; ?>
+    <?php if ($checkoutFields): ?>
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title fw-bold"><?php echo Text::_('COM_J2COMMERCE_ORDER_CHECKOUT_FIELDS'); ?></h5>
+            <dl class="row mb-0">
+                <?php foreach ($checkoutFields as $checkoutField): ?>
+                <dt class="col-sm-4"><?php echo $this->escape($checkoutField['label']); ?></dt>
+                <dd class="col-sm-8"><?php echo $checkoutField['multiline'] ? nl2br($this->escape($checkoutField['value'])) : $this->escape($checkoutField['value']); ?></dd>
+                <?php endforeach; ?>
+            </dl>
         </div>
     </div>
     <?php endif; ?>
