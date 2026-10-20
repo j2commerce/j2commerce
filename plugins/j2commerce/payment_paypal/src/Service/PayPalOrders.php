@@ -120,6 +120,10 @@ final class PayPalOrders
                 'currency_code' => $currencyCode,
                 'value'         => $this->formatAmount($orderData['tax'] ?? 0),
             ],
+            'handling' => [
+                'currency_code' => $currencyCode,
+                'value'         => $this->formatAmount($orderData['handling'] ?? 0),
+            ],
             'discount' => [
                 'currency_code' => $currencyCode,
                 'value'         => $this->formatAmount($orderData['discount'] ?? 0),
@@ -132,15 +136,16 @@ final class PayPalOrders
         $itemTotal = (float) ($breakdown['item_total']['value'] ?? 0);
         $shipping  = (float) ($breakdown['shipping']['value'] ?? 0);
         $tax       = (float) ($breakdown['tax_total']['value'] ?? 0);
+        $handling  = (float) ($breakdown['handling']['value'] ?? 0);
         $discount  = (float) ($breakdown['discount']['value'] ?? 0);
 
-        $calculatedTotal = $itemTotal + $shipping + $tax - $discount;
+        $calculatedTotal = $itemTotal + $shipping + $tax + $handling - $discount;
         $difference      = abs($calculatedTotal - $total);
 
         if ($difference > 0.01) {
             throw new \RuntimeException(
                 "Amount breakdown validation failed. Calculated: $calculatedTotal, " .
-                "Expected: $total (items: $itemTotal, shipping: $shipping, tax: $tax, discount: $discount)"
+                "Expected: $total (items: $itemTotal, shipping: $shipping, tax: $tax, handling: $handling, discount: $discount)"
             );
         }
     }

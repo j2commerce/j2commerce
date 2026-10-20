@@ -1986,7 +1986,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $itemTotal = 0.0;
 
             foreach ($orderItems as $item) {
-                $unitAmount = CurrencyHelper::convertForOrder((float) $item->orderitem_price, $orderTable);
+                $unitAmount = CurrencyHelper::convertForOrder((float) $item->orderitem_price + (float) $item->orderitem_option_price, $orderTable);
                 $quantity   = (int) $item->orderitem_quantity;
 
                 $items[] = [
@@ -2012,6 +2012,8 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 $tax = CurrencyHelper::convertForOrder((float) $orderTable->order_tax + (float) $orderTable->order_shipping_tax, $orderTable);
             }
             $discount = CurrencyHelper::convertForOrder((float) $orderTable->order_discount, $orderTable);
+            // Fees and their tax are carried in order_surcharge, not order_tax.
+            $handling = CurrencyHelper::convertForOrder((float) $orderTable->order_surcharge, $orderTable);
             $total    = CurrencyHelper::gatewayAmount($orderTable);
 
             $orderData = [
@@ -2024,6 +2026,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 'shipping'            => $shipping,
                 'tax'                 => $tax,
                 'discount'            => $discount,
+                'handling'            => $handling,
                 'items'               => $items,
             ];
 
