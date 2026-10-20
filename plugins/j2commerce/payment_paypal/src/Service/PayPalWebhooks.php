@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderTransactionHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
+use J2Commerce\Plugin\J2Commerce\PaymentPaypal\Helper\PayPalCurrencyHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
@@ -463,8 +464,8 @@ final class PayPalWebhooks
         // writing any paid state — a mismatched capture is logged for manual review.
         $captureAmount   = (float) ($resource['amount']['value'] ?? 0);
         $captureCurrency = (string) ($resource['amount']['currency_code'] ?? '');
-        $expectedAmount  = CurrencyHelper::gatewayAmount($orderTable);
         $expectedCcy     = strtoupper(trim((string) ($orderTable->currency_code ?? 'USD')));
+        $expectedAmount  = $this->roundToCurrency(CurrencyHelper::gatewayAmount($orderTable), $expectedCcy);
 
         if ($captureCurrency !== $expectedCcy || abs($captureAmount - $expectedAmount) > 0.01) {
             Factory::getApplication()->getLogger()->error(
@@ -806,13 +807,7 @@ final class PayPalWebhooks
      */
     private function roundToCurrency(float $amount, string $currency): float
     {
-        $zeroDecimal = ['JPY', 'KRW', 'TWD', 'HUF', 'CLP', 'ISK'];
-
-        $decimals = \in_array(strtoupper($currency), $zeroDecimal, true) ? 0 : 2;
-
-        // number_format, not round: this is the exact call the plan price is built with, so
-        // the two cannot disagree on a tie.
-        return (float) number_format($amount, $decimals, '.', '');
+        return (float) PayPalCurrencyHelper::format($amount, $currency);
     }
 
     /**

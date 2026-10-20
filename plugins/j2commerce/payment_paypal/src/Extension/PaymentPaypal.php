@@ -912,7 +912,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             }
 
             $currency = $this->getCurrency($orderTable);
-            $amount   = CurrencyHelper::gatewayAmount($orderTable);
+            $amount   = (float) PayPalCurrencyHelper::format(CurrencyHelper::gatewayAmount($orderTable), $currency);
 
             $response = $nvp->doExpressCheckoutPayment(
                 token:         $token,
@@ -1982,21 +1982,19 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $db->setQuery($query);
             $orderItems = $db->loadObjectList();
 
-            $items     = [];
-            $itemTotal = 0.0;
+            $items = [];
 
             foreach ($orderItems as $item) {
-                $unitAmount = CurrencyHelper::convertForOrder((float) $item->orderitem_price + (float) $item->orderitem_option_price, $orderTable);
-                $quantity   = (int) $item->orderitem_quantity;
+                $quantity = max(1, (int) $item->orderitem_quantity);
 
+                // orderitem_finalprice is the line as order_subtotal counts it: option prices
+                // included and any plugin line discount already taken off.
                 $items[] = [
                     'name'        => $item->orderitem_name,
                     'quantity'    => $quantity,
-                    'unit_amount' => $unitAmount,
+                    'unit_amount' => CurrencyHelper::convertForOrder((float) $item->orderitem_finalprice / $quantity, $orderTable),
                     'sku'         => $item->orderitem_sku ?? '',
                 ];
-
-                $itemTotal += $unitAmount * $quantity;
             }
 
             $shipping = CurrencyHelper::convertForOrder((float) $orderTable->order_shipping, $orderTable);
@@ -2022,7 +2020,6 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 'invoice_id'          => $orderTable->invoice_prefix . $orderId,
                 'currency_code'       => $currency,
                 'total'               => $total,
-                'item_total'          => $itemTotal,
                 'shipping'            => $shipping,
                 'tax'                 => $tax,
                 'discount'            => $discount,
@@ -2126,8 +2123,8 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 // writing any paid state — a mismatched capture is logged for manual review.
                 $captureAmount   = (float) ($capture['amount']['value'] ?? 0);
                 $captureCurrency = (string) ($capture['amount']['currency_code'] ?? '');
-                $expectedAmount  = CurrencyHelper::gatewayAmount($orderTable);
                 $expectedCcy     = $this->getCurrency($orderTable);
+                $expectedAmount  = (float) PayPalCurrencyHelper::format(CurrencyHelper::gatewayAmount($orderTable), $expectedCcy);
 
                 if ($captureCurrency !== $expectedCcy || abs($captureAmount - $expectedAmount) > 0.01) {
                     $this->log(

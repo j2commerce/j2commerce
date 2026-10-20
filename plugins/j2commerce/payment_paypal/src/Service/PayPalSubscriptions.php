@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Plugin\J2Commerce\PaymentPaypal\Helper\PayPalCurrencyHelper;
 
 \defined('_JEXEC') or die;
 
@@ -98,7 +99,7 @@ final class PayPalSubscriptions
         // trial/setup-fee cycles, PayPal requires infinite cycles to be the LAST
         // entry in billing_cycles[] — extend this array accordingly.
         $totalCycles   = max(0, (int) ($subscription->subscription_length ?? 0));
-        $renewalAmount = $this->formatAmount(
+        $renewalAmount = PayPalCurrencyHelper::format(
             CurrencyHelper::convertForOrder((float) ($order->order_total ?? $subscription->renewal_amount ?? 0), $order),
             (string) $context['currency_code']
         );
@@ -275,7 +276,7 @@ final class PayPalSubscriptions
         }
 
         $currency = strtoupper((string) ($order->currency_code ?? 'USD'));
-        $amount   = $this->formatAmount(CurrencyHelper::convertForOrder((float) ($order->order_total ?? $subscription->renewal_amount ?? 0), $order), $currency);
+        $amount   = PayPalCurrencyHelper::format(CurrencyHelper::convertForOrder((float) ($order->order_total ?? $subscription->renewal_amount ?? 0), $order), $currency);
         $body     = [
             'note'         => 'J2Commerce renewal — Order #' . ($order->order_id ?? ''),
             'capture_type' => 'OUTSTANDING_BALANCE',
@@ -342,18 +343,6 @@ final class PayPalSubscriptions
         }
 
         return false;
-    }
-
-    /**
-     * Format a monetary amount using PayPal's decimal rules.
-     * JPY/KRW/TWD/HUF use 0 decimals; everything else 2.
-     */
-    private function formatAmount(float $amount, string $currency): string
-    {
-        $zeroDecimal = ['JPY', 'KRW', 'TWD', 'HUF', 'CLP', 'ISK'];
-        $decimals    = \in_array(strtoupper($currency), $zeroDecimal, true) ? 0 : 2;
-
-        return number_format($amount, $decimals, '.', '');
     }
 
     public function suspendSubscription(string $paypalSubscriptionId, string $reason): bool

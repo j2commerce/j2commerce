@@ -14,6 +14,8 @@ namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Plugin\J2Commerce\PaymentPaypal\Helper\PayPalCurrencyHelper;
+
 /**
  * PayPal Classic NVP API client.
  *
@@ -92,7 +94,7 @@ final class PayPalNvpClient
             'METHOD'        => 'DoReferenceTransaction',
             'REFERENCEID'   => $referenceId,
             'PAYMENTACTION' => $paymentAction,
-            'AMT'           => number_format($amount, 2, '.', ''),
+            'AMT'           => PayPalCurrencyHelper::format($amount, $currencyCode),
             'CURRENCYCODE'  => $currencyCode,
         ], $extra);
 
@@ -167,7 +169,7 @@ final class PayPalNvpClient
         $fields = [
             'METHOD'                         => 'SetExpressCheckout',
             'PAYMENTREQUEST_0_PAYMENTACTION' => 'Sale',
-            'PAYMENTREQUEST_0_AMT'           => number_format($amount, 2, '.', ''),
+            'PAYMENTREQUEST_0_AMT'           => PayPalCurrencyHelper::format($amount, $currencyCode),
             'PAYMENTREQUEST_0_CURRENCYCODE'  => $currencyCode,
             'RETURNURL'                      => $returnUrl,
             'CANCELURL'                      => $cancelUrl,
@@ -198,14 +200,14 @@ final class PayPalNvpClient
             }
 
             $fields['L_PAYMENTREQUEST_0_NAME' . $i] = substr($name, 0, 126);
-            $fields['L_PAYMENTREQUEST_0_AMT' . $i]  = number_format($amt, 2, '.', '');
+            $fields['L_PAYMENTREQUEST_0_AMT' . $i]  = PayPalCurrencyHelper::format($amt, $currencyCode);
             $fields['L_PAYMENTREQUEST_0_QTY' . $i]  = (string) $qty;
-            $itemTotal += $amt * $qty;
+            $itemTotal += (float) PayPalCurrencyHelper::format($amt, $currencyCode) * $qty;
             $i++;
         }
 
         if ($itemTotal > 0) {
-            $fields['PAYMENTREQUEST_0_ITEMAMT'] = number_format($itemTotal, 2, '.', '');
+            $fields['PAYMENTREQUEST_0_ITEMAMT'] = PayPalCurrencyHelper::format($itemTotal, $currencyCode);
         }
 
         return $this->request($fields);
@@ -246,9 +248,9 @@ final class PayPalNvpClient
             'TOKEN'                          => $token,
             'PAYERID'                        => $payerId,
             'PAYMENTREQUEST_0_PAYMENTACTION' => 'Sale',
-            'PAYMENTREQUEST_0_AMT'           => number_format($amount, 2, '.', ''),
+            'PAYMENTREQUEST_0_AMT'           => PayPalCurrencyHelper::format($amount, $currencyCode),
             'PAYMENTREQUEST_0_CURRENCYCODE'  => $currencyCode,
-            'PAYMENTREQUEST_0_ITEMAMT'       => number_format($amount, 2, '.', ''),
+            'PAYMENTREQUEST_0_ITEMAMT'       => PayPalCurrencyHelper::format($amount, $currencyCode),
         ];
 
         if ($invoiceNumber !== '') {

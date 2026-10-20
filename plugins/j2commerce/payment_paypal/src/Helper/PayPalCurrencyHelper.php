@@ -25,9 +25,25 @@ final class PayPalCurrencyHelper
         'PLN', 'GBP', 'RUB', 'SGD', 'SEK', 'CHF', 'THB', 'USD',
     ];
 
+    /**
+     * @var array<string>
+     */
+    private const ZERO_DECIMAL_CURRENCIES = ['JPY', 'KRW', 'TWD', 'HUF', 'CLP', 'ISK'];
+
     public static function isValid(string $currencyCode): bool
     {
         return \in_array(strtoupper($currencyCode), self::ACCEPTED_CURRENCIES, true);
+    }
+
+    public static function decimals(string $currencyCode): int
+    {
+        return \in_array(strtoupper($currencyCode), self::ZERO_DECIMAL_CURRENCIES, true) ? 0 : 2;
+    }
+
+    /** number_format, not round(): one call for every PayPal amount, so a tie cannot round two ways. */
+    public static function format(float $amount, string $currencyCode): string
+    {
+        return number_format($amount, self::decimals($currencyCode), '.', '');
     }
 
     /**

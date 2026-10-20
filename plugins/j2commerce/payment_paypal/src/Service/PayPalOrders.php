@@ -14,6 +14,8 @@ namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Plugin\J2Commerce\PaymentPaypal\Helper\PayPalCurrencyHelper;
+
 final class PayPalOrders
 {
     public function __construct(private PayPalClient $client)
@@ -27,10 +29,48 @@ final class PayPalOrders
     public function createOrder(array $orderData): array
     {
         $currencyCode = $orderData['currency_code'];
-        $total        = (float) $orderData['total'];
-        $breakdown    = $this->buildAmountBreakdown($orderData, $currencyCode);
+        $factor       = 10 ** PayPalCurrencyHelper::decimals($currencyCode);
+        $minor        = static fn (mixed $amount): int => (int) round((float) PayPalCurrencyHelper::format((float) $amount, $currencyCode) * $factor);
+        $money        = static fn (int $amount): array => [
+            'currency_code' => $currencyCode,
+            'value'         => PayPalCurrencyHelper::format($amount / $factor, $currencyCode),
+        ];
 
-        $this->validateBreakdown($breakdown, $total);
+        // PayPal requires item_total to equal the sum of the rounded unit amounts times their
+        // quantities, so it is built from the same rounded figures the line items carry.
+        $itemTotal = 0;
+        $units     = 0;
+
+        foreach ($orderData['items'] ?? [] as $item) {
+            $quantity = (int) ($item['quantity'] ?? 1);
+            $itemTotal += $minor($item['unit_amount'] ?? 0) * $quantity;
+            $units += $quantity;
+        }
+
+        $total    = $minor($orderData['total']);
+        $shipping = $minor($orderData['shipping'] ?? 0);
+        $tax      = $minor($orderData['tax'] ?? 0);
+        $handling = $minor($orderData['handling'] ?? 0);
+        $discount = $minor($orderData['discount'] ?? 0);
+
+        // Every figure is rounded on its own and each unit before it is multiplied, so the parts
+        // can miss the total by up to half a minor unit per unit sold plus half per figure. That
+        // remainder is settled into handling or discount; anything larger is a real mismatch.
+        $residual = $total - ($itemTotal + $shipping + $tax + $handling - $discount);
+
+        if (abs($residual) > intdiv($units + 6, 2)) {
+            throw new \RuntimeException(
+                'Amount breakdown validation failed. Calculated: ' . ($total - $residual) / $factor . ', '
+                . 'Expected: ' . $total / $factor . ' (items: ' . $itemTotal / $factor . ', shipping: ' . $shipping / $factor
+                . ', tax: ' . $tax / $factor . ', handling: ' . $handling / $factor . ', discount: ' . $discount / $factor . ')'
+            );
+        }
+
+        if ($residual > 0) {
+            $handling += $residual;
+        } else {
+            $discount -= $residual;
+        }
 
         $body = [
             'intent'         => 'CAPTURE',
@@ -38,10 +78,14 @@ final class PayPalOrders
                 'reference_id' => $orderData['order_id'] ?? '',
                 'custom_id'    => (string) ($orderData['j2commerce_order_id'] ?? ''),
                 'invoice_id'   => $orderData['invoice_id'] ?? '',
-                'amount'       => [
-                    'currency_code' => $currencyCode,
-                    'value'         => $this->formatAmount($total),
-                    'breakdown'     => $breakdown,
+                'amount'       => $money($total) + [
+                    'breakdown' => [
+                        'item_total' => $money($itemTotal),
+                        'shipping'   => $money($shipping),
+                        'tax_total'  => $money($tax),
+                        'handling'   => $money($handling),
+                        'discount'   => $money($discount),
+                    ],
                 ],
                 'items' => $this->buildLineItems($orderData['items'] ?? [], $currencyCode),
             ]],
@@ -92,66 +136,12 @@ final class PayPalOrders
                 'quantity'    => (string) ($item['quantity'] ?? 1),
                 'unit_amount' => [
                     'currency_code' => $currencyCode,
-                    'value'         => $this->formatAmount($item['unit_amount'] ?? 0),
+                    'value'         => PayPalCurrencyHelper::format((float) ($item['unit_amount'] ?? 0), $currencyCode),
                 ],
                 'sku' => $item['sku'] ?? '',
             ];
         }
 
         return $lineItems;
-    }
-
-    /**
-     * @param array<string, mixed> $orderData
-     * @return array<string, array<string, string>>
-     */
-    private function buildAmountBreakdown(array $orderData, string $currencyCode): array
-    {
-        return [
-            'item_total' => [
-                'currency_code' => $currencyCode,
-                'value'         => $this->formatAmount($orderData['item_total'] ?? 0),
-            ],
-            'shipping' => [
-                'currency_code' => $currencyCode,
-                'value'         => $this->formatAmount($orderData['shipping'] ?? 0),
-            ],
-            'tax_total' => [
-                'currency_code' => $currencyCode,
-                'value'         => $this->formatAmount($orderData['tax'] ?? 0),
-            ],
-            'handling' => [
-                'currency_code' => $currencyCode,
-                'value'         => $this->formatAmount($orderData['handling'] ?? 0),
-            ],
-            'discount' => [
-                'currency_code' => $currencyCode,
-                'value'         => $this->formatAmount($orderData['discount'] ?? 0),
-            ],
-        ];
-    }
-
-    private function validateBreakdown(array $breakdown, float $total): void
-    {
-        $itemTotal = (float) ($breakdown['item_total']['value'] ?? 0);
-        $shipping  = (float) ($breakdown['shipping']['value'] ?? 0);
-        $tax       = (float) ($breakdown['tax_total']['value'] ?? 0);
-        $handling  = (float) ($breakdown['handling']['value'] ?? 0);
-        $discount  = (float) ($breakdown['discount']['value'] ?? 0);
-
-        $calculatedTotal = $itemTotal + $shipping + $tax + $handling - $discount;
-        $difference      = abs($calculatedTotal - $total);
-
-        if ($difference > 0.01) {
-            throw new \RuntimeException(
-                "Amount breakdown validation failed. Calculated: $calculatedTotal, " .
-                "Expected: $total (items: $itemTotal, shipping: $shipping, tax: $tax, handling: $handling, discount: $discount)"
-            );
-        }
-    }
-
-    private function formatAmount(float|int|string $amount): string
-    {
-        return number_format((float) $amount, 2, '.', '');
     }
 }
