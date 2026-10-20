@@ -2811,7 +2811,7 @@ class CheckoutController extends BaseController
         return true;
     }
 
-    // One named lock per stock-limited variant, coupon and voucher, taken in sorted order. Named
+    // One named lock per stock-limited variant, use-limited coupon and voucher, in sorted order. Named
     // rather than a row lock: it outlives the gateway call, where an open transaction would
     // roll back the payment plugin's own writes on any failure.
     private function acquirePlacementLocks(string $orderId): bool
@@ -2835,15 +2835,17 @@ class CheckoutController extends BaseController
 
             $keys = array_map(static fn ($id): string => 'v:' . (int) $id, $db->setQuery($query)->loadColumn() ?: []);
 
-            $discounts = $this->getMvcFactory()
-                ->createModel('Order', 'Administrator', ['ignore_request' => true])
-                ->getOrderDiscounts($orderId);
+            $factory   = $this->getMvcFactory();
+            $discounts = $factory->createModel('Order', 'Administrator', ['ignore_request' => true])->getOrderDiscounts($orderId);
+            $coupons   = $factory->createModel('Coupon', 'Administrator', ['ignore_request' => true]);
 
             foreach ($discounts as $row) {
                 $keys[] = match ($row->discount_type) {
                     'voucher' => 'g:' . (int) $row->discount_entity_id,
-                    'coupon'  => 'c:' . md5(strtolower(trim((string) $row->discount_code))),
-                    default   => '',
+                    'coupon'  => $this->couponIsUseLimited($coupons, (string) $row->discount_code)
+                        ? 'c:' . md5(strtolower(trim((string) $row->discount_code)))
+                        : '',
+                    default => '',
                 };
             }
 
@@ -2896,6 +2898,14 @@ class CheckoutController extends BaseController
         }
 
         $this->placementLocks = [];
+    }
+
+    /** A coupon with no use limit cannot be over-redeemed, so it is not serialised; an unresolvable one is. */
+    private function couponIsUseLimited(object $couponModel, string $code): bool
+    {
+        $coupon = $couponModel->getCouponByCode($code);
+
+        return !$coupon || (int) $coupon->max_uses > 0 || (int) $coupon->max_customer_uses > 0;
     }
 
     /** Stock checked from the stored lines by the same rules the confirm step applies to the cart. */
