@@ -1,0 +1,3 @@
+-- A sale used to set Stock Status to Out of Stock when stock reached zero, and no restock cleared it.
+-- Only sold-out rows that have been ordered are reset; their quantity keeps them out of stock until restocked.
+UPDATE `#__j2commerce_variants` AS `v` INNER JOIN `#__j2commerce_productquantities` AS `pq` ON `pq`.`variant_id` = `v`.`j2commerce_variant_id` SET `v`.`availability` = 1 WHERE `v`.`availability` = 0 AND `v`.`manage_stock` = 1 AND `v`.`allow_backorder` = 0 AND `pq`.`quantity` <= 0 AND EXISTS (SELECT 1 FROM `#__j2commerce_orderitems` AS `oi` WHERE `oi`.`variant_id` = `v`.`j2commerce_variant_id`);

@@ -751,6 +751,7 @@ class OrderModel extends AdminModel
 
         $oldStock = InventoryHelper::getStockQuantity($variantId);
         $newStock = InventoryHelper::adjustStockAndAvailability($variantId, $delta, InventoryHelper::isBackorderAllowed($variant));
+        InventoryHelper::adjustSold($variantId, -$delta);
 
         OrderHistoryHelper::add(
             orderId: $orderId,

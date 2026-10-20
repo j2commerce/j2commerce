@@ -3036,6 +3036,15 @@ class ProductHelper
             return false;
         }
 
+        // A sale no longer stamps the flag, so a stock-limited row without its quantity loads it.
+        if (!isset($variant->quantity)
+            && !empty($variant->j2commerce_variant_id)
+            && self::managingStock($variant)
+            && !self::backordersAllowed($variant)
+        ) {
+            $variant->quantity = self::getStockQuantity((int) $variant->j2commerce_variant_id);
+        }
+
         if (isset($variant->quantity)) {
             $minQty = (!empty($variant->quantity_restriction) && (float) ($variant->min_sale_qty ?? 0) > 0)
                 ? (int) $variant->min_sale_qty
@@ -3054,6 +3063,11 @@ class ProductHelper
     /** The refusal for an add the variant's stock cannot cover, given what this shopper already holds. */
     public static function stockRefusalMessage(object $variant, int $shopperQty, string $itemName): string
     {
+        // Refused by the owner's Stock Status, not by what is left: a count would contradict the refusal.
+        if (InventoryHelper::isMarkedOutOfStock($variant)) {
+            return Text::_('COM_J2COMMERCE_STOCK_OUT_OF_STOCK');
+        }
+
         return self::stockRefusalMessageForRemaining(
             max(0, (int) ($variant->quantity ?? 0) - $shopperQty),
             $shopperQty,
@@ -3109,8 +3123,7 @@ class ProductHelper
             return true;
         }
 
-        // Stock is managed: check availability flag or backorder allowance
-        return !empty($product->variant->availability) || self::backordersAllowed($product->variant);
+        return self::isVariantPurchasable($product->variant);
     }
 
     /**

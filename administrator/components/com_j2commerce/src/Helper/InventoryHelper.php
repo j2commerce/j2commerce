@@ -1138,11 +1138,10 @@ class InventoryHelper
             $allowBackorder = self::isBackorderAllowed($variant);
             $wasAlreadyZero = ($oldStock <= 0 && $allowBackorder);
 
+            // Stock Status is the owner's to set: a sell-out reads as out of stock from the
+            // quantity, and stamping the flag here left it Out of Stock after every restock.
             $newStock = self::adjustVariantStock((int) $item->variant_id, -$qty);
-
-            if ($newStock <= 0 && !$allowBackorder) {
-                self::setVariantAvailability((int) $item->variant_id, 0);
-            }
+            self::adjustSold((int) $item->variant_id, $qty);
 
             $historyComment = Text::sprintf(
                 'COM_J2COMMERCE_ORDERITEM_STOCK_REDUCED',
@@ -1213,6 +1212,7 @@ class InventoryHelper
             $oldStock = self::getStockQuantity((int) $item->variant_id);
 
             $newStock = self::adjustVariantStock((int) $item->variant_id, $qty);
+            self::adjustSold((int) $item->variant_id, -$qty);
 
             if ($newStock > 0) {
                 self::setVariantAvailability((int) $item->variant_id, 1);
@@ -1325,23 +1325,39 @@ class InventoryHelper
     }
 
     /**
-     * Adjust a variant's stock AND keep its availability flag in sync, mirroring
-     * reduceOrderStock/restoreOrderStock — so a single-line admin adjustment can't
-     * leave a restocked variant flagged unavailable (or vice versa). Returns new stock.
+     * Adjust a variant's stock and, as restoreOrderStock() does, mark it in stock again once
+     * the quantity is positive. A sell-out is left to the quantity, never stamped on the flag.
+     * $allowNegative is kept for existing callers. Returns new stock.
      */
     public static function adjustStockAndAvailability(int $variantId, int $delta, bool $allowNegative = false): int
     {
         $newStock = self::adjustVariantStock($variantId, $delta);
 
-        if ($newStock <= 0 && !$allowNegative) {
-            self::setVariantAvailability($variantId, 0);
-        } elseif ($newStock > 0) {
+        if ($newStock > 0) {
             self::setVariantAvailability($variantId, 1);
         }
 
         J2CommerceHelper::plugin()->event('AfterStockAdjust', [$variantId, $newStock]);
 
         return $newStock;
+    }
+
+    /** Move a variant's sold count with an order's stock; never below zero. */
+    public static function adjustSold(int $variantId, int $delta): void
+    {
+        if ($variantId < 1 || $delta === 0) {
+            return;
+        }
+
+        $db    = self::getDatabase();
+        $query = $db->getQuery(true)
+            ->update($db->quoteName('#__j2commerce_productquantities'))
+            ->set($db->quoteName('sold') . ' = GREATEST(0, ' . $db->quoteName('sold') . ' + :delta)')
+            ->where($db->quoteName('variant_id') . ' = :variantId')
+            ->bind(':delta', $delta, ParameterType::INTEGER)
+            ->bind(':variantId', $variantId, ParameterType::INTEGER);
+
+        $db->setQuery($query)->execute();
     }
 
     /**
