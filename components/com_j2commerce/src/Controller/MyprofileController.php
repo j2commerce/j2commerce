@@ -759,9 +759,9 @@ class MyprofileController extends BaseController
 
         if ($user && $user->id && (int) $order->user_id === (int) $user->id) {
             $hasAccess = true;
-        } elseif (!empty($guestToken) && !empty($guestEmail)
-            && $guestToken === $order->token
-            && $guestEmail === $order->user_email) {
+        } elseif (!empty($guestToken) && !empty($guestEmail) && !empty($order->token)
+            && hash_equals((string) $order->token, (string) $guestToken)
+            && strcasecmp((string) $order->user_email, (string) $guestEmail) === 0) {
             $hasAccess = true;
         }
 
@@ -1038,9 +1038,9 @@ class MyprofileController extends BaseController
         $guestToken = $session->get('guest_order_token', '', 'j2commerce');
         $guestEmail = $session->get('guest_order_email', '', 'j2commerce');
 
-        if (!empty($guestToken) && !empty($guestEmail)
-            && $guestToken === $order->token
-            && $guestEmail === $order->user_email) {
+        if (!empty($guestToken) && !empty($guestEmail) && !empty($order->token)
+            && hash_equals((string) $order->token, (string) $guestToken)
+            && strcasecmp((string) $order->user_email, (string) $guestEmail) === 0) {
             return true;
         }
 

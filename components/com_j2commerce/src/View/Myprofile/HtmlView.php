@@ -347,9 +347,9 @@ class HtmlView extends BaseHtmlView
             return true;
         }
 
-        if (!empty($guestToken) && !empty($guestEmail)
-            && $guestToken === $order->token
-            && $guestEmail === $order->user_email) {
+        if (!empty($guestToken) && !empty($guestEmail) && !empty($order->token)
+            && hash_equals((string) $order->token, $guestToken)
+            && strcasecmp((string) $order->user_email, $guestEmail) === 0) {
             return true;
         }
 
