@@ -14,9 +14,12 @@ namespace J2Commerce\Plugin\J2Commerce\PaymentCash\Extension;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPayGrantHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Base;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Payment;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\PluginLayoutTrait;
+use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Language;
 use Joomla\CMS\Language\Text;
@@ -345,6 +348,16 @@ final class PaymentCash extends CMSPlugin implements SubscriberInterface
         }
 
         if ($order->orderpayment_type !== $this->_name || !$this->getPayment()->validateHash($order)) {
+            $json['error'] = strip_tags(J2htmlHelper::translateKey($this->params->get('onerrorpayment', Text::_('PLG_J2COMMERCE_PAYMENT_CASH_INVALID_REQUEST'))));
+
+            return $json;
+        }
+
+        // A shopper's checkout settles an order still at New; a Take Payment context may settle
+        // any order it allows to be paid. Anything else was settled already and stays as it is.
+        $isNew = OrderStatusHelper::getType((int) $order->order_state_id) === OrderStatusHelper::TYPE_NEW;
+
+        if (!$isNew && !(CheckoutContextHelper::isActivated() && OrderPayGrantHelper::isPayable($order))) {
             $json['error'] = strip_tags(J2htmlHelper::translateKey($this->params->get('onerrorpayment', Text::_('PLG_J2COMMERCE_PAYMENT_CASH_INVALID_REQUEST'))));
 
             return $json;

@@ -24,6 +24,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPayGrantHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
@@ -62,6 +63,12 @@ class CheckoutController extends BaseController
      * into #__session.data on every request for the life of that session.
      */
     private const CUSTOMER_NOTE_MAX_LENGTH = 2000;
+
+    /** Seconds a submission waits for another placement on the same stock or discount. */
+    private const PLACEMENT_LOCK_WAIT = 10;
+
+    /** Named locks this request holds; MySQL drops them with the connection as a backstop. */
+    private array $placementLocks = [];
 
     public function display($cachable = false, $urlparams = []): static
     {
@@ -2245,6 +2252,12 @@ class CheckoutController extends BaseController
 
             try {
                 $vetoOrder = $this->getCartOrder();
+
+                // A retry under order_placed timing finds the cart emptied; the unplaced row stands in.
+                if (!$wasContextActivated && (!$vetoOrder instanceof CartOrder || !$vetoOrder->getItems())) {
+                    $vetoOrder = $this->storedOrderForValidation((string) $orderId) ?? $vetoOrder;
+                }
+
                 J2CommerceHelper::plugin()->event('AfterOrderValidate', [&$vetoOrder]);
             } catch (ExecutionFailureException | ConnectionFailureException | PrepareStatementFailureException $e) {
                 // Database faults also extend RuntimeException, so catch them before the plugin-veto arm.
@@ -2307,6 +2320,24 @@ class CheckoutController extends BaseController
             $orderTable->load(['order_id' => $orderId]);
         }
 
+        // A shopper-submitted payment acts on the order this session's confirm step primed,
+        // and on no other. Payment plugins read the order to settle from the request, so a
+        // request naming a different order than the one every gate below checks is refused.
+        // Prepayment forms post either the order number or the row id, so both are accepted.
+        if (!$tokenlessGatewayReturn && !$wasContextActivated) {
+            $requestOrderId = trim($this->input->getString('order_id', ''));
+
+            if (empty($orderTable->j2commerce_order_id)
+                || ($requestOrderId !== ''
+                    && $requestOrderId !== (string) $orderTable->order_id
+                    && $requestOrderId !== (string) $orderTable->j2commerce_order_id)
+            ) {
+                $this->refuseOutOfDateOrder();
+
+                return;
+            }
+        }
+
         // The confirm step persists an order and then keeps rendering while the cart
         // underneath it can still change — the coupon and voucher forms live in the
         // sidecart, which is on screen throughout. The step re-persists when those
@@ -2316,8 +2347,10 @@ class CheckoutController extends BaseController
         //
         // Deliberately narrow. It runs only where the order is still this session's
         // unfinished cart purchase: an off-site gateway return has already taken the
-        // money, a context order was never built from a cart, and a cart that has been
-        // emptied (order_placed timing, or a retry after one) has nothing to compare.
+        // money, and a context order was never built from a cart. Under order_placed
+        // timing a retry legitimately finds the cart emptied and has nothing to compare;
+        // under order_confirmed timing the cart is only emptied by a placed order, so no
+        // cart order there means this row is out of date too.
         // The surcharge is resolved from the payment method the stored row was saved
         // with, since that is the method that produced the stored total.
         if (!$tokenlessGatewayReturn
@@ -2326,6 +2359,28 @@ class CheckoutController extends BaseController
             && !empty($orderTable->j2commerce_order_id)
             && (int) ($orderTable->order_state_id ?? 0) === 5
         ) {
+            // Every check below reads limits that only a placed order consumes, so two
+            // submissions racing each other would both pass them. Placement on the same
+            // stock, coupon or voucher is serialised from here until the payment plugin
+            // has run, which is where an on-site payment places the order.
+            if (!$this->acquirePlacementLocks((string) $orderId)) {
+                $this->refuseOutOfDateOrder(Text::_('COM_J2COMMERCE_ERR_GENERIC'));
+
+                return;
+            }
+
+            // Re-read under the lock: a submission that waited on it may find the order
+            // already placed by the one that held it.
+            $orderTable->load(['order_id' => $orderId]);
+
+            if ((int) ($orderTable->order_state_id ?? 0) !== 5) {
+                $this->refuseOutOfDateOrder();
+
+                return;
+            }
+
+            $outOfDate = false;
+
             try {
                 // Built through the same two steps the confirm step used to produce the
                 // row on disk, so the two sides of the comparison cannot drift apart by
@@ -2334,44 +2389,28 @@ class CheckoutController extends BaseController
 
                 if ($currentOrder && $currentOrder->getItems()) {
                     $this->applyPaymentTo($currentOrder, (string) ($orderTable->orderpayment_type ?? ''));
+                    $outOfDate = !$this->orderMatchesCart($orderTable, $currentOrder);
                 } else {
-                    $currentOrder = null;
-                }
-
-                if ($currentOrder && !$this->orderMatchesCart($orderTable, $currentOrder)) {
-                    // Re-running the confirm step is what puts this right: it declines the
-                    // stale row, persists one built from the cart as it stands, and hands
-                    // the payment plugin the amount that comes out of it. So the step is
-                    // re-fetched rather than leaving the shopper holding a row that cannot
-                    // be paid for and no way to replace it.
-                    //
-                    // The shopper is told either way. Reaching here means the amount about
-                    // to be charged is not the amount on screen, and a redraw that says
-                    // nothing is indistinguishable from a button that did nothing.
-                    $message = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_ORDER_OUT_OF_DATE');
-                    $paction = $this->input->getString('paction', '');
-                    $isAjax  = $paction === 'process'
-                        || strtolower($this->input->server->getString('HTTP_X_REQUESTED_WITH', '')) === 'xmlhttprequest';
-
-                    if ($isAjax) {
-                        $this->jsonResponse([
-                            'success'         => false,
-                            'error'           => $message,
-                            'refresh_confirm' => true,
-                        ]);
-
-                        return;
-                    }
-
-                    $this->app->enqueueMessage($message, 'warning');
-                    $this->app->redirect($this->getCheckoutUrl());
-
-                    return;
+                    $outOfDate = $clearCartTiming !== 'order_placed';
                 }
             } catch (\Throwable $e) {
                 // The comparison could not be made. Refusing on that would strand a
-                // shopper whose order is fine, so the earlier gates stand alone here.
+                // shopper whose order is fine, so the discount and stock re-checks below stand alone.
                 Log::add('checkout.confirmPayment cart re-check failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            }
+
+            // Kept outside the try: the cart comparison is lenient, this is not. Coupon and
+            // voucher limits count placed orders only, so the row's discounts are checked
+            // again against whatever was placed since the confirm step stored them.
+            // Stock is read from the row rather than the cart: two rows confirmed from one
+            // shared cart, or a retry whose cart is already empty, carry no other record.
+            if ($outOfDate
+                || !$this->discountsStillRedeemable($orderTable)
+                || !$this->orderStockAvailable((string) $orderId)
+            ) {
+                $this->refuseOutOfDateOrder();
+
+                return;
             }
         }
 
@@ -2450,7 +2489,10 @@ class CheckoutController extends BaseController
             $orderTable->order_state_id     = 1;
             $orderTable->transaction_status = 'Completed';
 
-            if ($orderTable->store() && !$wasConfirmed) {
+            $stored = $orderTable->store();
+            $this->releasePlacementLocks();
+
+            if ($stored && !$wasConfirmed) {
                 J2CommerceHelper::plugin()->event('AfterConfirmFreeProduct', [$orderTable]);
 
                 // Payment succeeded — clear cart and checkout session (skip if already cleared)
@@ -2468,7 +2510,11 @@ class CheckoutController extends BaseController
                 'order_state_id' => 1,
             ];
 
-            $results = J2CommerceHelper::plugin()->eventWithArray('PostPayment', [$orderpaymentType, $values]);
+            try {
+                $results = J2CommerceHelper::plugin()->eventWithArray('PostPayment', [$orderpaymentType, $values]);
+            } finally {
+                $this->releasePlacementLocks();
+            }
 
             // Check if a payment plugin returned JSON (AJAX paction=process).
             // Plugins return JSON instead of calling $app->close() so that
@@ -2678,6 +2724,268 @@ class CheckoutController extends BaseController
         J2CommerceHelper::plugin()->event('CheckoutCleanup', [$session]);
 
         return $cartCleared;
+    }
+
+    /** Re-runs the confirm step, which replaces the stale row; it always says why, so it never reads as a dead button. */
+    private function refuseOutOfDateOrder(?string $message = null): void
+    {
+        $this->releasePlacementLocks();
+
+        $message ??= Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_ORDER_OUT_OF_DATE');
+        $isAjax  = $this->input->getString('paction', '') === 'process'
+            || strtolower($this->input->server->getString('HTTP_X_REQUESTED_WITH', '')) === 'xmlhttprequest';
+
+        if ($isAjax) {
+            $this->jsonResponse([
+                'success'         => false,
+                'error'           => $message,
+                'refresh_confirm' => true,
+            ]);
+
+            return;
+        }
+
+        $this->app->enqueueMessage($message, 'warning');
+        $this->app->redirect($this->getCheckoutUrl());
+    }
+
+    /** Coupon and voucher limits re-applied to an unplaced order's discounts, excluding its own rows. */
+    private function discountsStillRedeemable(object $orderTable): bool
+    {
+        $orderId = (string) $orderTable->order_id;
+        $factory = $this->getMvcFactory();
+        $rows    = $factory->createModel('Order', 'Administrator', ['ignore_request' => true])->getOrderDiscounts($orderId);
+
+        if (!$rows) {
+            return true;
+        }
+
+        $voucherModel = $factory->createModel('Voucher', 'Administrator', ['ignore_request' => true]);
+        $couponModel  = $factory->createModel('Coupon', 'Administrator', ['ignore_request' => true]);
+
+        foreach ($rows as $row) {
+            if ($row->discount_type === 'voucher') {
+                // Balances are drawn down by amount plus tax, the way getRemainingBalance() sums them.
+                $amount = round((float) $row->discount_amount + (float) $row->discount_tax, 2);
+
+                if ($voucherModel->getRemainingBalance((int) $row->discount_entity_id, $orderId) + 0.005 < $amount) {
+                    return false;
+                }
+
+                continue;
+            }
+
+            if ($row->discount_type !== 'coupon') {
+                continue;
+            }
+
+            $coupon = $couponModel->getCouponByCode((string) $row->discount_code);
+
+            if (!$coupon) {
+                return false;
+            }
+
+            $couponId = (int) $coupon->j2commerce_coupon_id;
+            $maxUses  = (int) $coupon->max_uses;
+
+            if ($maxUses > 0 && $couponModel->getCouponHistory($couponId, '', $orderId) >= $maxUses) {
+                return false;
+            }
+
+            $perCustomer = (int) $coupon->max_customer_uses;
+
+            if ($perCustomer < 1) {
+                continue;
+            }
+
+            $userId = (int) ($orderTable->user_id ?? 0);
+            $email  = strtolower(trim((string) ($orderTable->user_email ?? '')));
+
+            if (($userId > 0 && $couponModel->getCouponHistory($couponId, (string) $userId, $orderId) >= $perCustomer)
+                || ($email !== '' && $couponModel->getCouponHistoryByEmail($couponId, $email, $orderId) >= $perCustomer)
+            ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // One named lock per stock-limited variant, coupon and voucher, taken in sorted order. Named
+    // rather than a row lock: it outlives the gateway call, where an open transaction would
+    // roll back the payment plugin's own writes on any failure.
+    private function acquirePlacementLocks(string $orderId): bool
+    {
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+        if ($db->getServerType() !== 'mysql') {
+            return true;
+        }
+
+        try {
+            // Only a variant whose stock can run out needs serialising.
+            $query = $db->getQuery(true)
+                ->select('DISTINCT ' . $db->quoteName('oi.variant_id'))
+                ->from($db->quoteName('#__j2commerce_orderitems', 'oi'))
+                ->join('INNER', $db->quoteName('#__j2commerce_variants', 'v'), $db->quoteName('v.j2commerce_variant_id') . ' = ' . $db->quoteName('oi.variant_id'))
+                ->where($db->quoteName('oi.order_id') . ' = :orderId')
+                ->where($db->quoteName('v.manage_stock') . ' = 1')
+                ->where($db->quoteName('v.allow_backorder') . ' = 0')
+                ->bind(':orderId', $orderId);
+
+            $keys = array_map(static fn ($id): string => 'v:' . (int) $id, $db->setQuery($query)->loadColumn() ?: []);
+
+            $discounts = $this->getMvcFactory()
+                ->createModel('Order', 'Administrator', ['ignore_request' => true])
+                ->getOrderDiscounts($orderId);
+
+            foreach ($discounts as $row) {
+                $keys[] = match ($row->discount_type) {
+                    'voucher' => 'g:' . (int) $row->discount_entity_id,
+                    'coupon'  => 'c:' . md5(strtolower(trim((string) $row->discount_code))),
+                    default   => '',
+                };
+            }
+
+            $keys = array_values(array_unique(array_filter($keys)));
+            sort($keys, SORT_STRING);
+
+            // Lock names are server-wide, so they carry the site's database and prefix.
+            $scope = substr(md5($this->app->get('db') . '.' . $db->getPrefix()), 0, 8);
+            $wait  = self::PLACEMENT_LOCK_WAIT;
+
+            foreach ($keys as $key) {
+                $name  = 'j2c' . $scope . ':' . $key;
+                $query = $db->getQuery(true)
+                    ->select('GET_LOCK(:name, :wait)')
+                    ->bind(':name', $name)
+                    ->bind(':wait', $wait, ParameterType::INTEGER);
+
+                if ((int) $db->setQuery($query)->loadResult() !== 1) {
+                    $this->releasePlacementLocks();
+
+                    return false;
+                }
+
+                $this->placementLocks[] = $name;
+            }
+        } catch (\Throwable $e) {
+            Log::add('checkout.confirmPayment placement lock failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->releasePlacementLocks();
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function releasePlacementLocks(): void
+    {
+        if (!$this->placementLocks) {
+            return;
+        }
+
+        $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+        foreach ($this->placementLocks as $name) {
+            try {
+                $db->setQuery($db->getQuery(true)->select('RELEASE_LOCK(:name)')->bind(':name', $name))->loadResult();
+            } catch (\Throwable $e) {
+                Log::add('checkout.confirmPayment placement lock release failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
+            }
+        }
+
+        $this->placementLocks = [];
+    }
+
+    /** Stock checked from the stored lines by the same rules the confirm step applies to the cart. */
+    private function orderStockAvailable(string $orderId): bool
+    {
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['variant_id', 'orderitem_quantity']))
+            ->from($db->quoteName('#__j2commerce_orderitems'))
+            ->where($db->quoteName('order_id') . ' = :orderId')
+            ->where($db->quoteName('variant_id') . ' > 0')
+            ->bind(':orderId', $orderId);
+
+        $wanted = [];
+
+        foreach ($db->setQuery($query)->loadObjectList() ?: [] as $line) {
+            $wanted[(int) $line->variant_id] = ($wanted[(int) $line->variant_id] ?? 0) + (int) $line->orderitem_quantity;
+        }
+
+        foreach ($wanted as $variantId => $quantity) {
+            $variantTable = $this->getMvcFactory()->createTable('Variant', 'Administrator');
+
+            if (!$variantTable || !$variantTable->load($variantId)) {
+                continue;
+            }
+
+            $variant           = (object) $variantTable->getProperties();
+            $variant->quantity = ProductHelper::getStockQuantity($variantId);
+
+            if (!ProductHelper::checkStockStatus($variant, $quantity)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /** The unplaced row shaped for AfterOrderValidate listeners: getItems() plus the order columns, not a CartOrder. */
+    private function storedOrderForValidation(string $orderId): ?object
+    {
+        if ($orderId === '') {
+            return null;
+        }
+
+        $table = $this->getMvcFactory()->createTable('Order', 'Administrator');
+
+        if (!$table || !$table->load(['order_id' => $orderId]) || (int) $table->order_state_id !== 5) {
+            return null;
+        }
+
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName([
+                'j2commerce_orderitem_id', 'orderitem_type', 'cartitem_id', 'product_id', 'product_type',
+                'variant_id', 'vendor_id', 'orderitem_sku', 'orderitem_name', 'orderitem_quantity',
+                'orderitem_price', 'orderitem_option_price', 'orderitem_params',
+            ]))
+            ->from($db->quoteName('#__j2commerce_orderitems'))
+            ->where($db->quoteName('order_id') . ' = :orderId')
+            ->bind(':orderId', $orderId);
+
+        $items = $db->setQuery($query)->loadObjectList() ?: [];
+
+        if (!$items) {
+            return null;
+        }
+
+        foreach ($items as $item) {
+            $item->product_qty     = (float) $item->orderitem_quantity;
+            $item->cartitem_params = $item->orderitem_params;
+        }
+
+        $order = new class ($items) extends \stdClass {
+            public function __construct(private array $items)
+            {
+            }
+
+            public function getItems(): array
+            {
+                return $this->items;
+            }
+        };
+
+        foreach ($table->getProperties() as $key => $value) {
+            if ($key !== 'items') {
+                $order->{$key} = $value;
+            }
+        }
+
+        return $order;
     }
 
     /**
