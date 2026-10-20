@@ -42,7 +42,8 @@ final class PayPalRefunds
             'POST',
             "/v2/payments/captures/$captureId/refund",
             $body ?: null,
-            ['PayPal-Request-Id: ' . $requestId]
+            // The minimal default reply has no amount, which a full refund needs for the ledger.
+            ['PayPal-Request-Id: ' . $requestId, 'Prefer: return=representation']
         );
     }
 

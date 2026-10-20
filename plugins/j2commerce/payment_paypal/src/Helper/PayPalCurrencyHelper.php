@@ -46,6 +46,23 @@ final class PayPalCurrencyHelper
         return number_format($amount, self::decimals($currencyCode), '.', '');
     }
 
+    /** Compared as the formatted strings PayPal is sent, so only the exact charged figure matches. */
+    public static function sameAmount(float $charged, float $expected, string $currencyCode): bool
+    {
+        return self::format($charged, $currencyCode) === self::format($expected, $currencyCode);
+    }
+
+    /** At or above the target at currency precision; a sum of ledger rows can sit a float hair under it. */
+    public static function covers(float $amount, float $target, string $currencyCode): bool
+    {
+        return $amount > $target || self::sameAmount($amount, $target, $currencyCode);
+    }
+
+    public static function orderCurrency(object $order): string
+    {
+        return strtoupper(trim((string) ($order->currency_code ?? ''))) ?: 'USD';
+    }
+
     /**
      * @return array<string>
      */

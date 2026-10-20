@@ -356,6 +356,9 @@
                             debugLog('createOrder: Response:', { status: response.status, data });
 
                             if (!response.ok || !data.success) {
+                                if (data.pending) {
+                                    container.hidden = true;
+                                }
                                 throw new Error(data.error || 'Failed to create PayPal order');
                             }
 
@@ -394,7 +397,13 @@
                             debugLog('onApprove: Capture response:', { status: response.status, result });
 
                             if (!response.ok || !result.success) {
-                                if (result.error && result.error.includes('INSTRUMENT_DECLINED')) {
+                                // PayPal holds the payment for review: paying again would charge twice.
+                                if (result.pending) {
+                                    container.hidden = true;
+                                    showError(result.error);
+                                    return;
+                                }
+                                if (result.code === 'INSTRUMENT_DECLINED') {
                                     showError('Your payment method was declined. Please try a different payment method.');
                                     return data.restart();
                                 }

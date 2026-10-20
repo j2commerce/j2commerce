@@ -275,7 +275,7 @@ final class PayPalSubscriptions
             ];
         }
 
-        $currency = strtoupper((string) ($order->currency_code ?? 'USD'));
+        $currency = PayPalCurrencyHelper::orderCurrency($order);
         $amount   = PayPalCurrencyHelper::format(CurrencyHelper::convertForOrder((float) ($order->order_total ?? $subscription->renewal_amount ?? 0), $order), $currency);
         $body     = [
             'note'         => 'J2Commerce renewal — Order #' . ($order->order_id ?? ''),

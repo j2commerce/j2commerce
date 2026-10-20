@@ -3271,7 +3271,10 @@ class CheckoutController extends BaseController
         $result = $event->getArgument('result', ['success' => false, 'error' => 'No payment plugin responded']);
 
         if (!empty($result['success']) && !empty($orderId)) {
-            $this->sendOrderEmails($orderId);
+            // A plugin whose settlement owner already sent the emails says so.
+            if (($result['send_emails'] ?? true) !== false) {
+                $this->sendOrderEmails($orderId);
+            }
 
             // Clear the cart and set up guest session data so the confirmation view
             // can authorise the guest. confirmPayment() normally handles this but is

@@ -15,6 +15,7 @@ namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderTransactionHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
@@ -241,7 +242,7 @@ final class PayPalWebhooks
             $expectedAmount === null
             || $expectedCurrency === ''
             || $saleCurrency !== $expectedCurrency
-            || abs($this->roundToCurrency($saleAmount, $saleCurrency) - $expectedAmount) > 0.001
+            || !PayPalCurrencyHelper::sameAmount($saleAmount, $expectedAmount, $saleCurrency)
         ) {
             Factory::getApplication()->getLogger()->error(
                 'PayPal webhook renewal amount mismatch — manual review required',
@@ -464,10 +465,13 @@ final class PayPalWebhooks
         // writing any paid state — a mismatched capture is logged for manual review.
         $captureAmount   = (float) ($resource['amount']['value'] ?? 0);
         $captureCurrency = (string) ($resource['amount']['currency_code'] ?? '');
-        $expectedCcy     = strtoupper(trim((string) ($orderTable->currency_code ?? 'USD')));
+        $expectedCcy     = $this->orderCurrency($orderTable);
         $expectedAmount  = $this->roundToCurrency(CurrencyHelper::gatewayAmount($orderTable), $expectedCcy);
 
-        if ($captureCurrency !== $expectedCcy || abs($captureAmount - $expectedAmount) > 0.01) {
+        if (
+            $captureCurrency !== $expectedCcy
+            || !PayPalCurrencyHelper::sameAmount($captureAmount, $expectedAmount, $expectedCcy)
+        ) {
             Factory::getApplication()->getLogger()->error(
                 'PayPal webhook capture amount mismatch — manual review required',
                 [
@@ -495,6 +499,29 @@ final class PayPalWebhooks
 
         $confirmedStateId = PayPalOrderStates::resolve($params, PayPalOrderStates::CONFIRMED);
 
+        // The checkout capture may settle this order too. Only the claim owner stores it and runs
+        // AfterPayment and the emails; that includes a held payment, and a checkout response the
+        // buyer never received.
+        $orderPk     = (int) $orderTable->j2commerce_order_id;
+        $priorStatus = (string) ($orderTable->transaction_status ?? '');
+
+        $claim = PayPalOrderStates::claimSettlement($this->db, $orderPk, $params);
+
+        if ($claim === null) {
+            // The claim is held but the owner has not stored the order yet (or died before it
+            // could): ask PayPal to deliver this event again.
+            if ($orderTable->load($orderPk) && PayPalOrderStates::isSettlementStored($orderTable, $params)) {
+                return ['status' => 200, 'message' => 'Order already settled'];
+            }
+
+            Factory::getApplication()->getLogger()->error(
+                'PayPal capture settlement claimed but not stored — staff review if this repeats',
+                ['category' => 'j2commerce.paypal', 'order_id' => $orderTable->order_id ?? $orderPk]
+            );
+
+            return ['status' => 503, 'message' => 'Settlement in progress'];
+        }
+
         // State change and transaction fields are written on the same table instance in one
         // store() so a second, independent load/store pair can't clobber either write.
         if ($confirmedStateId > 0) {
@@ -508,15 +535,57 @@ final class PayPalWebhooks
         $transactionDetails['capture_completed_at'] = date('Y-m-d H:i:s');
         $orderTable->transaction_details            = json_encode($transactionDetails);
 
-        if (!TableSaveHelper::store($orderTable, 'paypal.webhook.capture_completed')) {
+        $renewed = null;
+        $lost    = false;
+
+        try {
+            $renewed = PayPalOrderStates::confirmClaim($this->db, $orderPk, $claim);
+            $lost    = $renewed === null;
+            $stored  = !$lost && TableSaveHelper::store($orderTable, 'paypal.webhook.capture_completed');
+        } catch (\Throwable $e) {
+            Factory::getApplication()->getLogger()->error(
+                'PayPal webhook capture store threw: ' . $e->getMessage(),
+                ['category' => 'j2commerce.paypal', 'order_id' => $orderTable->order_id]
+            );
+            $stored = false;
+        }
+
+        if (!$stored) {
+            // A takeover replaced a claim this delivery held too long: the new owner settles it.
+            if ($lost) {
+                return ['status' => 503, 'message' => 'Settlement taken over'];
+            }
+
+            // Hand the claim back, so PayPal's redelivery can settle the order.
+            PayPalOrderStates::releaseSettlement($this->db, $orderPk, $renewed ?? $claim, $priorStatus);
+
             return ['status' => 500, 'message' => 'Capture write failed'];
         }
 
-        OrderHistoryHelper::add(
-            orderId: (string) $orderTable->order_id,
-            comment: Text::sprintf('COM_J2COMMERCE_PAYPAL_PAYMENT_COMPLETED', $captureId),
-            orderStateId: (int) $orderTable->order_state_id,
-        );
+        // The order is stored: nothing past this point may stop AfterPayment and the emails.
+        try {
+            OrderHistoryHelper::add(
+                orderId: (string) $orderTable->order_id,
+                comment: Text::sprintf('COM_J2COMMERCE_PAYPAL_PAYMENT_COMPLETED', $captureId),
+                orderStateId: (int) $orderTable->order_state_id,
+            );
+        } catch (\Throwable $e) {
+            Factory::getApplication()->getLogger()->error(
+                'PayPal webhook history write failed: ' . $e->getMessage(),
+                ['category' => 'j2commerce.paypal', 'order_id' => $orderTable->order_id]
+            );
+        }
+
+        try {
+            J2CommerceHelper::plugin()->eventWithArray('AfterPayment', [$orderTable]);
+        } catch (\Throwable $e) {
+            Factory::getApplication()->getLogger()->error(
+                'PayPal webhook AfterPayment listener failed: ' . $e->getMessage(),
+                ['category' => 'j2commerce.paypal', 'order_id' => $orderTable->order_id]
+            );
+        }
+
+        $this->sendOrderEmails((string) $orderTable->order_id, true);
 
         return ['status' => 200, 'message' => 'Capture completed'];
     }
@@ -556,15 +625,32 @@ final class PayPalWebhooks
 
         // A redelivered or out-of-order event must not rewrite a status the order already
         // holds: OrderTable::store() moves stock and grants downloads on every transition.
-        if ($pendingStateId > 0 && (int) $order->order_state_id === $pendingStateId) {
+        if (
+            $pendingStateId > 0
+            && (int) $order->order_state_id === $pendingStateId
+            && strtoupper((string) ($order->transaction_status ?? '')) === 'PENDING'
+        ) {
             return ['status' => 200, 'message' => 'Order already in the requested state'];
         }
 
-        $this->updateOrderStatus(
+        // Recorded as held even when the checkout never saved its own result, so no second
+        // PayPal order can be started for it.
+        $write = $this->updateOrderStatus(
             $order,
             $pendingStateId,
-            Text::_('COM_J2COMMERCE_PAYPAL_PAYMENT_PENDING')
+            Text::_('COM_J2COMMERCE_PAYPAL_PAYMENT_PENDING'),
+            'PENDING',
+            (string) ($resource['id'] ?? ''),
+            true
         );
+
+        if ($write === 'failed') {
+            return ['status' => 500, 'message' => 'Order update failed'];
+        }
+
+        if ($write === 'skipped') {
+            return ['status' => 409, 'message' => 'Order already settled'];
+        }
 
         return ['status' => 200, 'message' => 'Capture pending'];
     }
@@ -604,15 +690,38 @@ final class PayPalWebhooks
 
         // A redelivered or out-of-order event must not rewrite a status the order already
         // holds: OrderTable::store() moves stock and grants downloads on every transition.
-        if ($failedStateId > 0 && (int) $order->order_state_id === $failedStateId) {
+        if (
+            $failedStateId > 0
+            && (int) $order->order_state_id === $failedStateId
+            && strtoupper((string) ($order->transaction_status ?? '')) === 'DENIED'
+        ) {
             return ['status' => 200, 'message' => 'Order already in the requested state'];
         }
 
-        $this->updateOrderStatus(
+        // The checkout told this buyer the payment was pending and emptied the cart, so the
+        // decline is the first news they get of it.
+        $wasHeld = strtoupper((string) ($order->transaction_status ?? '')) === 'PENDING';
+
+        $write = $this->updateOrderStatus(
             $order,
             $failedStateId,
-            Text::_('COM_J2COMMERCE_PAYPAL_PAYMENT_DENIED')
+            Text::_('COM_J2COMMERCE_PAYPAL_PAYMENT_DENIED'),
+            'DENIED',
+            '',
+            true
         );
+
+        if ($write === 'failed') {
+            return ['status' => 500, 'message' => 'Order update failed'];
+        }
+
+        if ($write === 'skipped') {
+            return ['status' => 409, 'message' => 'Order already settled'];
+        }
+
+        if ($wasHeld) {
+            $this->sendOrderEmails((string) $order->order_id, false);
+        }
 
         return ['status' => 200, 'message' => 'Capture denied'];
     }
@@ -642,10 +751,14 @@ final class PayPalWebhooks
             return ['status' => 400, 'message' => 'PayPal order id not bound to local order'];
         }
 
-        // A partial refund is not a refunded order: the status moves only when the whole
-        // charge has come back.
-        $refundAmount  = $this->roundToCurrency((float) ($resource['amount']['value'] ?? 0), $this->orderCurrency($order));
-        $chargedAmount = $this->roundToCurrency(CurrencyHelper::gatewayAmount($order), $this->orderCurrency($order));
+        $currency = $this->orderCurrency($order);
+
+        if (!$this->matchesOrderCurrency($order, $resource, $currency)) {
+            return ['status' => 409, 'message' => 'Currency mismatch'];
+        }
+
+        $refundAmount  = $this->roundToCurrency((float) ($resource['amount']['value'] ?? 0), $currency);
+        $chargedAmount = CurrencyHelper::gatewayAmount($order);
 
         if ($refundAmount <= 0) {
             return ['status' => 400, 'message' => 'Refund amount missing'];
@@ -653,9 +766,16 @@ final class PayPalWebhooks
 
         // order_refund is not written directly: it is a base-currency column that addReversal()
         // re-syncs from the ledger.
-        $this->recordReversal($order, $resource, $refundAmount);
+        $recorded = $this->recordReversal($order, $resource, $refundAmount);
 
-        $isFullyRefunded = $chargedAmount > 0 && $refundAmount + 0.001 >= $chargedAmount;
+        // A partial refund is not a refunded order: the status moves only when the whole
+        // charge has come back, counting earlier partial refunds from the ledger.
+        $orderPk         = (int) $order->j2commerce_order_id;
+        $refundedTotal   = OrderTransactionHelper::hasLedger($orderPk)
+            ? OrderTransactionHelper::getRefunded($orderPk) + ($recorded ? 0.0 : $refundAmount)
+            : $refundAmount;
+        $isFullyRefunded = $chargedAmount > 0
+            && PayPalCurrencyHelper::covers($refundedTotal, $chargedAmount, $currency);
         $refundedStateId = $isFullyRefunded
             ? PayPalOrderStates::resolve($params, PayPalOrderStates::REFUNDED)
             : 0;
@@ -664,11 +784,19 @@ final class PayPalWebhooks
             return ['status' => 200, 'message' => 'Order already in the requested state'];
         }
 
-        $this->updateOrderStatus(
+        $write = $this->updateOrderStatus(
             $order,
             $refundedStateId,
             Text::_('COM_J2COMMERCE_PAYPAL_PAYMENT_REFUNDED')
         );
+
+        if ($write === 'failed') {
+            return ['status' => 500, 'message' => 'Order update failed'];
+        }
+
+        if ($write === 'skipped') {
+            return ['status' => 409, 'message' => 'Order already settled'];
+        }
 
         return ['status' => 200, 'message' => $isFullyRefunded ? 'Capture refunded' : 'Partial refund, order status unchanged'];
     }
@@ -698,25 +826,44 @@ final class PayPalWebhooks
             return ['status' => 400, 'message' => 'PayPal order id not bound to local order'];
         }
 
+        $currency = $this->orderCurrency($order);
+
+        if (!$this->matchesOrderCurrency($order, $resource, $currency)) {
+            return ['status' => 409, 'message' => 'Currency mismatch'];
+        }
+
         $this->recordReversal(
             $order,
             $resource,
-            $this->roundToCurrency((float) ($resource['amount']['value'] ?? 0), $this->orderCurrency($order))
+            $this->roundToCurrency((float) ($resource['amount']['value'] ?? 0), $currency)
         );
 
         $failedStateId = PayPalOrderStates::resolve($params, PayPalOrderStates::FAILED);
 
         // A redelivered or out-of-order event must not rewrite a status the order already
         // holds: OrderTable::store() moves stock and grants downloads on every transition.
-        if ($failedStateId > 0 && (int) $order->order_state_id === $failedStateId) {
+        if (
+            $failedStateId > 0
+            && (int) $order->order_state_id === $failedStateId
+            && strtoupper((string) ($order->transaction_status ?? '')) === 'REVERSED'
+        ) {
             return ['status' => 200, 'message' => 'Order already in the requested state'];
         }
 
-        $this->updateOrderStatus(
+        $write = $this->updateOrderStatus(
             $order,
             $failedStateId,
-            Text::_('COM_J2COMMERCE_PAYPAL_PAYMENT_REVERSED') . ' - FLAG FOR REVIEW'
+            Text::_('COM_J2COMMERCE_PAYPAL_PAYMENT_REVERSED') . ' - FLAG FOR REVIEW',
+            'REVERSED'
         );
+
+        if ($write === 'failed') {
+            return ['status' => 500, 'message' => 'Order update failed'];
+        }
+
+        if ($write === 'skipped') {
+            return ['status' => 409, 'message' => 'Order already settled'];
+        }
 
         return ['status' => 200, 'message' => 'Capture reversed'];
     }
@@ -764,7 +911,7 @@ final class PayPalWebhooks
      *
      * @param array<string, mixed> $resource
      */
-    private function recordReversal(\stdClass $order, array $resource, float $amount): void
+    private function recordReversal(\stdClass $order, array $resource, float $amount): bool
     {
         $orderPk   = (int) $order->j2commerce_order_id;
         $txnId     = (string) ($resource['id'] ?? '');
@@ -772,16 +919,20 @@ final class PayPalWebhooks
             ?: (string) ($order->transaction_id ?? '');
 
         if ($amount <= 0 || $txnId === '' || $captureId === '' || !OrderTransactionHelper::hasLedger($orderPk)) {
-            return;
+            return false;
         }
 
         try {
             OrderTransactionHelper::addReversal($orderPk, 'payment_paypal', $txnId, $captureId, $amount);
+
+            return true;
         } catch (\InvalidArgumentException $e) {
             Factory::getApplication()->getLogger()->error(
                 'PayPal reversal not recorded in the ledger: ' . $e->getMessage(),
                 ['category' => 'j2commerce.paypal']
             );
+
+            return false;
         }
     }
 
@@ -795,16 +946,29 @@ final class PayPalWebhooks
         $confirmed = PayPalOrderStates::resolve($params, PayPalOrderStates::CONFIRMED);
         $refunded  = PayPalOrderStates::resolve($params, PayPalOrderStates::REFUNDED);
 
+        // A completed transaction counts even where no Complete status resolves and the order
+        // status was left unchanged.
         return ($confirmed > 0 && $current === $confirmed)
             || ($refunded > 0 && $current === $refunded)
-            || (float) ($order->order_refund ?? 0) > 0;
+            || (float) ($order->order_refund ?? 0) > 0
+            || PayPalOrderStates::isSettledOrSettling((string) ($order->transaction_status ?? ''));
     }
 
-    /**
-     * PayPal is billed the plan's formatted price, so the expectation is rounded the same way
-     * before comparison. A zero-decimal currency rounds to whole units, and comparing an
-     * unrounded product against that differs by up to 0.5 -- fifty times the old tolerance.
-     */
+    private function sendOrderEmails(string $orderId, bool $notifyAdmin): void
+    {
+        try {
+            Factory::getApplication()->bootComponent('com_j2commerce')->getMVCFactory()
+                ->createModel('Order', 'Administrator')
+                ->sendOrderNotification($orderId, true, $notifyAdmin);
+        } catch (\Throwable $e) {
+            Factory::getApplication()->getLogger()->error(
+                'PayPal webhook order email failed: ' . $e->getMessage(),
+                ['category' => 'j2commerce.paypal', 'order_id' => $orderId]
+            );
+        }
+    }
+
+    /** PayPal is billed the plan's formatted price, so the expectation is rounded the same way. */
     private function roundToCurrency(float $amount, string $currency): float
     {
         return (float) PayPalCurrencyHelper::format($amount, $currency);
@@ -814,11 +978,31 @@ final class PayPalWebhooks
      * Mirrors the fallback the plugin prices a plan with: currency_code is NOT NULL but may
      * be empty on a migrated row, and the plan would have been priced in USD in that case.
      */
-    private function orderCurrency(\stdClass $order): string
+    private function orderCurrency(object $order): string
     {
-        $currency = (string) ($order->currency_code ?? '');
+        return PayPalCurrencyHelper::orderCurrency($order);
+    }
 
-        return strtoupper(trim($currency)) ?: 'USD';
+    /** Capture and renewal already check currency; a refund in another currency is not this order's money. */
+    private function matchesOrderCurrency(\stdClass $order, array $resource, string $currency): bool
+    {
+        $eventCurrency = strtoupper(trim((string) ($resource['amount']['currency_code'] ?? '')));
+
+        if ($eventCurrency === '' || $eventCurrency === $currency) {
+            return true;
+        }
+
+        Factory::getApplication()->getLogger()->error(
+            'PayPal webhook refund/reversal currency mismatch — manual review required',
+            [
+                'category' => 'j2commerce.paypal',
+                'order_id' => $order->order_id,
+                'received' => $eventCurrency,
+                'expected' => $currency,
+            ]
+        );
+
+        return false;
     }
 
     /**
@@ -902,10 +1086,21 @@ final class PayPalWebhooks
         return null;
     }
 
-    private function updateOrderStatus(\stdClass $order, int $newStateId, string $comment): void
-    {
-        if ($newStateId <= 0) {
-            return;
+    /**
+     * A non-empty $transactionStatus replaces the stored one, so a denied capture no longer reads as held.
+     *
+     * @return 'done'|'skipped'|'failed'
+     */
+    private function updateOrderStatus(
+        \stdClass $order,
+        int $newStateId,
+        string $comment,
+        string $transactionStatus = '',
+        string $transactionId = '',
+        bool $unlessSettled = false
+    ): string {
+        if ($newStateId <= 0 && $transactionStatus === '') {
+            return 'done';
         }
 
         $orderTable = Factory::getApplication()
@@ -913,21 +1108,72 @@ final class PayPalWebhooks
             ->getMVCFactory()
             ->createTable('Order', 'Administrator');
 
-        // An unloaded table is treated as new by store(), which would insert a placeholder
-        // order rather than update this one.
-        if (!$orderTable->load(['order_id' => $order->order_id])) {
-            return;
-        }
-        $orderTable->order_state_id = $newStateId;
+        // The row is locked from the settled check to the store, so a settlement claim that lands
+        // meanwhile waits rather than being overwritten by a pending or denied status.
+        $this->db->transactionStart();
 
-        if (!TableSaveHelper::store($orderTable, 'paypal.webhook.order_status')) {
-            return;
+        try {
+            // The query builder has no MySQL row-lock clause, so the statement is written out; it
+            // stays a query object so the order id remains a bound value.
+            $orderPk = (int) $order->j2commerce_order_id;
+            $lock    = $this->db->createQuery()
+                ->setQuery(
+                    'SELECT ' . $this->db->quoteName('transaction_status')
+                    . ' FROM ' . $this->db->quoteName('#__j2commerce_orders')
+                    . ' WHERE ' . $this->db->quoteName('j2commerce_order_id') . ' = :pk FOR UPDATE'
+                )
+                ->bind(':pk', $orderPk, ParameterType::INTEGER);
+            $current = (string) $this->db->setQuery($lock)->loadResult();
+
+            if ($unlessSettled && PayPalOrderStates::isSettledOrSettling($current)) {
+                $this->db->transactionCommit();
+
+                return 'skipped';
+            }
+
+            // An unloaded table is treated as new by store(), which would insert a placeholder
+            // order rather than update this one.
+            if (!$orderTable->load(['order_id' => $order->order_id])) {
+                $this->db->transactionRollback();
+
+                return 'failed';
+            }
+
+            if ($newStateId > 0) {
+                $orderTable->order_state_id = $newStateId;
+            }
+
+            if ($transactionStatus !== '') {
+                $orderTable->transaction_status = $transactionStatus;
+            }
+
+            if ($transactionId !== '') {
+                $orderTable->transaction_id = $transactionId;
+            }
+
+            if (!TableSaveHelper::store($orderTable, 'paypal.webhook.order_status')) {
+                $this->db->transactionRollback();
+
+                return 'failed';
+            }
+
+            $this->db->transactionCommit();
+        } catch (\Throwable $e) {
+            $this->db->transactionRollback();
+            Factory::getApplication()->getLogger()->error(
+                'PayPal webhook status write failed: ' . $e->getMessage(),
+                ['category' => 'j2commerce.paypal', 'order_id' => $order->order_id]
+            );
+
+            return 'failed';
         }
 
         OrderHistoryHelper::add(
             orderId: (string) $order->order_id,
             comment: $comment,
-            orderStateId: $newStateId,
+            orderStateId: (int) $orderTable->order_state_id,
         );
+
+        return 'done';
     }
 }
