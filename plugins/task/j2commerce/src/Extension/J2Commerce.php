@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\Task\J2Commerce\Extension;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CartReminderHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderCascadeHelper;
@@ -71,6 +72,10 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             'method'          => 'scheduledTick',
             'form'            => 'scheduledTick',
         ],
+        'j2commerce.sendCartReminders' => [
+            'langConstPrefix' => 'PLG_TASK_J2COMMERCE_SEND_CART_REMINDERS',
+            'method'          => 'sendCartReminders',
+        ],
     ];
 
     protected $autoloadLanguage = true;
@@ -123,6 +128,25 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $dispatcher->dispatch('onJ2CommerceProcessCron', new GenericEvent('onJ2CommerceProcessCron', ['command' => 'clear_cart']));
 
         $this->logTask(\sprintf('Cleared %d outdated cart(s) and their items.', $count));
+
+        return Status::OK;
+    }
+
+    private function sendCartReminders(ExecuteTaskEvent $event): int
+    {
+        if (!CartReminderHelper::isEnabled()) {
+            $this->logTask('Cart reminder emails are switched off in the J2Commerce Emails options.');
+
+            return Status::OK;
+        }
+
+        if (!CartReminderHelper::canBuildLinks()) {
+            $this->logTask('No cart reminders sent: set the Email Site URL in the J2Commerce Emails options (or live_site in configuration.php, or pass --live-site to a command-line run) so the links in the email point at the store.');
+
+            return Status::OK;
+        }
+
+        $this->logTask(\sprintf('Sent %d cart reminder email(s).', CartReminderHelper::sendDue()));
 
         return Status::OK;
     }

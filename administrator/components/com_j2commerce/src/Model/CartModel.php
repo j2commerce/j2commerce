@@ -402,6 +402,7 @@ class CartModel extends BaseDatabaseModel
     protected function triggerAfterAddCartItem(object $item): void
     {
         CartHelper::flushCartCounts();
+        CartHelper::touchCart((int) ($item->cart_id ?? 0));
 
         try {
             J2CommerceHelper::plugin()->event('AfterAddCartItem', [$this, $item]);
@@ -607,6 +608,7 @@ class CartModel extends BaseDatabaseModel
         }
 
         CartHelper::flushCartCounts();
+        CartHelper::touchCart($cartId);
 
         // Trigger plugin event
         J2CommerceHelper::plugin()->event('AfterUpdateCart', [$cartId, $post]);
@@ -687,6 +689,7 @@ class CartModel extends BaseDatabaseModel
 
         if ($db->execute()) {
             CartHelper::flushCartCounts();
+            CartHelper::touchCart((int) ($cartitem->cart_id ?? 0));
             J2CommerceHelper::plugin()->event('RemoveFromCart', [$item]);
             return true;
         }

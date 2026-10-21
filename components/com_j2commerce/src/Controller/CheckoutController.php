@@ -18,6 +18,7 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartOrder;
+use J2Commerce\Component\J2commerce\Administrator\Helper\CartReminderHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
@@ -869,6 +870,7 @@ class CheckoutController extends BaseController
 
         // Actionlog: track billing complete (guest path)
         if (empty($json['error'])) {
+            CartReminderHelper::rememberGuestContact($addressData, $this->app->getLanguage()->getTag());
             $this->markBillingStepComplete();
 
             $this->app->getDispatcher()->dispatch(

@@ -58,9 +58,11 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_carts` (
   `cart_voucher` varchar(255) NOT NULL DEFAULT '',
   `cart_coupon` varchar(255) NOT NULL DEFAULT '',
   `cart_analytics` text NOT NULL,
+  `reminder_sent_on` datetime DEFAULT NULL,
   PRIMARY KEY (`j2commerce_cart_id`),
   KEY `session_id` (`session_id`),
-  KEY `user_id` (`user_id`)
+  KEY `user_id` (`user_id`),
+  KEY `idx_cart_type_modified` (`cart_type`, `modified_on`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -374,6 +376,20 @@ VALUES
   ('transactional', 'order_shipped', 'COM_J2COMMERCE_EMAILTYPE_CONTEXT_ORDER_SHIPPED', '', 3),
   ('transactional', 'order_refunded', 'COM_J2COMMERCE_EMAILTYPE_CONTEXT_ORDER_REFUNDED', '', 4),
   ('transactional', 'payment_received', 'COM_J2COMMERCE_EMAILTYPE_CONTEXT_PAYMENT_RECEIVED', '', 5);
+
+-- --------------------------------------------------------
+-- Table structure for table `#__j2commerce_email_optouts`
+-- Addresses that unsubscribed from an email type (marketing)
+-- --------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS `#__j2commerce_email_optouts` (
+  `j2commerce_email_optout_id` int NOT NULL AUTO_INCREMENT,
+  `email` varchar(255) NOT NULL,
+  `email_type` varchar(100) NOT NULL,
+  `created_on` datetime NOT NULL,
+  PRIMARY KEY (`j2commerce_email_optout_id`),
+  UNIQUE KEY `idx_email_type` (`email`, `email_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 -- Table structure for table `#__j2commerce_filtergroups`
@@ -847,6 +863,7 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_orders` (
   `campaign_order_id` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`j2commerce_order_id`),
   KEY `idx_order_id` (`order_id`),
+  KEY `idx_cart_id` (`cart_id`),
   KEY `idx_access` (`access`),
   KEY `idx_checkout` (`checked_out`),
   KEY `idx_createdby` (`created_by`)

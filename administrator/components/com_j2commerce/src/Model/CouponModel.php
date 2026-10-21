@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Exception\CouponRejection;
+use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartOrder;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
@@ -1600,6 +1601,7 @@ class CouponModel extends AdminModel
 
                     $db->setQuery($query);
                     $db->execute();
+                    CartHelper::touchCart($cartId);
                 }
             }
         } catch (\Exception $e) {
@@ -1648,6 +1650,7 @@ class CouponModel extends AdminModel
 
                     $db->setQuery($query);
                     $db->execute();
+                    CartHelper::touchCart($cartId);
                 }
             }
         } catch (\Exception $e) {

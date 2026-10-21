@@ -896,6 +896,7 @@ class VoucherModel extends AdminModel
 
             $db->setQuery($query);
             $db->execute();
+            CartHelper::touchCart($cartId);
         }
     }
 
@@ -1260,6 +1261,7 @@ class VoucherModel extends AdminModel
 
             $db->setQuery($query);
             $db->execute();
+            CartHelper::touchCart((int) $cartTable->j2commerce_cart_id);
         }
 
         J2CommerceHelper::plugin()->event('AfterSetVoucher', [&$postVoucher, &$cartTable]);

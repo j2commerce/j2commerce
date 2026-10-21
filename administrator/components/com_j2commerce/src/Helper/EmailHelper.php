@@ -539,7 +539,6 @@ class EmailHelper
             $template = (object) $template;
         }
 
-        $config   = Factory::getApplication()->getConfig();
         $extras   = [];
         $tag    ??= $this->orderLanguageTag($order);
         $language = $this->getLanguageForTag($tag);
@@ -555,6 +554,27 @@ class EmailHelper
         $templateText = $this->processTags($templateText, $order, $extras, $receiverType, true, $language, true);
         // The subject is a plain-text header — entity encoding would be shown literally.
         $subject      = $this->processTags($template->subject ?? '', $order, $extras, $receiverType, false, $language);
+
+        return $this->assembleMail($templateText, $subject, $template, $language);
+    }
+
+    /** For a message that is not about a placed order: $data stands in as the order; $htmlExtras must arrive already encoded, $textExtras stay plain for the subject. */
+    public function buildMailFromTemplate(object $template, object $data, array $htmlExtras, array $textExtras): Mail
+    {
+        $tag      = $this->orderLanguageTag($data);
+        $language = $this->getLanguageForTag($tag);
+
+        return $this->assembleMail(
+            $this->processTagsForHtml($this->getTemplateFromFile($template, $data, $tag), $data, $htmlExtras, 'customer', $language),
+            $this->processTags((string) ($template->subject ?? ''), $data, $textExtras, 'customer', false, $language),
+            $template,
+            $language
+        );
+    }
+
+    private function assembleMail(string $templateText, string $subject, object $template, Language $language): Mail
+    {
+        $config = Factory::getApplication()->getConfig();
 
         // An image that cannot be embedded is emitted as this root plus its relative path, so the
         // subpath has to stay on: a host-only root drops the subdirectory of a site installed in one.
@@ -581,9 +601,9 @@ class EmailHelper
         // Process inline images
         $templateText = $this->processInlineImagesInternal($templateText, $mailer, $imageUrl);
 
-        // Direction follows the locale this copy is rendered in, not the locale of whoever
+        // Language and direction follow the locale this copy is rendered in, not the locale of whoever
         // triggered the send — an RTL customer's order can be confirmed from an LTR backend.
-        $htmlExtra = $language->isRTL() ? ' dir="rtl"' : '';
+        $htmlExtra = ' lang="' . htmlspecialchars($language->getTag(), ENT_QUOTES, 'UTF-8') . '"' . ($language->isRTL() ? ' dir="rtl"' : '');
 
         // Inject custom CSS into <head>. The '<' strip matches the preview and test-send
         // paths, so what a test send renders is what the customer receives. The template's
@@ -795,6 +815,11 @@ class EmailHelper
         $sitename  = $config->get('sitename');
         $language ??= $this->getLanguageForOrder($order);
 
+        // A message that is not about a placed order (a cart reminder) supplies its own lines. It has
+        // no order rows to look up, and the order-summary, after-process and positional-hook events
+        // are written against a real order, so none of them run for it.
+        $standIn = \is_array($order->email_items ?? null);
+
         // Site URL roots — resolve to the frontend even when this helper is invoked from the
         // admin app, the scheduler or the console.
         [$siteRoot, $subpathURL] = self::emailSiteRoots();
@@ -849,8 +874,8 @@ class EmailHelper
         $orderDate = DateHelper::format($order->created_on ?? 'now', null, $language);
 
         // Get order info
-        $orderInfo   = $this->getOrderInfo($order);
-        $shipping    = $this->getOrderShipping($order);
+        $orderInfo   = $standIn ? new \stdClass() : $this->getOrderInfo($order);
+        $shipping    = $standIn ? new \stdClass() : $this->getOrderShipping($order);
         $orderCoupon = $this->getOrderCoupons($order);
         $status      = $this->getOrderStatus((int) ($order->order_state_id ?? 0));
 
@@ -901,7 +926,7 @@ class EmailHelper
         $invoiceNumber = $this->getInvoiceNumber($order);
 
         // Get order items as HTML
-        $items = $this->loadItemsTemplate($order, $receiverType, $language);
+        $items = $standIn ? '' : $this->loadItemsTemplate($order, $receiverType, $language);
 
         // Get country/zone names
         $billingCountryName  = $this->getCountryName((int) ($orderInfo->billing_country_id ?? 0));
@@ -930,7 +955,7 @@ class EmailHelper
         );
 
         // Plugin-contributed extra order summary rows
-        $orderExtraRows = $this->getOrderSummaryExtraRows($order);
+        $orderExtraRows = $standIn ? [] : $this->getOrderSummaryExtraRows($order);
         $extraRowsHtml  = '';
         foreach ($orderExtraRows as $extraRow) {
             $extraRowsHtml .= '<div class="j2c-order-extra-row"><strong>'
@@ -987,18 +1012,18 @@ class EmailHelper
             '[DISCOUNT_LABEL]'            => $language->_($discountLabel),
             '[BANK_TRANSFER_INFORMATION]' => $bankTransferInfo,
             '[PAYMENT_INSTRUCTIONS]'      => $paymentInstructions,
-            '[SHIPPING_TOTAL_WEIGHT]'     => $this->getTotalShippingWeight($order),
+            '[SHIPPING_TOTAL_WEIGHT]'     => $standIn ? '' : $this->getTotalShippingWeight($order),
             '[SHIPPING_AMOUNT]'           => ($shippingName !== '' || $shippingAmount > 0) ? CurrencyHelper::format($shippingAmount, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
             '[DISCOUNT_AMOUNT]'           => ((float) ($order->order_discount ?? 0)) > 0 ? CurrencyHelper::format((float) $order->order_discount, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
             '[TAX_AMOUNT]'                => $tagTaxTotal > 0 ? CurrencyHelper::format($tagTaxTotal, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
             '[SURCHARGE_AMOUNT]'          => $tagSurcharge > 0 ? CurrencyHelper::format($tagSurcharge, $order->currency_code ?? '', (float) ($order->currency_value ?? 1)) : '',
             '[SUBTOTAL]'                  => CurrencyHelper::format((float) ($order->order_subtotal ?? 0), $order->currency_code ?? '', (float) ($order->currency_value ?? 1)),
             '[ORDER_EXTRA_ROWS]'          => $extraRowsHtml,
-            '[TOTALS]'                    => str_contains($text, '[TOTALS]') ? $this->buildTotalsTable($order, $orderExtraRows, $language) : '',
+            '[TOTALS]'                    => !$standIn && str_contains($text, '[TOTALS]') ? $this->buildTotalsTable($order, $orderExtraRows, $language) : '',
             '[CURRENT_YEAR]'              => DateHelper::currentYear($language),
             '[PRINT_DATE]'                => DateHelper::format('now', null, $language),
             '[ITEMS]'                     => $items,
-            '[PACKING_ITEMS]'             => $this->loadPackingItemsTemplate($order, $language),
+            '[PACKING_ITEMS]'             => $standIn ? '' : $this->loadPackingItemsTemplate($order, $language),
         ];
 
         // Get customer user groups
@@ -1053,6 +1078,9 @@ class EmailHelper
         $tags['[SOCIAL_FACEBOOK]']  = $attr((string) $params->get('email_social_facebook', ''));
         $tags['[SOCIAL_INSTAGRAM]'] = $attr((string) $params->get('email_social_instagram', ''));
         $tags['[SOCIAL_TWITTER]']   = $attr((string) $params->get('email_social_twitter', ''));
+
+        // Text on an accent-filled button: white while it keeps the 4.5:1 minimum on the accent, slate otherwise.
+        $tags['[ACCENT_TEXT_COLOR]'] = self::whiteReadsOn($tags['[ACCENT_COLOR]']) ? '#FFFFFF' : '#0F172A';
 
         // With no width to emit, take the attribute out with its tag. Sweeping ' width=""' from
         // the finished body would also take a merchant's own empty width attribute with it.
@@ -1193,18 +1221,20 @@ class EmailHelper
         $text = $this->processCustomFields($orderInfo, 'shipping', $text, $language);
         $text = $this->processCustomFields($orderInfo, 'payment', $text, $language);
 
-        // Dispatch plugin event for custom tag processing
-        Factory::getApplication()->getDispatcher()->dispatch(
-            'onJ2CommerceAfterProcessTags',
-            new \Joomla\CMS\Event\GenericEvent('onJ2CommerceAfterProcessTags', [
-                'text'  => &$text,
-                'order' => $order,
-                'tags'  => $tags,
-            ])
-        );
+        if (!$standIn) {
+            // Dispatch plugin event for custom tag processing
+            Factory::getApplication()->getDispatcher()->dispatch(
+                'onJ2CommerceAfterProcessTags',
+                new \Joomla\CMS\Event\GenericEvent('onJ2CommerceAfterProcessTags', [
+                    'text'  => &$text,
+                    'order' => $order,
+                    'tags'  => $tags,
+                ])
+            );
 
-        // Process positional hook shortcodes via plugin events
-        $text = $this->processPositionalHooks($text, $order, $receiverType);
+            // Process positional hook shortcodes via plugin events
+            $text = $this->processPositionalHooks($text, $order, $receiverType);
+        }
 
         // Remove any unprocessed tags. Conditional-comment keywords are not tags: keep every
         // token that opens a conditional ([if mso], [if !mso], [if gte mso 9], [if IE]) or
@@ -1334,15 +1364,24 @@ class EmailHelper
             '/\[ITEMS_LOOP\](.*?)\[\/ITEMS_LOOP\]/s',
             function (array $m) use ($order, $baseURL): string {
                 $template = $m[1];
-                $db       = self::getDatabase();
-                $orderId  = $order->order_id ?? '';
-                $query    = $db->getQuery(true)
-                    ->select('*')
-                    ->from($db->quoteName('#__j2commerce_orderitems'))
-                    ->where($db->quoteName('order_id') . ' = :order_id')
-                    ->bind(':order_id', $orderId);
-                $db->setQuery($query);
-                $items = $db->loadObjectList() ?: [];
+
+                // A message about something that is not an order yet (a cart reminder) hands its
+                // lines in already shaped as order items.
+                $supplied = \is_array($order->email_items ?? null);
+
+                if ($supplied) {
+                    $items = $order->email_items;
+                } else {
+                    $db      = self::getDatabase();
+                    $orderId = $order->order_id ?? '';
+                    $query   = $db->getQuery(true)
+                        ->select('*')
+                        ->from($db->quoteName('#__j2commerce_orderitems'))
+                        ->where($db->quoteName('order_id') . ' = :order_id')
+                        ->bind(':order_id', $orderId);
+                    $db->setQuery($query);
+                    $items = $db->loadObjectList() ?: [];
+                }
 
                 if (empty($items)) {
                     return '';
@@ -1365,6 +1404,11 @@ class EmailHelper
                         ? $this->getProductImageForEmail((int) ($item->product_id ?? 0), $baseURL)
                         : '';
 
+                    // AfterDisplayLineItemTitle subscribers are written against a placed order.
+                    $annotations = $supplied
+                        ? ''
+                        : (string) J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayLineItemTitle', [$item, $order, &$params]);
+
                     $itemTags = [
                         '[ITEM_NAME]'        => self::encodeTagDelimiters(htmlspecialchars($item->orderitem_name ?? '')),
                         '[ITEM_SKU]'         => self::encodeTagDelimiters(htmlspecialchars($item->orderitem_sku ?? '')),
@@ -1374,7 +1418,7 @@ class EmailHelper
                         '[ITEM_IMAGE]'       => htmlspecialchars($imageUrl),
                         '[ITEM_OPTIONS]'     => $optionText,
                         '[ITEM_WEIGHT]'      => (string) (float) ($item->orderitem_weight ?? 0),
-                        '[ITEM_ANNOTATIONS]' => (string) J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayLineItemTitle', [$item, $order, &$params]),
+                        '[ITEM_ANNOTATIONS]' => $annotations,
                     ];
 
                     // Process per-item [IF:ITEM_*] and [IFNOT:ITEM_*] conditionals
@@ -2013,6 +2057,14 @@ class EmailHelper
         $url = ImageHelper::getProductImage($imagePath, 80, 'raw');
         if (empty($url)) {
             return '';
+        }
+
+        // ImageHelper roots the URL on the current request; an email takes its root from $baseURL,
+        // which is the configured site URL whenever one is set.
+        $requestRoot = rtrim(Uri::root(), '/') . '/';
+
+        if (str_starts_with($url, $requestRoot)) {
+            $url = substr($url, \strlen($requestRoot));
         }
 
         // Make absolute URL for email
@@ -2843,7 +2895,7 @@ class EmailHelper
      * normalises {TAG} into [TAG] before the substitution passes - so a value carrying either
      * family would be taken for template syntax. Encoded, it still displays as typed.
      */
-    private static function encodeTagDelimiters(string $value): string
+    public static function encodeTagDelimiters(string $value): string
     {
         return str_replace(['[', ']', '{', '}'], ['&#91;', '&#93;', '&#123;', '&#125;'], $value);
     }
@@ -3568,14 +3620,15 @@ class EmailHelper
      * Uri::root() is derived from the request, and these mails are also built by the scheduler,
      * the console and queued sends, where there is no request: the root is then assembled from
      * the running script's own path and names a host that resolves nowhere, so every link and
-     * every relative image in the message is dead. The configured Live Site URL is the one value
-     * that holds in that context, so it wins whenever the merchant has set one.
+     * every relative image in the message is dead. The configured Live Site URL, else the Email
+     * Site URL option, is the one value that holds in that context, so it wins whenever the
+     * merchant has set one.
      *
      * @return  array{0: string, 1: string}
      */
     private static function emailSiteRoots(): array
     {
-        $configured = trim((string) Factory::getApplication()->get('live_site', ''));
+        $configured = self::configuredSiteRoot();
 
         // Uri::base() upgrades a configured http:// live site to https:// on an SSL request
         // (libraries/src/Uri/Uri.php). Reading live_site directly skips that, which would mail
@@ -3595,6 +3648,37 @@ class EmailHelper
             (string) preg_replace('#/administrator$#', '', $root),
             (string) preg_replace('#/administrator$#', '', $subpath),
         ];
+    }
+
+    /** Whether white text on a validated hex colour meets the WCAG 4.5:1 contrast minimum. */
+    private static function whiteReadsOn(string $hex): bool
+    {
+        $hex = ltrim($hex, '#');
+        $hex = \strlen($hex) < 6 ? $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2] : substr($hex, 0, 6);
+        $lum = 0.0;
+
+        foreach ([0.2126, 0.7152, 0.0722] as $i => $weight) {
+            $c    = hexdec(substr($hex, $i * 2, 2)) / 255;
+            $lum += $weight * ($c <= 0.04045 ? $c / 12.92 : (($c + 0.055) / 1.055) ** 2.4);
+        }
+
+        return 1.05 / ($lum + 0.05) >= 4.5;
+    }
+
+    /** Joomla's live_site, else the Email Site URL option; '' when neither is set. */
+    public static function configuredSiteRoot(): string
+    {
+        $liveSite = trim((string) Factory::getApplication()->get('live_site', ''));
+
+        return $liveSite !== '' ? $liveSite : trim((string) ComponentHelper::getParams('com_j2commerce')->get('email_site_url', ''));
+    }
+
+    /** Absolute frontend URL for a link that leaves in an email, built the same way from any app. */
+    public function siteLink(string $url): string
+    {
+        [$siteRoot, $subpathURL] = self::emailSiteRoots();
+
+        return $this->buildSiteUrl($url, $siteRoot, $subpathURL);
     }
 
     /**

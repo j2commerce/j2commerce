@@ -125,15 +125,16 @@ class CartitemTable extends Table
 
         if ($result) {
             CartHelper::flushCartCounts();
+            CartHelper::touchCart((int) $this->cart_id);
         }
 
         return $result;
     }
 
     /**
-     * Overridden so every Table-based write drops the cart-count memo. CartsController mutates
-     * lines through this class rather than through CartModel, so the flush has to live here to
-     * cover both routes.
+     * Overridden so every Table-based write drops the cart-count memo and stamps the cart's
+     * modified_on. CartsController mutates lines through this class rather than through CartModel,
+     * so both have to live here to cover both routes.
      *
      * @param   mixed  $pk  Primary key value to delete, or null for the instance's own key.
      *
@@ -141,10 +142,17 @@ class CartitemTable extends Table
      */
     public function delete($pk = null): bool
     {
+        // CartsController deletes by id without loading the row, and the cart id is needed below.
+        if ($pk !== null && empty($this->cart_id)) {
+            $this->load($pk);
+        }
+
+        $cartId = (int) $this->cart_id;
         $result = parent::delete($pk);
 
         if ($result) {
             CartHelper::flushCartCounts();
+            CartHelper::touchCart($cartId);
         }
 
         return $result;

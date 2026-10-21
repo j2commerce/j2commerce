@@ -493,7 +493,29 @@ class CartHelper
             }
         }
 
+        self::touchCart($destCartId);
+
         return true;
+    }
+
+    // modified_on is the cart's activity clock: the cart reminder, the outdated-cart cleanup and the
+    // admin cart list all read it, and cart lines carry no timestamp of their own.
+    public static function touchCart(int $cartId): void
+    {
+        if ($cartId < 1) {
+            return;
+        }
+
+        $db    = self::getDatabase();
+        $now   = Factory::getDate()->toSql();
+        $query = $db->getQuery(true)
+            ->update($db->quoteName('#__j2commerce_carts'))
+            ->set($db->quoteName('modified_on') . ' = :modifiedOn')
+            ->where($db->quoteName('j2commerce_cart_id') . ' = :cartId')
+            ->bind(':modifiedOn', $now)
+            ->bind(':cartId', $cartId, ParameterType::INTEGER);
+
+        $db->setQuery($query)->execute();
     }
 
     /**
@@ -1272,6 +1294,61 @@ class CartHelper
         $rawCookie = $this->getRawCartCookie($cartType);
 
         return $rawCookie !== '' && $this->verifySignedCartId($rawCookie) === $cartId;
+    }
+
+    // Copies a guest cart's lines into this visitor's own basket, which no earlier cookie holder can
+    // reach. Copied, not moved: a mail scanner that opens the link first must not empty the cart the
+    // shopper's own click comes back for. A line the basket already holds is left as it is, so
+    // opening the link again adds nothing.
+    public function restoreGuestCart(int $cartId): bool
+    {
+        $source = $cartId > 0 ? $this->findGuestCartById($cartId) : null;
+        $target = $source ? $this->getCart(0, true) : null;
+
+        if (!$target || empty($target->j2commerce_cart_id)) {
+            return false;
+        }
+
+        // This browser already holds the cart.
+        if ((int) $target->j2commerce_cart_id === $cartId) {
+            return true;
+        }
+
+        $db       = self::getDatabase();
+        $targetId = (int) $target->j2commerce_cart_id;
+
+        foreach ($this->getCartItems($cartId) as $item) {
+            $held = $this->findCartItem(
+                $targetId,
+                (int) $item->product_id,
+                (int) $item->variant_id,
+                $item->product_options ?? '',
+                self::readCartItemSignature($item->cartitem_params ?? '')
+            );
+
+            if (!$held) {
+                unset($item->j2commerce_cartitem_id);
+                $item->cart_id = $targetId;
+                $db->insertObject('#__j2commerce_cartitems', $item);
+            }
+        }
+
+        self::touchCart($targetId);
+
+        $coupon = (string) ($source->cart_coupon ?? '');
+
+        if ($coupon !== '' && (string) ($target->cart_coupon ?? '') === '') {
+            $query = $db->getQuery(true)
+                ->update($db->quoteName('#__j2commerce_carts'))
+                ->set($db->quoteName('cart_coupon') . ' = :coupon')
+                ->where($db->quoteName('j2commerce_cart_id') . ' = :targetId')
+                ->bind(':coupon', $coupon)
+                ->bind(':targetId', $targetId, ParameterType::INTEGER);
+
+            $db->setQuery($query)->execute();
+        }
+
+        return true;
     }
 
     /**

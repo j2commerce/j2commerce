@@ -83,6 +83,17 @@ class CoreTemplateSyncHelper
             'file'             => 'email/confirmed/admin.html',
             'core_key'         => 'email.confirmed.admin',
         ],
+        5 => [
+            'email_type'       => 'marketing',
+            'context'          => 'cart_reminder',
+            'receiver_type'    => 'customer',
+            'orderstatus_name' => '',
+            'group_id'         => '*',
+            'paymentmethod'    => '*',
+            'subject'          => '[LANG:COM_J2COMMERCE_EMAIL_CART_REMINDER_SUBJECT]',
+            'file'             => 'email/cartreminder/modern.html',
+            'core_key'         => 'email.cartreminder.customer',
+        ],
     ];
 
     private const INVOICE_TEMPLATES = [
@@ -164,7 +175,7 @@ class CoreTemplateSyncHelper
 
     public function syncEmailTemplates(bool $probeOnly = false): array
     {
-        $names     = array_values(array_unique(array_column(self::EMAIL_TEMPLATES, 'orderstatus_name')));
+        $names     = array_values(array_filter(array_unique(array_column(self::EMAIL_TEMPLATES, 'orderstatus_name'))));
         $statusIds = $this->resolveOrderStatusIds($names);
 
         $skipped  = [];
@@ -173,14 +184,17 @@ class CoreTemplateSyncHelper
         foreach (self::EMAIL_TEMPLATES as $id => $expected) {
             $name = $expected['orderstatus_name'];
 
-            if (!isset($statusIds[$name])) {
+            // A template that is not about an order (a cart reminder) applies to every status.
+            $statusId = $name === '' ? '*' : ($statusIds[$name] ?? null);
+
+            if ($statusId === null) {
                 // An unmapped status name must never fall back to a literal id or '*' — that
                 // would risk matching (or inserting into) the wrong order status.
                 $skipped[] = ['id' => $id, 'status' => 'skipped_status_unmapped'];
                 continue;
             }
 
-            $registry[$id] = $expected + ['orderstatus_id' => $statusIds[$name]];
+            $registry[$id] = $expected + ['orderstatus_id' => $statusId];
         }
 
         $synced = $this->syncTemplates(
@@ -189,6 +203,12 @@ class CoreTemplateSyncHelper
             $registry,
             $probeOnly,
             function (DatabaseInterface $db, array $expected): array {
+                // A status-less row is found by its core_key alone. Its identity fields ('*' status,
+                // customer) would otherwise also match a legacy all-statuses order template.
+                if ($expected['orderstatus_name'] === '') {
+                    return [];
+                }
+
                 $emailType       = $expected['email_type'];
                 $emailTypeLegacy = '';
                 $orderstatus     = $expected['orderstatus_id'];
@@ -230,6 +250,7 @@ class CoreTemplateSyncHelper
             },
             static fn (array $expected, string $content, string $bodyJson, ?string $subject, int $id): array => [
                 'email_type'       => $expected['email_type'],
+                'context'          => $expected['context'] ?? '',
                 'receiver_type'    => $expected['receiver_type'],
                 'orderstatus_id'   => $expected['orderstatus_id'],
                 'group_id'         => $expected['group_id'],
