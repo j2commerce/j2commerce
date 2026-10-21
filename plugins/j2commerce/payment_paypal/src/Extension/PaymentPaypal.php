@@ -231,7 +231,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         $storedId   = $transactionId;
         $stored     = $pending ? 'PENDING' : $status;
         $newDetails = json_encode(array_merge(
-            json_decode((string) ($orderTable->transaction_details ?? '{}'), true) ?: [],
+            PayPalOrderStates::details((string) ($orderTable->transaction_details ?? '')),
             $details
         ));
         $query = $db->getQuery(true)
@@ -322,6 +322,61 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 Log::ERROR
             );
         }
+    }
+
+    /**
+     * Records a new PayPal reference on the order by writing transaction_details alone, and only
+     * while the order still awaits payment and nothing settles it. The row was loaded before a
+     * PayPal round-trip; storing all of it could put a payment settled meanwhile back to awaiting.
+     *
+     * @param array<string, mixed> $keys
+     */
+    private function bindPayPalReference(object $orderTable, array $keys): bool
+    {
+        $awaiting = PayPalOrderStates::awaitingStateIds($this->params);
+
+        if ($awaiting === []) {
+            return false;
+        }
+
+        $db      = $this->getDatabase();
+        $orderPk = (int) $orderTable->j2commerce_order_id;
+
+        // Merged into the details as they are now, and written only if nobody changed them since:
+        // a held payment recorded during the PayPal call keeps its capture reference.
+        $current = (string) $db->setQuery(
+            $db->getQuery(true)
+                ->select($db->quoteName('transaction_details'))
+                ->from($db->quoteName('#__j2commerce_orders'))
+                ->where($db->quoteName('j2commerce_order_id') . ' = :pk')
+                ->bind(':pk', $orderPk, ParameterType::INTEGER)
+        )->loadResult();
+        $details = json_encode(array_merge(
+            PayPalOrderStates::details($current),
+            $keys,
+            ['created_at' => date('Y-m-d H:i:s')]
+        ));
+        $pending    = 'PENDING';
+        $empty      = $db->quote('');
+        $detailsCol = 'COALESCE(' . $db->quoteName('transaction_details') . ', ' . $empty . ')';
+        $statusCol  = 'UPPER(COALESCE(' . $db->quoteName('transaction_status') . ', ' . $empty . '))';
+        $idCol      = 'COALESCE(' . $db->quoteName('transaction_id') . ', ' . $empty . ')';
+        $query      = $db->getQuery(true)
+            ->update($db->quoteName('#__j2commerce_orders'))
+            ->set($db->quoteName('transaction_details') . ' = :details')
+            ->where($db->quoteName('j2commerce_order_id') . ' = :pk')
+            ->whereIn($db->quoteName('order_state_id'), $awaiting)
+            ->where($detailsCol . ' = :current')
+            ->where('NOT (' . $statusCol . ' = :pending AND ' . $idCol . ' <> ' . $empty . ')')
+            ->bind(':details', $details)
+            ->bind(':pk', $orderPk, ParameterType::INTEGER)
+            ->bind(':current', $current)
+            ->bind(':pending', $pending);
+
+        PayPalOrderStates::whereClaimable($db, $query);
+        $db->setQuery($query)->execute();
+
+        return $db->getAffectedRows() === 1;
     }
 
     /** A payment PayPal is still holding must not be started again: a second one would charge twice. */
@@ -470,6 +525,21 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         // This event fires in the checkout View::display(), before the page renders.
         // The JS uses MutationObserver to detect when the PayPal button container
         // appears in the DOM (via AJAX innerHTML) and dynamically loads the PayPal SDK.
+        $jsKeys = [
+            'BUTTON_LOAD_FAILED',
+            'CANCELLED',
+            'CONTACT_SUPPORT',
+            'DECLINED',
+            'ERROR',
+            'REDIRECT_MISSING',
+            'SUBSCRIBE',
+            'TRY_AGAIN',
+        ];
+
+        foreach ($jsKeys as $key) {
+            Text::script('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_' . $key);
+        }
+
         $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
         $wa->registerAndUseScript(
             'plg_j2commerce_payment_paypal.checkout',
@@ -706,7 +776,10 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                     ['category' => 'j2commerce.paypal']
                 );
 
-                $event->setArgument('result', ['success' => false, 'error' => $errorMessage]);
+                $event->setArgument('result', [
+                    'success' => false,
+                    'error'   => Text::_('COM_J2COMMERCE_ERR_REFUND_FAILED'),
+                ]);
             }
         } catch (\Exception $e) {
             Factory::getApplication()->getLogger()->error(
@@ -1068,27 +1141,18 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
             }
 
-            $details = json_decode((string) ($orderTable->transaction_details ?? '{}'), true);
+            if (!$this->bindPayPalReference($orderTable, ['nvp_express_token' => $token, 'mode' => 'nvp_express'])) {
+                $this->log(
+                    'createNvpExpressCheckoutForOrder: order ' . $orderId . ' stopped awaiting payment during the call',
+                    Log::ERROR
+                );
 
-            if (!\is_array($details)) {
-                $details = [];
+                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
             }
-
-            $details['nvp_express_token']  = $token;
-            $details['mode']               = 'nvp_express';
-            $details['created_at']         = date('Y-m-d H:i:s');
-
-            $orderTable->transaction_details = json_encode($details);
-            TableSaveHelper::store($orderTable, 'paypal.nvp_express_token');
 
             $approveUrl = $nvp->getApprovalUrl($token);
 
-            $this->log(\sprintf(
-                'createNvpExpressCheckoutForOrder: order=%s token=%s approve=%s',
-                $orderId,
-                $token,
-                $approveUrl
-            ));
+            $this->log('createNvpExpressCheckoutForOrder: Express Checkout started for order ' . $orderId);
 
             return [
                 'success'      => true,
@@ -1252,31 +1316,70 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             }
 
             $confirmedStateId = PayPalOrderStates::resolve($this->params, PayPalOrderStates::CONFIRMED);
+            $orderPk          = (int) $orderTable->j2commerce_order_id;
+            $priorStatus      = (string) ($orderTable->transaction_status ?? '');
 
-            $details                          = json_decode((string) ($orderTable->transaction_details ?? '{}'), true) ?: [];
-            $details['billing_agreement_id']  = $baid;
-            $details['transaction_id']        = $transId;
-            $details['mode']                  = 'nvp_express';
-            $details['payment_status']        = $paymentStatus;
-            $details['completed_at']          = date('Y-m-d H:i:s');
+            // Same single-owner rule as the REST capture: a replayed return settles nothing twice.
+            // The request that holds the claim finishes the order, so this one reports progress.
+            $claim = PayPalOrderStates::claimSettlement($this->getDatabase(), $orderPk, $this->params);
 
-            $orderTable->orderpayment_type   = $this->_name;
-            $orderTable->transaction_id      = $transId;
-            $orderTable->transaction_status  = 'Completed';
-            $orderTable->transaction_details = json_encode($details);
+            if ($claim === null) {
+                return [
+                    'success' => false,
+                    'pending' => true,
+                    'error'   => Text::_('COM_J2COMMERCE_PAYPAL_PAYMENT_PENDING'),
+                ];
+            }
 
-            $this->applyConfirmedState($orderTable, $confirmedStateId);
+            $outcome = PayPalOrderStates::storeUnderClaim(
+                $this->getDatabase(),
+                $orderPk,
+                $claim,
+                $priorStatus,
+                function () use ($orderTable, $orderPk, $baid, $transId, $paymentStatus, $confirmedStateId): bool {
+                    // Reloaded under the row lock, so an edit made during the PayPal call stays.
+                    if (!$orderTable->load($orderPk)) {
+                        return false;
+                    }
 
-            TableSaveHelper::store($orderTable, 'paypal.nvp_payment_completed');
+                    $details = PayPalOrderStates::details((string) $orderTable->transaction_details);
 
-            OrderHistoryHelper::add(
-                orderId: (string) $orderTable->order_id,
-                comment: Text::sprintf(
-                    'COM_J2COMMERCE_ORDER_HISTORY_PAYMENT_RECEIVED',
-                    Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL')
-                ) . ' (NVP Express, BAID ' . $baid . ', TRANS ' . $transId . ')',
-                orderStateId: $confirmedStateId,
+                    $details['billing_agreement_id'] = $baid;
+                    $details['transaction_id']       = $transId;
+                    $details['mode']                 = 'nvp_express';
+                    $details['payment_status']       = $paymentStatus;
+                    $details['completed_at']         = date('Y-m-d H:i:s');
+
+                    $orderTable->orderpayment_type   = $this->_name;
+                    $orderTable->transaction_id      = $transId;
+                    $orderTable->transaction_status  = 'Completed';
+                    $orderTable->transaction_details = json_encode($details);
+
+                    $this->applyConfirmedState($orderTable, $confirmedStateId);
+
+                    return TableSaveHelper::store($orderTable, 'paypal.nvp_payment_completed');
+                }
             );
+
+            if ($outcome !== 'stored') {
+                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
+            }
+
+            try {
+                OrderHistoryHelper::add(
+                    orderId: (string) $orderTable->order_id,
+                    comment: Text::sprintf(
+                        'COM_J2COMMERCE_ORDER_HISTORY_PAYMENT_RECEIVED',
+                        Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL')
+                    ) . ' (NVP Express, BAID ' . $baid . ', TRANS ' . $transId . ')',
+                    orderStateId: $confirmedStateId,
+                );
+            } catch (\Throwable $e) {
+                $this->log(
+                    'completeNvpExpressCheckoutForOrder: history write failed - ' . $e->getMessage(),
+                    Log::ERROR
+                );
+            }
 
             $this->log(\sprintf(
                 'completeNvpExpressCheckoutForOrder: order=%s baid=%s transId=%s',
@@ -1824,10 +1927,32 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_ORDER_NOT_FOUND')];
             }
 
+            if ($this->hasPendingPayment($orderTable)) {
+                return [
+                    'success' => false,
+                    'pending' => true,
+                    'error'   => Text::_('COM_J2COMMERCE_PAYPAL_PAYMENT_PENDING'),
+                ];
+            }
+
+            // The same entry rule the REST create and the NVP start apply.
+            if (
+                !PayPalOrderStates::isAwaitingPayment((int) $orderTable->order_state_id, $this->params)
+                || (float) ($orderTable->order_refund ?? 0) > 0
+                || PayPalOrderStates::isSettledOrSettling((string) ($orderTable->transaction_status ?? ''))
+            ) {
+                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
+            }
+
             $stub = $this->buildSubscriptionStubFromOrder($orderId);
 
             if ($stub === null) {
-                return ['success' => false, 'error' => 'No subscription product found in order'];
+                $this->log(
+                    'createPayPalSubscriptionForOrder: no subscription product in order ' . $orderId,
+                    Log::ERROR
+                );
+
+                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
             }
 
             $currency = $this->getCurrency($orderTable);
@@ -1895,26 +2020,26 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $created = $subs->createSubscription($planId, $stub, $context);
 
             if (empty($created['success'])) {
-                return [
-                    'success' => false,
-                    'error'   => $created['error'] ?? 'PayPal subscription create failed',
-                ];
+                $this->log('createPayPalSubscriptionForOrder: ' . ($created['error'] ?? 'create failed'), Log::ERROR);
+
+                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
             }
 
-            $details = json_decode((string) ($orderTable->transaction_details ?? '{}'), true);
+            $bound = $this->bindPayPalReference($orderTable, [
+                'paypal_subscription_id' => $created['id'],
+                'paypal_plan_id'         => $planId,
+                'paypal_product_id'      => $productId,
+                'subscription_status'    => $created['status'],
+            ]);
 
-            if (!\is_array($details)) {
-                $details = [];
+            if (!$bound) {
+                $this->log(
+                    'createPayPalSubscriptionForOrder: order ' . $orderId . ' stopped awaiting payment during the call',
+                    Log::ERROR
+                );
+
+                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
             }
-
-            $details['paypal_subscription_id'] = $created['id'];
-            $details['paypal_plan_id']         = $planId;
-            $details['paypal_product_id']      = $productId;
-            $details['subscription_status']    = $created['status'];
-            $details['created_at']             = date('Y-m-d H:i:s');
-
-            $orderTable->transaction_details = json_encode($details);
-            TableSaveHelper::store($orderTable, 'paypal.subscription_created');
 
             $this->log(\sprintf(
                 'createPayPalSubscriptionForOrder: order=%s paypal_sub=%s plan=%s product=%s',
@@ -2016,6 +2141,24 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
             }
 
+            // The plan was priced from this order when it was created, so the subscription must
+            // still bill on that plan.
+            $storedPlanId = (string) ($details['paypal_plan_id'] ?? '');
+            $activePlanId = (string) ($info['body']['plan_id'] ?? '');
+
+            if ($storedPlanId === '' || !hash_equals($storedPlanId, $activePlanId)) {
+                $this->log('finalizePayPalSubscriptionApproval: plan mismatch on order ' . $orderIdString, Log::ERROR);
+
+                // PayPal has billed the first cycle by now, so staff see it on the order too.
+                PayPalOrderStates::addHistoryOnce(
+                    $this->getDatabase(),
+                    $orderTable,
+                    Text::sprintf('PLG_J2COMMERCE_PAYMENT_PAYPAL_SUBSCRIPTION_PLAN_MISMATCH', $paypalSubscriptionId)
+                );
+
+                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
+            }
+
             $confirmedStateId = PayPalOrderStates::resolve($this->params, PayPalOrderStates::CONFIRMED);
             $orderPk          = (int) $orderTable->j2commerce_order_id;
             $priorStatus      = (string) ($orderTable->transaction_status ?? '');
@@ -2027,41 +2170,44 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
             }
 
-            $renewed = null;
-            $lost    = false;
+            $outcome = PayPalOrderStates::storeUnderClaim(
+                $this->getDatabase(),
+                $orderPk,
+                $claim,
+                $priorStatus,
+                function () use ($orderTable, $orderPk, $paypalSubscriptionId, $status, $confirmedStateId): bool {
+                    // Reloaded under the row lock, so an edit made during the PayPal call stays.
+                    if (!$orderTable->load($orderPk)) {
+                        return false;
+                    }
 
-            try {
-                $orderTable->orderpayment_type   = $this->_name;
-                $orderTable->transaction_id      = $paypalSubscriptionId;
-                $orderTable->transaction_status  = 'Completed';
+                    $details = PayPalOrderStates::details((string) $orderTable->transaction_details);
 
-                $this->applyConfirmedState($orderTable, $confirmedStateId);
+                    $orderTable->orderpayment_type   = $this->_name;
+                    $orderTable->transaction_id      = $paypalSubscriptionId;
+                    $orderTable->transaction_status  = 'Completed';
 
-                $details['paypal_subscription_id'] = $paypalSubscriptionId;
-                $details['subscription_status']    = $status;
-                $details['approved_at']            = date('Y-m-d H:i:s');
+                    $this->applyConfirmedState($orderTable, $confirmedStateId);
 
-                $orderTable->transaction_details = json_encode($details);
+                    $details['paypal_subscription_id'] = $paypalSubscriptionId;
+                    $details['subscription_status']    = $status;
+                    $details['approved_at']            = date('Y-m-d H:i:s');
 
-                $renewed = PayPalOrderStates::confirmClaim($this->getDatabase(), $orderPk, $claim);
-                $lost    = $renewed === null;
-                $stored  = !$lost && TableSaveHelper::store($orderTable, 'paypal.subscription_approved');
-            } catch (\Throwable $e) {
-                $this->log('finalizePayPalSubscriptionApproval: order store threw - ' . $e->getMessage(), Log::ERROR);
-                $stored = false;
-            }
+                    $orderTable->transaction_details = json_encode($details);
 
-            if (!$stored) {
+                    return TableSaveHelper::store($orderTable, 'paypal.subscription_approved');
+                }
+            );
+
+            if ($outcome !== 'stored') {
                 // A takeover now owns the claim and settles the payment the buyer has made.
-                if ($lost) {
+                if ($outcome === 'lost') {
                     return [
                         'success' => false,
                         'pending' => true,
                         'error'   => Text::_('COM_J2COMMERCE_PAYPAL_PAYMENT_PENDING'),
                     ];
                 }
-
-                PayPalOrderStates::releaseSettlement($this->getDatabase(), $orderPk, $renewed ?? $claim, $priorStatus);
 
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
             }
@@ -2194,7 +2340,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         $nvpPayerId = (string) $app->input->getString('PayerID', '');
 
         if ($nvpFlag === 1 && $nvpToken !== '' && $nvpPayerId !== '') {
-            $this->log('_postPayment NVP return: order=' . $orderIdFromUrl . ' token=' . $nvpToken . ' payerid=' . $nvpPayerId);
+            $this->log('_postPayment NVP return: order=' . $orderIdFromUrl);
 
             $completion = $this->completeNvpExpressCheckoutForOrder($orderIdFromUrl, $nvpToken, $nvpPayerId);
 
@@ -2383,11 +2529,14 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             if ($result['status'] >= 200 && $result['status'] < 300) {
                 $paypalOrderId = $result['body']['id'] ?? '';
 
-                $transactionDetails                    = json_decode($orderTable->transaction_details ?? '{}', true);
-                $transactionDetails['paypal_order_id'] = $paypalOrderId;
-                $transactionDetails['created_at']      = date('Y-m-d H:i:s');
-                $orderTable->transaction_details       = json_encode($transactionDetails);
-                TableSaveHelper::store($orderTable, 'paypal.order_created');
+                if (!$this->bindPayPalReference($orderTable, ['paypal_order_id' => $paypalOrderId])) {
+                    $this->log(
+                        'createPayPalOrder: order ' . $orderId . ' stopped awaiting payment during the call',
+                        Log::ERROR
+                    );
+
+                    return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
+                }
 
                 $this->log('createPayPalOrder: Success - paypal_order_id: ' . $paypalOrderId);
                 return ['success' => true, 'paypal_order_id' => $paypalOrderId];
@@ -2435,6 +2584,14 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             if ($boundPayPalId === '' || !hash_equals($boundPayPalId, $paypalOrderId)) {
                 $this->log('capturePayPalOrder: PayPal order id not bound to local order - order_id: ' . $orderId, Log::ERROR);
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
+            }
+
+            if ($this->hasPendingPayment($orderTable)) {
+                return [
+                    'success' => false,
+                    'pending' => true,
+                    'error'   => Text::_('COM_J2COMMERCE_PAYPAL_PAYMENT_PENDING'),
+                ];
             }
 
             // Only an order still awaiting payment may be captured. A settled, cancelled or
@@ -2542,35 +2699,38 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
                 // Any failure from here on hands the claim back: a claim left held would stop the
                 // capture webhook from ever settling an order the buyer has paid for.
-                $renewed = null;
-                $lost    = false;
+                $outcome = PayPalOrderStates::storeUnderClaim(
+                    $this->getDatabase(),
+                    $orderPk,
+                    $claim,
+                    $priorStatus,
+                    function () use ($orderTable, $orderPk, $captureId, $captureStatus, $result): bool {
+                        // Reloaded under the row lock, so an edit made during the PayPal call stays.
+                        if (!$orderTable->load($orderPk)) {
+                            return false;
+                        }
 
-                try {
-                    $orderTable->transaction_id     = $captureId;
-                    $orderTable->transaction_status = $captureStatus;
+                        $orderTable->transaction_id     = $captureId;
+                        $orderTable->transaction_status = $captureStatus;
 
-                    $this->applyConfirmedState(
-                        $orderTable,
-                        PayPalOrderStates::resolve($this->params, PayPalOrderStates::CONFIRMED)
-                    );
+                        $this->applyConfirmedState(
+                            $orderTable,
+                            PayPalOrderStates::resolve($this->params, PayPalOrderStates::CONFIRMED)
+                        );
 
-                    $transactionDetails = json_decode($orderTable->transaction_details ?? '{}', true);
+                        $transactionDetails = PayPalOrderStates::details((string) $orderTable->transaction_details);
 
-                    $transactionDetails['capture_id']       = $captureId;
-                    $transactionDetails['capture_status']   = $captureStatus;
-                    $transactionDetails['captured_at']      = date('Y-m-d H:i:s');
-                    $transactionDetails['capture_response'] = $result['body'];
-                    $orderTable->transaction_details        = json_encode($transactionDetails);
+                        $transactionDetails['capture_id']       = $captureId;
+                        $transactionDetails['capture_status']   = $captureStatus;
+                        $transactionDetails['captured_at']      = date('Y-m-d H:i:s');
+                        $transactionDetails['capture_response'] = $result['body'];
+                        $orderTable->transaction_details        = json_encode($transactionDetails);
 
-                    $renewed = PayPalOrderStates::confirmClaim($this->getDatabase(), $orderPk, $claim);
-                    $lost    = $renewed === null;
-                    $stored  = !$lost && $orderTable->store();
-                } catch (\Throwable $e) {
-                    $this->log('capturePayPalOrder: Order store threw - ' . $e->getMessage(), Log::ERROR);
-                    $stored = false;
-                }
+                        return (bool) $orderTable->store();
+                    }
+                );
 
-                if ($stored) {
+                if ($outcome === 'stored') {
                     // The order is stored: nothing past this point may report the payment as failed.
                     try {
                         OrderHistoryHelper::add(
@@ -2597,15 +2757,13 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 }
 
                 // A takeover now owns the claim and settles the payment the buyer has made.
-                if ($lost) {
+                if ($outcome === 'lost') {
                     return [
                         'success' => false,
                         'pending' => true,
                         'error'   => Text::_('COM_J2COMMERCE_PAYPAL_PAYMENT_PENDING'),
                     ];
                 }
-
-                PayPalOrderStates::releaseSettlement($this->getDatabase(), $orderPk, $renewed ?? $claim, $priorStatus);
 
                 $this->log('capturePayPalOrder: Failed to store order - ' . $orderTable->getError(), Log::ERROR);
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
@@ -2615,7 +2773,11 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $this->log("capturePayPalOrder: Capture failed - $errorMessage", Log::ERROR);
             Factory::getApplication()->getLogger()->error(
                 "PayPal capture failed: $errorMessage",
-                ['category' => 'j2commerce.paypal', 'result' => $result]
+                [
+                    'category' => 'j2commerce.paypal',
+                    'name'     => $result['body']['name'] ?? '',
+                    'debug_id' => $result['body']['debug_id'] ?? '',
+                ]
             );
 
             // The checkout script restarts PayPal's own flow on a declined card, so the issue code

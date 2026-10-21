@@ -14,7 +14,9 @@ namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
+use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use Joomla\Database\QueryInterface;
@@ -104,29 +106,117 @@ final class PayPalOrderStates
     }
 
     /**
-     * Renews the caller's claim immediately before its store, and returns the new token. Null when
-     * a stale-claim takeover replaced it, so an owner that was merely slow cannot settle the order
-     * a second time. The claim stays a timed token until the store writes the final status, so an
-     * owner that dies mid-store can still be taken over.
+     * Runs the claim owner's store under a row lock that first proves the claim is still its own,
+     * so a stale-claim takeover waits for the store instead of settling the order a second time,
+     * and an owner that dies mid-store rolls back to a claim the takeover can reclaim.
+     *
+     * @param callable(): bool $store Writes the settled order (status, transaction fields).
+     *
+     * @return 'stored'|'lost'|'failed' On 'failed' the claim has been handed back.
      */
-    public static function confirmClaim(DatabaseInterface $db, int $orderPk, string $token): ?string
-    {
-        $renewed = self::newToken();
-        $query   = $db->getQuery(true)
-            ->update($db->quoteName('#__j2commerce_orders'))
-            ->set($db->quoteName('transaction_status') . ' = :renewed')
-            ->where($db->quoteName('j2commerce_order_id') . ' = :pk')
-            ->where($db->quoteName('transaction_status') . ' = :token')
-            ->bind(':renewed', $renewed)
-            ->bind(':pk', $orderPk, ParameterType::INTEGER)
-            ->bind(':token', $token);
+    public static function storeUnderClaim(
+        DatabaseInterface $db,
+        int $orderPk,
+        string $claim,
+        string $priorStatus,
+        callable $store
+    ): string {
+        $db->transactionStart();
 
-        $db->setQuery($query)->execute();
+        try {
+            if (self::lockedStatus($db, $orderPk) !== $claim) {
+                $db->transactionRollback();
 
-        return $db->getAffectedRows() === 1 ? $renewed : null;
+                return 'lost';
+            }
+
+            $stored = (bool) $store();
+        } catch (\Throwable $e) {
+            $stored = false;
+
+            // A logger failure must not leave the transaction open.
+            try {
+                Factory::getApplication()->getLogger()->error(
+                    'PayPal settlement store threw: ' . $e->getMessage(),
+                    ['category' => 'j2commerce.paypal', 'order_pk' => $orderPk]
+                );
+            } catch (\Throwable) {
+            }
+        }
+
+        // A store that throws or reports failure after its status listeners ran has already moved
+        // stock or sent mail: keep a write that landed, so a retry does not repeat those side
+        // effects. Every owner writes a completed status, so only that proves the write landed.
+        try {
+            if ($stored || strtoupper(self::lockedStatus($db, $orderPk)) === 'COMPLETED') {
+                $db->transactionCommit();
+
+                return 'stored';
+            }
+        } catch (\Throwable) {
+        }
+
+        $db->transactionRollback();
+        self::releaseSettlement($db, $orderPk, $claim, $priorStatus);
+
+        return 'failed';
     }
 
-    /** The random suffix keeps a renewal within the same second a real change for the UPDATE. */
+    /** A replayed event or request records the same note on the order's history only once. */
+    public static function addHistoryOnce(DatabaseInterface $db, object $orderTable, string $comment): void
+    {
+        $orderId = (string) $orderTable->order_id;
+
+        try {
+            $query = $db->getQuery(true)
+                ->select('COUNT(*)')
+                ->from($db->quoteName('#__j2commerce_orderhistories'))
+                ->where($db->quoteName('order_id') . ' = :orderId')
+                ->where($db->quoteName('comment') . ' = :comment')
+                ->bind(':orderId', $orderId)
+                ->bind(':comment', $comment);
+
+            if ((int) $db->setQuery($query)->loadResult() === 0) {
+                OrderHistoryHelper::add(
+                    orderId: $orderId,
+                    comment: $comment,
+                    orderStateId: (int) $orderTable->order_state_id,
+                );
+            }
+        } catch (\Throwable $e) {
+            try {
+                Factory::getApplication()->getLogger()->error(
+                    'PayPal history write failed: ' . $e->getMessage(),
+                    ['category' => 'j2commerce.paypal', 'order_id' => $orderId]
+                );
+            } catch (\Throwable) {
+            }
+        }
+    }
+
+    /** Stored transaction details as an array; anything that is not a JSON object reads as empty. */
+    public static function details(string $json): array
+    {
+        $decoded = json_decode($json !== '' ? $json : '{}', true);
+
+        return \is_array($decoded) ? $decoded : [];
+    }
+
+    /** The query builder has no MySQL row-lock clause, so the statement is written out with a bound id. */
+    private static function lockedStatus(DatabaseInterface $db, int $orderPk): string
+    {
+        $query = $db->createQuery()
+            ->setQuery(
+                'SELECT ' . $db->quoteName('transaction_status')
+                . ' FROM ' . $db->quoteName('#__j2commerce_orders')
+                . ' WHERE ' . $db->quoteName('j2commerce_order_id') . ' = :pk FOR UPDATE'
+            )
+            ->bind(':pk', $orderPk, ParameterType::INTEGER);
+
+        return (string) $db->setQuery($query)->loadResult();
+    }
+
+    /** The random suffix keeps two claims taken in the same second distinct. */
     private static function newToken(): string
     {
         return self::CLAIM_PREFIX . time() . '.' . bin2hex(random_bytes(4));
@@ -172,7 +262,9 @@ final class PayPalOrderStates
         $pattern    = self::CLAIM_PREFIX . '%';
         $staleClaim = self::CLAIM_PREFIX . (time() - self::CLAIM_TTL);
 
-        $query->where($column . ' <> :claimCompleted')
+        // Upper-cased: the subscription and Express Checkout paths store 'Completed', which a
+        // binary collation would otherwise not match.
+        $query->where('UPPER(' . $column . ') <> :claimCompleted')
             ->where('(' . $column . ' NOT LIKE :claimPattern OR ' . $column . ' < :claimStale)')
             ->bind(':claimCompleted', $completed)
             ->bind(':claimPattern', $pattern)

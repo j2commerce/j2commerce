@@ -81,7 +81,7 @@
             script.onerror = (e) => {
                 sdkLoading = false;
                 console.error('[PayPal] Failed to load SDK:', e);
-                reject(new Error('Failed to load PayPal SDK'));
+                reject(new Error(Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_BUTTON_LOAD_FAILED')));
             };
 
             document.head.appendChild(script);
@@ -163,7 +163,7 @@
             const nvpButton = document.createElement('button');
             nvpButton.type = 'button';
             nvpButton.className = 'btn btn-primary btn-lg w-100';
-            nvpButton.textContent = 'Subscribe via PayPal';
+            nvpButton.textContent = Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_SUBSCRIBE');
             nvpButton.style.minHeight = '45px';
 
             nvpButton.addEventListener('click', async () => {
@@ -187,19 +187,19 @@
                     const data = parseJsonResponse(await response.text());
 
                     if (!data) {
-                        throw new Error('Unexpected server response');
+                        throw new Error(Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_TRY_AGAIN'));
                     }
 
                     debugLog('NVP express checkout response:', { status: response.status, data });
 
                     if (!response.ok || !data.success || !data.redirect_url) {
-                        throw new Error(data.error || 'Failed to start PayPal Express Checkout');
+                        throw new Error(data.error || Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_TRY_AGAIN'));
                     }
 
                     window.location.href = data.redirect_url;
                 } catch (err) {
                     console.error('[PayPal NVP] start error:', err);
-                    showError(err.message || 'Failed to start PayPal Express Checkout. Please try again.');
+                    showError(err.message || Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_TRY_AGAIN'));
                     nvpButton.disabled = false;
                 }
             });
@@ -222,7 +222,7 @@
         loadPayPalSDK(sdkUrl)
             .then(() => {
                 if (typeof paypal === 'undefined') {
-                    throw new Error('PayPal SDK loaded but paypal object not available');
+                    throw new Error(Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_BUTTON_LOAD_FAILED'));
                 }
 
                 debugLog('Rendering PayPal buttons (' + (isSubscription ? 'subscription' : 'one-off') + ')');
@@ -238,13 +238,13 @@
 
                     onCancel: () => {
                         debugLog('onCancel: Payment cancelled by user');
-                        showError('Payment was cancelled. You can try again or choose a different payment method.');
+                        showError(Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_CANCELLED'));
                     },
 
                     onError: (err) => {
                         console.error('[PayPal] Button error:', err);
-                        const msg = err?.message || (typeof err === 'string' ? err : 'Unknown error');
-                        showError('PayPal error: ' + msg);
+                        const msg = err?.message || (typeof err === 'string' ? err : Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_TRY_AGAIN'));
+                        showError(Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_ERROR').replace('%s', () => msg));
                     }
                 };
 
@@ -270,20 +270,20 @@
                             const data = parseJsonResponse(await response.text());
 
                             if (!data) {
-                                throw new Error('Unexpected server response');
+                                throw new Error(Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_TRY_AGAIN'));
                             }
 
                             debugLog('createSubscription: Response:', { status: response.status, data });
 
                             if (!response.ok || !data.success || !data.paypal_subscription_id) {
-                                throw new Error(data.error || 'Failed to create PayPal subscription');
+                                throw new Error(data.error || Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_TRY_AGAIN'));
                             }
 
                             debugLog('createSubscription: PayPal subscription ID:', data.paypal_subscription_id);
                             return data.paypal_subscription_id;
                         } catch (error) {
                             console.error('[PayPal] createSubscription error:', error);
-                            showError(error.message || 'Failed to initialize subscription. Please try again.');
+                            showError(error.message || Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_TRY_AGAIN'));
                             throw error;
                         }
                     };
@@ -308,23 +308,23 @@
                             const result = parseJsonResponse(await response.text());
 
                             if (!result) {
-                                throw new Error('Unexpected server response');
+                                throw new Error(Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_TRY_AGAIN'));
                             }
 
                             debugLog('onApprove (subscription): Finalize response:', { status: response.status, result });
 
                             if (!response.ok || !result.success) {
-                                throw new Error(result.error || 'Subscription approval failed');
+                                throw new Error(result.error || Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_CONTACT_SUPPORT'));
                             }
 
                             if (result.redirect) {
                                 window.location.href = result.redirect;
                             } else {
-                                showError('Subscription approved but redirect URL is missing.');
+                                showError(Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_REDIRECT_MISSING'));
                             }
                         } catch (error) {
                             console.error('[PayPal] onApprove (subscription) error:', error);
-                            showError(error.message || 'Subscription approval failed. Please contact support.');
+                            showError(error.message || Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_CONTACT_SUPPORT'));
                         }
                     };
                 } else {
@@ -350,7 +350,7 @@
                             const data = parseJsonResponse(await response.text());
 
                             if (!data) {
-                                throw new Error('Unexpected server response');
+                                throw new Error(Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_TRY_AGAIN'));
                             }
 
                             debugLog('createOrder: Response:', { status: response.status, data });
@@ -359,14 +359,14 @@
                                 if (data.pending) {
                                     container.hidden = true;
                                 }
-                                throw new Error(data.error || 'Failed to create PayPal order');
+                                throw new Error(data.error || Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_TRY_AGAIN'));
                             }
 
                             debugLog('createOrder: PayPal order ID:', data.paypal_order_id);
                             return data.paypal_order_id;
                         } catch (error) {
                             console.error('[PayPal] createOrder error:', error);
-                            showError(error.message || 'Failed to initialize payment. Please try again.');
+                            showError(error.message || Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_TRY_AGAIN'));
                             throw error;
                         }
                     };
@@ -391,7 +391,7 @@
                             const result = parseJsonResponse(await response.text());
 
                             if (!result) {
-                                throw new Error('Unexpected server response');
+                                throw new Error(Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_TRY_AGAIN'));
                             }
 
                             debugLog('onApprove: Capture response:', { status: response.status, result });
@@ -404,21 +404,21 @@
                                     return;
                                 }
                                 if (result.code === 'INSTRUMENT_DECLINED') {
-                                    showError('Your payment method was declined. Please try a different payment method.');
+                                    showError(Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_DECLINED'));
                                     return data.restart();
                                 }
-                                throw new Error(result.error || 'Payment capture failed');
+                                throw new Error(result.error || Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_CONTACT_SUPPORT'));
                             }
 
                             if (result.redirect) {
                                 debugLog('onApprove: Redirecting to:', result.redirect);
                                 window.location.href = result.redirect;
                             } else {
-                                showError('Payment completed but redirect URL is missing.');
+                                showError(Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_REDIRECT_MISSING'));
                             }
                         } catch (error) {
                             console.error('[PayPal] onApprove error:', error);
-                            showError(error.message || 'Payment processing failed. Please contact support.');
+                            showError(error.message || Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_CONTACT_SUPPORT'));
                         }
                     };
                 }
@@ -427,7 +427,7 @@
             })
             .catch((err) => {
                 console.error('[PayPal] Initialization failed:', err);
-                showError('Failed to load PayPal payment button. Please refresh the page.');
+                showError(Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_BUTTON_LOAD_FAILED'));
                 container.dataset.paypalInitialized = 'false';
                 buttonsRendered = false;
             });
