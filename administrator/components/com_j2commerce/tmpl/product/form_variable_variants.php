@@ -42,7 +42,7 @@ $formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 $hasOptions  = isset($item->product_options) && !empty($item->product_options);
 $hasVariants = isset($item->variants) && count($item->variants);
 $csrfToken   = Session::getFormToken();
-$ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
+$ajaxBase    = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 ?>
 <div class="j2commerce-product-variants">
     <fieldset class="options-form">

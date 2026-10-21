@@ -35,7 +35,7 @@ $wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2
 
 $item = $displayData['product'];
 $formPrefix = $displayData['form_prefix'];
-$ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
+$ajaxBase   = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 ?>
 <div class="j2commerce-product-variants">
     <fieldset class="options-form">

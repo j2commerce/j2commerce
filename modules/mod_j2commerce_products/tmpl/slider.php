@@ -84,7 +84,7 @@ $swiperConfig = json_encode([
         768 => ['slidesPerView' => max(1, (int) ceil($slidesPerView / 2))],
         992 => ['slidesPerView' => $slidesPerView],
     ],
-], JSON_THROW_ON_ERROR);
+], JSON_THROW_ON_ERROR | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
 $wa = Factory::getApplication()->getDocument()->getWebAssetManager();
 $wa->addInlineScript(

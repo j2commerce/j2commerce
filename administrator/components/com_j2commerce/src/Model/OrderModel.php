@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Exception\UserFacingException;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
@@ -238,7 +239,7 @@ class OrderModel extends AdminModel
             $email = trim((string) ($data['user_email'] ?? ''));
 
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_GUEST_EMAIL_REQUIRED'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_GUEST_EMAIL_REQUIRED'));
             }
 
             $customerId       = 0;
@@ -249,13 +250,13 @@ class OrderModel extends AdminModel
             $customerId = (int) ($data['user_id'] ?? 0);
 
             if ($customerId < 1) {
-                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_CUSTOMER_REQUIRED'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_CUSTOMER_REQUIRED'));
             }
 
             $customer = Factory::getContainer()->get(UserFactoryInterface::class)->loadUserById($customerId);
 
             if (!$customer || (int) $customer->id !== $customerId) {
-                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_CUSTOMER_REQUIRED'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_CUSTOMER_REQUIRED'));
             }
 
             $customerEmail    = (string) $customer->email;
@@ -354,15 +355,15 @@ class OrderModel extends AdminModel
         $username = trim($username) !== '' ? trim($username) : $email;
 
         if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || $username === '') {
-            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_CUSTOMER_REQUIRED'));
+            throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_CUSTOMER_REQUIRED'));
         }
 
         if (UserHelper::usernameExists($username)) {
-            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_USERNAME_TAKEN'));
+            throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_USERNAME_TAKEN'));
         }
 
         if (UserHelper::emailExists($email)) {
-            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_EMAIL_TAKEN'));
+            throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_EMAIL_TAKEN'));
         }
 
         $groupId = (int) ComponentHelper::getParams('com_users')->get('new_usertype', 2);
@@ -2138,7 +2139,7 @@ class OrderModel extends AdminModel
             && !InventoryHelper::isBackorderAllowed($variant)
             && InventoryHelper::getAvailableQuantity((int) $variant->j2commerce_variant_id) < $qty
         ) {
-            throw new \RuntimeException(Text::_('COM_J2COMMERCE_NOT_ENOUGH_STOCK'));
+            throw new UserFacingException(Text::_('COM_J2COMMERCE_NOT_ENOUGH_STOCK'));
         }
 
         $price      = (float) $variant->price;
@@ -2397,7 +2398,7 @@ class OrderModel extends AdminModel
         $options = $line ? $this->loadEditableProductOptions((int) $line->product_id) : [];
 
         if ($options === []) {
-            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
         }
 
         $entries = $this->buildOptionEntries($options, $submitted, $priceOverrides);
@@ -2632,7 +2633,7 @@ class OrderModel extends AdminModel
     {
         foreach (array_keys($submitted) as $key) {
             if ((string) (int) $key !== (string) $key || !isset($options[(int) $key])) {
-                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
             }
         }
 
@@ -2645,14 +2646,14 @@ class OrderModel extends AdminModel
 
             if (\in_array($option->type, self::PRICED_OPTION_TYPES, true)) {
                 if (\is_array($raw) && $option->type !== 'checkbox') {
-                    throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
+                    throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
                 }
 
                 $valueIds = $raw === null || $raw === '' ? [] : array_unique((array) $raw);
 
                 foreach ($valueIds as $valueId) {
                     if (!\is_scalar($valueId) || !ctype_digit((string) $valueId) || !isset($option->values[(int) $valueId])) {
-                        throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
+                        throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
                     }
 
                     $valueId  = (int) $valueId;
@@ -2660,7 +2661,7 @@ class OrderModel extends AdminModel
                     $override = $priceOverrides[$valueId] ?? null;
 
                     if ($override !== null && (!\is_scalar($override) || !is_numeric($override))) {
-                        throw new \RuntimeException(Text::sprintf('COM_J2COMMERCE_ORDERITEM_OPTION_VALUE_INVALID', $label));
+                        throw new UserFacingException(Text::sprintf('COM_J2COMMERCE_ORDERITEM_OPTION_VALUE_INVALID', $label));
                     }
 
                     $entries[] = (object) [
@@ -2677,7 +2678,7 @@ class OrderModel extends AdminModel
                 }
             } else {
                 if (\is_array($raw)) {
-                    throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
+                    throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_INVALID'));
                 }
 
                 $control = $option->type === 'textarea' ? '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u' : '/[\x00-\x1F\x7F]/u';
@@ -2685,7 +2686,7 @@ class OrderModel extends AdminModel
 
                 if ($text !== '') {
                     if (!self::isValidOptionText((string) $option->type, $text)) {
-                        throw new \RuntimeException(Text::sprintf('COM_J2COMMERCE_ORDERITEM_OPTION_VALUE_INVALID', $label));
+                        throw new UserFacingException(Text::sprintf('COM_J2COMMERCE_ORDERITEM_OPTION_VALUE_INVALID', $label));
                     }
 
                     $entries[] = (object) [
@@ -2704,7 +2705,7 @@ class OrderModel extends AdminModel
 
             // Child options only apply when their parent value is chosen, so only top-level options are enforced.
             if ($count === 0 && (int) $option->required === 1 && (int) $option->parent_id === 0) {
-                throw new \RuntimeException(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', $label));
+                throw new UserFacingException(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', $label));
             }
         }
 
@@ -2931,18 +2932,18 @@ class OrderModel extends AdminModel
         $line = $this->loadOrderLine($orderId, $orderitemId);
 
         if (!$line || !\in_array((string) $line->product_type, ProductHelper::getVariableProductTypes(), true)) {
-            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+            throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
         }
 
         // Looked up within the line's own product, so a variant of any other product is simply not found.
         $target = $this->loadProductVariant((int) $line->product_id, $variantId);
 
         if ($target === null) {
-            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_VARIANT_INVALID'));
+            throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDERITEM_VARIANT_INVALID'));
         }
 
         if ((int) $target->j2commerce_variant_id === (int) $line->variant_id) {
-            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ORDERITEM_VARIANT_UNCHANGED'));
+            throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDERITEM_VARIANT_UNCHANGED'));
         }
 
         if (InventoryHelper::isMarkedOutOfStock($target)
@@ -2950,7 +2951,7 @@ class OrderModel extends AdminModel
                 && !InventoryHelper::isBackorderAllowed($target)
                 && InventoryHelper::getAvailableQuantity((int) $target->j2commerce_variant_id) < max(1, (int) $line->orderitem_quantity))
         ) {
-            throw new \RuntimeException(Text::_('COM_J2COMMERCE_NOT_ENOUGH_STOCK'));
+            throw new UserFacingException(Text::_('COM_J2COMMERCE_NOT_ENOUGH_STOCK'));
         }
 
         return [$line, $this->loadProductVariant((int) $line->product_id, (int) $line->variant_id), $target];

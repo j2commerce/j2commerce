@@ -88,12 +88,6 @@ class CartsController extends BaseController
         return (bool) $this->input->post->get($token, '', 'alnum');
     }
 
-    /** Same token, read from the query string — for GET endpoints a template override may still call. */
-    private function validateAjaxTokenFromQuery(): bool
-    {
-        return (bool) $this->input->get->get(Session::getFormToken(), '', 'alnum');
-    }
-
     /**
      * Start output buffering for AJAX methods.
      *
@@ -1476,9 +1470,8 @@ class CartsController extends BaseController
 
         // A template override of default_calculator.php / default_shipping.php still sends
         // the old tokenless GET, and the old JS ignores the response body — so a silent
-        // reject looks like "clicking a shipping option does nothing". Accept the token
-        // from the query string as well, and name the two files when there is none at all.
-        if (!$this->validateAjaxToken() && !$this->validateAjaxTokenFromQuery()) {
+        // reject looks like "clicking a shipping option does nothing". Name the two files.
+        if (!$this->validateAjaxToken()) {
             Log::add(
                 'carts.shippingUpdate rejected: no CSRF token. A template override of '
                 . 'tmpl/carts/{framework}/default_calculator.php or default_shipping.php is '

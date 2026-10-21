@@ -239,8 +239,8 @@ Text::script('ERROR');
 ?>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    var ajaxUrl = <?php echo json_encode($ajaxUrl); ?>;
-    var baseUrl = <?php echo json_encode(rtrim(Uri::base(true), '/') . '/index.php'); ?>;
+    var ajaxUrl = <?php echo json_encode($ajaxUrl, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+    var baseUrl = <?php echo json_encode(rtrim(Uri::base(true), '/') . '/index.php', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
     // A hidden Joomla form-token input reproduces exactly the shape core's page cache
     // rewrites to the current visitor's token on every cached-page replay, unlike a

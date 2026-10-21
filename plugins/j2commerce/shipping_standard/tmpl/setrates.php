@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         foreach ($geozones as $gzId => $gzName) {
             $opts[] = ['id' => (int) $gzId, 'name' => $gzName];
         }
-        echo json_encode($opts);
+        echo json_encode($opts, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
     ?>;
 
     // Load rates on page load

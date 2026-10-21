@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Exception\UserFacingException;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
@@ -22,7 +23,6 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPayGrantHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderTransactionHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\PackingSlipHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\QueueHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
@@ -147,7 +147,7 @@ class OrderController extends FormController
 
             return false;
         } catch (\Exception $e) {
-            $this->app->enqueueMessage($e->getMessage(), 'warning');
+            $this->app->enqueueMessage(UserFacingException::messageFor($e), 'warning');
             $this->setRedirect($editUrl);
 
             return false;
@@ -197,11 +197,11 @@ class OrderController extends FormController
 
         try {
             if ($orderId < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
             if ($statusId < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_NO_STATUS_SELECTED'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_NO_STATUS_SELECTED'));
             }
 
             $model = $this->getModel();
@@ -230,10 +230,10 @@ class OrderController extends FormController
                 }
             } else {
                 $errors = $model->getErrors();
-                throw new \Exception(implode("\n", $errors));
+                throw new UserFacingException(implode("\n", $errors));
             }
         } catch (\Exception $e) {
-            $this->app->enqueueMessage($e->getMessage(), 'warning');
+            $this->app->enqueueMessage(UserFacingException::messageFor($e), 'warning');
         }
 
         $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=order&layout=edit&id=' . $orderId, false));
@@ -269,30 +269,35 @@ class OrderController extends FormController
 
         try {
             if ($orderId < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
             if (empty(trim($comment))) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_NOTE_REQUIRED'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_NOTE_REQUIRED'));
             }
 
             $model = $this->getModel();
             $order = $model->getItem($orderId);
 
             if (!$order || empty($order->order_id)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
             if ($model->addOrderHistory($order->order_id, (int) $order->order_state_id, $notify, $comment)) {
                 $this->setMessage(Text::_('COM_J2COMMERCE_ORDER_NOTE_ADDED'));
             } else {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_ADDING_NOTE'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_ADDING_NOTE'));
             }
         } catch (\Exception $e) {
-            $this->app->enqueueMessage($e->getMessage(), 'warning');
+            $this->app->enqueueMessage(UserFacingException::messageFor($e), 'warning');
         }
 
         $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=order&layout=edit&id=' . $orderId, false));
+    }
+
+    private function sendJsonError(\Throwable $e): void
+    {
+        $this->sendJson(['success' => false, 'message' => UserFacingException::messageFor($e)]);
     }
 
     /** JSON exit for the AJAX tasks. close() is exit(), so the headers flush first. */
@@ -318,14 +323,14 @@ class OrderController extends FormController
 
         try {
             if ($orderId < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
             // The model refuses an empty value because saving one also releases the label
             // claim. Say so here rather than letting it fall through to the generic save
             // failure, which would not tell the operator where a tracking number is cleared.
             if (trim($trackingId) === '') {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERR_TRACKING_NUMBER_REQUIRED'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERR_TRACKING_NUMBER_REQUIRED'));
             }
 
             $model = $this->getModel();
@@ -333,7 +338,7 @@ class OrderController extends FormController
             if ($model->saveTrackingNumber($orderId, $trackingId)) {
                 $this->sendJson(['success' => true, 'message' => Text::_('COM_J2COMMERCE_TRACKING_NUMBER_SAVED')]);
             } else {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_SAVING_TRACKING'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_SAVING_TRACKING'));
             }
         } catch (\Exception $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
@@ -356,7 +361,7 @@ class OrderController extends FormController
 
         try {
             if ($orderId < 1 || $statusId < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             $model = $this->getModel();
@@ -396,7 +401,7 @@ class OrderController extends FormController
                 ],
             ]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -410,14 +415,14 @@ class OrderController extends FormController
 
         try {
             if ($orderId < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
             $model = $this->getModel();
             $order = $model->getItem($orderId);
 
             if (!$order || empty($order->order_id)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
             $result = $model->sendOrderNotification($order->order_id, true, true);
@@ -437,7 +442,7 @@ class OrderController extends FormController
                 $this->sendJson(['success' => false, 'message' => $errorMsg]);
             }
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -452,27 +457,27 @@ class OrderController extends FormController
 
         try {
             if ($orderId < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
             if ($note === '') {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_NOTE_REQUIRED'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_NOTE_REQUIRED'));
             }
 
             $model = $this->getModel();
             $order = $model->getItem($orderId);
 
             if (!$order || empty($order->order_id)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
             if ($model->addAdminNote($order->order_id, (int) $order->order_state_id, $note)) {
                 $this->sendJson(['success' => true, 'message' => Text::_('COM_J2COMMERCE_ORDER_NOTE_ADDED')]);
             } else {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_ADDING_NOTE'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_ADDING_NOTE'));
             }
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -486,7 +491,7 @@ class OrderController extends FormController
 
         try {
             if ($historyId < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             $model         = $this->getModel();
@@ -495,10 +500,10 @@ class OrderController extends FormController
             if ($model->deleteAdminNote($historyId, $currentUserId)) {
                 $this->sendJson(['success' => true, 'message' => Text::_('COM_J2COMMERCE_ORDER_NOTE_DELETED')]);
             } else {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_DELETING_NOTE'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_DELETING_NOTE'));
             }
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -519,14 +524,14 @@ class OrderController extends FormController
 
         try {
             if ($orderId < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
             $model = $this->getModel();
             $order = $model->getItem($orderId);
 
             if (!$order || empty($order->order_id)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
             $result     = $model->getOrderHistoryPaginated($order->order_id, $offset, $limit);
@@ -835,11 +840,11 @@ class OrderController extends FormController
             $order = $model->getItem($orderId);
 
             if (!$order || empty($order->order_id)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
             if (!$model->saveOrderEditData($orderId, $jform)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             if (!empty($qty) || !empty($price)) {
@@ -857,7 +862,7 @@ class OrderController extends FormController
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -895,7 +900,7 @@ class OrderController extends FormController
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -912,7 +917,7 @@ class OrderController extends FormController
 
         try {
             if ($term === '') {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             $model = $this->getModel();
@@ -956,7 +961,7 @@ class OrderController extends FormController
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -994,14 +999,14 @@ class OrderController extends FormController
 
         try {
             if ($orderId < 1 || $variantId < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             $model = $this->getModel();
             $order = $model->getItem($orderId);
 
             if (!$order || empty($order->order_id)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
             $productId = $model->getVariantProductId($variantId);
@@ -1025,7 +1030,7 @@ class OrderController extends FormController
                 );
 
                 if ($item === null) {
-                    throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                    throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
                 }
 
                 if ($editable) {
@@ -1074,7 +1079,7 @@ class OrderController extends FormController
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         } catch (\Throwable $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
@@ -1094,14 +1099,14 @@ class OrderController extends FormController
 
         try {
             if ($orderId < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
             $model = $this->getModel();
             $order = $model->getItem($orderId);
 
             if (!$order || empty($order->order_id)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
             $model->updateOrderItemLines($order->order_id, $qty, $price, $model->isStockCommitted($order));
@@ -1131,7 +1136,7 @@ class OrderController extends FormController
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -1222,8 +1227,7 @@ class OrderController extends FormController
         } catch (\Joomla\Database\Exception\ExecutionFailureException | \JsonException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
-        } catch (\RuntimeException $e) {
-            // The model only throws translated validation messages of its own here.
+        } catch (UserFacingException $e) {
             $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         } catch (\Throwable $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
@@ -1260,8 +1264,7 @@ class OrderController extends FormController
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST')]);
-        } catch (\RuntimeException $e) {
-            // The model only throws translated validation messages of its own here.
+        } catch (UserFacingException $e) {
             $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         } catch (\Throwable $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
@@ -1330,8 +1333,7 @@ class OrderController extends FormController
         } catch (\Joomla\Database\Exception\ExecutionFailureException | \JsonException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
-        } catch (\RuntimeException $e) {
-            // The model only throws translated validation messages of its own here.
+        } catch (UserFacingException $e) {
             $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
         } catch (\Throwable $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
@@ -1351,20 +1353,20 @@ class OrderController extends FormController
 
         try {
             if ($orderId < 1 || empty($itemIds)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             $model = $this->getModel();
             $order = $model->getItem($orderId);
 
             if (!$order || empty($order->order_id)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
             $removed = $model->removeOrderItems($order->order_id, $itemIds, $model->isStockCommitted($order));
 
             if (empty($removed)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             $totals = $model->recalculateOrderTotals($order->order_id);
@@ -1387,7 +1389,7 @@ class OrderController extends FormController
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -1402,14 +1404,14 @@ class OrderController extends FormController
 
         try {
             if ($orderId < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
             $model = $this->getModel();
             $order = $model->getItem($orderId);
 
             if (!$order || empty($order->order_id)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
             }
 
             $totals = $model->recomputeOrderTax($order->order_id);
@@ -1423,7 +1425,7 @@ class OrderController extends FormController
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -1471,11 +1473,11 @@ class OrderController extends FormController
             }
 
             if (!\in_array($type, ['billing', 'shipping'], true) || empty($address)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             if (!$this->getModel()->saveOrderAddress($order->order_id, $type, $address)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
             }
 
             $this->sendJson(['success' => true, 'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED')]);
@@ -1483,7 +1485,7 @@ class OrderController extends FormController
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -1503,7 +1505,7 @@ class OrderController extends FormController
 
             $this->sendJson(['success' => true, 'addresses' => $addresses]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -1523,11 +1525,11 @@ class OrderController extends FormController
             }
 
             if (!\in_array($type, ['billing', 'shipping'], true) || $addressId < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             if (!$this->getModel()->applySavedAddress($order->order_id, $type, $addressId, (int) $order->user_id)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             $this->sendJson(['success' => true, 'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED')]);
@@ -1535,7 +1537,7 @@ class OrderController extends FormController
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -1564,7 +1566,7 @@ class OrderController extends FormController
             }
 
             if (!$this->getModel()->copyBillingToShipping($order->order_id)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
             }
 
             $this->sendJson(['success' => true, 'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED')]);
@@ -1572,7 +1574,7 @@ class OrderController extends FormController
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -1598,7 +1600,7 @@ class OrderController extends FormController
             $element = (string) ($order->orderpayment_type ?? '');
 
             if ($element === '') {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             $currencyCode = (string) ($order->currency_code ?? '');
@@ -1608,7 +1610,7 @@ class OrderController extends FormController
             $refundable   = OrderTransactionHelper::getRefundable($orderPk);
 
             if ($amount < $epsilon || $amount > $refundable + $epsilon) {
-                throw new \Exception(Text::sprintf(
+                throw new UserFacingException(Text::sprintf(
                     'COM_J2COMMERCE_ERR_REFUND_OUT_OF_RANGE',
                     CurrencyHelper::format($refundable, $currencyCode, 1.0)
                 ));
@@ -1627,7 +1629,7 @@ class OrderController extends FormController
 
             if (!\is_array($result) || empty($result['success'])) {
                 $gatewayMessage = \is_array($result) ? (string) ($result['error'] ?? $result['message'] ?? '') : '';
-                throw new \Exception($gatewayMessage !== '' ? $gatewayMessage : Text::_('COM_J2COMMERCE_ERR_REFUND_FAILED'));
+                throw new UserFacingException($gatewayMessage !== '' ? $gatewayMessage : Text::_('COM_J2COMMERCE_ERR_REFUND_FAILED'));
             }
 
             // A 'void' outcome reversed the whole unsettled capture, not just the
@@ -1664,7 +1666,7 @@ class OrderController extends FormController
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -1692,7 +1694,7 @@ class OrderController extends FormController
 
             // Parity with the UI gate: balance charges only apply to ledgered orders.
             if (!OrderTransactionHelper::hasLedger($orderPk)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             // Capability + stored profile are re-resolved server-side — never trusted
@@ -1700,7 +1702,7 @@ class OrderController extends FormController
             $profile = $model->resolveStoredPaymentProfile((int) ($order->user_id ?? 0), $element);
 
             if ($element === '' || $profile === null || $model->getSupplementalCapability($order) !== 'token_charge') {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             $currencyCode = (string) ($order->currency_code ?? '');
@@ -1714,7 +1716,7 @@ class OrderController extends FormController
             $balanceDue        = max(0.0, $orderTotalDisplay - max(0.0, OrderTransactionHelper::getNetPaid($orderPk)));
 
             if ($amount < $epsilon || $amount > $balanceDue + $epsilon) {
-                throw new \Exception(Text::sprintf(
+                throw new UserFacingException(Text::sprintf(
                     'COM_J2COMMERCE_ERR_CHARGE_OUT_OF_RANGE',
                     CurrencyHelper::format($balanceDue, $currencyCode, 1.0)
                 ));
@@ -1743,7 +1745,7 @@ class OrderController extends FormController
 
             if (($outcome['status'] ?? '') !== 'success') {
                 $gatewayMessage = (string) ($outcome['message'] ?? '');
-                throw new \Exception($gatewayMessage !== '' ? $gatewayMessage : Text::_('COM_J2COMMERCE_ERR_CHARGE_FAILED'));
+                throw new UserFacingException($gatewayMessage !== '' ? $gatewayMessage : Text::_('COM_J2COMMERCE_ERR_CHARGE_FAILED'));
             }
 
             $transactionId = (string) ($outcome['transaction_id'] ?? '');
@@ -1776,7 +1778,7 @@ class OrderController extends FormController
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -1797,13 +1799,13 @@ class OrderController extends FormController
             }
 
             if ($name === '' || $amount <= 0) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             $model = $this->getModel();
 
             if (!$model->addOrderFee($order->order_id, $name, $amount, $taxable)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'));
             }
 
             $totals = $model->recalculateOrderTotals($order->order_id);
@@ -1817,7 +1819,7 @@ class OrderController extends FormController
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -1838,7 +1840,7 @@ class OrderController extends FormController
             $model = $this->getModel();
 
             if ($feeId < 1 || !$model->removeOrderFee($order->order_id, $feeId)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             $totals = $model->recalculateOrderTotals($order->order_id);
@@ -1852,7 +1854,7 @@ class OrderController extends FormController
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -1871,7 +1873,7 @@ class OrderController extends FormController
             }
 
             if ($code === '') {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ENTER_COUPON_CODE'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ENTER_COUPON_CODE'));
             }
 
             $model               = $this->getModel();
@@ -1897,7 +1899,7 @@ class OrderController extends FormController
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -1916,7 +1918,7 @@ class OrderController extends FormController
             }
 
             if ($code === '') {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             $model               = $this->getModel();
@@ -1942,7 +1944,7 @@ class OrderController extends FormController
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
         } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
+            $this->sendJsonError($e);
         }
     }
 
@@ -1963,7 +1965,7 @@ class OrderController extends FormController
             $model = $this->getModel();
 
             if ($discountId < 1 || !$model->removeOrderDiscount($order->order_id, $discountId)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             // Removing a coupon widens the taxable base back out — recomputeOrderTax() re-derives
@@ -2059,46 +2061,5 @@ class OrderController extends FormController
         $db->setQuery($query);
 
         return $db->loadObject();
-    }
-
-    public function ajaxQueueFaker(): void
-    {
-        if (!$this->checkOrderEditAccess()) {
-            return;
-        }
-
-        $orderId  = $this->input->post->getInt('order_id', 0);
-        $orderRef = $this->input->post->getString('order_ref', '');
-
-        try {
-            if ($orderId < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ORDER_NOT_FOUND'));
-            }
-
-            $queueId = QueueHelper::enqueue('faker', (string) $orderId, [
-                'order_id'  => $orderId,
-                'order_ref' => $orderRef,
-                'action'    => 'test_sync',
-            ]);
-
-            $model = $this->getModel();
-            $order = $model->getItem($orderId);
-
-            if ($order && !empty($order->order_id)) {
-                $model->addAdminNote(
-                    $order->order_id,
-                    (int) $order->order_state_id,
-                    Text::sprintf('COM_J2COMMERCE_ORDER_SUBMITTED_TO_FAKER_QUEUE', $queueId),
-                    'system_note'
-                );
-            }
-
-            $this->sendJson([
-                'success' => true,
-                'message' => Text::sprintf('COM_J2COMMERCE_QUEUE_ORDER_ADDED', $orderRef),
-            ]);
-        } catch (\Exception $e) {
-            $this->sendJson(['success' => false, 'message' => $e->getMessage()]);
-        }
     }
 }

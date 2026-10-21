@@ -87,6 +87,8 @@ class MultiimageuploaderController extends BaseController
         'srt', 'vtt', 'ass', 'ssa',
     ];
 
+    private const ARCHIVE_EXTENSIONS = ['zip', '7z', 'rar', 'tar', 'gz', 'bz2', 'xz', 'tgz'];
+
     /** MIME content-types that must never be accepted regardless of extension. */
     private const DANGEROUS_MIME_TYPES = [
         'application/x-php', 'application/x-httpd-php', 'application/x-httpd-php-source',
@@ -149,10 +151,9 @@ class MultiimageuploaderController extends BaseController
         $fileName  = $baseName . '_' . UploadHelper::randomToken() . '.' . $extension;
         $filePath  = $uploadPath . '/' . $fileName;
 
-        // File-mode products legitimately carry .php archive entries and <?php samples,
-        // so the archive/tag content scans are dropped in that mode; the null-byte, phar-stub
-        // and forbidden-extension name checks stay on in both, alongside validateUploadedFile().
-        $safeFileOptions = $fileMode === 1
+        // Archives in file mode may legitimately carry .php entries and <?php samples, so only
+        // they skip the content scans; every other type keeps the full default scan.
+        $safeFileOptions = $fileMode === 1 && \in_array($extension, self::ARCHIVE_EXTENSIONS, true)
             ? ['php_tag_in_content' => false, 'shorttag_in_content' => false, 'fobidden_ext_in_content' => false]
             : [];
 
