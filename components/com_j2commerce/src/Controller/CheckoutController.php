@@ -2461,10 +2461,9 @@ class CheckoutController extends BaseController
         $user = $this->app->getIdentity();
 
         if (!$user || !$user->id) {
-            $guest = $session->get('guest', [], 'j2commerce');
-
-            if (\is_array($guest) && !empty($guest['email'])) {
-                $session->set('guest_order_email', $guest['email'], 'j2commerce');
+            // The order row's own address, which the guest order checks compare against.
+            if (!empty($orderTable->user_email)) {
+                $session->set('guest_order_email', (string) $orderTable->user_email, 'j2commerce');
             }
 
             if (isset($orderTable->token) && !empty($orderTable->token)) {
@@ -3286,10 +3285,9 @@ class CheckoutController extends BaseController
                 $user = $this->app->getIdentity();
 
                 if (!$user || !$user->id) {
-                    $guest = $session->get('guest', [], 'j2commerce');
-
-                    if (\is_array($guest) && !empty($guest['email'])) {
-                        $session->set('guest_order_email', $guest['email'], 'j2commerce');
+                    // The order row's own address, which the guest order checks compare against.
+                    if (!empty($orderTable->user_email)) {
+                        $session->set('guest_order_email', (string) $orderTable->user_email, 'j2commerce');
                     }
 
                     if (!empty($orderTable->token)) {

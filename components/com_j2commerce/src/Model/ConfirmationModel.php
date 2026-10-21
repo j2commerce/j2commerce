@@ -351,8 +351,11 @@ class ConfirmationModel extends BaseDatabaseModel
 
         $session      = $app->getSession();
         $sessionToken = $session->get('guest_order_token', '', 'j2commerce');
+        $sessionEmail = $session->get('guest_order_email', '', 'j2commerce');
 
-        if (!empty($sessionToken) && $sessionToken === ($orderTable->token ?? '')) {
+        if (!empty($sessionToken) && !empty($sessionEmail)
+            && hash_equals((string) ($orderTable->token ?? ''), (string) $sessionToken)
+            && strcasecmp((string) ($orderTable->user_email ?? ''), (string) $sessionEmail) === 0) {
             return true;
         }
 
