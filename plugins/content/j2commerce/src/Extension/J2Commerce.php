@@ -217,10 +217,15 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
+        // Prepare Content / Preserve Tags govern article and store text only. Other
+        // callers (module text, a form extension's email body) run their own
+        // content-plugin dispatch, so their text is left to that single pass.
+        $storeContext = str_starts_with($context, 'com_content.') || str_starts_with($context, 'com_j2commerce.');
+
         // When prepare_content is off, strip standard Joomla content-plugin tags
         // (loadposition / loadmodule / loadmoduleid) while preserving any patterns
         // listed in the preserve_tags parameter.
-        if (!(bool) $this->params->get('prepare_content', 1)) {
+        if ($storeContext && !(bool) $this->params->get('prepare_content', 1)) {
             $this->stripContentPluginTags($article);
         }
 
@@ -260,7 +265,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         // Re-dispatch onContentPrepare with the real article so content plugins can
         // render remaining tags ({field 4}, {loadmoduleid 120}, etc.).
         //
-        // Fires for all contexts — including productlist — when:
+        // Fires for $storeContext contexts — including productlist — when:
         //   - prepare_content is on  → render all plugin tags in the text, OR
         //   - preserve_tags is set   → stripContentPluginTags already removed the
         //     unwanted tags; we still need to render the ones that were preserved.
@@ -270,7 +275,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         // The static flag above prevents recursion.
         $hasPreserveTags = trim((string) $this->params->get('preserve_tags', '')) !== '';
 
-        if ((bool) $this->params->get('prepare_content', 1) || $hasPreserveTags) {
+        if ($storeContext && ((bool) $this->params->get('prepare_content', 1) || $hasPreserveTags)) {
             self::$preparingContent = true;
             PluginHelper::importPlugin('content');
             $dispatcher = Factory::getContainer()->get(DispatcherInterface::class);
