@@ -1134,18 +1134,47 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         };
 
         $strip = static function (string $text) use ($shouldStrip): string {
-            // Paired form first: {tagname …}…{/tagname}
-            $text = preg_replace_callback(
-                '/\{([a-z][a-z0-9_-]*)(?:\s[^{}]*)?\}.*?\{\/\1\}/is',
-                static function (array $m) use ($shouldStrip): string {
-                    return $shouldStrip($m[0], $m[1]) ? '' : $m[0];
-                },
-                $text
-            ) ?? $text;
+            $openerRe = '/\{([a-z][a-z0-9_-]*)(?:\s[^{}]*)?\}/i';
+
+            // Paired form first: {tagname …}…{/tagname}, each opener paired with the next closer
+            // of its name, in one streaming forward scan. A `.*?\{\/\1\}` regex re-scanned to the
+            // end of the text from every self-closing tag (quadratic) and returned null on long
+            // articles once the backtrack limit was reached.
+            $lastCloser = [];
+
+            for ($offset = 0; preg_match('/\{\/([a-z][a-z0-9_-]*)\}/i', $text, $m, PREG_OFFSET_CAPTURE, $offset); $offset = $m[0][1] + \strlen($m[0][0])) {
+                $lastCloser[strtolower($m[1][0])] = $m[0][1];
+            }
+
+            if ($lastCloser) {
+                $out = '';
+                $pos = $offset = 0;
+
+                while (preg_match($openerRe, $text, $m, PREG_OFFSET_CAPTURE, $offset)) {
+                    [[$raw, $start], [$name]] = $m;
+
+                    $key    = strtolower($name);
+                    $offset = $start + \strlen($raw);
+
+                    // No closer of this name follows; the self-closing pass handles it.
+                    if (($lastCloser[$key] ?? -1) < $start) {
+                        continue;
+                    }
+
+                    // Cannot miss: the closer recorded above starts at or after $offset.
+                    $needle = '{/' . $key . '}';
+                    $end    = stripos($text, $needle, $offset) + \strlen($needle);
+                    $pair   = substr($text, $start, $end - $start);
+                    $out .= substr($text, $pos, $start - $pos) . ($shouldStrip($pair, $name) ? '' : $pair);
+                    $offset = $pos = $end;
+                }
+
+                $text = $out . substr($text, $pos);
+            }
 
             // Self-closing form: {tagname} or {tagname attributes}
             return preg_replace_callback(
-                '/\{([a-z][a-z0-9_-]*)(?:\s[^{}]*)?\}/i',
+                $openerRe,
                 static function (array $m) use ($shouldStrip): string {
                     return $shouldStrip($m[0], $m[1]) ? '' : $m[0];
                 },
