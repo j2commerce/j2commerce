@@ -532,7 +532,6 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             'DECLINED',
             'ERROR',
             'REDIRECT_MISSING',
-            'SUBSCRIBE',
             'TRY_AGAIN',
         ];
 
@@ -638,13 +637,6 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 return;
             }
 
-            $captureId = $orderTable->transaction_id;
-
-            if (empty($captureId)) {
-                $event->setArgument('result', ['success' => false, 'error' => 'No capture ID found']);
-                return;
-            }
-
             $currency = $this->getCurrency($orderTable);
             $amount   = $rawAmount !== null
                 ? CurrencyHelper::convertForOrder((float) $rawAmount, $orderTable)
@@ -654,6 +646,26 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $orderPk        = (int) $orderTable->j2commerce_order_id;
             $hasLedger      = OrderTransactionHelper::hasLedger($orderPk);
             $refundedBefore = $hasLedger ? OrderTransactionHelper::getRefunded($orderPk) : 0.0;
+
+            // The ledger names the refundable payment. transaction_id is not always one: a subscription
+            // order stores the PayPal subscription id (I-...), whose sale is what can be refunded.
+            $captureId = (string) $orderTable->transaction_id;
+
+            if ($hasLedger) {
+                $legs = OrderTransactionHelper::allocateRefund($orderPk, $amount ?? OrderTransactionHelper::getRefundable($orderPk));
+
+                if (\count($legs) > 1) {
+                    $event->setArgument('result', ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_REFUND_SPANS_PAYMENTS')]);
+                    return;
+                }
+
+                $captureId = (string) ($legs[0]['gateway_txn_id'] ?? $captureId);
+            }
+
+            if ($captureId === '') {
+                $event->setArgument('result', ['success' => false, 'error' => 'No capture ID found']);
+                return;
+            }
 
             $refunds = $this->getPayPalRefunds();
             $result  = $refunds->refundCapture($captureId, $amount, $currency);
@@ -1044,135 +1056,14 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
     }
 
     /**
-     * createOrder branch for subscription_mode=nvp + subscription cart. Calls
-     * SetExpressCheckout to obtain a TOKEN, stashes the TOKEN in the order's
-     * transaction_details, and returns a redirect URL the JS sends the
-     * customer to. After approval, PayPal redirects back with TOKEN+PayerID
-     * in query params; the capture step calls completeNvpExpressCheckoutForOrder.
-     */
-    public function createNvpExpressCheckoutForOrder(array $data): array
-    {
-        try {
-            $orderId = (string) ($data['order_id'] ?? '');
-
-            if ($orderId === '') {
-                return ['success' => false, 'error' => 'Missing order_id'];
-            }
-
-            $orderTable = Factory::getApplication()
-                ->bootComponent('com_j2commerce')
-                ->getMVCFactory()
-                ->createTable('Order', 'Administrator');
-
-            if (!$orderTable->load(['order_id' => $orderId])) {
-                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_ORDER_NOT_FOUND')];
-            }
-
-            if ($this->hasPendingPayment($orderTable)) {
-                return [
-                    'success' => false,
-                    'pending' => true,
-                    'error'   => Text::_('COM_J2COMMERCE_PAYPAL_PAYMENT_PENDING'),
-                ];
-            }
-
-            // The same entry rule the REST create and capture apply.
-            if (
-                !PayPalOrderStates::isAwaitingPayment((int) $orderTable->order_state_id, $this->params)
-                || (float) ($orderTable->order_refund ?? 0) > 0
-                || PayPalOrderStates::isSettledOrSettling((string) ($orderTable->transaction_status ?? ''))
-            ) {
-                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
-            }
-
-            $nvp = $this->getPayPalNvp();
-
-            if (!$nvp->isConfigured()) {
-                $this->log('createNvpExpressCheckoutForOrder: NVP credentials not configured', Log::ERROR);
-
-                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
-            }
-
-            $currency = $this->getCurrency($orderTable);
-            $amount   = CurrencyHelper::gatewayAmount($orderTable);
-
-            $returnUrl = Route::_(
-                'index.php?option=com_j2commerce&task=checkout.confirmPayment'
-                . '&orderpayment_type=' . $this->_name
-                . '&order_id=' . urlencode($orderId)
-                . '&nvp=1',
-                false,
-                Route::TLS_IGNORE,
-                true
-            );
-            $cancelUrl = Route::_(
-                'index.php?option=com_j2commerce&view=checkout',
-                false,
-                Route::TLS_IGNORE,
-                true
-            );
-
-            $brand = (string) Factory::getApplication()->get('sitename', 'J2Commerce');
-
-            $response = $nvp->setExpressCheckout(
-                amount:             $amount,
-                currencyCode:       $currency,
-                returnUrl:          $returnUrl,
-                cancelUrl:          $cancelUrl,
-                invoiceNumber:      $orderId,
-                billingDescription: $brand . ' subscription',
-                custom:             $orderId
-            );
-
-            if (!PayPalNvpClient::isSuccess($response)) {
-                $this->log(
-                    'createNvpExpressCheckoutForOrder: ' . PayPalNvpClient::getErrorMessage($response),
-                    Log::ERROR
-                );
-
-                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
-            }
-
-            $token = (string) ($response['TOKEN'] ?? '');
-
-            if ($token === '') {
-                $this->log('createNvpExpressCheckoutForOrder: SetExpressCheckout returned no TOKEN', Log::ERROR);
-
-                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
-            }
-
-            if (!$this->bindPayPalReference($orderTable, ['nvp_express_token' => $token, 'mode' => 'nvp_express'])) {
-                $this->log(
-                    'createNvpExpressCheckoutForOrder: order ' . $orderId . ' stopped awaiting payment during the call',
-                    Log::ERROR
-                );
-
-                return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
-            }
-
-            $approveUrl = $nvp->getApprovalUrl($token);
-
-            $this->log('createNvpExpressCheckoutForOrder: Express Checkout started for order ' . $orderId);
-
-            return [
-                'success'      => true,
-                'mode'         => 'nvp',
-                'redirect_url' => $approveUrl,
-                'token'        => $token,
-            ];
-        } catch (\Throwable $e) {
-            $this->log('createNvpExpressCheckoutForOrder exception: ' . $e->getMessage(), Log::ERROR);
-
-            return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
-        }
-    }
-
-    /**
      * Capture-step branch for the NVP Express Checkout return flow. Customer
      * has approved at PayPal and bounced back with TOKEN+PayerID in URL params.
      * This calls DoExpressCheckoutPayment, extracts the BILLINGAGREEMENTID
      * (BAID), and stashes it in transaction_details so onAfterPayment writes
      * the billing_agreement_id metakey.
+     *
+     * Nothing starts an NVP Express Checkout any more; this finishes one a buyer began before the
+     * upgrade. DELETE WHEN: no order has transaction_details.nvp_express_token without a payment.
      */
     public function completeNvpExpressCheckoutForOrder(string $orderIdString, string $token, string $payerId): array
     {
@@ -1314,6 +1205,9 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
                 return $unsettled;
             }
+
+            // Ahead of the claim, as the REST capture does: the money has moved either way.
+            $this->recordLedgerCharge($orderIdString, $transId, $chargedAmount, $chargedCurrency);
 
             $confirmedStateId = PayPalOrderStates::resolve($this->params, PayPalOrderStates::CONFIRMED);
             $orderPk          = (int) $orderTable->j2commerce_order_id;
@@ -1515,6 +1409,31 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         return ['failed', PayPalNvpClient::getErrorMessage($response), ['gateway_response' => $response]];
     }
 
+    /** Ledger charge for a payment taken outside the Orders v2 capture, so the order view can refund it. Dedupes on the id. */
+    private function recordLedgerCharge(string $orderIdString, string $txnId, float $amount, string $currency): void
+    {
+        if ($orderIdString === '' || $txnId === '' || $amount <= 0 || $currency === '') {
+            return;
+        }
+
+        try {
+            $db      = $this->getDatabase();
+            $orderPk = (int) $db->setQuery(
+                $db->getQuery(true)
+                    ->select($db->quoteName('j2commerce_order_id'))
+                    ->from($db->quoteName('#__j2commerce_orders'))
+                    ->where($db->quoteName('order_id') . ' = :orderId')
+                    ->bind(':orderId', $orderIdString)
+            )->loadResult();
+
+            if ($orderPk > 0) {
+                OrderTransactionHelper::addCharge($orderPk, $this->_name, $txnId, $amount, strtoupper($currency));
+            }
+        } catch (\Throwable $e) {
+            $this->log('Ledger charge not recorded for order ' . $orderIdString . ': ' . $e->getMessage(), Log::ERROR);
+        }
+    }
+
     private function finalizeNvpRenewalOrder(object $order, string $transactionId, array $nvpResponse): void
     {
         try {
@@ -1526,6 +1445,13 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             if (!$orderTable->load(['order_id' => (string) ($order->order_id ?? '')])) {
                 return;
             }
+
+            $this->recordLedgerCharge(
+                (string) $orderTable->order_id,
+                $transactionId,
+                (float) ($nvpResponse['AMT'] ?? 0),
+                (string) ($nvpResponse['CURRENCYCODE'] ?? '')
+            );
 
             $orderTable->transaction_id      = $transactionId;
             $orderTable->transaction_status  = 'Completed';
@@ -1570,6 +1496,15 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         } catch (\Throwable $e) {
             $this->log('Modern subscription capture exception: ' . $e->getMessage(), Log::ERROR);
             return ['no_response', Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED'), []];
+        }
+
+        if (($outcome['status'] ?? '') === 'success') {
+            $this->recordLedgerCharge(
+                (string) ($order->order_id ?? ''),
+                (string) ($outcome['transaction_id'] ?? ''),
+                CurrencyHelper::convertForOrder((float) ($order->order_total ?? 0), $order),
+                $this->getCurrency($order)
+            );
         }
 
         return [
@@ -1754,30 +1689,18 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
         $orderId = (string) ($data['order_id'] ?? '');
 
+        // New subscriptions always use the Subscriptions API. Legacy NVP billing agreements
+        // only renew (onProcessRenewalPayment routes them by their stored BAID).
         if ($this->isSubscriptionOrder($orderId)) {
-            $mode = $this->getSubscriptionMode();
-            $this->log('onPaymentCreateOrder: subscription detected for order_id: ' . $orderId . ' — mode=' . $mode);
+            $this->log('onPaymentCreateOrder: subscription detected for order_id: ' . $orderId);
 
-            $result = $mode === 'nvp'
-                ? $this->createNvpExpressCheckoutForOrder($data)
-                : $this->createPayPalSubscriptionForOrder($data);
+            $result = $this->createPayPalSubscriptionForOrder($data);
         } else {
             $this->log('onPaymentCreateOrder: Starting PayPal order creation for order_id: ' . ($data['order_id'] ?? 'N/A'));
             $result = $this->createPayPalOrder($data);
         }
 
         $event->setArgument('result', $result);
-    }
-
-    /**
-     * Effective subscription creation mode for new checkouts.
-     * Returns 'nvp' or 'rest'. Defaults to 'rest'.
-     */
-    private function getSubscriptionMode(): string
-    {
-        $mode = strtolower((string) $this->params->get('subscription_mode', 'rest'));
-
-        return $mode === 'nvp' ? 'nvp' : 'rest';
     }
 
     public function onPaymentCaptureOrder(Event $event): void
@@ -2159,6 +2082,20 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
             }
 
+            // The first cycle's sale is the refundable payment (the I- subscription id is not), so it
+            // goes on the ledger ahead of the claim, as the capture path does. PayPal bills it as part
+            // of activation; a sale that has not posted yet is recorded by the sale webhook instead.
+            foreach ($this->getPayPalSubscriptions()->listTransactions($paypalSubscriptionId) as $sale) {
+                if (\in_array(strtoupper((string) ($sale['status'] ?? '')), ['COMPLETED', 'PENDING'], true)) {
+                    $this->recordLedgerCharge(
+                        $orderIdString,
+                        (string) ($sale['id'] ?? ''),
+                        (float) ($sale['amount_with_breakdown']['gross_amount']['value'] ?? 0),
+                        (string) ($sale['amount_with_breakdown']['gross_amount']['currency_code'] ?? '')
+                    );
+                }
+            }
+
             $confirmedStateId = PayPalOrderStates::resolve($this->params, PayPalOrderStates::CONFIRMED);
             $orderPk          = (int) $orderTable->j2commerce_order_id;
             $priorStatus      = (string) ($orderTable->transaction_status ?? '');
@@ -2293,10 +2230,9 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         $vars->csrf_token = Session::getFormToken();
         $vars->debug      = (int) $this->params->get('debug', 0);
 
-        $vars->is_subscription   = $this->isSubscriptionOrder((string) $vars->order_id);
-        $vars->subscription_mode = $vars->is_subscription ? $this->getSubscriptionMode() : 'rest';
+        $vars->is_subscription = $this->isSubscriptionOrder((string) $vars->order_id);
 
-        $this->log('_prePayment: Prepared vars - order_id: ' . $vars->order_id . ', currency: ' . $vars->currency_code . ', amount: ' . $vars->orderpayment_amount . ', is_subscription: ' . ($vars->is_subscription ? '1' : '0') . ', subscription_mode: ' . $vars->subscription_mode);
+        $this->log('_prePayment: Prepared vars - order_id: ' . $vars->order_id . ', currency: ' . $vars->currency_code . ', amount: ' . $vars->orderpayment_amount . ', is_subscription: ' . ($vars->is_subscription ? '1' : '0'));
 
         return $this->_getLayout('prepayment', $vars);
     }

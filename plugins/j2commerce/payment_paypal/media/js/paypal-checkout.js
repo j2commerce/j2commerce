@@ -112,10 +112,8 @@
         const sandbox = container.dataset.sandbox === 'true';
         const clientId = container.dataset.clientId;
         const isSubscription = container.dataset.isSubscription === 'true';
-        const subscriptionMode = container.dataset.subscriptionMode || 'rest';
-        const isNvpMode = isSubscription && subscriptionMode === 'nvp';
 
-        debugLog('Configuration:', { orderId, currency, amount, sandbox, isSubscription, subscriptionMode });
+        debugLog('Configuration:', { orderId, currency, amount, sandbox, isSubscription });
 
         const errorContainer = document.getElementById('paypal-error-message');
         const processingContainer = document.getElementById('paypal-processing-message');
@@ -152,62 +150,6 @@
                 processingContainer.classList.add('d-none');
             }
         };
-
-        // Legacy NVP Express Checkout flow: no Smart Buttons SDK. Render a single
-        // "Subscribe via PayPal" button that POSTs to createOrderUrl, gets back a
-        // redirect_url, sends the customer to classic PayPal Express Checkout.
-        if (isNvpMode) {
-            container.dataset.paypalInitialized = 'true';
-            buttonsRendered = true;
-
-            const nvpButton = document.createElement('button');
-            nvpButton.type = 'button';
-            nvpButton.className = 'btn btn-primary btn-lg w-100';
-            nvpButton.textContent = Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_SUBSCRIBE');
-            nvpButton.style.minHeight = '45px';
-
-            nvpButton.addEventListener('click', async () => {
-                nvpButton.disabled = true;
-                hideMessages();
-                showProcessing();
-                debugLog('NVP express checkout: requesting redirect URL');
-
-                try {
-                    const response = await fetch(createOrderUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            order_id: orderId,
-                            currency: currency,
-                            amount: amount,
-                            mode: 'nvp',
-                            [csrfToken]: '1'
-                        })
-                    });
-                    const data = parseJsonResponse(await response.text());
-
-                    if (!data) {
-                        throw new Error(Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_TRY_AGAIN'));
-                    }
-
-                    debugLog('NVP express checkout response:', { status: response.status, data });
-
-                    if (!response.ok || !data.success || !data.redirect_url) {
-                        throw new Error(data.error || Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_TRY_AGAIN'));
-                    }
-
-                    window.location.href = data.redirect_url;
-                } catch (err) {
-                    console.error('[PayPal NVP] start error:', err);
-                    showError(err.message || Joomla.Text._('PLG_J2COMMERCE_PAYMENT_PAYPAL_JS_TRY_AGAIN'));
-                    nvpButton.disabled = false;
-                }
-            });
-
-            container.appendChild(nvpButton);
-            debugLog('NVP express checkout button rendered');
-            return;
-        }
 
         const baseUrl = sandbox ? 'https://www.sandbox.paypal.com/sdk/js' : 'https://www.paypal.com/sdk/js';
         // Subscriptions require vault=true + intent=subscription on the SDK URL.

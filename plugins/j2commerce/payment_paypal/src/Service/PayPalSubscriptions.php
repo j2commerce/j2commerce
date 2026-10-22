@@ -356,6 +356,18 @@ final class PayPalSubscriptions
         return ($response['status'] ?? 0) >= 200 && ($response['status'] ?? 0) < 300;
     }
 
+    /** Sales billed on the subscription in the last day (its first cycle at approval time). */
+    public function listTransactions(string $paypalSubscriptionId): array
+    {
+        $response = $this->client->request(
+            'GET',
+            '/v1/billing/subscriptions/' . urlencode($paypalSubscriptionId) . '/transactions?start_time='
+            . rawurlencode(gmdate('Y-m-d\TH:i:s\Z', time() - 86400)) . '&end_time=' . rawurlencode(gmdate('Y-m-d\TH:i:s\Z', time() + 3600))
+        );
+
+        return (int) ($response['status'] ?? 0) === 200 ? (array) ($response['body']['transactions'] ?? []) : [];
+    }
+
     public function getSubscriptionDetails(string $paypalSubscriptionId): array
     {
         $response = $this->client->request(

@@ -92,7 +92,7 @@ final class PayPalWebhooks
                 'CUSTOMER.DISPUTE.CREATED'            => $this->handleDisputeCreated($event, $params),
                 'CUSTOMER.DISPUTE.RESOLVED'           => $this->handleDisputeResolved($event, $params),
                 'BILLING.SUBSCRIPTION.ACTIVATED'      => $this->handleSubscriptionActivated($event),
-                'BILLING.SUBSCRIPTION.CANCELLED'      => $this->handleSubscriptionStatusChange($event, 'cancelled'),
+                'BILLING.SUBSCRIPTION.CANCELLED'      => $this->handleSubscriptionStatusChange($event, 'canceled'),
                 'BILLING.SUBSCRIPTION.SUSPENDED'      => $this->handleSubscriptionStatusChange($event, 'pending'),
                 'BILLING.SUBSCRIPTION.EXPIRED'        => $this->handleSubscriptionStatusChange($event, 'expired'),
                 'PAYMENT.SALE.COMPLETED'              => $this->handleSubscriptionRenewalSuccess($event),
@@ -256,6 +256,27 @@ final class PayPalWebhooks
             );
 
             return ['status' => 409, 'message' => 'Amount/currency mismatch'];
+        }
+
+        // The first cycle's sale is also announced here. It belongs to the checkout order and is no
+        // renewal: approval already recorded it (or does so now when it posted late), and advancing the
+        // cycle for it would bill-date the subscription one period ahead.
+        $saleId   = (string) ($resource['id'] ?? '');
+        $parentPk = (int) ($parentOrder->j2commerce_order_id ?? 0);
+        $charges  = array_column(OrderTransactionHelper::getCharges($parentPk), 'gateway_txn_id');
+
+        if ($saleId !== '' && \in_array($saleId, $charges, true)) {
+            return ['status' => 200, 'message' => 'First-cycle sale already recorded'];
+        }
+
+        // Both sides UTC: orders.created_on is stored in UTC and create_time is ISO 8601.
+        $orderedAt = strtotime((string) ($parentOrder->created_on ?? '') . ' UTC') ?: 0;
+        $saleAt    = strtotime((string) ($resource['create_time'] ?? '')) ?: 0;
+
+        if ($saleId !== '' && $charges === [] && $orderedAt > 0 && $saleAt > 0 && abs($saleAt - $orderedAt) < 86400) {
+            OrderTransactionHelper::addCharge($parentPk, 'payment_paypal', $saleId, $saleAmount, $saleCurrency);
+
+            return ['status' => 200, 'message' => 'First-cycle sale recorded on the checkout order'];
         }
 
         // Build a minimal order-like object the renewal helper can consume.
