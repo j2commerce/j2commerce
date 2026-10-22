@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
 
@@ -26,6 +27,14 @@ use Joomla\Database\DatabaseDriver;
  */
 class CustomfieldTable extends Table
 {
+    // #__j2commerce_addresses columns shipped by install.mysql.utf8.sql; never dropped by a custom field.
+    private const BASE_ADDRESS_COLUMNS = [
+        'j2commerce_address_id', 'user_id', 'first_name', 'last_name', 'email', 'address_1', 'address_2',
+        'city', 'zip', 'zone_id', 'country_id', 'phone_1', 'phone_2', 'fax', 'type', 'company', 'tax_number',
+        'access', 'created_on', 'created_by', 'modified_on', 'modified_by', 'checked_out', 'checked_out_time',
+        'ordering', 'enabled', 'params',
+    ];
+
     /**
      * Constructor.
      *
@@ -148,11 +157,12 @@ class CustomfieldTable extends Table
             return false;
         }
 
-        // If this is a non-core custom field with field_table='address' and field_type != 'customtext',
+        // If this is a non-core custom field with field_table='address' and a column-bearing type (not customtext/multiuploader),
         // drop the column from the addresses table before deleting the field
         if ((int) $this->field_core !== 1 &&
-            $this->field_table === 'address' &&
+            ($this->field_table ?: 'address') === 'address' &&
             $this->field_type !== 'customtext' &&
+            $this->field_type !== 'multiuploader' &&
             !empty($this->field_namekey)) {
 
             $this->dropAddressColumn($this->field_namekey);
@@ -172,14 +182,14 @@ class CustomfieldTable extends Table
      *
      * @since   6.0.7
      */
-    protected function dropAddressColumn(string $fieldNamekey): void
+    public function dropAddressColumn(string $fieldNamekey): void
     {
         $db = $this->getDatabase();
 
         // Check if column exists before attempting to drop
         $columns = $db->getTableColumns('#__j2commerce_addresses');
-        if (!isset($columns[$fieldNamekey])) {
-            // Column doesn't exist, nothing to drop
+        if (!isset($columns[$fieldNamekey]) || \in_array(strtolower($fieldNamekey), self::BASE_ADDRESS_COLUMNS, true)) {
+            // Column doesn't exist or belongs to the base table, nothing to drop
             return;
         }
 
@@ -191,10 +201,9 @@ class CustomfieldTable extends Table
             $db->setQuery($query);
             $db->execute();
         } catch (\Exception $e) {
-            throw new \RuntimeException(
-                Text::_('COM_J2COMMERCE_ERR_CUSTOMFIELD_DROP_COLUMN_FAILED') .
-                ': ' . $e->getMessage()
-            );
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERR_CUSTOMFIELD_DROP_COLUMN_FAILED'));
         }
     }
 }

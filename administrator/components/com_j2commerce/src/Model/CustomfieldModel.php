@@ -20,8 +20,10 @@ use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Model\AdminModel;
 use Joomla\CMS\Table\Table;
+use Joomla\Database\ParameterType;
 
 /**
  * Customfield item model class.
@@ -99,7 +101,7 @@ class CustomfieldModel extends AdminModel
         $id   = (int) $this->getState('customfield.id');
         $task = Factory::getApplication()->getInput()->get('task', '', 'cmd');
 
-        if ($id > 0 && $task !== 'customfield.save2copy') {
+        if ($id > 0 && $task !== 'save2copy') {
             $form->setFieldAttribute('field_namekey', 'readonly', 'true');
             $form->setFieldAttribute('field_namekey', 'hint', 'COM_J2COMMERCE_FIELD_NAMEKEY_READONLY_HINT');
         }
@@ -276,14 +278,19 @@ class CustomfieldModel extends AdminModel
 
     public function save($data): bool
     {
-        // Auto-generate field_namekey from field_name when empty (like Joomla alias)
-        if (empty($data['field_namekey']) && !empty($data['field_name'])) {
-            $data['field_namekey'] = preg_replace('/[^a-z0-9_]/', '', str_replace([' ', '-'], '_', strtolower(trim($data['field_name']))));
+        // The namekey becomes an addresses column (DDL), so reduce it to [a-z0-9_]. When it is empty,
+        // or reduces to nothing, derive it from field_name (like Joomla alias).
+        $normalizeKey = static fn (string $key): string => preg_replace('/[^a-z0-9_]/', '', str_replace([' ', '-'], '_', strtolower(trim($key))));
+
+        $data['field_namekey'] = $normalizeKey((string) ($data['field_namekey'] ?? ''));
+
+        if ($data['field_namekey'] === '' && !empty($data['field_name'])) {
+            $data['field_namekey'] = $normalizeKey((string) $data['field_name']);
         }
 
-        // Normalize field_namekey early (before addAddressColumn which uses it for DDL)
-        if (!empty($data['field_namekey'])) {
-            $data['field_namekey'] = strtolower(trim($data['field_namekey']));
+        // Type keys are lowercase; the column-less checks below compare them strictly.
+        if (isset($data['field_type'])) {
+            $data['field_type'] = strtolower((string) $data['field_type']);
         }
 
         // Ensure field_table is 'address' when empty (both new and existing records)
@@ -300,6 +307,22 @@ class CustomfieldModel extends AdminModel
             $data['field_namekey'] = $existing->field_namekey;
         }
 
+        // field_table (a hidden input) and the column-less type class decide whether this row owns an
+        // addresses column, which delete() relies on, so neither changes after creation.
+        if ($existing) {
+            // An empty stored table reads as 'address' everywhere (CustomFieldHelper, CustomerModel).
+            $data['field_table'] = $existing->field_table ?: 'address';
+
+            $columnless = ['customtext', 'multiuploader'];
+
+            if ($data['field_table'] === 'address' && isset($data['field_type'])
+                && \in_array($existing->field_type, $columnless, true) !== \in_array($data['field_type'], $columnless, true)) {
+                $this->setError(Text::_('COM_J2COMMERCE_ERR_CUSTOMFIELD_TYPE_LOCKED'));
+
+                return false;
+            }
+        }
+
         // For save2copy: generate a unique field_namekey to avoid UNIQUE constraint violation
         $task = Factory::getApplication()->getInput()->get('task', '', 'cmd');
 
@@ -309,7 +332,14 @@ class CustomfieldModel extends AdminModel
             $avoidAddressColumn = ($data['field_table'] ?? '') === 'address'
                 && !\in_array($data['field_type'] ?? '', ['customtext', 'multiuploader'], true);
 
-            $data['field_namekey'] = $this->generateUniqueNamekey($data['field_namekey'], $avoidAddressColumn);
+            try {
+                $data['field_namekey'] = $this->generateUniqueNamekey($normalizeKey($data['field_namekey']), $avoidAddressColumn);
+            } catch (\Exception $e) {
+                Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+                $this->setError(Text::_('JERROR_AN_ERROR_HAS_OCCURRED'));
+
+                return false;
+            }
         }
 
         // Consolidate zone dropdown values into field_default
@@ -427,23 +457,6 @@ class CustomfieldModel extends AdminModel
             $data['field_value'] = '';
         }
 
-        // For NEW custom fields with field_table='address' and field_type != 'customtext',
-        // add the field_namekey as a column to the addresses table
-        $isNew = empty($data['j2commerce_customfield_id']);
-        if ($isNew &&
-            isset($data['field_table']) && $data['field_table'] === 'address' &&
-            isset($data['field_type']) && $data['field_type'] !== 'customtext' && $data['field_type'] !== 'multiuploader' &&
-            !empty($data['field_namekey'])) {
-
-            try {
-                $this->addAddressColumn($data['field_namekey']);
-            } catch (\RuntimeException $e) {
-                $this->setError($e->getMessage());
-
-                return false;
-            }
-        }
-
         // Sync plugin area toggles into field_display JSON before saving
         $pluginAreas = CustomFieldHelper::getRegisteredAreas();
 
@@ -480,7 +493,64 @@ class CustomfieldModel extends AdminModel
             $data['field_display'] = json_encode($existingDisplay, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         }
 
-        return parent::save($data);
+        // For NEW custom fields with field_table='address' and field_type != 'customtext',
+        // add the field_namekey as a column to the addresses table
+        $isNew       = empty($data['j2commerce_customfield_id']);
+        $columnAdded = false;
+
+        $isNewAddressField = $isNew && ($data['field_table'] ?? '') === 'address' && !empty($data['field_namekey']);
+
+        try {
+            if ($isNewAddressField && isset($data['field_type'])
+                && $data['field_type'] !== 'customtext' && $data['field_type'] !== 'multiuploader') {
+                $this->addAddressColumn($data['field_namekey']);
+                $columnAdded = true;
+            } elseif ($isNewAddressField && $this->addressColumnExists($data['field_namekey'])) {
+                // A column-less address field may not take an existing column's name: a later type change
+                // would let delete() drop a column this field never created.
+                throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERR_CUSTOMFIELD_COLUMN_EXISTS'));
+            }
+        } catch (\RuntimeException $e) {
+            $this->setError($e->getMessage());
+
+            return false;
+        }
+
+        if (parent::save($data)) {
+            return true;
+        }
+
+        // DDL is not transactional, so a refused save must remove the column it added. A false
+        // return can still follow a stored row (an onContentAfterSave subscriber that throws),
+        // so the column is kept whenever a column-bearing address field with this namekey exists.
+        if ($columnAdded) {
+            try {
+                if (!$this->addressColumnFieldExists($data['field_namekey'])) {
+                    $this->getTable()->dropAddressColumn($data['field_namekey']);
+                }
+            } catch (\RuntimeException $e) {
+                // Logged only: the refusal reason stays the message the form shows.
+                Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            }
+        }
+
+        return false;
+    }
+
+    private function addressColumnFieldExists(string $fieldNamekey): bool
+    {
+        $db    = $this->getDatabase();
+        $table = 'address';
+        $query = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__j2commerce_customfields'))
+            ->where($db->quoteName('field_namekey') . ' = :namekey')
+            ->where($db->quoteName('field_table') . ' = :fieldtable')
+            ->whereNotIn($db->quoteName('field_type'), ['customtext', 'multiuploader'], ParameterType::STRING)
+            ->bind(':namekey', $fieldNamekey)
+            ->bind(':fieldtable', $table);
+
+        return (int) $db->setQuery($query)->loadResult() > 0;
     }
 
     /**
@@ -544,9 +614,7 @@ class CustomfieldModel extends AdminModel
 
         $db = $this->getDatabase();
 
-        // Check if column already exists
-        $columns = $db->getTableColumns('#__j2commerce_addresses');
-        if (isset($columns[$fieldNamekey])) {
+        if ($this->addressColumnExists($fieldNamekey)) {
             throw new \RuntimeException(
                 Text::_('COM_J2COMMERCE_ERR_CUSTOMFIELD_COLUMN_EXISTS')
             );
@@ -560,10 +628,20 @@ class CustomfieldModel extends AdminModel
             $db->setQuery($query);
             $db->execute();
         } catch (\Exception $e) {
-            throw new \RuntimeException(
-                Text::_('COM_J2COMMERCE_ERR_CUSTOMFIELD_ALTER_TABLE_FAILED') .
-                ': ' . $e->getMessage()
-            );
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERR_CUSTOMFIELD_ALTER_TABLE_FAILED'));
+        }
+    }
+
+    private function addressColumnExists(string $fieldNamekey): bool
+    {
+        try {
+            return isset($this->getDatabase()->getTableColumns('#__j2commerce_addresses')[$fieldNamekey]);
+        } catch (\Exception $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERR_CUSTOMFIELD_ALTER_TABLE_FAILED'));
         }
     }
 

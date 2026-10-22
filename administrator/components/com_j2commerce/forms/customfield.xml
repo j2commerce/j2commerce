@@ -89,7 +89,7 @@
             label="COM_J2COMMERCE_FIELD_FIELD_CORE"
             description="COM_J2COMMERCE_FIELD_FIELD_CORE_DESC"
             layout="joomla.form.field.radio.switcher"
-            filter="integer"
+            filter="unset"
             default="0"
             readonly="true"
         >
