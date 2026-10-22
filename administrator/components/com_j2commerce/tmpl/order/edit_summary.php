@@ -273,6 +273,9 @@ $symbolPre      = CurrencyHelper::getSymbolPosition($currency) !== 'post';
             <div class="mt-3 j2c-summary-status">
                 <label for="order_state_id" class="form-label text-body-secondary fw-semibold" style="font-size:13px;"><?php echo Text::_('COM_J2COMMERCE_FIELD_ORDER_STATUS'); ?></label>
                 <select name="order_state_id" id="order_state_id" class="form-select">
+                    <?php if ((int) ($item->order_state_id ?? 0) === 0) : /* A new order gets its status when it is created on this page; 0 keeps that status on Save. */ ?>
+                        <option value="0" selected><?php echo Text::_('COM_J2COMMERCE_OPTION_KEEP_CURRENT_STATUS'); ?></option>
+                    <?php endif; ?>
                     <?php foreach ($this->orderStatuses as $status) : ?>
                         <option value="<?php echo (int) $status->value; ?>" <?php echo ((int) ($item->order_state_id ?? 0) === (int) $status->value) ? 'selected' : ''; ?>>
                             <?php echo $this->escape(Text::_($status->text)); ?>
