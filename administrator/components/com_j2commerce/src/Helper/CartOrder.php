@@ -1632,7 +1632,17 @@ class CartOrder
         $tax = 0.0;
 
         if ($taxable && (int) $taxClassId > 0) {
-            $tax = TaxHelper::computeTax($amount, (int) $taxClassId, $this->getCustomerGeozones())->taxtotal;
+            // With inclusive pricing the surcharge is a gross price like every other price in the
+            // store, so its tax is worked out of it and the fee is stored net — the treatment
+            // loadShipping() gives an inclusive shipping price. The tax is rounded first so the
+            // net and tax rows add back to the surcharge exactly.
+            $isIncludingTax = (bool) J2CommerceHelper::config()->get('config_including_tax', 0);
+            $tax            = TaxHelper::computeTax($amount, (int) $taxClassId, $this->getCustomerGeozones(), $isIncludingTax)->taxtotal;
+
+            if ($isIncludingTax) {
+                $tax = round($tax, CurrencyHelper::getDecimalPlace(ConfigHelper::getDefaultCurrency()));
+                $amount -= $tax;
+            }
         }
 
         self::addFee($key, $amount, $name, $tax, (int) $taxClassId);
@@ -3051,14 +3061,17 @@ class CartOrder
             }
         }
 
-        // Fees - allow plugins to add custom fees via session
-        $fees = $this->get_fees();
+        // Fees - allow plugins to add custom fees via session. With inclusive pricing the subtotal
+        // and shipping rows above are gross, and add_fee() stores a taxable fee net, so the fee is
+        // shown gross too or the rows would not add up to the total.
+        $fees       = $this->get_fees();
+        $feeDisplay = (int) $params->get('config_including_tax', 0) ? 1 : $checkoutPriceDisplay;
         if (!empty($fees)) {
             foreach ($fees as $fee) {
                 $feeKey          = 'fee_' . preg_replace('/[^a-z0-9_]/', '_', strtolower($fee->name ?? 'custom'));
                 $totals[$feeKey] = [
                     'label' => J2htmlHelper::translateKey($fee->name),
-                    'value' => $currency->format($this->get_formatted_fees($fee, $checkoutPriceDisplay)),
+                    'value' => $currency->format($this->get_formatted_fees($fee, $feeDisplay)),
                 ];
             }
         }
