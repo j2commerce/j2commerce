@@ -28,6 +28,41 @@ final class PayPalOrders
      */
     public function createOrder(array $orderData): array
     {
+        return $this->client->requestWithRetry('POST', '/v2/checkout/orders', $this->buildBody($orderData), [
+            'Prefer: return=representation',
+        ]);
+    }
+
+    /**
+     * Merchant-initiated capture against a legacy (NVP Express Checkout) billing agreement id.
+     * The request id is derived from the agreement and invoice so a repeated attempt for the same
+     * renewal order is deduplicated by PayPal instead of charging twice.
+     *
+     * @param array<string, mixed> $orderData
+     * @return array{status: int, body: array<string, mixed>}
+     */
+    public function chargeBillingAgreement(string $baid, array $orderData): array
+    {
+        $body                   = $this->buildBody($orderData);
+        $body['payment_source'] = [
+            'paypal' => [
+                'billing_agreement_id' => $baid,
+                'stored_credential'    => ['payment_initiator' => 'MERCHANT', 'usage' => 'SUBSEQUENT'],
+            ],
+        ];
+
+        return $this->client->requestWithRetry('POST', '/v2/checkout/orders', $body, [
+            'PayPal-Request-Id: baid-' . md5($baid . '|' . ($orderData['invoice_id'] ?? '')),
+            'Prefer: return=representation',
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $orderData
+     * @return array<string, mixed>
+     */
+    private function buildBody(array $orderData): array
+    {
         $currencyCode = $orderData['currency_code'];
         $factor       = 10 ** PayPalCurrencyHelper::decimals($currencyCode);
         $minor        = static fn (mixed $amount): int => (int) round((float) PayPalCurrencyHelper::format((float) $amount, $currencyCode) * $factor);
@@ -72,7 +107,7 @@ final class PayPalOrders
             $discount -= $residual;
         }
 
-        $body = [
+        return [
             'intent'         => 'CAPTURE',
             'purchase_units' => [[
                 'reference_id' => $orderData['order_id'] ?? '',
@@ -90,10 +125,6 @@ final class PayPalOrders
                 'items' => $this->buildLineItems($orderData['items'] ?? [], $currencyCode),
             ]],
         ];
-
-        return $this->client->requestWithRetry('POST', '/v2/checkout/orders', $body, [
-            'Prefer: return=representation',
-        ]);
     }
 
     /**
@@ -128,7 +159,7 @@ final class PayPalOrders
         foreach ($items as $item) {
             $name = $item['name'] ?? 'Item';
             if (\strlen($name) > 127) {
-                $name = substr($name, 0, 124) . '...';
+                $name = mb_strcut($name, 0, 124) . '...';
             }
 
             $lineItems[] = [

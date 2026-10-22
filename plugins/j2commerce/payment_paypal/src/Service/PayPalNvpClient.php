@@ -90,16 +90,16 @@ final class PayPalNvpClient
         string $paymentAction = 'Sale',
         array $extra = []
     ): array {
-        $fields = array_merge([
+        $fields = [
             'METHOD'        => 'DoReferenceTransaction',
             'REFERENCEID'   => $referenceId,
             'PAYMENTACTION' => $paymentAction,
             'AMT'           => PayPalCurrencyHelper::format($amount, $currencyCode),
             'CURRENCYCODE'  => $currencyCode,
-        ], $extra);
+        ] + $extra;
 
         if ($invoiceNumber !== '') {
-            $fields['INVNUM'] = $invoiceNumber;
+            $fields['INVNUM'] = substr($invoiceNumber, 0, 127);
         }
 
         if ($description !== '') {

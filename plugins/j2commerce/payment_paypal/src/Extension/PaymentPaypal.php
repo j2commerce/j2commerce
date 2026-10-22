@@ -837,11 +837,53 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         $event->setArgument('result', ['status' => 'subscription_cancellation_registered', 'paypal_remote' => 'no-id']);
     }
 
+    /** One billing agreement can back many local subscriptions; cancelling it remotely would stop every sibling's renewals. */
+    private function baidHasLiveSiblings(int $subscriptionId, string $baid): bool
+    {
+        $db        = $this->getDatabase();
+        $namespace = 'subscription';
+        $resource  = 'subscriptions';
+        $metakey   = 'billing_agreement_id';
+        $canceled  = 'canceled';
+        $expired   = 'expired';
+        $statusCol = $db->quoteName('s.status');
+
+        $query = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__j2commerce_metafields', 'm'))
+            ->join('INNER', $db->quoteName('#__j2commerce_subscriptions', 's') . ' ON ' . $db->quoteName('s.id') . ' = ' . $db->quoteName('m.owner_id'))
+            ->where($db->quoteName('m.owner_resource') . ' = :res')
+            ->where($db->quoteName('m.namespace') . ' = :ns')
+            ->where($db->quoteName('m.metakey') . ' = :metakey')
+            ->where($db->quoteName('m.metavalue') . ' = :metavalue')
+            ->where($db->quoteName('m.owner_id') . ' != :sid')
+            ->where('(' . $statusCol . ' IS NULL OR ' . $statusCol . ' NOT IN (:canceled, :expired))')
+            ->bind(':canceled', $canceled)
+            ->bind(':expired', $expired)
+            ->bind(':res', $resource)
+            ->bind(':ns', $namespace)
+            ->bind(':metakey', $metakey)
+            ->bind(':metavalue', $baid)
+            ->bind(':sid', $subscriptionId, ParameterType::INTEGER);
+
+        return (int) $db->setQuery($query)->loadResult() > 0;
+    }
+
     /**
      * @return  array<string, mixed>
      */
     private function cancelNvpBaid(int $subscriptionId, string $baid, string $reason): array
     {
+        if ($this->baidHasLiveSiblings($subscriptionId, $baid)) {
+            $this->log(\sprintf('onAfterSubscriptionCanceled: sub=%d BAID=%s still backs other active subscriptions — remote cancel skipped', $subscriptionId, $baid));
+
+            return [
+                'status'        => 'subscription_cancellation_registered',
+                'paypal_remote' => 'shared-kept',
+                'legacy_baid'   => $baid,
+            ];
+        }
+
         $nvp = $this->getPayPalNvp();
 
         if (!$nvp->isConfigured()) {
@@ -1333,7 +1375,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         $paypalSubId = $this->loadPayPalSubscriptionId($localSubId);
 
         if ($legacyBaid !== '') {
-            [$status, $error, $extra] = $this->renewViaNvpReference($legacyBaid, $subscription, $order);
+            [$status, $error, $extra] = $this->renewLegacyBaid($legacyBaid, $subscription, $order);
         } elseif ($paypalSubId !== '') {
             [$status, $error, $extra] = $this->renewViaModernSubscriptionsApi($paypalSubId, $subscription, $order);
         } else {
@@ -1379,12 +1421,35 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         }
 
         try {
+            // Same DB row and gatewayAmount() as the Orders API path, so both charge the identical figure.
+            $orderTable   = Factory::getApplication()->bootComponent('com_j2commerce')->getMVCFactory()->createTable('Order', 'Administrator');
+            $source       = $orderTable->load(['order_id' => (string) ($order->order_id ?? '')]) ? $orderTable : $order;
+            $amount       = CurrencyHelper::gatewayAmount($source);
+            $currencyCode = $this->getCurrency($source);
+            $description  = 'J2Commerce subscription renewal #' . ($subscription->id ?? '');
+            $extra        = [];
+            $names        = $this->getOrderItemNames((string) ($order->order_id ?? ''));
+
+            if ($names !== '') {
+                $suffix      = ' - renewal (subscription #' . ($subscription->id ?? '') . ')';
+                $description = mb_strcut($names, 0, max(0, 127 - \strlen($suffix))) . $suffix;
+                $formatted   = PayPalCurrencyHelper::format($amount, $currencyCode);
+                // Single line equal to the total avoids NVP 10413 (item/tax sum mismatch).
+                $extra       = [
+                    'L_NAME0' => mb_strcut($names, 0, 127),
+                    'L_QTY0'  => '1',
+                    'L_AMT0'  => $formatted,
+                    'ITEMAMT' => $formatted,
+                ];
+            }
+
             $response = $nvp->doReferenceTransaction(
                 referenceId:    $baid,
-                amount:         CurrencyHelper::convertForOrder((float) ($order->order_total ?? $subscription->renewal_amount ?? 0), $order),
-                currencyCode:   $this->getCurrency($order),
-                invoiceNumber:  (string) ($order->order_id ?? ''),
-                description:    'J2Commerce subscription renewal #' . ($subscription->id ?? '')
+                amount:         $amount,
+                currencyCode:   $currencyCode,
+                invoiceNumber:  ($source->invoice_prefix ?? '') . ($order->order_id ?? ''),
+                description:    $description,
+                extra:          $extra
             );
         } catch (\Throwable $e) {
             $this->log('NVP DoReferenceTransaction exception: ' . $e->getMessage(), Log::ERROR);
@@ -1393,7 +1458,24 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
         if (PayPalNvpClient::isSuccess($response)) {
             $transId = (string) ($response['TRANSACTIONID'] ?? '');
-            $this->finalizeNvpRenewalOrder($order, $transId, $response);
+
+            if (isset($response['AMT'])) {
+                $this->flagRenewalAmountMismatch((string) ($order->order_id ?? ''), (float) $response['AMT'], (string) ($response['CURRENCYCODE'] ?? $currencyCode), $amount, $currencyCode);
+            }
+
+            $this->finalizeRenewalOrder(
+                $order,
+                $transId,
+                (float) ($response['AMT'] ?? 0),
+                (string) ($response['CURRENCYCODE'] ?? ''),
+                [
+                    'paymentinfo'    => $response['PAYMENTINFO_0_TRANSACTIONID'] ?? null,
+                    'pending_reason' => $response['PENDINGREASON'] ?? null,
+                    'reason_code'    => $response['REASONCODE'] ?? null,
+                ],
+                'renewal_nvp',
+                'NVP DoReferenceTransaction'
+            );
             return ['success', null, ['transaction_id' => $transId, 'gateway_response' => $response]];
         }
 
@@ -1405,8 +1487,269 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             return ['no_response', PayPalNvpClient::getErrorMessage($response), ['gateway_response' => $response]];
         }
 
-        // 11451 = BAID already canceled, 11452 = BAID expired — terminal failures.
-        return ['failed', PayPalNvpClient::getErrorMessage($response), ['gateway_response' => $response]];
+        // 10201 = agreement canceled (sandbox-proven), 11451/11452 = canceled/expired — terminal; 'failed'
+        // is dispatched once and the subscription leaves the renewal queue (only no_response retries).
+        $terminal = \in_array($code, ['10201', '11451', '11452'], true);
+
+        return ['failed', PayPalNvpClient::getErrorMessage($response), ['gateway_response' => $response] + ($terminal ? ['agreement_canceled' => true] : [])];
+    }
+
+    /**
+     * Orders v2 first (merchant-initiated capture on the BAID), NVP DoReferenceTransaction as the fallback.
+     *
+     * @return  array{0: string, 1: ?string, 2: array<string, mixed>}  [status, error, extra]
+     */
+    private function renewLegacyBaid(string $baid, object $subscription, object $order): array
+    {
+        $orderIdString = (string) ($order->order_id ?? '');
+
+        // A renewal order that already holds a payment must never be charged again.
+        try {
+            $db    = $this->getDatabase();
+            $query = $db->getQuery(true)
+                ->select($db->quoteName(['j2commerce_order_id', 'transaction_id', 'transaction_status', 'order_state_id']))
+                ->from($db->quoteName('#__j2commerce_orders'))
+                ->where($db->quoteName('order_id') . ' = :orderId')
+                ->bind(':orderId', $orderIdString)
+                ->setLimit(1);
+            $row = $db->setQuery($query)->loadObject();
+        } catch (\Throwable $e) {
+            $this->log('Renewal prior-state check failed: ' . $e->getMessage(), Log::ERROR);
+
+            return ['no_response', Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED'), []];
+        }
+
+        if ($row !== null && (string) $row->transaction_id !== '') {
+            $confirmed = PayPalOrderStates::resolve($this->params, PayPalOrderStates::CONFIRMED);
+            $txStatus  = strtoupper((string) $row->transaction_status);
+
+            if (($confirmed > 0 && (int) $row->order_state_id === $confirmed) || \in_array($txStatus, ['COMPLETED', 'PENDING'], true)) {
+                return ['success', null, ['transaction_id' => (string) $row->transaction_id] + ($txStatus === 'PENDING' ? ['pending' => true] : [])];
+            }
+        }
+
+        // The ledger is written before the order is stored, so a failed store leaves an empty transaction_id but a charge row.
+        if ($row !== null && (int) $row->j2commerce_order_id > 0) {
+            try {
+                foreach (OrderTransactionHelper::getCharges((int) $row->j2commerce_order_id) as $charge) {
+                    if ($charge->type === 'DEBIT' && (string) $charge->gateway_txn_id !== '') {
+                        return ['success', null, ['transaction_id' => (string) $charge->gateway_txn_id]];
+                    }
+                }
+            } catch (\Throwable $e) {
+                $this->log('Renewal ledger prior-state check failed: ' . $e->getMessage(), Log::ERROR);
+
+                return ['no_response', Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED'), []];
+            }
+        }
+
+        $outcome = $this->renewViaOrdersApi($baid, $order);
+
+        return $outcome ?? $this->renewViaNvpReference($baid, $subscription, $order);
+    }
+
+    /** A paid amount or currency that differs from what was sent is logged and noted on the order; the money moved, so the order is still finalized. */
+    private function flagRenewalAmountMismatch(string $orderIdString, float $paid, string $paidCurrency, float $expected, string $expectedCurrency): void
+    {
+        $paidCurrency = strtoupper($paidCurrency);
+
+        if ($paidCurrency === strtoupper($expectedCurrency) && PayPalCurrencyHelper::sameAmount($paid, $expected, $expectedCurrency)) {
+            return;
+        }
+
+        $captured = $paid . ' ' . $paidCurrency;
+        $sent     = PayPalCurrencyHelper::format($expected, $expectedCurrency) . ' ' . strtoupper($expectedCurrency);
+
+        $this->log('Renewal amount mismatch on order ' . $orderIdString . ': paid ' . $captured . ', sent ' . $sent . ' - manual review required', Log::ERROR);
+
+        try {
+            $orderTable = Factory::getApplication()->bootComponent('com_j2commerce')->getMVCFactory()->createTable('Order', 'Administrator');
+
+            if ($orderTable->load(['order_id' => $orderIdString])) {
+                PayPalOrderStates::addHistoryOnce(
+                    $this->getDatabase(),
+                    $orderTable,
+                    Text::sprintf('COM_J2COMMERCE_ORDER_HISTORY_PAYMENT_MISMATCH', $captured, $sent)
+                );
+            }
+        } catch (\Throwable $e) {
+            $this->log('Renewal amount mismatch note failed for order ' . $orderIdString . ': ' . $e->getMessage(), Log::ERROR);
+        }
+    }
+
+    /**
+     * @return  array{0: string, 1: ?string, 2: array<string, mixed>}|null  null = let NVP try instead
+     */
+    private function renewViaOrdersApi(string $baid, object $order): ?array
+    {
+        $sandbox = (bool) (int) $this->params->get('sandbox', 0);
+        $keys    = $sandbox ? ['sandbox_client_id', 'sandbox_client_secret'] : ['client_id', 'client_secret'];
+
+        if ((string) $this->params->get($keys[0], '') === '' || (string) $this->params->get($keys[1], '') === '') {
+            return null;
+        }
+
+        $nvpAvailable = $this->getPayPalNvp()->isConfigured();
+
+        try {
+            $orderTable = Factory::getApplication()
+                ->bootComponent('com_j2commerce')
+                ->getMVCFactory()
+                ->createTable('Order', 'Administrator');
+
+            $orderIdString = (string) ($order->order_id ?? '');
+
+            if (!$orderTable->load(['order_id' => $orderIdString])) {
+                return null;
+            }
+
+            $currency = $this->getCurrency($orderTable);
+
+            if (!PayPalCurrencyHelper::isValid($currency)) {
+                $this->log('Orders API renewal skipped: invalid currency "' . $currency . '" on order ' . $orderIdString, Log::DEBUG);
+
+                return null;
+            }
+
+            $payload = $this->buildOrderData($orderTable, $orderIdString, $currency);
+            // Nothing has been sent yet, so an auth failure here is safe to hand to NVP.
+            $this->getPayPalClient()->getAccessToken();
+        } catch (\Throwable $e) {
+            $this->log('Orders API renewal not attempted: ' . $e->getMessage(), Log::WARNING);
+
+            return null;
+        }
+
+        try {
+            $result = $this->getPayPalOrders()->chargeBillingAgreement($baid, $payload);
+        } catch (\Throwable $e) {
+            $this->log('Orders API BAID renewal exception: ' . $e->getMessage(), Log::ERROR);
+
+            return ['no_response', Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED'), []];
+        }
+
+        $status  = (int) $result['status'];
+        $body    = $result['body'];
+        $issue   = (string) ($body['details'][0]['issue'] ?? $body['name'] ?? '');
+        $debugId = (string) ($body['debug_id'] ?? '');
+
+        if ($status >= 200 && $status < 300) {
+            $capture = $body['purchase_units'][0]['payments']['captures'][0] ?? null;
+            $capId   = (string) ($capture['id'] ?? '');
+            $capStat = (string) ($capture['status'] ?? '');
+
+            if ($capId === '') {
+                $this->log('Orders API BAID renewal: no capture in response, order ' . $orderIdString . ' debug_id ' . $debugId, Log::ERROR);
+
+                return ['no_response', Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED'), []];
+            }
+
+            if (\in_array($capStat, ['DECLINED', 'FAILED'], true)) {
+                $this->log('Orders API BAID renewal capture ' . $capStat . ', order ' . $orderIdString . ' capture ' . $capId, Log::ERROR);
+
+                return ['failed', Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED'), []];
+            }
+
+            $capAmount     = (float) ($capture['amount']['value'] ?? 0);
+            $capCurrency   = (string) ($capture['amount']['currency_code'] ?? $currency);
+            $pendingReason = (string) ($capture['status_details']['reason'] ?? '');
+            $summary       = [
+                'id'             => $body['id'] ?? null,
+                'status'         => $body['status'] ?? null,
+                'capture_id'     => $capId,
+                'capture_status' => $capStat,
+                'debug_id'       => $debugId ?: null,
+            ];
+
+            $this->flagRenewalAmountMismatch($orderIdString, $capAmount, $capCurrency, (float) $payload['total'], $currency);
+
+            // Anything but a settled capture is held, never confirmed: the subscription advances on
+            // 'success', but the order stays awaiting payment until the capture webhook settles or demotes it.
+            if ($capStat !== 'COMPLETED' || ($body['status'] ?? '') !== 'COMPLETED') {
+                $this->recordLedgerCharge($orderIdString, $capId, $capAmount, $capCurrency);
+
+                $held = $this->recordUnsettledPayment(
+                    $orderTable,
+                    $capId,
+                    $capStat,
+                    ['paypal_order_id' => $body['id'] ?? null, 'capture_id' => $capId, 'pending_reason' => $pendingReason ?: null],
+                    'capture_id'
+                );
+
+                if (empty($held['pending']) && empty($held['success'])) {
+                    $this->log('Orders API BAID renewal capture ' . $capId . ' (' . $capStat . ') could not be held on order ' . $orderIdString, Log::ERROR);
+                    PayPalOrderStates::addHistoryOnce(
+                        $this->getDatabase(),
+                        $orderTable,
+                        Text::sprintf('PLG_J2COMMERCE_PAYMENT_PAYPAL_RENEWAL_CAPTURE_NOT_HELD', $capId)
+                    );
+                }
+
+                return ['success', null, ['pending' => true, 'transaction_id' => $capId, 'gateway_response' => $summary]];
+            }
+
+            $this->finalizeRenewalOrder(
+                $order,
+                $capId,
+                $capAmount,
+                $capCurrency,
+                ['paypal_order_id' => $body['id'] ?? null, 'pending_reason' => $pendingReason ?: null],
+                'renewal_orders_api',
+                'Orders API BAID capture'
+            );
+
+            return ['success', null, ['transaction_id' => $capId, 'gateway_response' => $summary]];
+        }
+
+        $this->log('Orders API BAID renewal HTTP ' . $status . ' issue ' . $issue . ' debug_id ' . $debugId . ' order ' . $orderIdString, Log::ERROR);
+
+        if ($issue === 'AGREEMENT_ALREADY_CANCELLED') {
+            return ['failed', 'PayPal billing agreement ' . $baid . ' was cancelled.', ['agreement_canceled' => true]];
+        }
+
+        if ($issue === 'DUPLICATE_INVOICE_ID') {
+            $this->log('Renewal rejected as a duplicate invoice: a payment may already exist at PayPal for invoice ' . $payload['invoice_id'] . ' - reconcile manually', Log::ERROR);
+            PayPalOrderStates::addHistoryOnce(
+                $this->getDatabase(),
+                $orderTable,
+                Text::sprintf('PLG_J2COMMERCE_PAYMENT_PAYPAL_RENEWAL_DUPLICATE_INVOICE', $payload['invoice_id'])
+            );
+
+            return ['no_response', Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED'), []];
+        }
+
+        // 0 / 3xx / 409 / 429 / 5xx and an in-flight duplicate request: PayPal may have charged, so NVP must not be tried.
+        if ($status < 400 || $status === 409 || $status === 429 || $status >= 500 || str_contains($issue, 'PREVIOUS_REQUEST') || str_contains($issue, 'IN_PROGRESS')) {
+            return ['no_response', Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED'), []];
+        }
+
+        $declined = ['INSTRUMENT_DECLINED', 'PAYMENT_SOURCE_DECLINED_BY_PROCESSOR', 'TRANSACTION_REFUSED', 'PAYER_ACTION_REQUIRED'];
+
+        if (\in_array($issue, $declined, true)) {
+            return ['failed', Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED'), ['gateway_response' => ['issue' => $issue, 'debug_id' => $debugId ?: null]]];
+        }
+
+        // Any other rejection happened before a charge could exist, so NVP may try.
+        return $nvpAvailable
+            ? null
+            : ['failed', 'PayPal rejected billing agreement ' . $baid . ' (' . ($issue ?: 'HTTP ' . $status) . ') and NVP credentials are not configured for a fallback.', []];
+    }
+
+    private function getOrderItemNames(string $orderIdString): string
+    {
+        if ($orderIdString === '') {
+            return '';
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('orderitem_name'))
+            ->from($db->quoteName('#__j2commerce_orderitems'))
+            ->where($db->quoteName('order_id') . ' = :orderId')
+            ->order($db->quoteName('j2commerce_orderitem_id'))
+            ->bind(':orderId', $orderIdString);
+
+        return implode(', ', array_filter(array_map('trim', $db->setQuery($query)->loadColumn() ?: [])));
     }
 
     /** Ledger charge for a payment taken outside the Orders v2 capture, so the order view can refund it. Dedupes on the id. */
@@ -1434,7 +1777,8 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         }
     }
 
-    private function finalizeNvpRenewalOrder(object $order, string $transactionId, array $nvpResponse): void
+    /** @param array<string, mixed> $details */
+    private function finalizeRenewalOrder(object $order, string $transactionId, float $amount, string $currency, array $details, string $type, string $label): bool
     {
         try {
             $orderTable = Factory::getApplication()
@@ -1443,15 +1787,12 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 ->createTable('Order', 'Administrator');
 
             if (!$orderTable->load(['order_id' => (string) ($order->order_id ?? '')])) {
-                return;
+                $this->log('finalizeRenewalOrder: order ' . ($order->order_id ?? '') . ' not found for payment ' . $transactionId, Log::ERROR);
+
+                return false;
             }
 
-            $this->recordLedgerCharge(
-                (string) $orderTable->order_id,
-                $transactionId,
-                (float) ($nvpResponse['AMT'] ?? 0),
-                (string) ($nvpResponse['CURRENCYCODE'] ?? '')
-            );
+            $this->recordLedgerCharge((string) $orderTable->order_id, $transactionId, $amount, $currency);
 
             $orderTable->transaction_id      = $transactionId;
             $orderTable->transaction_status  = 'Completed';
@@ -1459,26 +1800,31 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
             $this->applyConfirmedState($orderTable, PayPalOrderStates::resolve($this->params, PayPalOrderStates::CONFIRMED));
 
-            $orderTable->transaction_details = json_encode([
-                'transaction_id' => $transactionId,
-                'paymentinfo'    => $nvpResponse['PAYMENTINFO_0_TRANSACTIONID'] ?? null,
-                'pending_reason' => $nvpResponse['PENDINGREASON'] ?? null,
-                'reason_code'    => $nvpResponse['REASONCODE'] ?? null,
-                'type'           => 'renewal_nvp',
-                'completed_at'   => date('Y-m-d H:i:s'),
+            $orderTable->transaction_details = json_encode(['transaction_id' => $transactionId] + $details + [
+                'type'         => $type,
+                'completed_at' => date('Y-m-d H:i:s'),
             ]);
-            TableSaveHelper::store($orderTable, 'paypal.nvp_renewal');
+
+            if (!TableSaveHelper::store($orderTable, 'paypal.' . $type)) {
+                $this->log('finalizeRenewalOrder: order ' . $orderTable->order_id . ' not stored after payment ' . $transactionId, Log::ERROR);
+
+                return false;
+            }
 
             OrderHistoryHelper::add(
                 orderId: (string) $orderTable->order_id,
                 comment: Text::sprintf(
                     'COM_J2COMMERCE_ORDER_HISTORY_PAYMENT_RECEIVED',
                     Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL')
-                ) . ' (NVP DoReferenceTransaction ' . $transactionId . ')',
+                ) . ' (' . $label . ' ' . $transactionId . ')',
                 orderStateId: (int) $orderTable->order_state_id,
             );
+
+            return true;
         } catch (\Throwable $e) {
-            $this->log('finalizeNvpRenewalOrder exception: ' . $e->getMessage(), Log::ERROR);
+            $this->log('finalizeRenewalOrder exception for payment ' . $transactionId . ': ' . $e->getMessage(), Log::ERROR);
+
+            return false;
         }
     }
 
@@ -2399,63 +2745,9 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 ];
             }
 
-            $db    = $this->getDatabase();
-            $query = $db->getQuery(true);
+            $orderData = $this->buildOrderData($orderTable, $orderId, $currency);
 
-            $query->select('*')
-                ->from($db->quoteName('#__j2commerce_orderitems'))
-                ->where($db->quoteName('order_id') . ' = :order_id')
-                ->bind(':order_id', $orderId);
-
-            $db->setQuery($query);
-            $orderItems = $db->loadObjectList();
-
-            $items = [];
-
-            foreach ($orderItems as $item) {
-                $quantity = max(1, (int) $item->orderitem_quantity);
-
-                // orderitem_finalprice is the line as order_subtotal counts it: option prices
-                // included and any plugin line discount already taken off.
-                $items[] = [
-                    'name'        => $item->orderitem_name,
-                    'quantity'    => $quantity,
-                    'unit_amount' => CurrencyHelper::convertForOrder((float) $item->orderitem_finalprice / $quantity, $orderTable),
-                    'sku'         => $item->orderitem_sku ?? '',
-                ];
-            }
-
-            $shipping = CurrencyHelper::convertForOrder((float) $orderTable->order_shipping, $orderTable);
-
-            if (ConfigHelper::pricesIncludeTax()) {
-                // Prices are tax-inclusive: orderitem_price and order_shipping already contain
-                // the tax. Sending order_tax / order_shipping_tax as a separate tax_total would
-                // double-charge the customer. Set tax_total to zero so the breakdown is:
-                // item_total (incl.) + shipping (incl.) + 0 = order_total.
-                $tax = 0.0;
-            } else {
-                // Prices are tax-exclusive: add both product and shipping taxes explicitly.
-                $tax = CurrencyHelper::convertForOrder((float) $orderTable->order_tax + (float) $orderTable->order_shipping_tax, $orderTable);
-            }
-            $discount = CurrencyHelper::convertForOrder((float) $orderTable->order_discount, $orderTable);
-            // Fees and their tax are carried in order_surcharge, not order_tax.
-            $handling = CurrencyHelper::convertForOrder((float) $orderTable->order_surcharge, $orderTable);
-            $total    = CurrencyHelper::gatewayAmount($orderTable);
-
-            $orderData = [
-                'order_id'            => $orderId,
-                'j2commerce_order_id' => $orderTable->j2commerce_order_id ?? $orderId,
-                'invoice_id'          => $orderTable->invoice_prefix . $orderId,
-                'currency_code'       => $currency,
-                'total'               => $total,
-                'shipping'            => $shipping,
-                'tax'                 => $tax,
-                'discount'            => $discount,
-                'handling'            => $handling,
-                'items'               => $items,
-            ];
-
-            $this->log('createPayPalOrder: Sending order data to PayPal API - order_id: ' . $orderId . ', total: ' . $total . ' ' . $currency . ', items: ' . \count($items));
+            $this->log('createPayPalOrder: Sending order data to PayPal API - order_id: ' . $orderId . ', total: ' . $orderData['total'] . ' ' . $currency . ', items: ' . \count($orderData['items']));
 
             $orders = $this->getPayPalOrders();
             $result = $orders->createOrder($orderData);
@@ -2493,6 +2785,66 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
             return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
         }
+    }
+
+    /** @return array<string, mixed> */
+    private function buildOrderData(object $orderTable, string $orderId, string $currency): array
+    {
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true);
+
+        $query->select($db->quoteName(['orderitem_name', 'orderitem_quantity', 'orderitem_finalprice', 'orderitem_sku']))
+            ->from($db->quoteName('#__j2commerce_orderitems'))
+            ->where($db->quoteName('order_id') . ' = :order_id')
+            ->bind(':order_id', $orderId);
+
+        $db->setQuery($query);
+        $orderItems = $db->loadObjectList();
+
+        $items = [];
+
+        foreach ($orderItems as $item) {
+            $quantity = max(1, (int) $item->orderitem_quantity);
+
+            // orderitem_finalprice is the line as order_subtotal counts it: option prices
+            // included and any plugin line discount already taken off.
+            $items[] = [
+                'name'        => $item->orderitem_name,
+                'quantity'    => $quantity,
+                'unit_amount' => CurrencyHelper::convertForOrder((float) $item->orderitem_finalprice / $quantity, $orderTable),
+                'sku'         => $item->orderitem_sku ?? '',
+            ];
+        }
+
+        $shipping = CurrencyHelper::convertForOrder((float) $orderTable->order_shipping, $orderTable);
+
+        if (ConfigHelper::pricesIncludeTax()) {
+            // Prices are tax-inclusive: orderitem_price and order_shipping already contain
+            // the tax. Sending order_tax / order_shipping_tax as a separate tax_total would
+            // double-charge the customer. Set tax_total to zero so the breakdown is:
+            // item_total (incl.) + shipping (incl.) + 0 = order_total.
+            $tax = 0.0;
+        } else {
+            // Prices are tax-exclusive: add both product and shipping taxes explicitly.
+            $tax = CurrencyHelper::convertForOrder((float) $orderTable->order_tax + (float) $orderTable->order_shipping_tax, $orderTable);
+        }
+        $discount = CurrencyHelper::convertForOrder((float) $orderTable->order_discount, $orderTable);
+        // Fees and their tax are carried in order_surcharge, not order_tax.
+        $handling = CurrencyHelper::convertForOrder((float) $orderTable->order_surcharge, $orderTable);
+        $total    = CurrencyHelper::gatewayAmount($orderTable);
+
+        return [
+            'order_id'            => $orderId,
+            'j2commerce_order_id' => $orderTable->j2commerce_order_id ?? $orderId,
+            'invoice_id'          => $orderTable->invoice_prefix . $orderId,
+            'currency_code'       => $currency,
+            'total'               => $total,
+            'shipping'            => $shipping,
+            'tax'                 => $tax,
+            'discount'            => $discount,
+            'handling'            => $handling,
+            'items'               => $items,
+        ];
     }
 
     public function capturePayPalOrder(string $paypalOrderId, string $orderId): array
