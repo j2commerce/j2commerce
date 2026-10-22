@@ -2042,6 +2042,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $params->set('list_link_title', 1);
         $params->set('list_image_link_to_product', 1);
         $params->set('list_image_width', (int) $this->params->get('shortcode_image_width', 300));
+        $params->set('list_collapsed_options', (int) $this->params->get('shortcode_collapsed_options', 1));
 
         return $params;
     }

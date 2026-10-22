@@ -345,6 +345,18 @@
                     <option value="1">JYES</option>
                 </field>
                 <field
+                    name="shortcode_collapsed_options"
+                    type="radio"
+                    layout="joomla.form.field.radio.switcher"
+                    label="PLG_CONTENT_J2COMMERCE_SHORTCODE_COLLAPSED_OPTIONS_LABEL"
+                    description="PLG_CONTENT_J2COMMERCE_SHORTCODE_COLLAPSED_OPTIONS_DESC"
+                    default="1"
+                    filter="integer"
+                >
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+                <field
                     name="shortcode_strip_in_finder"
                     type="radio"
                     layout="joomla.form.field.radio.switcher"
