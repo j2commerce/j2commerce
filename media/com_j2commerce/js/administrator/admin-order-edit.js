@@ -1514,7 +1514,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // === Refund / charge-balance modals (Summary totals rail) ===
     // Both are money actions against server-validated ledger amounts; a full page
     // reload afterwards re-renders the server-side balance panel honestly.
-    async function submitMoneyModal(btnId, inputId, modalId, task) {
+    async function submitMoneyModal(btnId, inputId, modalId, task, extra = {}) {
         const btn = document.getElementById(btnId);
         const amount = parseFloat(document.getElementById(inputId)?.value || '0');
 
@@ -1526,7 +1526,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
 
         try {
-            const result = await postAjax(task, { amount: String(amount) });
+            const result = await postAjax(task, { ...extra, amount: String(amount) });
 
             if (!result.success) {
                 showMessage('error', result.message);
@@ -1548,7 +1548,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('refundPaymentConfirmBtn')?.addEventListener('click', () => {
-        submitMoneyModal('refundPaymentConfirmBtn', 'refundAmount', 'refundPaymentModal', 'ajaxRefundOrderPayment');
+        const refundOptions = [...document.querySelectorAll('#refundPaymentModal [data-refund-option]:checked')]
+            .map((el) => el.dataset.refundOption);
+
+        submitMoneyModal('refundPaymentConfirmBtn', 'refundAmount', 'refundPaymentModal', 'ajaxRefundOrderPayment', {
+            refund_options: refundOptions,
+        });
     });
 
     document.getElementById('chargeBalanceConfirmBtn')?.addEventListener('click', () => {

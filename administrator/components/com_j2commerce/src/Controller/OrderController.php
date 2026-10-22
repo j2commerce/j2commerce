@@ -1618,6 +1618,9 @@ class OrderController extends FormController
 
             $refundedBefore = OrderTransactionHelper::getRefunded($orderPk);
 
+            // Read before the refund: what a plugin offers can depend on state the refund changes.
+            $optionNames = array_keys($this->getModel()->getRefundOptions($order));
+
             // Event contract (all gateways): args = [element, (int) varchar order_id,
             // amount in STORE BASE currency] — gateways convert to display internally.
             $rate       = (float) ($order->currency_value ?? 1.0);
@@ -1660,6 +1663,27 @@ class OrderController extends FormController
                 Text::sprintf('COM_J2COMMERCE_ORDER_REFUND_NOTE', CurrencyHelper::format($ledgerAmount, $currencyCode, 1.0), $element),
                 'system_note'
             );
+
+            // The money has moved; a follow-up failure is logged, never reported as a failed refund.
+            try {
+                // Every option offered for this order, each true only when the admin left it ticked:
+                // a plugin needs the unticked case too (e.g. to record that a subscription was kept).
+                $requested = $this->input->post->get('refund_options', [], 'array');
+                $options   = [];
+
+                foreach ($optionNames as $name) {
+                    $options[$name] = \in_array($name, $requested, true);
+                }
+
+                J2CommerceHelper::plugin()->event('AfterRefundPayment', [
+                    $order,
+                    $ledgerAmount,
+                    OrderTransactionHelper::getRefundable($orderPk) < $epsilon,
+                    $options,
+                ]);
+            } catch (\Throwable $e) {
+                Log::add('AfterRefundPayment for order ' . $order->order_id . ': ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            }
 
             $this->sendJson(['success' => true, 'message' => Text::_('COM_J2COMMERCE_REFUND_DONE')]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {

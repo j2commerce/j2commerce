@@ -325,6 +325,13 @@ $amountAttr    = static fn (float $v): string => number_format($v, $moneyDecimal
                     <?php endif; ?>
                 </div>
                 <div class="form-text"><?php echo Text::sprintf('COM_J2COMMERCE_REFUND_AMOUNT_MAX', $fmtDisplay($this->refundableAmount)); ?></div>
+                <?php foreach ($this->refundOptions as $optionName => $option) : ?>
+                    <div class="form-check mt-3">
+                        <input class="form-check-input" type="checkbox" id="refundOption_<?php echo $this->escape($optionName); ?>"
+                               data-refund-option="<?php echo $this->escape($optionName); ?>"<?php echo $option['checked'] ? ' checked' : ''; ?>>
+                        <label class="form-check-label" for="refundOption_<?php echo $this->escape($optionName); ?>"><?php echo $this->escape($option['label']); ?></label>
+                    </div>
+                <?php endforeach; ?>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><?php echo Text::_('JCANCEL'); ?></button>

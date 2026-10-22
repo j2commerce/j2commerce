@@ -772,6 +772,22 @@ class OrderModel extends AdminModel
         return InventoryHelper::orderStockCommitted((string) ($order->order_id ?? ''));
     }
 
+    /** @return array<string, array{label: string, checked: bool}> Refund-modal checkboxes from onJ2CommerceGetRefundOptions; the first plugin to claim a name wins. */
+    public function getRefundOptions(object $order): array
+    {
+        $options = [];
+
+        foreach ((array) J2CommerceHelper::plugin()->event('GetRefundOptions', [$order])->getEventResult() as $option) {
+            $name = \is_array($option) ? (string) ($option['name'] ?? '') : '';
+
+            if (preg_match('/^[a-z][a-z0-9_]*$/', $name) && !isset($options[$name])) {
+                $options[$name] = ['label' => Text::_((string) ($option['label'] ?? $name)), 'checked' => !empty($option['checked'])];
+            }
+        }
+
+        return $options;
+    }
+
     /** Supplemental-charge capability of the order's gateway ('token_charge' | 'order_update' | 'none'). */
     public function getSupplementalCapability(object $order): string
     {
