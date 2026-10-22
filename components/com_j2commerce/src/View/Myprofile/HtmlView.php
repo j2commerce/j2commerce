@@ -275,6 +275,9 @@ class HtmlView extends BaseHtmlView
 
         $this->registerFrameworkTemplatePaths($app);
 
+        // The page-level AfterDisplayOrder call display() makes; its HTML goes unused there too.
+        J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayOrder', [$this->orders]);
+
         return $this->loadTemplate('orderslist');
     }
 
@@ -347,9 +350,9 @@ class HtmlView extends BaseHtmlView
             return true;
         }
 
-        if (!empty($guestToken) && !empty($guestEmail)
-            && $guestToken === $order->token
-            && $guestEmail === $order->user_email) {
+        if (!empty($guestToken) && !empty($guestEmail) && !empty($order->token)
+            && hash_equals((string) $order->token, $guestToken)
+            && strcasecmp((string) $order->user_email, $guestEmail) === 0) {
             return true;
         }
 

@@ -14,6 +14,8 @@ namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Plugin\J2Commerce\PaymentPaypal\Helper\PayPalCurrencyHelper;
+
 /**
  * PayPal Classic NVP API client.
  *
@@ -88,16 +90,16 @@ final class PayPalNvpClient
         string $paymentAction = 'Sale',
         array $extra = []
     ): array {
-        $fields = array_merge([
+        $fields = [
             'METHOD'        => 'DoReferenceTransaction',
             'REFERENCEID'   => $referenceId,
             'PAYMENTACTION' => $paymentAction,
-            'AMT'           => number_format($amount, 2, '.', ''),
+            'AMT'           => PayPalCurrencyHelper::format($amount, $currencyCode),
             'CURRENCYCODE'  => $currencyCode,
-        ], $extra);
+        ] + $extra;
 
         if ($invoiceNumber !== '') {
-            $fields['INVNUM'] = $invoiceNumber;
+            $fields['INVNUM'] = substr($invoiceNumber, 0, 127);
         }
 
         if ($description !== '') {
@@ -144,74 +146,6 @@ final class PayPalNvpClient
     }
 
     /**
-     * SetExpressCheckout — start the legacy NVP Express Checkout flow. Used to
-     * create a Billing Agreement (BAID) for subscription products.
-     *
-     * Returns ACK=Success + TOKEN. The caller redirects the customer to:
-     *   https://www.{sandbox.}paypal.com/cgi-bin/webscr?cmd=_express-checkout&token={TOKEN}
-     * After approval, PayPal redirects to ReturnURL with TOKEN + PayerID query params.
-     *
-     * @param  array<int, array{name: string, amt: float, qty: int}>  $items
-     * @return array<string, mixed>
-     */
-    public function setExpressCheckout(
-        float $amount,
-        string $currencyCode,
-        string $returnUrl,
-        string $cancelUrl,
-        string $invoiceNumber = '',
-        string $billingDescription = 'Automatic payments for subscription product',
-        string $custom = '',
-        array $items = []
-    ): array {
-        $fields = [
-            'METHOD'                         => 'SetExpressCheckout',
-            'PAYMENTREQUEST_0_PAYMENTACTION' => 'Sale',
-            'PAYMENTREQUEST_0_AMT'           => number_format($amount, 2, '.', ''),
-            'PAYMENTREQUEST_0_CURRENCYCODE'  => $currencyCode,
-            'RETURNURL'                      => $returnUrl,
-            'CANCELURL'                      => $cancelUrl,
-            'L_BILLINGTYPE0'                 => 'MerchantInitiatedBillingSingleAgreement',
-            'L_BILLINGAGREEMENTDESCRIPTION0' => substr(strip_tags($billingDescription), 0, 127),
-            'NOSHIPPING'                     => '1',
-            'ALLOWNOTE'                      => '0',
-        ];
-
-        if ($invoiceNumber !== '') {
-            $fields['PAYMENTREQUEST_0_INVNUM'] = substr($invoiceNumber, 0, 127);
-        }
-
-        if ($custom !== '') {
-            $fields['PAYMENTREQUEST_0_CUSTOM'] = substr($custom, 0, 255);
-        }
-
-        $i         = 0;
-        $itemTotal = 0.0;
-
-        foreach ($items as $item) {
-            $name = (string) ($item['name'] ?? '');
-            $amt  = (float) ($item['amt'] ?? 0);
-            $qty  = (int) ($item['qty'] ?? 1);
-
-            if ($name === '' || $amt <= 0 || $qty <= 0) {
-                continue;
-            }
-
-            $fields['L_PAYMENTREQUEST_0_NAME' . $i] = substr($name, 0, 126);
-            $fields['L_PAYMENTREQUEST_0_AMT' . $i]  = number_format($amt, 2, '.', '');
-            $fields['L_PAYMENTREQUEST_0_QTY' . $i]  = (string) $qty;
-            $itemTotal += $amt * $qty;
-            $i++;
-        }
-
-        if ($itemTotal > 0) {
-            $fields['PAYMENTREQUEST_0_ITEMAMT'] = number_format($itemTotal, 2, '.', '');
-        }
-
-        return $this->request($fields);
-    }
-
-    /**
      * GetExpressCheckoutDetails — verify a TOKEN after customer approval and
      * read the PayerID + email + buyer details. Called between Return URL hit
      * and DoExpressCheckoutPayment.
@@ -246,9 +180,9 @@ final class PayPalNvpClient
             'TOKEN'                          => $token,
             'PAYERID'                        => $payerId,
             'PAYMENTREQUEST_0_PAYMENTACTION' => 'Sale',
-            'PAYMENTREQUEST_0_AMT'           => number_format($amount, 2, '.', ''),
+            'PAYMENTREQUEST_0_AMT'           => PayPalCurrencyHelper::format($amount, $currencyCode),
             'PAYMENTREQUEST_0_CURRENCYCODE'  => $currencyCode,
-            'PAYMENTREQUEST_0_ITEMAMT'       => number_format($amount, 2, '.', ''),
+            'PAYMENTREQUEST_0_ITEMAMT'       => PayPalCurrencyHelper::format($amount, $currencyCode),
         ];
 
         if ($invoiceNumber !== '') {
@@ -260,19 +194,6 @@ final class PayPalNvpClient
         }
 
         return $this->request($fields);
-    }
-
-    /**
-     * Build the customer-facing approval URL for a TOKEN returned by
-     * SetExpressCheckout. Customer is redirected here to authorize the BAID.
-     */
-    public function getApprovalUrl(string $token): string
-    {
-        $base = $this->sandbox
-            ? 'https://www.sandbox.paypal.com'
-            : 'https://www.paypal.com';
-
-        return $base . '/cgi-bin/webscr?cmd=_express-checkout&token=' . urlencode($token);
     }
 
     /**

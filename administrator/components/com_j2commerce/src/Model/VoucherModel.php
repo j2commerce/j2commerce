@@ -896,6 +896,7 @@ class VoucherModel extends AdminModel
 
             $db->setQuery($query);
             $db->execute();
+            CartHelper::touchCart($cartId);
         }
     }
 
@@ -1081,11 +1082,12 @@ class VoucherModel extends AdminModel
         $tz       = Factory::getApplication()->getConfig()->get('offset');
         $now      = Factory::getDate('now', $tz)->format('Y-m-d', true);
 
-        $validFrom = Factory::getDate($this->voucher->valid_from, $tz)->format('Y-m-d', true);
-        $validTo   = Factory::getDate($this->voucher->valid_to, $tz)->format('Y-m-d', true);
+        // An open-ended bound is stored as NULL; it is never handed to the date parser.
+        $from = (string) ($this->voucher->valid_from ?? '');
+        $to   = (string) ($this->voucher->valid_to ?? '');
 
-        $fromValid = ($this->voucher->valid_from == $nullDate || empty($this->voucher->valid_from) || $validFrom <= $now);
-        $toValid   = ($this->voucher->valid_to == $nullDate || empty($this->voucher->valid_to) || $validTo >= $now);
+        $fromValid = $from === '' || $from === $nullDate || Factory::getDate($from, $tz)->format('Y-m-d', true) <= $now;
+        $toValid   = $to === '' || $to === $nullDate || Factory::getDate($to, $tz)->format('Y-m-d', true) >= $now;
 
         if (!$fromValid || !$toValid) {
             throw new VoucherRejection(Text::_('COM_J2COMMERCE_VOUCHER_HAS_EXPIRED'));
@@ -1259,6 +1261,7 @@ class VoucherModel extends AdminModel
 
             $db->setQuery($query);
             $db->execute();
+            CartHelper::touchCart((int) $cartTable->j2commerce_cart_id);
         }
 
         J2CommerceHelper::plugin()->event('AfterSetVoucher', [&$postVoucher, &$cartTable]);

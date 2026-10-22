@@ -1129,7 +1129,7 @@ class CustomFieldHelper
 
         if (\in_array($type, ['select', 'singledropdown', 'radio'], true)) {
             $names   = array_column(self::getFieldOptions($field), 'name', 'value');
-            $scalars = array_map(static fn ($v) => Text::_($names[$v] ?? $v), $scalars);
+            $scalars = array_map(static fn ($v) => isset($names[$v]) ? Text::_($names[$v]) : $v, $scalars);
         } elseif ($type === 'zone') {
             $zoneType = (string) (json_decode((string) ($field->field_options ?? ''), true)['zone_type'] ?? '');
             $scalars  = array_map(static fn ($v) => self::getZoneOrCountryName($zoneType, (int) $v) ?: $v, $scalars);

@@ -224,8 +224,10 @@ final class PayPalClient
      */
     public function requestWithRetry(string $method, string $endpoint, ?array $body = null, array $extraHeaders = []): array
     {
-        $requestId = bin2hex(random_bytes(16));
-        $headers   = array_merge($extraHeaders, ['PayPal-Request-Id: ' . $requestId]);
+        // A caller's own id wins: sending two PayPal-Request-Id headers left theirs unused.
+        $headers = preg_grep('/^PayPal-Request-Id:/i', $extraHeaders)
+            ? $extraHeaders
+            : array_merge($extraHeaders, ['PayPal-Request-Id: ' . bin2hex(random_bytes(16))]);
 
         for ($attempt = 0; $attempt <= 3; $attempt++) {
             if ($attempt > 0) {

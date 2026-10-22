@@ -51,7 +51,6 @@ $clientId = $vars->client_id ?? '';
      data-sandbox="<?php echo $sandbox ? 'true' : 'false'; ?>"
      data-client-id="<?php echo htmlspecialchars($clientId, ENT_QUOTES, 'UTF-8'); ?>"
      data-is-subscription="<?php echo !empty($vars->is_subscription) ? 'true' : 'false'; ?>"
-     data-subscription-mode="<?php echo htmlspecialchars($vars->subscription_mode ?? 'rest', ENT_QUOTES, 'UTF-8'); ?>"
      data-debug="<?php echo ($vars->debug ?? 0) ? 'true' : 'false'; ?>"
 ></div>
 

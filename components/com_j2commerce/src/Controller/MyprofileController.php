@@ -210,25 +210,31 @@ class MyprofileController extends BaseController
             return;
         }
 
-        $db        = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-        $orderType = 'normal';
-        $query     = $db->getQuery(true)
-            ->select($db->quoteName('j2commerce_order_id'))
-            ->from($db->quoteName('#__j2commerce_orders'))
-            ->where($db->quoteName('token') . ' = :token')
-            ->where($db->quoteName('user_email') . ' = :email')
-            ->where($db->quoteName('order_type') . ' = :orderType')
-            ->bind(':token', $orderToken)
-            ->bind(':email', $email)
-            ->bind(':orderType', $orderType)
-            ->setLimit(1);
+        $matchedToken = '';
 
-        $db->setQuery($query);
-        $orderId = $db->loadResult();
+        // A blank token is never looked up, as in guestOrderLink().
+        if ($orderToken !== '') {
+            $db        = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+            $orderType = 'normal';
+            $query     = $db->getQuery(true)
+                ->select($db->quoteName('token'))
+                ->from($db->quoteName('#__j2commerce_orders'))
+                ->where($db->quoteName('token') . ' = :token')
+                ->where($db->quoteName('user_email') . ' = :email')
+                ->where($db->quoteName('order_type') . ' = :orderType')
+                ->bind(':token', $orderToken)
+                ->bind(':email', $email)
+                ->bind(':orderType', $orderType)
+                ->setLimit(1);
 
-        if ($orderId) {
+            $db->setQuery($query);
+            $matchedToken = (string) $db->loadResult();
+        }
+
+        if ($matchedToken !== '') {
+            // The lookup matches case-insensitively; later checks compare the stored row token exactly.
             $session = $this->app->getSession();
-            $session->set('guest_order_token', $orderToken, 'j2commerce');
+            $session->set('guest_order_token', $matchedToken, 'j2commerce');
             $session->set('guest_order_email', $email, 'j2commerce');
 
             $this->app->redirect(Route::_('index.php?option=com_j2commerce&view=myprofile', false));
@@ -759,9 +765,9 @@ class MyprofileController extends BaseController
 
         if ($user && $user->id && (int) $order->user_id === (int) $user->id) {
             $hasAccess = true;
-        } elseif (!empty($guestToken) && !empty($guestEmail)
-            && $guestToken === $order->token
-            && $guestEmail === $order->user_email) {
+        } elseif (!empty($guestToken) && !empty($guestEmail) && !empty($order->token)
+            && hash_equals((string) $order->token, (string) $guestToken)
+            && strcasecmp((string) $order->user_email, (string) $guestEmail) === 0) {
             $hasAccess = true;
         }
 
@@ -1038,9 +1044,9 @@ class MyprofileController extends BaseController
         $guestToken = $session->get('guest_order_token', '', 'j2commerce');
         $guestEmail = $session->get('guest_order_email', '', 'j2commerce');
 
-        if (!empty($guestToken) && !empty($guestEmail)
-            && $guestToken === $order->token
-            && $guestEmail === $order->user_email) {
+        if (!empty($guestToken) && !empty($guestEmail) && !empty($order->token)
+            && hash_equals((string) $order->token, (string) $guestToken)
+            && strcasecmp((string) $order->user_email, (string) $guestEmail) === 0) {
             return true;
         }
 

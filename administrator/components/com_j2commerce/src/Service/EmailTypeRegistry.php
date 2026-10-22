@@ -118,6 +118,24 @@ class EmailTypeRegistry
             'default_body'    => 'COM_J2COMMERCE_EMAILTEMPLATE_BODY_DEFAULT',
             'receiver_types'  => ['customer', 'admin', '*'],
         ];
+
+        $this->types['marketing'] = [
+            'type'        => 'marketing',
+            'label'       => 'COM_J2COMMERCE_EMAILTYPE_MARKETING',
+            'description' => 'COM_J2COMMERCE_EMAILTYPE_MARKETING_DESC',
+            'icon'        => 'fa-solid fa-bullhorn',
+            'contexts'    => [
+                'cart_reminder' => 'COM_J2COMMERCE_EMAILTYPE_CONTEXT_CART_REMINDER',
+            ],
+            'tags' => [
+                'FIRST_NAME'      => ['label' => 'COM_J2COMMERCE_FIELD_FIRST_NAME', 'description' => 'COM_J2COMMERCE_FIELD_FIRST_NAME', 'group' => 'general'],
+                'CART_ITEM_COUNT' => ['label' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_CART_ITEM_COUNT', 'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_CART_ITEM_COUNT', 'group' => 'general'],
+                'CART_COUPON'     => ['label' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_CART_COUPON', 'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_CART_COUPON', 'group' => 'general'],
+                'CART_URL'        => ['label' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_CART_URL', 'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_CART_URL', 'group' => 'general'],
+                'UNSUBSCRIBE_URL' => ['label' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_UNSUBSCRIBE_URL', 'description' => 'COM_J2COMMERCE_EMAILTEMPLATE_TAG_UNSUBSCRIBE_URL', 'group' => 'general'],
+            ],
+            'receiver_types' => ['customer'],
+        ];
     }
 
     /**

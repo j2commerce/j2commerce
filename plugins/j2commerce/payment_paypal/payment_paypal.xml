@@ -165,18 +165,6 @@
                 <field type="spacer" />
 
                 <field
-                    name="subscription_mode"
-                    type="radio"
-                    layout="joomla.form.field.radio.switcher"
-                    label="PLG_J2COMMERCE_PAYMENT_PAYPAL_SUBSCRIPTION_MODE_LABEL"
-                    description="PLG_J2COMMERCE_PAYMENT_PAYPAL_SUBSCRIPTION_MODE_DESC"
-                    default="rest"
-                >
-                    <option value="rest">PLG_J2COMMERCE_PAYMENT_PAYPAL_SUBSCRIPTION_MODE_REST</option>
-                    <option value="nvp">PLG_J2COMMERCE_PAYMENT_PAYPAL_SUBSCRIPTION_MODE_NVP</option>
-                </field>
-
-                <field
                     name="nvp_section_note"
                     type="note"
                     label="PLG_J2COMMERCE_PAYMENT_PAYPAL_NVP_SECTION_LABEL"

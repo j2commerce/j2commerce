@@ -561,8 +561,9 @@ $tmpl = $input->get('tmpl', '', 'cmd') === 'component' ? '&tmpl=component' : '';
                         // Core transactional directories — everything else maps to a registered email type
                         $coreTransactionalDirs = ['confirmed', 'shipped', 'cancelled'];
 
-                        // Build directory→emailType map from registered email types
-                        $dirEmailTypeMap = [];
+                        // Build directory→emailType map from registered email types. cartreminder is a
+                        // context of the marketing type, so its folder name matches no type id.
+                        $dirEmailTypeMap = ['cartreminder' => 'marketing'];
                         try {
                             $emailTypes = \J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper::getEmailTypes();
                             foreach ($emailTypes as $typeId => $typeConfig) {

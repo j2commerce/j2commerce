@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Exception\UserFacingException;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CsvHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
@@ -81,7 +82,7 @@ class OrdersController extends AdminController
             || !$identity->authorise('core.edit', 'com_j2commerce')
             || !J2CommerceHelper::canAccess('j2commerce.editorders')
         ) {
-            throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
+            throw new UserFacingException(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 
         $pks      = (array) $this->input->post->get('cid', [], 'int');
@@ -95,11 +96,11 @@ class OrdersController extends AdminController
 
         try {
             if (empty($pks)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_NO_ORDERS_SELECTED'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_NO_ORDERS_SELECTED'));
             }
 
             if ($statusId < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_NO_STATUS_SELECTED'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_NO_STATUS_SELECTED'));
             }
 
             $model              = $this->getModel();
@@ -144,7 +145,7 @@ class OrdersController extends AdminController
                 );
             }
         } catch (\Exception $e) {
-            $this->app->enqueueMessage($e->getMessage(), 'warning');
+            $this->app->enqueueMessage(UserFacingException::messageFor($e), 'warning');
         }
 
         $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=orders' . $this->getRedirectToListAppend(), false));
@@ -189,7 +190,7 @@ class OrdersController extends AdminController
             || !J2CommerceHelper::canAccess('j2commerce.vieworders')
             || !J2CommerceHelper::canAccess('j2commerce.exportorders')
         ) {
-            throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
+            throw new UserFacingException(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 
         $filters = $this->getExportFiltersFromRequest();
@@ -353,7 +354,7 @@ class OrdersController extends AdminController
             || !$identity->authorise('core.delete', 'com_j2commerce')
             || !J2CommerceHelper::canAccess('j2commerce.editorders')
         ) {
-            throw new \Exception(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
+            throw new UserFacingException(Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 403);
         }
 
         $pks = (array) $this->input->post->get('cid', [], 'int');
@@ -361,7 +362,7 @@ class OrdersController extends AdminController
 
         try {
             if (empty($pks)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_NO_ORDERS_SELECTED'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_NO_ORDERS_SELECTED'));
             }
 
             $model = $this->getModel();
@@ -372,7 +373,7 @@ class OrdersController extends AdminController
 
             $this->setMessage(Text::plural('COM_J2COMMERCE_N_ITEMS_DELETED', \count($pks)));
         } catch (\Exception $e) {
-            $this->app->enqueueMessage($e->getMessage(), 'error');
+            $this->app->enqueueMessage(UserFacingException::messageFor($e), 'error');
         }
 
         $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=orders' . $this->getRedirectToListAppend(), false));
@@ -406,14 +407,14 @@ class OrdersController extends AdminController
 
         try {
             if ($orderId < 1 || $newStatus < 1) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             $model = $this->getModel();
 
             if (!$model->updateOrderStatus($orderId, $newStatus, false)) {
                 $errors = $model->getErrors();
-                throw new \Exception(implode("\n", $errors));
+                throw new UserFacingException(implode("\n", $errors));
             }
 
             $statusInfo  = $this->getStatusInfo($newStatus);
@@ -445,7 +446,7 @@ class OrdersController extends AdminController
                 ],
             ];
         } catch (\Exception $e) {
-            $response = ['success' => false, 'message' => $e->getMessage()];
+            $response = ['success' => false, 'message' => UserFacingException::messageFor($e)];
         }
 
         // Discard any stray output from plugins/model operations

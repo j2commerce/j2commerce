@@ -12,11 +12,15 @@ declare(strict_types=1);
 
 namespace J2Commerce\Plugin\J2Commerce\PaymentBanktransfer\Extension;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPayGrantHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Base;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Payment;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\PluginLayoutTrait;
+use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Language;
 use Joomla\CMS\Language\Text;
@@ -117,7 +121,9 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $total            = $order->order_subtotal + $order->order_shipping + $order->order_shipping_tax;
+        // Inclusive prices already carry the shipping tax inside order_shipping.
+        $isIncludingTax   = (int) J2CommerceHelper::config()->get('config_including_tax', 0);
+        $total            = $order->order_subtotal + $order->order_shipping + ($isIncludingTax ? 0.0 : $order->order_shipping_tax);
         $surcharge        = 0.0;
         $surchargePercent = (float) $this->params->get('surcharge_percent', 0);
         $surchargeFixed   = (float) $this->params->get('surcharge_fixed', 0);
@@ -288,6 +294,16 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
         }
 
         if ($order->orderpayment_type !== $this->_element || !$this->getPayment()->validateHash($order)) {
+            $json['error'] = strip_tags(J2htmlHelper::translateKey($this->params->get('onerrorpayment', Text::_('PLG_J2COMMERCE_PAYMENT_BANKTRANSFER_ORDER_NOT_FOUND'))));
+
+            return $json;
+        }
+
+        // A shopper's checkout settles an order still at New; a Take Payment context may settle
+        // any order it allows to be paid. Anything else was settled already and stays as it is.
+        $isNew = OrderStatusHelper::getType((int) $order->order_state_id) === OrderStatusHelper::TYPE_NEW;
+
+        if (!$isNew && !(CheckoutContextHelper::isActivated() && OrderPayGrantHelper::isPayable($order))) {
             $json['error'] = strip_tags(J2htmlHelper::translateKey($this->params->get('onerrorpayment', Text::_('PLG_J2COMMERCE_PAYMENT_BANKTRANSFER_ORDER_NOT_FOUND'))));
 
             return $json;

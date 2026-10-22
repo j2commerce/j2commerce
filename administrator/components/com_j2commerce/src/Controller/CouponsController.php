@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Exception\UserFacingException;
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\AdminController;
@@ -90,14 +91,14 @@ class CouponsController extends AdminController
 
         try {
             if (empty($pks)) {
-                throw new \Exception(Text::_('COM_J2COMMERCE_ERROR_NO_COUPONS_SELECTED'));
+                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_NO_COUPONS_SELECTED'));
             }
 
             $model = $this->getModel();
             $model->duplicate($pks);
             $this->setMessage(Text::plural('COM_J2COMMERCE_COUPONS_N_ITEMS_DUPLICATED', \count($pks)));
         } catch (\Exception $e) {
-            $this->app->enqueueMessage($e->getMessage(), 'warning');
+            $this->app->enqueueMessage(UserFacingException::messageFor($e), 'warning');
         }
 
         $this->setRedirect(Route::_('index.php?option=com_j2commerce&view=coupons' . $this->getRedirectToListAppend(), false));

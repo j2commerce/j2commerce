@@ -217,10 +217,15 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
+        // Prepare Content / Preserve Tags govern article and store text only. Other
+        // callers (module text, a form extension's email body) run their own
+        // content-plugin dispatch, so their text is left to that single pass.
+        $storeContext = str_starts_with($context, 'com_content.') || str_starts_with($context, 'com_j2commerce.');
+
         // When prepare_content is off, strip standard Joomla content-plugin tags
         // (loadposition / loadmodule / loadmoduleid) while preserving any patterns
         // listed in the preserve_tags parameter.
-        if (!(bool) $this->params->get('prepare_content', 1)) {
+        if ($storeContext && !(bool) $this->params->get('prepare_content', 1)) {
             $this->stripContentPluginTags($article);
         }
 
@@ -260,7 +265,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         // Re-dispatch onContentPrepare with the real article so content plugins can
         // render remaining tags ({field 4}, {loadmoduleid 120}, etc.).
         //
-        // Fires for all contexts — including productlist — when:
+        // Fires for $storeContext contexts — including productlist — when:
         //   - prepare_content is on  → render all plugin tags in the text, OR
         //   - preserve_tags is set   → stripContentPluginTags already removed the
         //     unwanted tags; we still need to render the ones that were preserved.
@@ -270,7 +275,7 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         // The static flag above prevents recursion.
         $hasPreserveTags = trim((string) $this->params->get('preserve_tags', '')) !== '';
 
-        if ((bool) $this->params->get('prepare_content', 1) || $hasPreserveTags) {
+        if ($storeContext && ((bool) $this->params->get('prepare_content', 1) || $hasPreserveTags)) {
             self::$preparingContent = true;
             PluginHelper::importPlugin('content');
             $dispatcher = Factory::getContainer()->get(DispatcherInterface::class);
@@ -1134,18 +1139,47 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         };
 
         $strip = static function (string $text) use ($shouldStrip): string {
-            // Paired form first: {tagname …}…{/tagname}
-            $text = preg_replace_callback(
-                '/\{([a-z][a-z0-9_-]*)(?:\s[^{}]*)?\}.*?\{\/\1\}/is',
-                static function (array $m) use ($shouldStrip): string {
-                    return $shouldStrip($m[0], $m[1]) ? '' : $m[0];
-                },
-                $text
-            ) ?? $text;
+            $openerRe = '/\{([a-z][a-z0-9_-]*)(?:\s[^{}]*)?\}/i';
+
+            // Paired form first: {tagname …}…{/tagname}, each opener paired with the next closer
+            // of its name, in one streaming forward scan. A `.*?\{\/\1\}` regex re-scanned to the
+            // end of the text from every self-closing tag (quadratic) and returned null on long
+            // articles once the backtrack limit was reached.
+            $lastCloser = [];
+
+            for ($offset = 0; preg_match('/\{\/([a-z][a-z0-9_-]*)\}/i', $text, $m, PREG_OFFSET_CAPTURE, $offset); $offset = $m[0][1] + \strlen($m[0][0])) {
+                $lastCloser[strtolower($m[1][0])] = $m[0][1];
+            }
+
+            if ($lastCloser) {
+                $out = '';
+                $pos = $offset = 0;
+
+                while (preg_match($openerRe, $text, $m, PREG_OFFSET_CAPTURE, $offset)) {
+                    [[$raw, $start], [$name]] = $m;
+
+                    $key    = strtolower($name);
+                    $offset = $start + \strlen($raw);
+
+                    // No closer of this name follows; the self-closing pass handles it.
+                    if (($lastCloser[$key] ?? -1) < $start) {
+                        continue;
+                    }
+
+                    // Cannot miss: the closer recorded above starts at or after $offset.
+                    $needle = '{/' . $key . '}';
+                    $end    = stripos($text, $needle, $offset) + \strlen($needle);
+                    $pair   = substr($text, $start, $end - $start);
+                    $out .= substr($text, $pos, $start - $pos) . ($shouldStrip($pair, $name) ? '' : $pair);
+                    $offset = $pos = $end;
+                }
+
+                $text = $out . substr($text, $pos);
+            }
 
             // Self-closing form: {tagname} or {tagname attributes}
             return preg_replace_callback(
-                '/\{([a-z][a-z0-9_-]*)(?:\s[^{}]*)?\}/i',
+                $openerRe,
                 static function (array $m) use ($shouldStrip): string {
                     return $shouldStrip($m[0], $m[1]) ? '' : $m[0];
                 },

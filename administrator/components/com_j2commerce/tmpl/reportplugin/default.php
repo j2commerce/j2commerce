@@ -52,7 +52,7 @@ $pluginName = Factory::getApplication()->getInput()->getCmd('plugin', '');
     document.addEventListener('DOMContentLoaded', function() {
         var btn = document.querySelector('.js-stools-btn-filter');
         if (btn) {
-            btn.childNodes[0].textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_REPORT_OPTIONS'), JSON_HEX_TAG | JSON_HEX_AMP); ?> + ' ';
+            btn.childNodes[0].textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_REPORT_OPTIONS'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?> + ' ';
         }
     });
     </script>

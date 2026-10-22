@@ -73,8 +73,8 @@ final class PaypaltestbuttonsField extends FormField
         $html .= '<pre id="paypal-test-output" class="bg-body-tertiary p-3 rounded mt-2" style="max-height:400px; overflow:auto; min-height:60px;"></pre>';
         $html .= '</div>';
 
-        $baseUrlJs = json_encode($baseUrl);
-        $tokenJs   = json_encode($token);
+        $baseUrlJs = json_encode($baseUrl, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+        $tokenJs   = json_encode($token, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
         $script = <<<JS
 (function(){

@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', function() {
             closeBtn.type = 'button';
             closeBtn.className = 'btn-close';
             closeBtn.setAttribute('data-bs-dismiss', 'alert');
-            closeBtn.setAttribute('aria-label', <?php echo json_encode(Text::_('JCLOSE')); ?>);
+            closeBtn.setAttribute('aria-label', <?php echo json_encode(Text::_('JCLOSE'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
             alertEl.appendChild(closeBtn);
 
             container.replaceChildren(alertEl);

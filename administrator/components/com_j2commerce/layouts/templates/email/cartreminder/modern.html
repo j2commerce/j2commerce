@@ -1,0 +1,148 @@
+<!--@subject: [LANG:COM_J2COMMERCE_EMAIL_CART_REMINDER_SUBJECT] -->
+<!-- J2Commerce Cart Reminder Email — Modern Template -->
+<div style="display: none; max-height: 0; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; color: [EMAIL_BG_COLOR];">[LANG:COM_J2COMMERCE_EMAIL_CART_REMINDER_PREHEADER]</div>
+<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background-color: [EMAIL_BG_COLOR]; padding: 0; margin: 0; font-family: Arial, Helvetica, sans-serif;">
+  <tr>
+    <td align="center" style="padding: 20px 10px;">
+      <table width="600" cellpadding="0" cellspacing="0" border="0" role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff;">
+
+        <!-- Logo Bar -->
+        <tr>
+          <td align="center" style="padding: 24px 40px; background-color: #ffffff; border-radius: 12px 12px 0 0; text-align: center;">
+            [IF:STORE_LOGO_URL]
+            <a href="[SITEURL]" target="_blank">
+              <img src="[STORE_LOGO_URL]" alt="[SITENAME]" height="[LOGO_MAX_HEIGHT]" width="[LOGO_WIDTH]" style="display: block; margin: 0 auto; border: 0; height: [LOGO_MAX_HEIGHT]px; width: auto;" />
+            </a>
+            [/IF:STORE_LOGO_URL]
+            [IFNOT:STORE_LOGO_URL]
+            <a href="[SITEURL]" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: bold; color: #0F172A; text-decoration: none;">[SITENAME]</a>
+            [/IFNOT:STORE_LOGO_URL]
+          </td>
+        </tr>
+
+        <!-- Reminder Banner -->
+        <tr>
+          <td style="background-color: #F8FAFC; padding: 32px 40px; text-align: center; border-top: 1px solid #E2E8F0; border-bottom: 1px solid #E2E8F0;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+              <tr>
+                <td align="center">
+                  <table cellpadding="0" cellspacing="0" border="0" role="presentation" style="margin-bottom: 16px;">
+                    <tr>
+                      <td align="center" style="width: 64px; height: 64px; background-color: [ACCENT_COLOR]; border-radius: 50%; text-align: center; vertical-align: middle;">
+                        <span aria-hidden="true" style="font-size: 30px; line-height: 64px;">&#x1F6D2;</span>
+                      </td>
+                    </tr>
+                  </table>
+                  <h1 style="font-family: Arial, Helvetica, sans-serif; font-size: 26px; font-weight: 800; color: #0F172A; margin: 0 0 12px;">[LANG:COM_J2COMMERCE_EMAIL_CART_REMINDER_HEADING]</h1>
+                  [IF:FIRST_NAME]<p style="font-family: Arial, Helvetica, sans-serif; font-size: 16px; color: #334155; line-height: 1.5; margin: 0 0 4px;">[LANG:COM_J2COMMERCE_EMAIL_HI]</p>[/IF:FIRST_NAME]
+                  <p style="font-family: Arial, Helvetica, sans-serif; font-size: 16px; color: #334155; line-height: 1.5; margin: 0;">[LANG:COM_J2COMMERCE_EMAIL_CART_REMINDER_INTRO]</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Primary CTA -->
+        <tr>
+          <td align="center" style="background-color: #ffffff; padding: 28px 40px 8px;">
+            <table cellpadding="0" cellspacing="0" border="0" role="presentation">
+              <tr>
+                <td align="center" style="background-color: [ACCENT_COLOR]; border-radius: 8px;">
+                  <a href="[CART_URL]" target="_blank" style="font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; color: [ACCENT_TEXT_COLOR]; text-decoration: none; display: inline-block; padding: 14px 40px; min-height: 20px;">[LANG:COM_J2COMMERCE_EMAIL_CART_REMINDER_BUTTON]</a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Cart Items Card -->
+        <tr>
+          <td style="box-sizing: border-box; background-color: #ffffff; padding: 24px 40px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border: 1px solid #E2E8F0; border-radius: 10px; overflow: hidden;">
+              <!-- Card Header -->
+              <tr>
+                <td colspan="3" style="background-color: #F8FAFC; padding: 14px 20px; border-bottom: 1px solid #E2E8F0;">
+                  <h2 style="font-family: Arial, Helvetica, sans-serif; font-size: 15px; font-weight: 700; color: #0F172A; margin: 0;">[LANG:COM_J2COMMERCE_EMAIL_CART_REMINDER_ITEMS]</h2>
+                </td>
+              </tr>
+              <!-- Column Headers -->
+              <tr>
+                <th scope="col" colspan="2" style="padding: 10px 20px; font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; text-align: left;">[LANG:COM_J2COMMERCE_EMAIL_PRODUCT]</th>
+                <th scope="col" style="padding: 10px 20px; font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; width: 45px;">[LANG:COM_J2COMMERCE_EMAIL_QTY]</th>
+              </tr>
+              <!-- Items -->
+              <!--[ITEMS_LOOP]-->
+              <tr>
+                <td style="padding: 12px 0 12px 20px; border-top: 1px solid #F1F5F9; vertical-align: top; width: 60px;">
+                  [IF:ITEM_IMAGE]
+                  <img src="[ITEM_IMAGE]" alt="[ITEM_NAME]" width="50" height="50" style="border-radius: 6px; object-fit: cover; display: block; border: 1px solid #F1F5F9;" />
+                  [/IF:ITEM_IMAGE]
+                </td>
+                <td style="padding: 12px 10px; border-top: 1px solid #F1F5F9; vertical-align: top; font-family: Arial, Helvetica, sans-serif;">
+                  <span style="font-size: 14px; font-weight: 600; color: #0F172A;">[ITEM_NAME]</span>
+                  [IF:ITEM_SKU]<br /><span style="font-size: 12px; color: #475569;">[LANG:COM_J2COMMERCE_EMAIL_SKU_2]</span>[/IF:ITEM_SKU]
+                  [IF:ITEM_OPTIONS]<br /><span style="font-size: 12px; color: #475569;">[ITEM_OPTIONS]</span>[/IF:ITEM_OPTIONS]
+                </td>
+                <td style="padding: 12px 20px; border-top: 1px solid #F1F5F9; text-align: center; vertical-align: top; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #0F172A;">[ITEM_QTY]</td>
+              </tr>
+              <!--[/ITEMS_LOOP]-->
+            </table>
+          </td>
+        </tr>
+
+        <!-- Applied Coupon -->
+        <!--[IF:CART_COUPON]-->
+        <tr>
+          <td style="background-color: #ffffff; padding: 0 40px 24px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background-color: #F8FAFC; border: 1px dashed #64748B; border-radius: 10px;">
+              <tr>
+                <td style="padding: 16px 20px; text-align: center; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #334155;">[LANG:COM_J2COMMERCE_EMAIL_CART_REMINDER_COUPON]</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!--[/IF:CART_COUPON]-->
+
+        <!-- Support Block -->
+        <!--[IF:STORE_EMAIL]-->
+        <tr>
+          <td style="background-color: #ffffff; padding: 0 40px 24px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background-color: #F8FAFC; border-radius: 10px;">
+              <tr>
+                <td style="padding: 20px; text-align: center; font-family: Arial, Helvetica, sans-serif;">
+                  <h2 style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: 600; color: #0F172A; margin: 0 0 4px;">[LANG:COM_J2COMMERCE_EMAIL_CART_REMINDER_HELP_HEADING]</h2>
+                  <p style="font-size: 13px; color: #475569; margin: 0;">
+                    [LANG:COM_J2COMMERCE_EMAIL_CONTACT_US_AT] <a href="mailto:[STORE_EMAIL]" style="color: #334155; text-decoration: underline;">[STORE_EMAIL]</a>
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!--[/IF:STORE_EMAIL]-->
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding: 24px 40px; background-color: #ffffff; border-radius: 0 0 12px 12px; border-top: 1px solid #F1F5F9; text-align: center; font-family: Arial, Helvetica, sans-serif;">
+            <p style="font-size: 12px; color: #475569; margin: 0 0 12px; line-height: 1.6;">
+              [IF:SOCIAL_FACEBOOK]<a href="[SOCIAL_FACEBOOK]" style="color: #475569; text-decoration: underline; margin: 0 6px;">Facebook</a>[/IF:SOCIAL_FACEBOOK]
+              [IF:SOCIAL_INSTAGRAM]<a href="[SOCIAL_INSTAGRAM]" style="color: #475569; text-decoration: underline; margin: 0 6px;">Instagram</a>[/IF:SOCIAL_INSTAGRAM]
+              [IF:SOCIAL_TWITTER]<a href="[SOCIAL_TWITTER]" style="color: #475569; text-decoration: underline; margin: 0 6px;">X (Twitter)</a>[/IF:SOCIAL_TWITTER]
+            </p>
+            <p style="font-size: 12px; color: #475569; margin: 0; line-height: 1.6;">[FOOTER_TEXT]</p>
+            <p style="font-size: 12px; color: #475569; margin: 8px 0 0; line-height: 1.6;">
+              [STORE_NAME][IF:STORE_ADDRESS_1] &middot; [STORE_ADDRESS_1][/IF:STORE_ADDRESS_1][IF:STORE_ADDRESS_2], [STORE_ADDRESS_2][/IF:STORE_ADDRESS_2][IF:STORE_CITY], [STORE_CITY][/IF:STORE_CITY][IF:STORE_STATE], [STORE_STATE][/IF:STORE_STATE] [STORE_ZIP][IF:STORE_COUNTRY], [STORE_COUNTRY][/IF:STORE_COUNTRY]
+            </p>
+            <p style="font-size: 12px; color: #475569; margin: 8px 0 0; line-height: 1.6;">
+              [LANG:COM_J2COMMERCE_EMAIL_CART_REMINDER_WHY] <a href="[UNSUBSCRIBE_URL]" style="color: #475569; text-decoration: underline;">[LANG:COM_J2COMMERCE_EMAIL_CART_REMINDER_UNSUBSCRIBE]</a>
+            </p>
+            <p style="font-size: 12px; color: #475569; margin: 8px 0 0;">
+              &copy; [CURRENT_YEAR] <a href="[SITEURL]" style="color: #475569; text-decoration: underline;">[SITENAME]</a>. [LANG:COM_J2COMMERCE_EMAIL_ALL_RIGHTS_RESERVED]
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>

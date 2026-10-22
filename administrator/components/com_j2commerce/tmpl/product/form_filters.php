@@ -35,7 +35,7 @@ $formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 
 $global_config = Factory::getApplication()->getConfig();
 $limit    = $global_config->get('list_limit', 20);
-$ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php');
+$ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
 ?>
 

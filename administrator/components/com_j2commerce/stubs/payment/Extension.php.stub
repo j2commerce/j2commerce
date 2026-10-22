@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace {{namespace}}\Extension;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Base;
@@ -144,7 +145,9 @@ final class {{Type}}{{Name}} extends CMSPlugin implements SubscriberInterface
         }
 
 {{#if surcharge}}
-        $total = $order->order_subtotal + $order->order_shipping + $order->order_shipping_tax;
+        // Inclusive prices already carry the shipping tax inside order_shipping.
+        $isIncludingTax = (int) J2CommerceHelper::config()->get('config_including_tax', 0);
+        $total = $order->order_subtotal + $order->order_shipping + ($isIncludingTax ? 0.0 : $order->order_shipping_tax);
         $surcharge = 0.0;
         $surchargePercent = (float) $this->params->get('surcharge_percent', 0);
         $surchargeFixed = (float) $this->params->get('surcharge_fixed', 0);

@@ -18,6 +18,7 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartOrder;
+use J2Commerce\Component\J2commerce\Administrator\Helper\CartReminderHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
@@ -27,6 +28,7 @@ use J2Commerce\Component\J2commerce\Administrator\Model\CartModel;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ModuleHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Plugin\PluginHelper;
@@ -86,12 +88,6 @@ class CartsController extends BaseController
 
         // Then check POST body (truthy check, matching Joomla's Session::checkToken behavior)
         return (bool) $this->input->post->get($token, '', 'alnum');
-    }
-
-    /** Same token, read from the query string — for GET endpoints a template override may still call. */
-    private function validateAjaxTokenFromQuery(): bool
-    {
-        return (bool) $this->input->get->get(Session::getFormToken(), '', 'alnum');
     }
 
     /**
@@ -1476,9 +1472,8 @@ class CartsController extends BaseController
 
         // A template override of default_calculator.php / default_shipping.php still sends
         // the old tokenless GET, and the old JS ignores the response body — so a silent
-        // reject looks like "clicking a shipping option does nothing". Accept the token
-        // from the query string as well, and name the two files when there is none at all.
-        if (!$this->validateAjaxToken() && !$this->validateAjaxTokenFromQuery()) {
+        // reject looks like "clicking a shipping option does nothing". Name the two files.
+        if (!$this->validateAjaxToken()) {
             Log::add(
                 'carts.shippingUpdate rejected: no CSRF token. A template override of '
                 . 'tmpl/carts/{framework}/default_calculator.php or default_shipping.php is '
@@ -1644,6 +1639,81 @@ class CartsController extends BaseController
         $json   = J2CommerceHelper::plugin()->eventWithArray('AfterAddingToWishlist', [$result]);
 
         $this->sendJsonResponse($json);
+    }
+
+    // Landing for the button in a cart reminder email: the signed link attaches a guest cart to this
+    // visitor, and a customer's own cart comes back when they log in.
+    public function restore(): void
+    {
+        UtilitiesHelper::sendNoCacheHeaders();
+
+        $cartId  = $this->input->getInt('cart', 0);
+        $cart    = CartReminderHelper::verifyRestore($cartId, $this->input->getString('t', ''));
+        $cartUrl = $this->getCartModel()->getCartUrl();
+        $helper  = CartHelper::getInstance();
+
+        if ($cart === null) {
+            $this->setRedirect($cartUrl, Text::_('COM_J2COMMERCE_CART_REMINDER_LINK_EXPIRED'), 'notice');
+
+            return;
+        }
+
+        if ((int) $cart->user_id > 0) {
+            if ((int) $this->app->getIdentity()?->id !== (int) $cart->user_id) {
+                $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_CART_REMINDER_LOGIN_TO_RESTORE'), 'notice');
+            }
+        } elseif (!$helper->restoreGuestCart($cartId)) {
+            $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_CART_REMINDER_CART_NOT_RESTORED'), 'notice');
+        }
+
+        $this->setRedirect($cartUrl);
+    }
+
+    // Opt-out link carried by marketing emails, authorised by its signed token. The link in the
+    // message only asks, because mail scanners open every link they find; the confirm form and the
+    // RFC 8058 one-click POST a mailbox provider sends record the opt-out.
+    public function unsubscribe(): void
+    {
+        UtilitiesHelper::sendNoCacheHeaders();
+
+        $encoded = $this->input->getString('e', '');
+        $token   = $this->input->getString('t', '');
+        $email   = CartReminderHelper::verifyUnsubscribe($encoded, $token);
+        $isPost  = $this->input->getMethod() === 'POST';
+
+        if ($isPost && $this->input->post->getString('List-Unsubscribe', '') === 'One-Click') {
+            if ($email !== '') {
+                CartReminderHelper::optOut($email);
+            }
+
+            $this->app->setHeader('status', $email !== '' ? 200 : 400, true);
+            $this->app->sendHeaders();
+            $this->app->close();
+        }
+
+        if ($email === '') {
+            $this->setRedirect(Uri::root(), Text::_('COM_J2COMMERCE_CART_REMINDER_UNSUBSCRIBE_LINK_INVALID'), 'notice');
+
+            return;
+        }
+
+        if (!$isPost) {
+            $document = $this->app->getDocument();
+            $document->setTitle(Text::_('COM_J2COMMERCE_CART_REMINDER_UNSUBSCRIBE_CONFIRM_HEADING'));
+            $document->setMetaData('robots', 'noindex, nofollow');
+
+            echo LayoutHelper::render('form.unsubscribe', [
+                'email'     => $email,
+                'encoded'   => $encoded,
+                'token'     => $token,
+                'framework' => str_contains((string) J2CommerceHelper::config()->get('subtemplate', ''), 'uikit') ? 'uikit' : 'bootstrap5',
+            ], JPATH_SITE . '/components/com_j2commerce/layouts');
+
+            return;
+        }
+
+        CartReminderHelper::optOut($email);
+        $this->setRedirect(Uri::root(), Text::_('COM_J2COMMERCE_CART_REMINDER_UNSUBSCRIBED'), 'message');
     }
 
     /**

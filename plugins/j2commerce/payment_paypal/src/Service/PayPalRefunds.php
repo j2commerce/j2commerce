@@ -14,6 +14,8 @@ namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Plugin\J2Commerce\PaymentPaypal\Helper\PayPalCurrencyHelper;
+
 final class PayPalRefunds
 {
     public function __construct(private PayPalClient $client)
@@ -29,7 +31,7 @@ final class PayPalRefunds
 
         if ($amount !== null) {
             $body['amount'] = [
-                'value'         => $this->formatAmount($amount),
+                'value'         => PayPalCurrencyHelper::format($amount, $currency ?? 'USD'),
                 'currency_code' => $currency ?? 'USD',
             ];
         }
@@ -40,7 +42,8 @@ final class PayPalRefunds
             'POST',
             "/v2/payments/captures/$captureId/refund",
             $body ?: null,
-            ['PayPal-Request-Id: ' . $requestId]
+            // The minimal default reply has no amount, which a full refund needs for the ledger.
+            ['PayPal-Request-Id: ' . $requestId, 'Prefer: return=representation']
         );
     }
 
@@ -50,10 +53,5 @@ final class PayPalRefunds
     public function getRefund(string $refundId): array
     {
         return $this->client->request('GET', "/v2/payments/refunds/$refundId");
-    }
-
-    private function formatAmount(float $amount): string
-    {
-        return number_format($amount, 2, '.', '');
     }
 }

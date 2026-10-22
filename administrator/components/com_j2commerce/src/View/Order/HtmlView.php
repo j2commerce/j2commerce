@@ -61,6 +61,7 @@ class HtmlView extends BaseHtmlView
     protected bool $canChargeBalance      = false;
     protected float $refundableAmount     = 0.0;
     protected float $balanceDueAmount     = 0.0;
+    protected array $refundOptions        = [];
 
     /** Set by the billing/shipping tab templates before loading the shared address form. */
     protected string $addressFormType = 'billing';
@@ -258,6 +259,7 @@ class HtmlView extends BaseHtmlView
                     && $model->resolveStoredPaymentProfile((int) ($this->item->user_id ?? 0), $paymentType) !== null;
 
                 if ($this->canRefundPayment) {
+                    $this->refundOptions = $model->getRefundOptions($this->item);
                     HTMLHelper::_('bootstrap.modal', 'refundPaymentModal');
                 }
 

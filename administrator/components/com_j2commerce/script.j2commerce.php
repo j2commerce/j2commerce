@@ -157,6 +157,10 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
             $this->previousVersion = $this->readInstalledVersion();
         }
 
+        if ($route === 'install') {
+            $this->reconcileRetainedTables($adapter);
+        }
+
         $this->debugLog("PREFLIGHT: passed all checks");
         return true;
     }
@@ -198,6 +202,82 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
 
         $this->executeSqlFile($sqlFile);
         $this->debugLog("REPAIR: install SQL executed — tables created");
+    }
+
+    /** Uninstall keeps the tables but drops the #__schemas row, so a reinstall runs no update delta; add the columns the install SQL defines and kept tables lack. */
+    private function reconcileRetainedTables(InstallerAdapter $adapter): void
+    {
+        $sqlFile = $adapter->getParent()->getPath('source') . '/administrator/components/com_j2commerce/sql/install.mysql.utf8.sql';
+
+        if (!is_file($sqlFile)) {
+            return;
+        }
+
+        $db       = Factory::getContainer()->get(DatabaseInterface::class);
+        $existing = array_flip($db->getTableList());
+        $prefix   = $db->getPrefix();
+        $added    = 0;
+
+        foreach (DatabaseDriver::splitSql(file_get_contents($sqlFile)) as $query) {
+            if (!preg_match('/^\s*CREATE TABLE IF NOT EXISTS `#__(\w+)` \((.+)\)[^)]*$/s', $query, $m)
+                || !isset($existing[$prefix . $m[1]])) {
+                continue;
+            }
+
+            $table   = '#__' . $m[1];
+            $columns = $db->getTableColumns($table, false);
+
+            foreach (preg_split('/\R/', $m[2]) as $line) {
+                if (!preg_match('/^\s*`(\w+)`\s+(.+?),?\s*$/', $line, $col) || isset($columns[$col[1]])) {
+                    continue;
+                }
+
+                try {
+                    $db->setQuery('ALTER TABLE ' . $db->quoteName($table) . ' ADD COLUMN ' . $db->quoteName($col[1]) . ' ' . $col[2])->execute();
+                    $added++;
+                } catch (\Throwable $e) {
+                    Log::add('Retained table column repair failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
+                }
+            }
+        }
+
+        if ($added > 0) {
+            $this->debugLog("REINSTALL: added {$added} missing columns to retained tables");
+        }
+
+        if (!isset($existing[$prefix . 'j2commerce_orderstatuses'])
+            || !isset($db->getTableColumns('#__j2commerce_orderstatuses', false)['orderstatus_type'])) {
+            return;
+        }
+
+        // The seed INSERT IGNORE skips kept core rows, so give untyped ones the seed's types (keep in step with that seed).
+        $types = [
+            'J2COMMERCE_CONFIRMED' => 'complete',
+            'J2COMMERCE_PROCESSED' => 'approved',
+            'J2COMMERCE_FAILED'    => 'failed',
+            'J2COMMERCE_PENDING'   => 'open',
+            'J2COMMERCE_NEW'       => 'new',
+            'J2COMMERCE_CANCELLED' => 'cancelled',
+            'J2COMMERCE_SHIPPED'   => 'shipped',
+            'J2COMMERCE_DELIVERED' => 'delivered',
+        ];
+
+        foreach ($types as $name => $type) {
+            $query = $db->createQuery()
+                ->update($db->quoteName('#__j2commerce_orderstatuses'))
+                ->set($db->quoteName('orderstatus_type') . ' = :type')
+                ->where($db->quoteName('orderstatus_core') . ' = 1')
+                ->where($db->quoteName('orderstatus_name') . ' = :name')
+                ->where($db->quoteName('orderstatus_type') . ' IS NULL')
+                ->bind(':type', $type)
+                ->bind(':name', $name);
+
+            try {
+                $db->setQuery($query)->execute();
+            } catch (\Throwable $e) {
+                Log::add('Retained order status type backfill failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
+            }
+        }
     }
 
     public function install(InstallerAdapter $adapter): bool

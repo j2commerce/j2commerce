@@ -25,9 +25,42 @@ final class PayPalCurrencyHelper
         'PLN', 'GBP', 'RUB', 'SGD', 'SEK', 'CHF', 'THB', 'USD',
     ];
 
+    /**
+     * @var array<string>
+     */
+    private const ZERO_DECIMAL_CURRENCIES = ['JPY', 'KRW', 'TWD', 'HUF', 'CLP', 'ISK'];
+
     public static function isValid(string $currencyCode): bool
     {
         return \in_array(strtoupper($currencyCode), self::ACCEPTED_CURRENCIES, true);
+    }
+
+    public static function decimals(string $currencyCode): int
+    {
+        return \in_array(strtoupper($currencyCode), self::ZERO_DECIMAL_CURRENCIES, true) ? 0 : 2;
+    }
+
+    /** number_format, not round(): one call for every PayPal amount, so a tie cannot round two ways. */
+    public static function format(float $amount, string $currencyCode): string
+    {
+        return number_format($amount, self::decimals($currencyCode), '.', '');
+    }
+
+    /** Compared as the formatted strings PayPal is sent, so only the exact charged figure matches. */
+    public static function sameAmount(float $charged, float $expected, string $currencyCode): bool
+    {
+        return self::format($charged, $currencyCode) === self::format($expected, $currencyCode);
+    }
+
+    /** At or above the target at currency precision; a sum of ledger rows can sit a float hair under it. */
+    public static function covers(float $amount, float $target, string $currencyCode): bool
+    {
+        return $amount > $target || self::sameAmount($amount, $target, $currencyCode);
+    }
+
+    public static function orderCurrency(object $order): string
+    {
+        return strtoupper(trim((string) ($order->currency_code ?? ''))) ?: 'USD';
     }
 
     /**
