@@ -2953,15 +2953,14 @@ class CheckoutController extends BaseController
         $result = $event->getArgument('result', ['success' => false, 'error' => 'No payment plugin responded']);
 
         if (!empty($result['success']) && !empty($orderId)) {
-            $this->sendOrderEmails($orderId);
-
             // Clear the cart and set up guest session data so the confirmation view
             // can authorise the guest. confirmPayment() normally handles this but is
             // bypassed by the Smart Buttons AJAX capture flow.
             $session    = $this->app->getSession();
             $orderTable = $this->getMvcFactory()->createTable('Order', 'Administrator');
+            $orderLoaded = $orderTable && $orderTable->load(['order_id' => (string) $orderId]);
 
-            if ($orderTable && $orderTable->load(['order_id' => (string) $orderId])) {
+            if ($orderLoaded) {
                 $user = $this->app->getIdentity();
 
                 if (!$user || !$user->id) {
@@ -2985,6 +2984,17 @@ class CheckoutController extends BaseController
             }
 
             $this->clearCartAndSession((string) $orderId, $session);
+
+            // confirmPayment() dispatches AfterPayment itself, but the Smart Buttons AJAX
+            // capture flow never reaches it (and deliberately clears the session state
+            // below that would let it). Without this, nothing that listens on AfterPayment
+            // ever runs for a PayPal Smart Buttons payment — notably app_subscriptionproduct,
+            // which creates the subscription record there.
+            if ($orderLoaded) {
+                J2CommerceHelper::plugin()->event('AfterPayment', [$orderTable]);
+            }
+
+            $this->sendOrderEmails($orderId);
 
             // Clear the primed order from session — confirmPayment() normally does
             // this but is bypassed by the Smart Buttons AJAX flow.
