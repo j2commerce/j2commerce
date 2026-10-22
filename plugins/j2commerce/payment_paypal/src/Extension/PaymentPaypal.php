@@ -450,7 +450,9 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $total            = $order->order_subtotal + $order->order_shipping + $order->order_shipping_tax;
+        // Inclusive prices already carry the shipping tax inside order_shipping.
+        $isIncludingTax   = (int) J2CommerceHelper::config()->get('config_including_tax', 0);
+        $total            = $order->order_subtotal + $order->order_shipping + ($isIncludingTax ? 0.0 : $order->order_shipping_tax);
         $surcharge        = 0.0;
         $surchargePercent = (float) $this->params->get('surcharge_percent', 0);
         $surchargeFixed   = (float) $this->params->get('surcharge_fixed', 0);
