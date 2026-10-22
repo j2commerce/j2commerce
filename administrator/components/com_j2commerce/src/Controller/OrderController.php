@@ -1689,7 +1689,8 @@ class OrderController extends FormController
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED')]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            // \Throwable, not \Exception: a gateway listener's \Error must still answer in JSON.
             $this->sendJsonError($e);
         }
     }

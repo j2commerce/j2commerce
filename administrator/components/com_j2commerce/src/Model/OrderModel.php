@@ -772,16 +772,27 @@ class OrderModel extends AdminModel
         return InventoryHelper::orderStockCommitted((string) ($order->order_id ?? ''));
     }
 
-    /** @return array<string, array{label: string, checked: bool}> Refund-modal checkboxes from onJ2CommerceGetRefundOptions; the first plugin to claim a name wins. */
+    /** @return array<string, array{label: string, checked: bool}> Refund-modal checkboxes from onJ2CommerceGetRefundOptions: each addResult() is one ['name', 'label', 'checked'] option or a list of them; the first plugin to claim a name wins. */
     public function getRefundOptions(object $order): array
     {
+        try {
+            $results = (array) J2CommerceHelper::plugin()->event('GetRefundOptions', [$order])->getEventResult();
+        } catch (\Throwable $e) {
+            // Optional checkboxes: a failing listener must not block the refund or the order view.
+            Log::add('GetRefundOptions for order ' . ($order->order_id ?? '') . ': ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            return [];
+        }
+
         $options = [];
 
-        foreach ((array) J2CommerceHelper::plugin()->event('GetRefundOptions', [$order])->getEventResult() as $option) {
-            $name = \is_array($option) ? (string) ($option['name'] ?? '') : '';
+        foreach ($results as $result) {
+            foreach (\is_array($result) && array_is_list($result) ? $result : [$result] as $option) {
+                $name = \is_array($option) ? (string) ($option['name'] ?? '') : '';
 
-            if (preg_match('/^[a-z][a-z0-9_]*$/', $name) && !isset($options[$name])) {
-                $options[$name] = ['label' => Text::_((string) ($option['label'] ?? $name)), 'checked' => !empty($option['checked'])];
+                if (preg_match('/^[a-z][a-z0-9_]*$/', $name) && !isset($options[$name])) {
+                    $options[$name] = ['label' => Text::_((string) ($option['label'] ?? $name)), 'checked' => !empty($option['checked'])];
+                }
             }
         }
 

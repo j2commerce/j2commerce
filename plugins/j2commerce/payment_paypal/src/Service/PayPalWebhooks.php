@@ -96,6 +96,7 @@ final class PayPalWebhooks
                 'BILLING.SUBSCRIPTION.SUSPENDED'      => $this->handleSubscriptionStatusChange($event, 'pending'),
                 'BILLING.SUBSCRIPTION.EXPIRED'        => $this->handleSubscriptionStatusChange($event, 'expired'),
                 'PAYMENT.SALE.COMPLETED'              => $this->handleSubscriptionRenewalSuccess($event),
+                'PAYMENT.SALE.REFUNDED'               => $this->handleSaleRefunded($event, $params),
                 'BILLING.SUBSCRIPTION.PAYMENT.FAILED' => $this->handleSubscriptionRenewalFailed($event),
                 default                               => ['status' => 200, 'message' => 'Event type not handled: ' . $event['event_type']],
             };
@@ -273,10 +274,34 @@ final class PayPalWebhooks
         $orderedAt = strtotime((string) ($parentOrder->created_on ?? '') . ' UTC') ?: 0;
         $saleAt    = strtotime((string) ($resource['create_time'] ?? '')) ?: 0;
 
-        if ($saleId !== '' && $charges === [] && $orderedAt > 0 && $saleAt > 0 && abs($saleAt - $orderedAt) < 86400) {
-            OrderTransactionHelper::addCharge($parentPk, 'payment_paypal', $saleId, $saleAmount, $saleCurrency);
+        if ($saleId !== '' && $charges === []) {
+            // Most first sales post within minutes. A later (or redelivered) one is the first cycle
+            // when PayPal lists no other sale on the subscription before it.
+            $isFirstCycle = $orderedAt > 0 && $saleAt > 0 && abs($saleAt - $orderedAt) < 86400;
 
-            return ['status' => 200, 'message' => 'First-cycle sale recorded on the checkout order'];
+            if (!$isFirstCycle && $orderedAt > 0 && $saleAt > $orderedAt) {
+                $list = $this->client->request(
+                    'GET',
+                    '/v1/billing/subscriptions/' . rawurlencode($paypalSubId) . '/transactions?start_time='
+                    . rawurlencode(gmdate('Y-m-d\TH:i:s\Z', $orderedAt - 86400)) . '&end_time=' . rawurlencode(gmdate('Y-m-d\TH:i:s\Z', $saleAt + 60))
+                );
+
+                if ((int) ($list['status'] ?? 0) !== 200) {
+                    return ['status' => 503, 'message' => 'Subscription transactions unavailable'];
+                }
+
+                $earlier = array_filter(
+                    (array) ($list['body']['transactions'] ?? []),
+                    static fn ($t) => ($t['id'] ?? '') !== $saleId && (strtotime((string) ($t['time'] ?? '')) ?: PHP_INT_MAX) < $saleAt
+                );
+                $isFirstCycle = $earlier === [];
+            }
+
+            if ($isFirstCycle) {
+                OrderTransactionHelper::addCharge($parentPk, 'payment_paypal', $saleId, $saleAmount, $saleCurrency);
+
+                return ['status' => 200, 'message' => 'First-cycle sale recorded on the checkout order'];
+            }
         }
 
         // Build a minimal order-like object the renewal helper can consume.
@@ -792,6 +817,79 @@ final class PayPalWebhooks
             return ['status' => 400, 'message' => 'PayPal order id not bound to local order'];
         }
 
+        return $this->applyRefund($order, $resource, $params);
+    }
+
+    /**
+     * A refund of a subscription sale, made in PayPal or by the order view. The resource is a v1
+     * refund (sale_id, amount.total); its id is the refund id the order view already ledgered, so
+     * that case dedupes.
+     *
+     * @param array<string, mixed> $event
+     * @return array{status: int, message: string}
+     */
+    private function handleSaleRefunded(array $event, Registry $params): array
+    {
+        $resource = $event['resource'] ?? [];
+        $saleId   = (string) ($resource['sale_id'] ?? '');
+        $order    = $saleId === '' ? null : $this->loadOrderBySaleId($saleId);
+
+        if ($order === null) {
+            // Not a sale this store charged (e.g. an Orders v2 capture, handled by CAPTURE.REFUNDED).
+            return ['status' => 200, 'message' => 'Sale not linked to a local order'];
+        }
+
+        return $this->applyRefund($order, [
+            'id'     => (string) ($resource['id'] ?? ''),
+            'amount' => [
+                'value'         => abs((float) ($resource['amount']['total'] ?? 0)),
+                'currency_code' => (string) ($resource['amount']['currency'] ?? ''),
+            ],
+            'supplementary_data' => ['related_ids' => ['capture_id' => $saleId]],
+        ], $params);
+    }
+
+    /** The order whose ledger charged this sale, else the one whose transaction id it is. */
+    private function loadOrderBySaleId(string $saleId): ?\stdClass
+    {
+        $plugin = 'payment_paypal';
+        $type   = 'DEBIT';
+        $query  = $this->db->getQuery(true)
+            ->select($this->db->quoteName('order_id'))
+            ->from($this->db->quoteName('#__j2commerce_ordertransactions'))
+            ->where($this->db->quoteName('gateway_txn_id') . ' = :sale')
+            ->where($this->db->quoteName('plugin') . ' = :plugin')
+            ->where($this->db->quoteName('type') . ' = :type')
+            ->bind(':sale', $saleId)
+            ->bind(':plugin', $plugin)
+            ->bind(':type', $type)
+            ->setLimit(1);
+        $orderPk = (int) $this->db->setQuery($query)->loadResult();
+
+        $query = $this->db->getQuery(true)
+            ->select('*')
+            ->from($this->db->quoteName('#__j2commerce_orders'))
+            ->setLimit(1);
+
+        if ($orderPk > 0) {
+            $query->where($this->db->quoteName('j2commerce_order_id') . ' = :pk')
+                ->bind(':pk', $orderPk, ParameterType::INTEGER);
+        } else {
+            $query->where($this->db->quoteName('transaction_id') . ' = :sale')
+                ->where($this->db->quoteName('orderpayment_type') . ' = :plugin')
+                ->bind(':sale', $saleId)
+                ->bind(':plugin', $plugin);
+        }
+
+        return $this->db->setQuery($query)->loadObject() ?: null;
+    }
+
+    /**
+     * @param array<string, mixed> $resource
+     * @return array{status: int, message: string}
+     */
+    private function applyRefund(\stdClass $order, array $resource, Registry $params): array
+    {
         $currency = $this->orderCurrency($order);
 
         if (!$this->matchesOrderCurrency($order, $resource, $currency)) {
