@@ -200,13 +200,14 @@ $showViewCartBtn         = $showViewCart && !empty($cartUrl);
         <?php $viewCartClass = ($showCheckoutBtn && $showViewCartBtn) ? 'btn btn-link' : 'btn btn-success'; ?>
         <div class="j2commerce-minicart-button d-grid gap-2 mt-2">
             <?php if ($showCheckoutBtn) : ?>
-                <a class="btn btn-success"
+                <a class="btn btn-primary j2commerce-minicart-checkout-btn"
                    href="<?php echo htmlspecialchars($checkoutUrl, ENT_QUOTES, 'UTF-8'); ?>"
                    role="button"
                    aria-label="<?php echo htmlspecialchars(Text::_('MOD_J2COMMERCE_CART_CHECKOUT'), ENT_QUOTES, 'UTF-8'); ?>">
                     <?php echo Text::_('MOD_J2COMMERCE_CART_CHECKOUT'); ?>
                 </a>
             <?php endif; ?>
+            <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayCheckoutButton', [$order ?? null]); ?>
             <?php if ($showViewCartBtn) : ?>
                 <a class="<?php echo $viewCartClass; ?>"
                    href="<?php echo htmlspecialchars($cartUrl, ENT_QUOTES, 'UTF-8'); ?>"
