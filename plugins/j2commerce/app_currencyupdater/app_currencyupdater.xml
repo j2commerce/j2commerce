@@ -95,6 +95,7 @@
                     <option value="exchangerate_api">PLG_J2COMMERCE_APP_CURRENCYUPDATER_EXCHANGERATE_API</option>
                     <option value="currencyapi">PLG_J2COMMERCE_APP_CURRENCYUPDATER_CURRENCYAPI</option>
                     <option value="openexchangerates">PLG_J2COMMERCE_APP_CURRENCYUPDATER_OPENEXCHANGERATES</option>
+                    <option value="allratestoday">PLG_J2COMMERCE_APP_CURRENCYUPDATER_ALLRATESTODAY</option>
                 </field>
                 <field
                     name="exchangerate_api_key"
@@ -123,6 +124,20 @@
                     label="PLG_J2COMMERCE_APP_CURRENCYUPDATER_OPENEXCHANGERATES_APP_ID"
                     description="PLG_J2COMMERCE_APP_CURRENCYUPDATER_OPENEXCHANGERATES_APP_ID_DESC"
                     showon="currency_converter_api_type:openexchangerates"
+                />
+                <field
+                    name="allratestoday_note"
+                    type="note"
+                    label="PLG_J2COMMERCE_APP_CURRENCYUPDATER_ALLRATESTODAY_NOTE"
+                    class="alert alert-info w-100 my-3"
+                    showon="currency_converter_api_type:allratestoday"
+                />
+                <field
+                    name="allratestoday_api_key"
+                    type="text"
+                    label="PLG_J2COMMERCE_APP_CURRENCYUPDATER_ALLRATESTODAY_API_KEY"
+                    description="PLG_J2COMMERCE_APP_CURRENCYUPDATER_ALLRATESTODAY_API_KEY_DESC"
+                    showon="currency_converter_api_type:allratestoday"
                 />
             </fieldset>
         </fields>
