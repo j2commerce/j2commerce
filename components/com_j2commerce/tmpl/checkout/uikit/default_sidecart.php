@@ -88,12 +88,12 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
                     <div class="checkout-sidebar-item uk-flex uk-flex-middle" style="gap: 12px;">
                         <?php if (!empty($thumbImage)): ?>
                         <div class="uk-position-relative uk-flex-none j2commerce-sidecart-thumb">
-                            <img class="uk-border-rounded uk-border uk-width-1-1 uk-height-1-1" style="object-fit:cover;" src="<?php echo $this->escape($thumbImage); ?>" alt="<?php echo $this->escape($item->orderitem_name); ?>">
-                            <span class="uk-badge j2commerce-sidecart-qty-badge"><?php echo $qty; ?></span>
+                            <img class="uk-border-rounded uk-border uk-width-1-1 uk-height-1-1" style="object-fit:cover;" src="<?php echo $this->escape($thumbImage); ?>" alt="">
+                            <span class="uk-badge j2commerce-sidecart-qty-badge"><span class="uk-hidden-visually"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_QUANTITY'); ?> </span><?php echo $qty; ?></span>
                         </div>
                         <?php else: ?>
                         <div class="uk-flex-none uk-flex uk-flex-middle uk-flex-center uk-border-rounded uk-border uk-background-default" style="width:64px;height:64px;">
-                            <span class="uk-text-meta uk-text-small"><?php echo $qty; ?>x</span>
+                            <span class="uk-text-meta uk-text-small"><span class="uk-hidden-visually"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_QUANTITY'); ?> </span><?php echo $qty; ?>x</span>
                         </div>
                         <?php endif; ?>
 

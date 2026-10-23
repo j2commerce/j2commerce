@@ -88,12 +88,12 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
                     <div class="checkout-sidebar-item list-group-item px-0 d-flex align-items-center gap-3">
                         <?php if (!empty($thumbImage)): ?>
                         <div class="position-relative flex-shrink-0" style="width:64px;height:64px;">
-                            <img class="rounded border w-100 h-100 object-fit-cover" src="<?php echo $this->escape($thumbImage); ?>" alt="<?php echo $this->escape($item->orderitem_name); ?>">
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary"><?php echo $qty; ?></span>
+                            <img class="rounded border w-100 h-100 object-fit-cover" src="<?php echo $this->escape($thumbImage); ?>" alt="">
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_QUANTITY'); ?> </span><?php echo $qty; ?></span>
                         </div>
                         <?php else: ?>
                         <div class="position-relative flex-shrink-0 d-flex align-items-center justify-content-center rounded border bg-light" style="width:64px;height:64px;">
-                            <span class="text-body-secondary small"><?php echo $qty; ?>x</span>
+                            <span class="text-body-secondary small"><span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_CART_LINE_ITEM_QUANTITY'); ?> </span><?php echo $qty; ?>x</span>
                         </div>
                         <?php endif; ?>
 

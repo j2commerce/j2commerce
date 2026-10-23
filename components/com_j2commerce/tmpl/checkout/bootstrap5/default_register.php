@@ -172,7 +172,7 @@ $asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="text-danger">*<
     <?php endif; ?>
 
     <div class="mt-3">
-        <button type="button" id="button-register" class="btn btn-primary">
+        <button type="button" id="button-register" class="btn btn-primary btn-lg w-100 btn-checkout-step">
             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE'); ?>
         </button>
     </div>

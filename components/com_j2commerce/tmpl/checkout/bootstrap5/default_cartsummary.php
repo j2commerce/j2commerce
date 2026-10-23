@@ -37,7 +37,7 @@ if ($showItemTax && isset($this->taxes) && \count($this->taxes)) {
 
 ?>
 <div class="j2commerce-checkout-summary">
-    <h5 class="mb-3"><?php echo Text::_('COM_J2COMMERCE_ORDER_SUMMARY'); ?></h5>
+    <h3 class="h5 mb-3"><?php echo Text::_('COM_J2COMMERCE_ORDER_SUMMARY'); ?></h3>
 
     <div class="table-responsive">
         <table class="table table-striped align-middle">
@@ -82,7 +82,7 @@ if ($showItemTax && isset($this->taxes) && \count($this->taxes)) {
                             <div class="d-flex align-items-start gap-2">
                                 <?php if ($showThumbCart && !empty($thumbImage)) : ?>
                                     <img src="<?php echo $this->escape($thumbImage); ?>"
-                                         alt="<?php echo $this->escape($item->orderitem_name); ?>"
+                                         alt=""
                                          class="rounded flex-shrink-0"
                                          width="50">
                                 <?php endif; ?>

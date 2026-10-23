@@ -125,7 +125,7 @@ $platform = J2CommerceHelper::platform();
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayShippingPayment', [$this->order]); ?>
 
     <div class="uk-margin-top">
-        <button type="button" id="button-payment-method" class="uk-button uk-button-primary btn-checkout-step">
+        <button type="button" id="button-payment-method" class="uk-button uk-button-primary uk-button-large uk-width-1-1 btn-checkout-step">
             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE'); ?>
         </button>
     </div>

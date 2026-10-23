@@ -43,7 +43,7 @@ $shipSameAsBilling = (bool) ($this->shipSameAsBilling ?? true);
             </label>
         </div>
 
-        <select name="address_id" id="address_id" class="uk-select uk-margin-bottom" aria-label="<?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SELECT_ADDRESS'); ?>">
+        <select name="address_id" id="address_id" class="uk-select uk-margin-bottom" aria-label="<?php echo $this->escape(Text::_('COM_J2COMMERCE_CHECKOUT_SELECT_ADDRESS')); ?>">
             <?php foreach ($addresses as $address) : ?>
                 <?php
                 $addressId = $address->j2commerce_address_id ?? $address->id ?? '';
@@ -108,7 +108,7 @@ $shipSameAsBilling = (bool) ($this->shipSameAsBilling ?? true);
     <?php echo J2CommerceHelper::plugin()->eventWithHtml('CheckoutBilling', [$this]); ?>
 
     <div class="uk-margin-top">
-        <button type="button" id="button-billing-address" class="uk-button uk-button-primary btn-checkout-step">
+        <button type="button" id="button-billing-address" class="uk-button uk-button-primary uk-button-large uk-width-1-1 btn-checkout-step">
             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE'); ?>
         </button>
     </div>

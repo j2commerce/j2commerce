@@ -82,7 +82,7 @@ if ($showTerms && $termsArticleId) {
             <?php if ($showShipTo) : ?>
                 <div>
                     <div class="j2c-address-heading uk-flex uk-flex-between uk-flex-bottom uk-margin-small-bottom uk-text-bold">
-                        <span><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_ADDRESS'); ?></span>
+                        <h3 class="uk-h5 uk-margin-remove"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_ADDRESS'); ?></h3>
                         <a href="#" role="button" data-j2c-edit-step="shipping-address"
                            aria-label="<?php echo htmlspecialchars($modifyLabel . ' ' . Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_ADDRESS'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($modifyLabel, ENT_QUOTES, 'UTF-8'); ?></a>
                     </div>
@@ -92,7 +92,7 @@ if ($showTerms && $termsArticleId) {
 
             <div>
                 <div class="j2c-address-heading uk-flex uk-flex-between uk-flex-bottom uk-margin-small-bottom uk-text-bold">
-                    <span><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS'); ?></span>
+                    <h3 class="uk-h5 uk-margin-remove"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS'); ?></h3>
                     <a href="#" role="button" data-j2c-edit-step="billing-address"
                        aria-label="<?php echo htmlspecialchars($modifyLabel . ' ' . Text::_('COM_J2COMMERCE_CHECKOUT_BILLING_ADDRESS'), ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($modifyLabel, ENT_QUOTES, 'UTF-8'); ?></a>
                 </div>
@@ -173,7 +173,7 @@ if ($showTerms && $termsArticleId) {
 
     <?php if (!empty($freeRedirect)) : ?>
         <form action="<?php echo Route::_('index.php?option=com_j2commerce&task=checkout.confirmPayment'); ?>" method="post">
-            <button type="submit" class="uk-button uk-button-primary uk-button-large">
+            <button type="submit" class="uk-button uk-button-primary uk-button-large uk-width-1-1 btn-checkout-step">
                 <?php echo Text::_('COM_J2COMMERCE_PLACE_ORDER'); ?>
             </button>
             <input type="hidden" name="option" value="com_j2commerce">
@@ -198,9 +198,9 @@ if ($showTerms && $termsArticleId) {
     <div class="uk-modal-dialog uk-modal-body">
         <button class="uk-modal-close-default" type="button" uk-close
                 aria-label="<?php echo htmlspecialchars(Text::_('JCLOSE'), ENT_QUOTES, 'UTF-8'); ?>"></button>
-        <h5 class="uk-modal-title">
+        <h2 class="uk-modal-title">
             <?php echo htmlspecialchars(Text::_('COM_J2COMMERCE_CHECKOUT_TERMS_AND_CONDITIONS'), ENT_QUOTES, 'UTF-8'); ?>
-        </h5>
+        </h2>
         <iframe src="<?php echo htmlspecialchars($termsModalUrl, ENT_QUOTES, 'UTF-8'); ?>"
                 title="<?php echo htmlspecialchars(Text::_('COM_J2COMMERCE_CHECKOUT_TERMS_AND_CONDITIONS'), ENT_QUOTES, 'UTF-8'); ?>"
                 class="uk-width-1-1" style="height:60vh; border:0;"

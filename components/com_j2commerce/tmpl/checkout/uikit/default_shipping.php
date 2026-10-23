@@ -27,7 +27,8 @@ $guestShippingData = $this->guestShippingData ?? [];
 <div class="j2commerce-shipping-address">
 
 <?php if ($hasAddresses) : ?>
-    <div class="uk-margin-bottom">
+    <fieldset class="uk-margin-bottom">
+        <legend class="uk-hidden-visually"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_ADDRESS_SELECTION'); ?></legend>
         <div class="uk-margin-small-bottom">
             <label class="uk-flex uk-flex-middle">
                 <input class="uk-radio uk-margin-small-right" type="radio" name="shipping_address" value="existing" id="shipping-existing" checked>
@@ -37,7 +38,7 @@ $guestShippingData = $this->guestShippingData ?? [];
             </label>
         </div>
 
-        <select name="address_id" id="shipping-address-id" class="uk-select uk-margin-bottom">
+        <select name="address_id" id="shipping-address-id" class="uk-select uk-margin-bottom" aria-label="<?php echo $this->escape(Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_ADDRESS')); ?>">
             <?php foreach ($addresses as $address) : ?>
                 <?php
                 $addressId = $address->j2commerce_address_id ?? $address->id ?? '';
@@ -59,7 +60,7 @@ $guestShippingData = $this->guestShippingData ?? [];
                 </span>
             </label>
         </div>
-    </div>
+    </fieldset>
 
     <div id="shipping-new-address-form" style="display: none;">
 <?php else : ?>
@@ -76,11 +77,11 @@ $guestShippingData = $this->guestShippingData ?? [];
 
     <div class="uk-margin-top">
         <?php if ($isGuest) : ?>
-        <button type="button" id="button-guest-shipping" class="uk-button uk-button-primary btn-checkout-step">
+        <button type="button" id="button-guest-shipping" class="uk-button uk-button-primary uk-button-large uk-width-1-1 btn-checkout-step">
             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE'); ?>
         </button>
         <?php else : ?>
-        <button type="button" id="button-shipping-address" class="uk-button uk-button-primary btn-checkout-step">
+        <button type="button" id="button-shipping-address" class="uk-button uk-button-primary uk-button-large uk-width-1-1 btn-checkout-step">
             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE'); ?>
         </button>
         <?php endif; ?>

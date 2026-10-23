@@ -37,7 +37,7 @@ if ($showItemTax && isset($this->taxes) && \count($this->taxes)) {
 
 ?>
 <div class="j2commerce-checkout-summary">
-    <h5 class="uk-margin-bottom"><?php echo Text::_('COM_J2COMMERCE_ORDER_SUMMARY'); ?></h5>
+    <h3 class="uk-h5 uk-margin-bottom"><?php echo Text::_('COM_J2COMMERCE_ORDER_SUMMARY'); ?></h3>
 
     <div class="uk-overflow-auto">
         <table class="uk-table uk-table-striped uk-table-middle">
@@ -82,7 +82,7 @@ if ($showItemTax && isset($this->taxes) && \count($this->taxes)) {
                             <div class="uk-flex uk-flex-top" style="gap: 8px;">
                                 <?php if ($showThumbCart && !empty($thumbImage)) : ?>
                                     <img src="<?php echo $this->escape($thumbImage); ?>"
-                                         alt="<?php echo $this->escape($item->orderitem_name); ?>"
+                                         alt=""
                                          class="uk-border-rounded uk-flex-none"
                                          width="50">
                                 <?php endif; ?>

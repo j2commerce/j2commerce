@@ -24,9 +24,10 @@ $showLogin = (int) $this->params->get('show_login_form', 1);
 <div class="uk-grid" uk-grid>
     <?php if ($allowRegistration || $allowGuest) : ?>
     <div class="uk-width-1-2@m uk-margin-bottom">
-        <h3 class="uk-h4"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_NEW_CUSTOMER'); ?></h3>
+        <h3 id="j2c-new-customer-heading" class="uk-h4"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_NEW_CUSTOMER'); ?></h3>
         <p><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_OPTIONS'); ?></p>
 
+        <div role="radiogroup" aria-labelledby="j2c-new-customer-heading">
         <?php if ($allowRegistration) : ?>
         <div class="uk-margin-small-bottom">
             <label class="uk-flex uk-flex-middle">
@@ -50,6 +51,7 @@ $showLogin = (int) $this->params->get('show_login_form', 1);
             </label>
         </div>
         <?php endif; ?>
+        </div>
 
         <?php if ($allowRegistration) : ?>
         <p class="uk-text-meta uk-margin-small-top">
@@ -57,9 +59,11 @@ $showLogin = (int) $this->params->get('show_login_form', 1);
         </p>
         <?php endif; ?>
 
-        <button type="button" id="button-account" class="uk-button uk-button-primary uk-margin-small-top">
-            <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE'); ?>
-        </button>
+        <div class="uk-margin-top">
+            <button type="button" id="button-account" class="uk-button uk-button-primary uk-button-large uk-width-1-1 btn-checkout-step">
+                <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE'); ?>
+            </button>
+        </div>
     </div>
     <?php else : ?>
     <div class="uk-width-1-2@m uk-margin-bottom">
@@ -87,9 +91,11 @@ $showLogin = (int) $this->params->get('show_login_form', 1);
         <input type="hidden" name="task" value="checkout.loginValidate">
         <input type="hidden" name="option" value="com_j2commerce">
 
-        <button type="button" id="button-login" class="uk-button uk-button-primary">
-            <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_LOGIN'); ?>
-        </button>
+        <div class="uk-margin-top">
+            <button type="button" id="button-login" class="uk-button uk-button-primary uk-button-large uk-width-1-1 btn-checkout-step">
+                <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_LOGIN'); ?>
+            </button>
+        </div>
 
         <div class="uk-margin-small-top">
             <a href="<?php echo Route::_('index.php?option=com_users&view=reset'); ?>" target="_blank">

@@ -27,7 +27,8 @@ $guestShippingData = $this->guestShippingData ?? [];
 <div class="j2commerce-shipping-address">
 
 <?php if ($hasAddresses) : ?>
-    <div class="mb-3">
+    <fieldset class="mb-3">
+        <legend class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_CHECKOUT_ADDRESS_SELECTION'); ?></legend>
         <div class="form-check mb-2">
             <input class="form-check-input" type="radio" name="shipping_address" value="existing" id="shipping-existing" checked>
             <label class="form-check-label fw-bold" for="shipping-existing">
@@ -35,7 +36,7 @@ $guestShippingData = $this->guestShippingData ?? [];
             </label>
         </div>
 
-        <select name="address_id" id="shipping-address-id" class="form-select mb-3">
+        <select name="address_id" id="shipping-address-id" class="form-select mb-3" aria-label="<?php echo $this->escape(Text::_('COM_J2COMMERCE_CHECKOUT_SHIPPING_ADDRESS')); ?>">
             <?php foreach ($addresses as $address) : ?>
                 <?php
                 $addressId = $address->j2commerce_address_id ?? $address->id ?? '';
@@ -55,7 +56,7 @@ $guestShippingData = $this->guestShippingData ?? [];
                 <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_NEW_ADDRESS'); ?>
             </label>
         </div>
-    </div>
+    </fieldset>
 
     <div id="shipping-new-address-form" style="display: none;">
 <?php else : ?>
@@ -72,11 +73,11 @@ $guestShippingData = $this->guestShippingData ?? [];
 
     <div class="mt-3">
         <?php if ($isGuest) : ?>
-        <button type="button" id="button-guest-shipping" class="btn btn-primary btn-checkout-step">
+        <button type="button" id="button-guest-shipping" class="btn btn-primary btn-lg w-100 btn-checkout-step">
             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE'); ?>
         </button>
         <?php else : ?>
-        <button type="button" id="button-shipping-address" class="btn btn-primary btn-checkout-step">
+        <button type="button" id="button-shipping-address" class="btn btn-primary btn-lg w-100 btn-checkout-step">
             <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_CONTINUE'); ?>
         </button>
         <?php endif; ?>
