@@ -2121,6 +2121,28 @@ class CartOrder
         return $email;
     }
 
+    /** Digest of the session-derived values saveOrder() writes; unmatchable if they cannot be encoded. */
+    public function getSaveFingerprint(): string
+    {
+        $app        = Factory::getApplication();
+        $session    = $app->getSession();
+        $userId     = (int) ($app->getIdentity()?->id ?? 0);
+        $mvcFactory = $app->bootComponent('com_j2commerce')->getMVCFactory();
+
+        return hash('sha256', json_encode([
+            'billing'        => $this->loadAddressData('billing', $session, $mvcFactory, $userId),
+            'shipping'       => $this->loadAddressData('shipping', $session, $mvcFactory, $userId),
+            'payment_fields' => (array) $session->get('payment_custom_fields', [], 'j2commerce'),
+            'email'          => $this->resolveCheckoutEmail(),
+            'payment'        => $this->orderpayment_type,
+            'shipping_rate'  => [
+                (string) ($this->shippingRate->ordershipping_plugin ?? ''),
+                (string) ($this->shippingRate->ordershipping_name ?? ''),
+                (string) ($this->shippingRate->ordershipping_code ?? ''),
+            ],
+        ], JSON_INVALID_UTF8_SUBSTITUTE) ?: bin2hex(random_bytes(16)));
+    }
+
     /**
      * Persist the cart order to the database.
      *

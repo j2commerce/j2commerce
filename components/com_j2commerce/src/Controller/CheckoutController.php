@@ -1984,8 +1984,12 @@ class CheckoutController extends BaseController
                 // a fresh order: the earlier row is never altered, which keeps this
                 // decision away from any amount a payment plugin may already have
                 // handed a gateway for it.
+                //
+                // Addresses, email, payment method and shipping rate are held to the
+                // fingerprint recorded at save; a row without one is not reused.
                 $savedOrder   = null;
                 $priorOrderId = $this->app->getUserState('j2commerce.order_id');
+                $fingerprint  = $order->getSaveFingerprint();
 
                 if (!empty($priorOrderId)) {
                     $priorTable = $this->getMvcFactory()->createTable('Order', 'Administrator');
@@ -2001,6 +2005,10 @@ class CheckoutController extends BaseController
                         $isSameOrder = $isSameCart
                             && $isSameOwner
                             && $isUnpaid
+                            && hash_equals(
+                                (string) $this->app->getUserState('j2commerce.order_fingerprint', ''),
+                                $priorOrderId . ':' . $fingerprint
+                            )
                             && $this->orderMatchesCart($priorTable, $order);
 
                         if ($isSameOrder) {
@@ -2016,6 +2024,10 @@ class CheckoutController extends BaseController
                 $this->app->setUserState('j2commerce.order_id', $savedOrder->order_id ?? null);
                 $this->app->setUserState('j2commerce.orderpayment_id', $savedOrder->j2commerce_order_id ?? null);
                 $this->app->setUserState('j2commerce.order_token', $savedOrder->token ?? null);
+                $this->app->setUserState(
+                    'j2commerce.order_fingerprint',
+                    empty($savedOrder->order_id) ? null : $savedOrder->order_id . ':' . $fingerprint
+                );
 
                 // The in-memory CartOrder does not carry the order_params column
                 // (where amount_due_now lives), so reload the persisted row to
@@ -2392,6 +2404,14 @@ class CheckoutController extends BaseController
                 if ($currentOrder && $currentOrder->getItems()) {
                     $this->applyPaymentTo($currentOrder, (string) ($orderTable->orderpayment_type ?? ''));
                     $outOfDate = !$this->orderMatchesCart($orderTable, $currentOrder);
+
+                    // Held to the confirm step's recording only where this session made
+                    // one for this row; orders primed by a handoff or context carry none.
+                    $recorded = (string) $this->app->getUserState('j2commerce.order_fingerprint', '');
+
+                    if (!$outOfDate && str_starts_with($recorded, $orderId . ':')) {
+                        $outOfDate = !hash_equals($recorded, $orderId . ':' . $currentOrder->getSaveFingerprint());
+                    }
                 } else {
                     $outOfDate = $clearCartTiming !== 'order_placed';
                 }
@@ -3186,6 +3206,7 @@ class CheckoutController extends BaseController
         $this->app->setUserState('j2commerce.order_id', null);
         $this->app->setUserState('j2commerce.orderpayment_id', null);
         $this->app->setUserState('j2commerce.order_token', null);
+        $this->app->setUserState('j2commerce.order_fingerprint', null);
     }
 
     private function sendOrderEmails(string $orderId): void
@@ -3275,8 +3296,8 @@ class CheckoutController extends BaseController
             // Clear the cart and set up guest session data so the confirmation view
             // can authorise the guest. confirmPayment() normally handles this but is
             // bypassed by the Smart Buttons AJAX capture flow.
-            $session    = $this->app->getSession();
-            $orderTable = $this->getMvcFactory()->createTable('Order', 'Administrator');
+            $session     = $this->app->getSession();
+            $orderTable  = $this->getMvcFactory()->createTable('Order', 'Administrator');
             $orderLoaded = $orderTable && $orderTable->load(['order_id' => (string) $orderId]);
 
             if ($orderLoaded) {
