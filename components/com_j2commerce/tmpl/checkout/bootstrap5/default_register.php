@@ -95,6 +95,8 @@ $asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="text-danger">*<
             <?php if ($fieldsetName === 'privacyconsent') : ?>
                 <?php
                 $privacyField = $registrationForm->getField('privacy', 'privacyconsent');
+                // Keep xhtml=false on both Route::_() calls below: the anchor's htmlspecialchars() is the
+                // only escape, so Route::_()'s default would turn any & into &amp;amp;.
                 $privacyLink  = '';
                 $privacyNote  = '';
 
@@ -119,7 +121,7 @@ $asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="text-danger">*<
 
                         if ($article) {
                             $slug        = $article->alias ? ($article->id . ':' . $article->alias) : $article->id;
-                            $privacyLink = Route::_(RouteHelper::getArticleRoute($slug, $article->catid, $article->language));
+                            $privacyLink = Route::_(RouteHelper::getArticleRoute($slug, $article->catid, $article->language), false);
                         }
                     } elseif ($menuItemId > 0) {
                         $url = 'index.php?Itemid=' . $menuItemId;
@@ -139,7 +141,7 @@ $asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="text-danger">*<
                             }
                         }
 
-                        $privacyLink = Route::_($url);
+                        $privacyLink = Route::_($url, false);
                     }
                 }
                 ?>

@@ -300,10 +300,39 @@ document.addEventListener('DOMContentLoaded', function() {
         var trigger = e.target.closest('[data-j2c-edit-step]');
         if (!trigger) return;
         e.preventDefault();
-        var stepId = trigger.getAttribute('data-j2c-edit-step');
-        var link = document.querySelector('#' + stepId + ' .checkout-heading a:not(.checkout-logout)');
-        if (link) link.click();
+        document.getElementById(trigger.getAttribute('data-j2c-edit-step'))
+            ?.querySelector('.checkout-heading a:not(.checkout-logout)')?.click();
     });
+
+    // Terms modal: UIkit focuses its overlay wrapper (on open, and whenever Tab leaves the panel),
+    // outside the role="dialog" panel, and neither returns focus on close nor hears Escape
+    // pressed inside the terms iframe. Focus wraps between the close button and the iframe.
+    document.addEventListener('shown', (e) => {
+        if (e.target.id === 'j2c-terms-modal') e.target.querySelector('#j2c-terms-modal-label')?.focus();
+    });
+    document.addEventListener('focusin', (e) => {
+        if (e.target.id === 'j2c-terms-modal') e.target.querySelector('.uk-modal-close-default')?.focus();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Tab' || !e.shiftKey || !e.target.matches('#j2c-terms-modal .uk-modal-close-default')) return;
+        e.preventDefault();
+        e.target.closest('.uk-modal-dialog').querySelector('iframe')?.focus();
+    });
+    let termsOpener = null;
+    document.addEventListener('click', (e) => {
+        termsOpener = e.target.closest('[uk-toggle*="#j2c-terms-modal"]') ?? termsOpener;
+    });
+    document.addEventListener('hidden', (e) => {
+        if (e.target.id !== 'j2c-terms-modal') return;
+        (termsOpener?.isConnected ? termsOpener : document.querySelector('[uk-toggle*="#j2c-terms-modal"]'))?.focus();
+    });
+    document.addEventListener('load', (e) => {
+        const modal = e.target.tagName === 'IFRAME' && e.target.closest('#j2c-terms-modal');
+        if (!modal) return;
+        e.target.contentDocument?.addEventListener('keydown', (k) => {
+            if (k.key === 'Escape') UIkit.modal(modal).hide();
+        });
+    }, true); // capture: load does not bubble
 
     // Utility: remove all edit links (preserves logout link)
     function removeEditLinks() {

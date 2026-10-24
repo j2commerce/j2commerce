@@ -305,10 +305,18 @@ document.addEventListener('DOMContentLoaded', function() {
         var trigger = e.target.closest('[data-j2c-edit-step]');
         if (!trigger) return;
         e.preventDefault();
-        var stepId = trigger.getAttribute('data-j2c-edit-step');
-        var link = document.querySelector('#' + stepId + ' .checkout-heading a:not(.checkout-logout)');
-        if (link) link.click();
+        document.getElementById(trigger.getAttribute('data-j2c-edit-step'))
+            ?.querySelector('.checkout-heading a:not(.checkout-logout)')?.click();
     });
+
+    // Terms modal: Escape pressed inside the terms iframe never reaches Bootstrap's handler.
+    document.addEventListener('load', (e) => {
+        const modal = e.target.tagName === 'IFRAME' && e.target.closest('#j2c-terms-modal');
+        if (!modal) return;
+        e.target.contentDocument?.addEventListener('keydown', (k) => {
+            if (k.key === 'Escape') bootstrap.Modal.getInstance(modal)?.hide();
+        });
+    }, true); // capture: load does not bubble
 
     // Utility: remove all edit links (preserves logout link)
     function removeEditLinks() {

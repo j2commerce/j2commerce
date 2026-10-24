@@ -27,15 +27,18 @@ $termsDisplayType = (string) ($this->termsDisplayType ?? 'link');
 $termsArticleId   = (int) ($this->termsArticleId ?? 0);
 $pluginHtml       = $this->plugin_html ?? '';
 $freeRedirect     = $this->free_redirect ?? '';
+// Keep xhtml=false: $termsHref and the iframe each escape this URL once at output, so
+// Route::_()'s default encoding would turn any & in the route into &amp;amp;.
 $termsUrl         = $showTerms && $termsArticleId
-    ? Route::_(RouteHelper::getArticleRoute($termsArticleId))
+    ? (string) Route::_(RouteHelper::getArticleRoute($termsArticleId), false)
     : '';
+$termsHref        = htmlspecialchars($termsUrl, ENT_QUOTES, 'UTF-8');
 $termsText        = trim((string) ($this->termsText ?? ''));
 $showCustomerNote = (bool) ($this->showCustomerNote ?? true);
 
 // Build the terms modal URL from the already-computed $termsUrl (M4 — avoids 4 Route::_ calls).
 $termsModalUrl = '';
-if ($showTerms && $termsArticleId) {
+if ($termsUrl !== '') {
     $sep           = str_contains($termsUrl, '?') ? '&' : '?';
     $termsModalUrl = $termsUrl . $sep . 'tmpl=component';
 }
@@ -58,7 +61,7 @@ if ($showTerms && $termsArticleId) {
                     <?php if ($termsText !== '' && $termsModalUrl !== '') : ?>
                         <?php // Raw HTML — admin-controlled via filter="raw" ?>
                         <?php echo $termsText; ?>
-                        <a href="<?php echo $termsUrl; ?>" uk-toggle="target: #j2c-terms-modal; preventdefault: true">
+                        <a href="<?php echo $termsHref; ?>" uk-toggle="target: #j2c-terms-modal; preventdefault: true">
                             <?php echo htmlspecialchars(Text::_('COM_J2COMMERCE_CHECKOUT_TERMS_AND_CONDITIONS')); ?>
                         </a>
                     <?php elseif ($termsText !== '') : ?>
@@ -67,7 +70,7 @@ if ($showTerms && $termsArticleId) {
                     <?php elseif ($termsModalUrl !== '') : ?>
                         <?php echo Text::sprintf(
                             'COM_J2COMMERCE_CHECKOUT_AGREE_TERMS_LINK',
-                            '<a href="' . $termsUrl . '" uk-toggle="target: #j2c-terms-modal; preventdefault: true">'
+                            '<a href="' . $termsHref . '" uk-toggle="target: #j2c-terms-modal; preventdefault: true">'
                                 . htmlspecialchars(Text::_('COM_J2COMMERCE_CHECKOUT_TERMS_AND_CONDITIONS'))
                                 . '</a>'
                         ); ?>
@@ -82,7 +85,7 @@ if ($showTerms && $termsArticleId) {
             <?php if ($termsText !== '' && $termsModalUrl !== '') : ?>
                 <?php // Raw HTML — admin-controlled via filter="raw" ?>
                 <?php echo $termsText; ?>
-                <a href="<?php echo $termsUrl; ?>" uk-toggle="target: #j2c-terms-modal; preventdefault: true">
+                <a href="<?php echo $termsHref; ?>" uk-toggle="target: #j2c-terms-modal; preventdefault: true">
                     <?php echo htmlspecialchars(Text::_('COM_J2COMMERCE_CHECKOUT_TERMS_AND_CONDITIONS')); ?>
                 </a>
             <?php elseif ($termsText !== '') : ?>
@@ -91,14 +94,7 @@ if ($showTerms && $termsArticleId) {
             <?php elseif ($termsModalUrl !== '') : ?>
                 <?php echo Text::sprintf(
                     'COM_J2COMMERCE_CHECKOUT_AGREE_TERMS_LINK',
-                    '<a href="' . $termsUrl . '" uk-toggle="target: #j2c-terms-modal; preventdefault: true">'
-                        . htmlspecialchars(Text::_('COM_J2COMMERCE_CHECKOUT_TERMS_AND_CONDITIONS'))
-                        . '</a>'
-                ); ?>
-            <?php else : ?>
-                <?php echo Text::sprintf(
-                    'COM_J2COMMERCE_CHECKOUT_AGREE_TERMS_LINK',
-                    '<a href="' . $termsUrl . '" target="_blank" rel="noopener">'
+                    '<a href="' . $termsHref . '" uk-toggle="target: #j2c-terms-modal; preventdefault: true">'
                         . htmlspecialchars(Text::_('COM_J2COMMERCE_CHECKOUT_TERMS_AND_CONDITIONS'))
                         . '</a>'
                 ); ?>
@@ -143,11 +139,12 @@ if ($showTerms && $termsArticleId) {
 </div>
 
 <?php if ($showTerms === 1 && $termsModalUrl !== '') : ?>
-<div id="j2c-terms-modal" uk-modal>
-    <div class="uk-modal-dialog uk-modal-body">
+<?php // container: false keeps the modal in this step: moved to <body>, a step re-render leaves a duplicate id. ?>
+<div id="j2c-terms-modal" uk-modal="container: false">
+    <div class="uk-modal-dialog uk-modal-body" role="dialog" aria-modal="true" aria-labelledby="j2c-terms-modal-label">
         <button class="uk-modal-close-default" type="button" uk-close
                 aria-label="<?php echo htmlspecialchars(Text::_('JCLOSE'), ENT_QUOTES, 'UTF-8'); ?>"></button>
-        <h2 class="uk-modal-title">
+        <h2 class="uk-modal-title" id="j2c-terms-modal-label" tabindex="-1">
             <?php echo htmlspecialchars(Text::_('COM_J2COMMERCE_CHECKOUT_TERMS_AND_CONDITIONS'), ENT_QUOTES, 'UTF-8'); ?>
         </h2>
         <iframe src="<?php echo htmlspecialchars($termsModalUrl, ENT_QUOTES, 'UTF-8'); ?>"
