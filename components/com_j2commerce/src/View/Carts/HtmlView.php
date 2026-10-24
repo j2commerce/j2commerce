@@ -272,11 +272,9 @@ class HtmlView extends BaseHtmlView
         PluginHelper::importPlugin('j2commerce');
 
         // Trigger BeforeDisplayCart event
-        $this->before_display_cart = '';
-        $beforeResults             = J2CommerceHelper::plugin()->event('BeforeDisplayCart', [&$items]);
-        foreach ($beforeResults as $result) {
-            $this->before_display_cart .= $result;
-        }
+        $this->before_display_cart = (string) J2CommerceHelper::plugin()
+            ->eventWithHtml('BeforeDisplayCart', [&$items])
+            ->getArgument('html', '');
 
         // Trigger DisplayCartItem event for each item
         $this->onDisplayCartItem = [];
@@ -315,11 +313,9 @@ class HtmlView extends BaseHtmlView
             $this->vouchers = $this->order->getOrderVouchers();
 
             // Trigger AfterDisplayCart event
-            $this->after_display_cart = '';
-            $afterResults             = J2CommerceHelper::plugin()->event('AfterDisplayCart', [$this->order]);
-            foreach ($afterResults as $result) {
-                $this->after_display_cart .= $result;
-            }
+            $this->after_display_cart = (string) J2CommerceHelper::plugin()
+                ->eventWithHtml('AfterDisplayCart', [$this->order])
+                ->getArgument('html', '');
         } else {
             $this->items = $items;
         }
