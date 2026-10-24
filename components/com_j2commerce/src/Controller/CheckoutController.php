@@ -1841,7 +1841,6 @@ class CheckoutController extends BaseController
 
             $this->renderStep('confirm', [
                 'order'            => $existingOrder,
-                'orderInfo'        => $this->getOrderInfoFor($existingOrder),
                 'items'            => method_exists($existingOrder, 'getItems') ? $existingOrder->getItems() : [],
                 'taxes'            => method_exists($existingOrder, 'getOrderTaxrates') ? $existingOrder->getOrderTaxrates() : [],
                 'shipping'         => method_exists($existingOrder, 'getOrderShippingRate') ? $existingOrder->getOrderShippingRate() : null,
@@ -2094,7 +2093,6 @@ class CheckoutController extends BaseController
 
         $this->renderStep('confirm', [
             'order'            => $order,
-            'orderInfo'        => $this->getOrderInfoFor(\is_object($order) ? $order : null),
             'items'            => $orderItems,
             'taxes'            => $taxes,
             'shipping'         => $shipping,
@@ -3725,23 +3723,6 @@ class CheckoutController extends BaseController
                 $this->input->set($name, $value);
             }
         }
-    }
-
-    /**
-     * Persisted billing / ship-to for the confirm step's review block.
-     * Reads what was actually stored, not what the session believes.
-     */
-    protected function getOrderInfoFor(?object $order): ?object
-    {
-        $orderId = (string) ($order->order_id ?? '');
-
-        if ($orderId === '') {
-            return null;
-        }
-
-        $model = $this->getMvcFactory()->createModel('Order', 'Administrator', ['ignore_request' => true]);
-
-        return $model && method_exists($model, 'getOrderInfo') ? $model->getOrderInfo($orderId) : null;
     }
 
     protected function getCartOrder(): ?object

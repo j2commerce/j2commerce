@@ -296,8 +296,11 @@ document.addEventListener('DOMContentLoaded', function() {
         heading.appendChild(link);
     }
 
-    // Confirm-step address blocks carry their own Change link. Forward it to the edit
-    // link the step heading already owns, so one code path drives step navigation.
+    // No core markup emits data-j2c-edit-step; plugins (e.g. app_advancedfields' confirm review
+    // rows) render their own Change control with it. That control must be a native
+    // <button type="button"> with an aria-label naming the step: this handler listens for
+    // click only, which a button also fires on Enter and Space. Forward it to the edit link
+    // the step heading already owns, so one code path drives step navigation.
     document.addEventListener('click', function(e) {
         var trigger = e.target.closest('[data-j2c-edit-step]');
         if (!trigger) return;
