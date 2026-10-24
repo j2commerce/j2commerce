@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Application\CMSWebApplicationInterface;
 use Joomla\CMS\Event\Content\ContentPrepareEvent;
@@ -3175,50 +3176,22 @@ class ProductHelper
         $upSells = array_filter(explode(',', $upSellCsv));
 
         foreach ($upSells as $upSellId) {
-            $product = self::getFullProduct((int) $upSellId);
+            $id  = (int) $upSellId;
+            $row = self::getProductById($id);
 
-            if (!$product) {
+            // Checked on the base row so products held back by the listing access/publish predicates are never hydrated
+            if (!$row || empty($row->visibility) || empty($row->enabled)
+                || !ProductVisibilityHelper::isViewable($id)) {
                 continue;
             }
 
-            // Skip if product is not visible, not enabled
-            if (empty($product->visibility) || empty($product->enabled)) {
-                continue;
+            if ($product = self::getFullProduct($id)) {
+                $products[] = $product;
             }
-
-            $products[] = $product;
         }
 
         return $products;
     }
-    /*public static function getUpsells(object $sourceProduct): array
-    {
-        $products = [];
-        $upSellCsv = $sourceProduct->up_sells ?? '';
-
-        if (empty($upSellCsv)) {
-            return $products;
-        }
-
-        $upSells = array_filter(explode(',', $upSellCsv));
-
-        foreach ($upSells as $upSellId) {
-            $product = self::getProductById((int) $upSellId);
-
-            if (!$product) {
-                continue;
-            }
-
-            // Skip if product is not visible, not enabled, or not published
-            if (empty($product->visibility) || empty($product->enabled)) {
-                continue;
-            }
-
-            $products[] = $product;
-        }
-
-        return $products;
-    }*/
 
     /**
      * Get cross-sell products.
@@ -3241,18 +3214,18 @@ class ProductHelper
         $crossSells = array_filter(explode(',', $crossSellCsv));
 
         foreach ($crossSells as $crossSellId) {
-            $product = self::getFullProduct((int) $crossSellId);
+            $id  = (int) $crossSellId;
+            $row = self::getProductById($id);
 
-            if (!$product) {
+            // Checked on the base row so products held back by the listing access/publish predicates are never hydrated
+            if (!$row || empty($row->visibility) || empty($row->enabled)
+                || !ProductVisibilityHelper::isViewable($id)) {
                 continue;
             }
 
-            // Skip if product is not visible, not enabled
-            if (empty($product->visibility) || empty($product->enabled)) {
-                continue;
+            if ($product = self::getFullProduct($id)) {
+                $products[] = $product;
             }
-
-            $products[] = $product;
         }
 
         return $products;
