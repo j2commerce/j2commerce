@@ -51,3 +51,8 @@
     box-shadow: none;
     border-color: var(--bs-primary, #0d6efd);
 }
+
+/* Refused coupon (UIkit): dark text on the warning label for 4.5:1 contrast */
+.uk-label.j2c-coupon-refused {
+    color: #1e1e1e;
+}

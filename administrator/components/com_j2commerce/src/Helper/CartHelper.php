@@ -935,6 +935,26 @@ class CartHelper
             );
     }
 
+    /** Why the built order refused $code (expired at build or plugin-vetoed), or null when it applied it. */
+    public static function couponRejectionMessage(?CartOrder $order, string $code): ?string
+    {
+        if ($order === null) {
+            return null;
+        }
+
+        foreach ($order->getOrderCoupons() as $entry) {
+            if (strcasecmp((string) ($entry->coupon_code ?? ''), $code) === 0
+                && (!empty($entry->is_expired) || !empty($entry->is_rejected))) {
+                // A plugin's rejection_reason is shopper-facing text: accept a string only, and cap it.
+                $error = \is_string($entry->error ?? null) ? mb_substr(trim($entry->error), 0, 255) : '';
+
+                return Text::_($error !== '' ? $error : 'COM_J2COMMERCE_COUPON_NOT_VALID');
+            }
+        }
+
+        return null;
+    }
+
     /** Voucher twin of couponDiscountLabel() — takes the ledger balance object from VoucherModel::getVoucher(). */
     public static function voucherBalanceLabel(?object $voucher): string
     {

@@ -12,6 +12,8 @@
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\CartOrder;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
 use J2Commerce\Component\J2commerce\Site\Service\ProductLayoutService;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -104,7 +106,17 @@ if ($hasCoupon && $showDiscount) {
     $discountLabel = CartHelper::couponDiscountLabel($couponCache[$couponCode]);
 }
 
-$displayData['discountLabel'] = $discountLabel;
+// The order the page's totals used states whether it refused the code; a caller may pass it, else the last order built.
+$pageOrder   = $displayData['order'] ?? OrderHelper::getInstance()->getOrder();
+$couponError = $hasCoupon ? CartHelper::couponRejectionMessage($pageOrder instanceof CartOrder ? $pageOrder : null, $couponCode) : null;
+
+$displayData['discountLabel'] = $couponError === null ? $discountLabel : '';
+$displayData['couponError']   = $couponError;
+
+// A refused code must not be signalled by the badge colour alone: open the accordion so the reason shows.
+if ($couponError !== null) {
+    $displayData['expanded'] = true;
+}
 
 // The framework folder is a fallback, not an override — see product/quantity.php.
 echo ProductLayoutService::renderLayout('form.coupon', $displayData, [$framework]);

@@ -20,6 +20,7 @@ $expanded     = !empty($displayData['expanded']);
 $discountLabel = $displayData['discountLabel'] ?? '';
 $showDiscount  = !empty($displayData['showDiscount']);
 $hasCoupon    = !empty($couponCode);
+$couponError  = $displayData['couponError'] ?? null;
 
 ?>
 <?php if ($variant === 'accordion') : ?>
@@ -27,7 +28,7 @@ $hasCoupon    = !empty($couponCode);
     <a class="uk-accordion-title" href="#">
         <?php echo Text::_('COM_J2COMMERCE_COUPON_CODE'); ?>
         <?php if ($hasCoupon) : ?>
-            <span class="uk-label uk-label-success uk-margin-small-left j2c-coupon-badge"><?php echo htmlspecialchars($couponCode, ENT_QUOTES, 'UTF-8'); ?></span>
+            <span class="uk-label <?php echo $couponError !== null ? 'uk-label-warning j2c-coupon-refused' : 'uk-label-success'; ?> uk-margin-small-left j2c-coupon-badge"><?php echo htmlspecialchars($couponCode, ENT_QUOTES, 'UTF-8'); ?></span>
             <?php if ($discountLabel) : ?>
                 <small class="uk-text-muted uk-margin-small-left j2c-coupon-discount"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
             <?php endif; ?>
@@ -40,7 +41,7 @@ $hasCoupon    = !empty($couponCode);
     <?php if ($hasCoupon) : ?>
         <div class="uk-flex uk-flex-middle uk-flex-between uk-padding-small">
             <span>
-                <span class="uk-label uk-label-success">
+                <span class="uk-label <?php echo $couponError !== null ? 'uk-label-warning j2c-coupon-refused' : 'uk-label-success'; ?>">
                     <span class="icon-tag uk-margin-small-right" aria-hidden="true"></span><?php echo htmlspecialchars($couponCode, ENT_QUOTES, 'UTF-8'); ?>
                 </span>
                 <?php if ($discountLabel) : ?>
@@ -53,6 +54,12 @@ $hasCoupon    = !empty($couponCode);
                 <?php echo Text::_('COM_J2COMMERCE_REMOVE'); ?>
             </button>
         </div>
+        <?php if ($couponError !== null) : ?>
+            <div class="j2c-coupon-rejected uk-text-small uk-margin-small-top">
+                <span class="icon-warning" aria-hidden="true"></span>
+                <?php echo htmlspecialchars($couponError, ENT_QUOTES, 'UTF-8'); ?>
+            </div>
+        <?php endif; ?>
     <?php else : ?>
         <div class="j2c-coupon-input-wrap">
             <div class="uk-flex uk-flex-stretch">

@@ -21,6 +21,7 @@ $expanded     = !empty($displayData['expanded']);
 $discountLabel = $displayData['discountLabel'] ?? '';
 $showDiscount  = !empty($displayData['showDiscount']);
 $hasCoupon    = !empty($couponCode);
+$couponError  = $displayData['couponError'] ?? null;
 
 ?>
 <?php if ($variant === 'accordion') : ?>
@@ -34,7 +35,7 @@ $hasCoupon    = !empty($couponCode);
                 aria-controls="<?php echo $formId; ?>-collapse">
             <?php echo Text::_('COM_J2COMMERCE_COUPON_CODE'); ?>
             <?php if ($hasCoupon) : ?>
-                <span class="badge bg-success ms-2 j2c-coupon-badge"><?php echo htmlspecialchars($couponCode, ENT_QUOTES, 'UTF-8'); ?></span>
+                <span class="badge <?php echo $couponError !== null ? 'text-bg-warning' : 'bg-success'; ?> ms-2 j2c-coupon-badge"><?php echo htmlspecialchars($couponCode, ENT_QUOTES, 'UTF-8'); ?></span>
                 <?php if ($discountLabel) : ?>
                     <small class="text-body-tertiary ms-1 j2c-coupon-discount"><?php echo htmlspecialchars($discountLabel, ENT_QUOTES, 'UTF-8'); ?></small>
                 <?php endif; ?>
@@ -51,7 +52,7 @@ $hasCoupon    = !empty($couponCode);
     <?php if ($hasCoupon) : ?>
         <div class="d-flex align-items-center justify-content-between py-1">
             <span>
-                <span class="badge bg-success">
+                <span class="badge <?php echo $couponError !== null ? 'text-bg-warning' : 'bg-success'; ?>">
                     <span class="icon-tag me-1" aria-hidden="true"></span><?php echo htmlspecialchars($couponCode, ENT_QUOTES, 'UTF-8'); ?>
                 </span>
                 <?php if ($discountLabel) : ?>
@@ -64,6 +65,12 @@ $hasCoupon    = !empty($couponCode);
                 <?php echo Text::_('COM_J2COMMERCE_REMOVE'); ?>
             </button>
         </div>
+        <?php if ($couponError !== null) : ?>
+            <div class="j2c-coupon-rejected small text-danger-emphasis mt-1">
+                <span class="icon-warning" aria-hidden="true"></span>
+                <?php echo htmlspecialchars($couponError, ENT_QUOTES, 'UTF-8'); ?>
+            </div>
+        <?php endif; ?>
     <?php else : ?>
         <div class="j2c-coupon-input-wrap">
             <div class="input-group">

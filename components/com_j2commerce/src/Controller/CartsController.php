@@ -25,6 +25,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UploadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\CartModel;
+use J2Commerce\Component\J2commerce\Administrator\Model\CouponModel;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ModuleHelper;
 use Joomla\CMS\Language\Text;
@@ -926,9 +927,21 @@ class CartsController extends BaseController
         $model  = $this->getCartModel();
         $coupon = $this->input->getString('coupon', '');
 
+        $msg     = '';
+        $msgType = 'message';
+
         if (!empty($coupon)) {
+            $previous    = (string) $this->app->getSession()->get('coupon', '', 'j2commerce');
             $couponModel = $this->factory->createModel('Coupon', 'Administrator');
             $couponModel->setCoupon($coupon);
+
+            $rejection = $this->rejectionAfterApply($couponModel, $coupon, $previous);
+
+            // CouponModel::isValid() already queued its own reason during the build; add only the ones it did not.
+            if ($rejection !== null && !\in_array($rejection, array_column($this->app->getMessageQueue(), 'message'), true)) {
+                $msg     = htmlspecialchars($rejection, ENT_QUOTES, 'UTF-8'); // the message queue renders as HTML
+                $msgType = 'warning';
+            }
         }
 
         $redirect = $this->input->getBase64('redirect', '');
@@ -939,7 +952,28 @@ class CartsController extends BaseController
             $url = $model->getCartUrl();
         }
 
-        $this->setRedirect($url);
+        $this->setRedirect($url, $msg, $msgType);
+    }
+
+    /** Builds the order with $code applied; a refused code is replaced by the previous coupon, or removed. */
+    protected function rejectionAfterApply(CouponModel $couponModel, string $code, string $previous): ?string
+    {
+        $cartsModel = $this->factory->createModel('Carts', 'Site', ['ignore_request' => true]);
+        $cartsModel->getState();
+
+        // Only the coupon entries are read, so skip CartsModel::getOrder()'s stock pass.
+        $order  = OrderHelper::getInstance()->populateOrder($cartsModel->getItems())->getOrder();
+        $reason = CartHelper::couponRejectionMessage($order, $code);
+
+        if ($reason !== null) {
+            if ($previous !== '' && strcasecmp($previous, $code) !== 0) {
+                $couponModel->setCoupon($previous);
+            } else {
+                $couponModel->removeCoupon();
+            }
+        }
+
+        return $reason;
     }
 
     /**
@@ -1058,6 +1092,7 @@ class CartsController extends BaseController
         }
 
         try {
+            $previous    = (string) $this->app->getSession()->get('coupon', '', 'j2commerce');
             $couponModel = $this->factory->createModel('Coupon', 'Administrator');
             $couponModel->setCoupon($coupon);
             $couponModel->init();
@@ -1092,6 +1127,11 @@ class CartsController extends BaseController
                     'success' => false,
                     'message' => $couponModel->getError() ?: Text::_('COM_J2COMMERCE_COUPON_NOT_VALID'),
                 ]);
+            }
+
+            // The lightweight context above never runs BeforeApplyCoupon; the real order build does.
+            if (($rejection = $this->rejectionAfterApply($couponModel, $coupon, $previous)) !== null) {
+                $this->sendJsonResponse(['success' => false, 'message' => $rejection]);
             }
 
             $this->sendJsonResponse([

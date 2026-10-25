@@ -26,6 +26,8 @@ return [
         'the cart'          => 'the basket',
         'The Cart'          => 'The Basket',
         'in cart'           => 'in basket',
+        'Cart Contains'     => 'Basket Contains',
+        'cart contains'     => 'basket contains',
         'Zip Code'          => 'Postcode',
         'zip code'          => 'postcode',
         'ZIP Code'          => 'Postcode',
