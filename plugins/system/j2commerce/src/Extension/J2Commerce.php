@@ -771,6 +771,15 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
+        // onUserLogin reaches every subscriber even when plg_user_joomla refuses the login, so apply the
+        // same two refusals it does, against the same login action, before handing the guest cart over.
+        $options = (array) $event->getArgument(1, []);
+        $account = Factory::getContainer()->get(UserFactoryInterface::class)->loadUserById($userId);
+
+        if ((int) $account->block === 1 || !$account->authorise($options['action'] ?? 'core.login.site')) {
+            return;
+        }
+
         // Migrate cart to logged-in user
         $this->migrateCartOnLogin($userId, $session->getId());
     }
@@ -1105,14 +1114,18 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
      */
     private function migrateCartOnLogin(int $userId, string $newSessionId): void
     {
-        $db = $this->getDatabase();
+        $db        = $this->getDatabase();
+        $guestCart = null;
+        $moved     = false;
+
+        // A new login starts with no merge notice shown.
+        $this->getApplication()->getSession()->clear('cart_merge_notified', 'j2commerce');
 
         try {
             // Locate the guest cart via the persistent cookie (30-day browser cookie that
             // survives Joomla's session regeneration on login).
-            $app          = $this->getApplication();
-            $rawCookie    = (string) $app->getInput()->cookie->getString('j2commerce_cart_id', '');
-            $guestCart    = null;
+            $app       = $this->getApplication();
+            $rawCookie = (string) $app->getInput()->cookie->getString('j2commerce_cart_id', '');
 
             if ($rawCookie !== '') {
                 $cookieCartId = $this->verifyCartCookieId($rawCookie, (string) $app->get('secret', ''));
@@ -1152,6 +1165,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
                 // causing "ghost" items to reappear from the survivor.
                 $cartHelper->updateCartitemEntry($guestCart, $userCart);
 
+                $moved       = true;
                 $guestCartId = (int) $guestCart->j2commerce_cart_id;
 
                 $db->setQuery(
@@ -1176,6 +1190,8 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
                         ->bind(':cartId', $guestCartId, ParameterType::INTEGER)
                 );
                 $db->execute();
+
+                $moved = true;
             }
 
             // Sync the session ID on whichever cart the user now owns.
@@ -1188,9 +1204,18 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
                     ->bind(':userId', $userId, ParameterType::INTEGER)
             );
             $db->execute();
-        } catch (\Exception $e) {
-            // Silently fail if cart table doesn't exist yet or other DB error
-            // This allows the plugin to work during initial migration
+        } catch (\Throwable $e) {
+            // Login must not fail over the cart (the table may not exist yet during a migration). The
+            // reason goes to the log; the shopper is told only when guest items did not reach the account,
+            // once per login (CartHelper::resetCart reads the same flag).
+            Log::add('J2Commerce::migrateCartOnLogin failed: ' . $e->getMessage(), Log::ERROR, self::COMPONENT_NAME);
+
+            $session = $this->getApplication()->getSession();
+
+            if ($guestCart !== null && !$moved && !$session->get('cart_merge_notified', false, 'j2commerce')) {
+                $session->set('cart_merge_notified', true, 'j2commerce');
+                $this->getApplication()->enqueueMessage(Text::_('PLG_SYSTEM_J2COMMERCE_MSG_CART_MERGE_FAILED'), 'warning');
+            }
         }
 
         // The unavailable-item list CartModel::getItems() keeps was built against the

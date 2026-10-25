@@ -463,10 +463,14 @@ class CheckoutController extends BaseController
                     return $exists;
                 }
 
-                // An empty activation token on a blocked account is an administrator's block, not a pending
-                // registration; it gets the message plg_user_joomla has just queued for the next page.
+                // Registration writes ApplicationHelper::getHash() (32 hex characters) as the activation token; a
+                // password reset (ResetModel) writes a password hash into the same column. Anything but a
+                // registration token is an administrator's block, which gets the message plg_user_joomla has
+                // just queued for the next page.
+                $pending = preg_match('/^[a-f0-9]{32}$/', (string) $existingUser->activation) === 1;
+
                 return ['error' => ['warning' => Text::_(
-                    (string) $existingUser->activation !== '' ? 'COM_J2COMMERCE_CHECKOUT_ACCOUNT_PENDING_ACTIVATION' : 'JERROR_NOLOGIN_BLOCKED'
+                    $pending ? 'COM_J2COMMERCE_CHECKOUT_ACCOUNT_PENDING_ACTIVATION' : 'JERROR_NOLOGIN_BLOCKED'
                 )]];
             }
 
@@ -538,6 +542,13 @@ class CheckoutController extends BaseController
     public function registerValidate(): void
     {
         $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
+
+        // Same guard as loginValidate(): a signed-in shopper is sent back into checkout, never through registration.
+        if ($this->app->getIdentity()?->id) {
+            $this->jsonResponse(['redirect' => $this->getCheckoutUrl()]);
+
+            return;
+        }
 
         $session  = $this->app->getSession();
         $json     = [];

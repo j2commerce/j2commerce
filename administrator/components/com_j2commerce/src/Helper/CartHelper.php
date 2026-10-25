@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
@@ -360,7 +361,7 @@ class CartHelper
                 $db->setQuery($query);
                 $db->execute();
             } catch (\Throwable $e) {
-                Factory::getApplication()->enqueueMessage($e->getMessage(), 'notice');
+                $this->reportCartSyncFailure('claim', $e, true);
             }
 
             return;
@@ -385,7 +386,8 @@ class CartHelper
                 $db->setQuery($query);
                 $db->execute();
             } catch (\Throwable $e) {
-                Factory::getApplication()->enqueueMessage($e->getMessage(), 'notice');
+                // Nothing had to move; only the session pointer is stale.
+                $this->reportCartSyncFailure('session sync', $e, false);
             }
 
             return;
@@ -395,7 +397,7 @@ class CartHelper
         try {
             $this->updateCartitemEntry($guestCart, $userCart);
         } catch (\Throwable $e) {
-            Factory::getApplication()->enqueueMessage($e->getMessage(), 'notice');
+            $this->reportCartSyncFailure('merge', $e, true);
 
             return;
         }
@@ -416,11 +418,28 @@ class CartHelper
             $db->setQuery($query);
             $db->execute();
         } catch (\Throwable $e) {
-            Factory::getApplication()->enqueueMessage($e->getMessage(), 'notice');
+            // The items are already in the user's cart; only the session pointer is stale.
+            $this->reportCartSyncFailure('post-merge session sync', $e, false);
         }
 
         // Delete the now-empty guest cart record
         $this->deleteSessionCartItems($guestSessionId);
+    }
+
+    /**
+     * The reason always goes to the log; the shopper is told only when items stayed behind, and only once
+     * per login — plg_system_j2commerce reports the same failure through the same session flag.
+     */
+    private function reportCartSyncFailure(string $stage, \Throwable $e, bool $itemsStayedBehind): void
+    {
+        Log::add('CartHelper::resetCart ' . $stage . ' failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+        $session = Factory::getApplication()->getSession();
+
+        if ($itemsStayedBehind && !$session->get('cart_merge_notified', false, 'j2commerce')) {
+            $session->set('cart_merge_notified', true, 'j2commerce');
+            Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_CART_MERGE_FAILED'), 'warning');
+        }
     }
 
     /**
@@ -447,6 +466,28 @@ class CartHelper
         if (empty($items)) {
             return true;
         }
+
+        // One unit: a quantity added to the destination without its source line removed would be added
+        // again by the next merge attempt.
+        $db->transactionStart();
+
+        try {
+            $this->moveCartItems($items, $destCartId);
+            $db->transactionCommit();
+        } catch (\Throwable $e) {
+            $db->transactionRollback();
+
+            throw $e;
+        }
+
+        self::touchCart($destCartId);
+
+        return true;
+    }
+
+    private function moveCartItems(array $items, int $destCartId): void
+    {
+        $db = self::getDatabase();
 
         foreach ($items as $item) {
             // Check if item already exists in destination cart
@@ -478,7 +519,9 @@ class CartHelper
                 $db->execute();
 
                 // Delete the source item after successful merge
-                $this->deleteCartItem($itemId);
+                if (!$this->deleteCartItem($itemId)) {
+                    throw new \RuntimeException('could not remove merged cart line ' . $itemId . ': ' . $this->getError());
+                }
             } else {
                 // Item does not exist in destination: move it by updating cart_id
                 $query = $db->getQuery(true)
@@ -492,10 +535,6 @@ class CartHelper
                 $db->execute();
             }
         }
-
-        self::touchCart($destCartId);
-
-        return true;
     }
 
     // modified_on is the cart's activity clock: the cart reminder, the outdated-cart cleanup and the
