@@ -64,8 +64,11 @@ final class CheckoutPlacementService
      *
      * onJ2CommerceAfterPlaceOrder (named args order, placement) is informational. It fires once per
      * placement, including when an earlier unpaid row was reused (`placement->reused`), and the order
-     * is unpaid (state 5) at that point: it is not a "paid" signal. `order` is a read-only snapshot
-     * (a detached copy), so a listener cannot change the placed order or what confirm renders.
+     * is unpaid (state 5) at that point: it is not a "paid" signal. `order` is a shallow copy (a plain
+     * object for a table row, a clone for a CartOrder): assigning its properties does not reach the
+     * placed order, but nested objects such as items stay shared, and `placement->order` and
+     * `placement->chargeOrder` are the live objects. The charge amount, PrePayment HTML and free
+     * redirect are fixed in `placement` before the event, so listeners must treat it as read-only.
      *
      * @throws  \Exception  What saveOrder() and PrePayment plugins throw; the caller logs it.
      */
