@@ -354,7 +354,8 @@ final class DownloadHelper
 
     /**
      * Allowed local roots for downloadable-product files: the configured attachments
-     * folder plus the legacy images dir. Absolute (native separators, unresolved).
+     * folder plus every directory configured under image_directories (the same roots the
+     * Files tab's own upload picker offers). Absolute (native separators, unresolved).
      *
      * @return  list<string>
      */
@@ -366,26 +367,17 @@ final class DownloadHelper
         // and the upload paths do. Reading it raw meant a Windows-typed 'files\com_j2commerce'
         // named one literal directory here, whose realpath() fails on Linux and dropped the
         // attachment root from the union without a word.
-        $attach = ConfigHelper::getAttachmentPath();
+        $attach = self::sanitizeRootSegment(ConfigHelper::getAttachmentPath())
+            ?? AttachmentDenyFileHelper::defaultPath();
 
-        // Segment scan, not a whole-string compare: 'files/../..' passed the old test intact
-        // and resolved to the site's parent, at which point the prefix test in
-        // isAllowedResolvedPath() accepted everything beneath it. A '.' segment carries no
-        // traversal, so it is dropped rather than treated as hostile — rejecting it would
-        // send a working 'files/./x' to the default root and break its downloads.
-        $segments = array_filter(
-            explode('/', $attach),
-            static fn (string $segment): bool => $segment !== '' && $segment !== '.'
-        );
+        $candidates = array_merge([$attach], ConfigHelper::getImageDirectoryPaths());
 
-        $attach = $segments === [] || \in_array('..', $segments, true)
-            ? AttachmentDenyFileHelper::defaultPath()
-            : implode('/', $segments);
+        foreach (array_unique($candidates) as $candidate) {
+            $root = self::sanitizeRootSegment($candidate);
 
-        foreach (array_unique([$attach, 'images']) as $root) {
-            // Absolute attachment roots are not servable by the download endpoint,
-            // which always resolves stored paths against JPATH_SITE.
-            if ($root === '' || preg_match('#^(?:/|[a-zA-Z]:)#', $root)) {
+            // Absolute roots are not servable by the download endpoint, which always
+            // resolves stored paths against JPATH_SITE.
+            if ($root === null || $root === '' || preg_match('#^(?:/|[a-zA-Z]:)#', $root)) {
                 continue;
             }
 
@@ -393,6 +385,29 @@ final class DownloadHelper
         }
 
         return $roots;
+    }
+
+    /**
+     * Segment scan, not a whole-string compare: 'files/../..' passed a whole-string test
+     * intact and resolved to the site's parent, at which point the prefix test in
+     * isAllowedResolvedPath() accepted everything beneath it. A '.' segment carries no
+     * traversal, so it is dropped rather than treated as hostile — rejecting it would send
+     * a working 'files/./x' to the caller's fallback and break its downloads.
+     *
+     * @return  string|null  Null when the path is empty or carries a '..' segment.
+     */
+    private static function sanitizeRootSegment(string $path): ?string
+    {
+        $segments = array_filter(
+            explode('/', $path),
+            static fn (string $segment): bool => $segment !== '' && $segment !== '.'
+        );
+
+        if ($segments === [] || \in_array('..', $segments, true)) {
+            return null;
+        }
+
+        return implode('/', $segments);
     }
 
     /** Save-side validation: the path must resolve inside an allowed root. */
