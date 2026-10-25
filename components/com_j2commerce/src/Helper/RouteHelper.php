@@ -15,6 +15,7 @@ namespace J2Commerce\Component\J2commerce\Site\Helper;
 \defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use Joomla\CMS\Access\Access;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\Log\Log;
@@ -41,10 +42,13 @@ use Joomla\CMS\Router\Route;
  */
 abstract class RouteHelper
 {
-    /** The provider chosen for this request; null when none answered. Valid only once $checkoutProviderResolved is set. */
-    private static ?array $checkoutProvider = null;
+    /** Raw provider answers; the event is dispatched once per request. Null until dispatched. */
+    private static ?array $checkoutAnswers = null;
 
-    private static bool $checkoutProviderResolved = false;
+    /** The validated pick, per identity key (user id, view levels, language); null when none answered. */
+    private static array $checkoutProviders = [];
+
+    private static bool $resolvingCheckoutProvider = false;
 
     /**
      * Get the product route.
@@ -490,25 +494,35 @@ abstract class RouteHelper
      */
     public static function getCheckoutProvider(): ?array
     {
-        if (self::$checkoutProviderResolved) {
-            return self::$checkoutProvider;
+        // A listener that builds a checkout URL while answering must not recurse into the dispatch.
+        if (self::$resolvingCheckoutProvider) {
+            return null;
         }
 
-        // Set before the dispatch so a listener that builds a checkout URL cannot recurse into it.
-        self::$checkoutProviderResolved = true;
-        self::$checkoutProvider         = null;
+        $app    = Factory::getApplication();
+        $levels = self::viewLevels();
+        $key    = ($app->getIdentity()?->id ?? 0) . ':' . implode(',', $levels) . ':' . $app->getLanguage()->getTag();
 
-        try {
-            $answers = J2CommerceHelper::plugin()->eventWithArray('GetCheckoutProvider', ['result' => []]);
-        } catch (\Throwable $e) {
-            Log::add('checkout provider lookup failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+        if (\array_key_exists($key, self::$checkoutProviders)) {
+            return self::$checkoutProviders[$key];
+        }
 
-            return null;
+        if (self::$checkoutAnswers === null) {
+            self::$resolvingCheckoutProvider = true;
+
+            try {
+                self::$checkoutAnswers = J2CommerceHelper::plugin()->eventWithArray('GetCheckoutProvider', ['result' => []]);
+            } catch (\Throwable $e) {
+                self::$checkoutAnswers = [];
+                Log::add('checkout provider lookup failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            } finally {
+                self::$resolvingCheckoutProvider = false;
+            }
         }
 
         $candidates = [];
 
-        foreach ($answers as $answer) {
+        foreach (self::$checkoutAnswers as $answer) {
             $element    = \is_array($answer) ? (string) ($answer['element'] ?? '') : '';
             $menuItemId = \is_array($answer) ? (int) ($answer['menu_item_id'] ?? 0) : 0;
 
@@ -531,10 +545,6 @@ abstract class RouteHelper
             ];
         }
 
-        if ($candidates === []) {
-            return null;
-        }
-
         $chosen = (string) J2CommerceHelper::config()->get('checkout_provider', '');
         $best   = null;
 
@@ -549,7 +559,17 @@ abstract class RouteHelper
             }
         }
 
-        return self::$checkoutProvider = $best;
+        return self::$checkoutProviders[$key] = $best;
+    }
+
+    /** Sorted view levels of the current identity; the guest levels when the application has none (CLI). */
+    private static function viewLevels(): array
+    {
+        $user   = Factory::getApplication()->getIdentity();
+        $levels = $user ? $user->getAuthorisedViewLevels() : Access::getAuthorisedViewLevels(0);
+        sort($levels);
+
+        return $levels;
     }
 
     /** The menu item's own link plus its Itemid, or null unless this visitor can reach it as a com_j2commerce checkout item. */
@@ -566,7 +586,7 @@ abstract class RouteHelper
             return null;
         }
 
-        if (!\in_array((int) $item->access, $app->getIdentity()->getAuthorisedViewLevels(), true)) {
+        if (!\in_array((int) $item->access, self::viewLevels(), true)) {
             return null;
         }
 

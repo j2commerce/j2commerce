@@ -29,6 +29,7 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
+use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\Exception\ConnectionFailureException;
 use Joomla\Database\Exception\ExecutionFailureException;
@@ -58,12 +59,13 @@ final class CheckoutPlacementService
      *
      * onJ2CommerceBeforePlaceOrder (named args order, paymentElement, result) is veto-only: a listener
      * appends translated strings to `result` and only non-empty string entries count. The order is
-     * snapshotted around the event, so a listener that changes the totals, owner, payment method or
-     * lines is refused as out of date rather than placed.
+     * snapshotted around the event, so a listener that changes the totals, owner, payment method,
+     * lines, addresses, email or fees is refused as out of date rather than placed.
      *
      * onJ2CommerceAfterPlaceOrder (named args order, placement) is informational. It fires once per
      * placement, including when an earlier unpaid row was reused (`placement->reused`), and the order
-     * is unpaid (state 5) at that point: it is not a "paid" signal.
+     * is unpaid (state 5) at that point: it is not a "paid" signal. `order` is a read-only snapshot
+     * (a detached copy), so a listener cannot change the placed order or what confirm renders.
      *
      * @throws  \Exception  What saveOrder() and PrePayment plugins throw; the caller logs it.
      */
@@ -92,8 +94,12 @@ final class CheckoutPlacementService
             }
         }
 
-        if ($errors === [] && $this->orderSnapshot($order) !== $before) {
-            Log::add('checkout.placeOrder BeforePlaceOrder listener changed the order; placement refused', Log::ERROR, 'com_j2commerce');
+        $drift = $errors === []
+            ? array_keys(array_filter($this->orderSnapshot($order), static fn ($value, $group) => $value !== $before[$group], ARRAY_FILTER_USE_BOTH))
+            : [];
+
+        if ($drift) {
+            Log::add('checkout.placeOrder BeforePlaceOrder listener changed the order (' . implode(', ', $drift) . '); placement refused', Log::ERROR, 'com_j2commerce');
 
             $errors[] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_ORDER_OUT_OF_DATE');
         }
@@ -210,8 +216,11 @@ final class CheckoutPlacementService
         );
 
         // Informational: nothing a listener sets changes the placement, and a listener fault must not undo it.
+        // A table row is handed over as a plain object, which has no store(); a CartOrder as a clone.
         try {
-            J2CommerceHelper::plugin()->event('AfterPlaceOrder', ['order' => $savedOrder, 'placement' => $placement]);
+            $snapshot = $savedOrder instanceof Table ? (object) get_object_vars($savedOrder) : clone $savedOrder;
+
+            J2CommerceHelper::plugin()->event('AfterPlaceOrder', ['order' => $snapshot, 'placement' => $placement]);
         } catch (\Throwable $e) {
             Log::add('checkout.placeOrder AfterPlaceOrder failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
         }
@@ -219,7 +228,7 @@ final class CheckoutPlacementService
         return $placement;
     }
 
-    /** Everything the placement checks have already vouched for: money, owner, payment method and lines. */
+    /** Signature per group of what the placement checks have vouched for; the keys name a drifted group in the log. */
     private function orderSnapshot(CartOrder $order): array
     {
         $lines = [];
@@ -231,16 +240,21 @@ final class CheckoutPlacementService
         sort($lines);
 
         return [
-            $order->order_total,
-            $order->order_subtotal,
-            $order->order_tax,
-            $order->order_shipping,
-            $order->order_shipping_tax,
-            $order->order_discount,
-            $order->order_surcharge,
-            $order->user_id,
-            $order->orderpayment_type,
-            $lines,
+            'totals' => [
+                $order->order_total,
+                $order->order_subtotal,
+                $order->order_tax,
+                $order->order_shipping,
+                $order->order_shipping_tax,
+                $order->order_discount,
+                $order->order_surcharge,
+            ],
+            'owner'     => $order->user_id,
+            'payment'   => $order->orderpayment_type,
+            'lines'     => $lines,
+            'addresses' => $order->getSaveFingerprint(),
+            'email'     => $order->resolveCheckoutEmail(),
+            'fees'      => md5((string) json_encode($order->get_fees(), JSON_INVALID_UTF8_SUBSTITUTE | JSON_PARTIAL_OUTPUT_ON_ERROR)),
         ];
     }
 
