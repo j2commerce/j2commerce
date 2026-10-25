@@ -359,52 +359,8 @@ class CheckoutController extends BaseController
                     return;
                 }
 
-                $session->set('uaccount', 'login', 'j2commerce');
+                $this->completeCheckoutLogin($guestSessionId);
 
-                // The identity changed mid-checkout; an order primed under the
-                // previous one is no longer this caller's to resume or rewrite.
-                $this->clearPrimedOrder();
-
-                $loggedUser = $this->app->getIdentity();
-
-                if ($loggedUser && $loggedUser->id && !empty($guestSessionId)) {
-                    CartHelper::getInstance()->resetCart($guestSessionId, (int) $loggedUser->id);
-                }
-
-                $params = J2CommerceHelper::config();
-
-                if ($loggedUser && $loggedUser->id) {
-                    $addressInfo = $this->getUserFirstAddress((int) $loggedUser->id);
-
-                    if ($addressInfo) {
-                        $taxDefault = $params->get('config_tax_default', 'billing');
-
-                        if ($taxDefault === 'shipping') {
-                            $session->set('shipping_country_id', (int) $addressInfo->country_id, 'j2commerce');
-                            $session->set('shipping_zone_id', (int) $addressInfo->zone_id, 'j2commerce');
-                            $session->set('shipping_postcode', $addressInfo->zip ?? '', 'j2commerce');
-                        }
-
-                        if ($taxDefault === 'billing') {
-                            $session->set('billing_country_id', (int) $addressInfo->country_id, 'j2commerce');
-                            $session->set('billing_zone_id', (int) $addressInfo->zone_id, 'j2commerce');
-                            $session->set('billing_postcode', $addressInfo->zip ?? '', 'j2commerce');
-                        }
-                    } else {
-                        $session->clear('shipping_country_id', 'j2commerce');
-                        $session->clear('shipping_zone_id', 'j2commerce');
-                        $session->clear('shipping_postcode', 'j2commerce');
-                        $session->clear('billing_country_id', 'j2commerce');
-                        $session->clear('billing_zone_id', 'j2commerce');
-                        $session->clear('billing_postcode', 'j2commerce');
-                    }
-
-                    // Either arm moves where rates are quoted from, so anything quoted for
-                    // the pre-login destination goes with it.
-                    $this->clearShippingSelection();
-                }
-
-                $session->clear('guest', 'j2commerce');
                 $json['redirect'] = $this->getCheckoutUrl();
             } catch (\Exception $e) {
                 // Log the detail; the shopper gets a generic message.
@@ -414,6 +370,13 @@ class CheckoutController extends BaseController
             }
         }
 
+        $this->dispatchCheckoutLoginEvents($json);
+
+        $this->jsonResponse($json);
+    }
+
+    private function dispatchCheckoutLoginEvents(array &$json): void
+    {
         J2CommerceHelper::plugin()->event('CheckoutAfterLogin', [&$json]);
 
         if (empty($json['error'])) {
@@ -422,8 +385,103 @@ class CheckoutController extends BaseController
                 new \Joomla\Event\Event('onJ2CommerceCheckoutLogin', [])
             );
         }
+    }
 
-        $this->jsonResponse($json);
+    /** Session work shared by every checkout path that has just logged the shopper in. */
+    private function completeCheckoutLogin(string $guestSessionId): void
+    {
+        $session = $this->app->getSession();
+        $session->set('uaccount', 'login', 'j2commerce');
+
+        // The identity changed mid-checkout; an order primed under the
+        // previous one is no longer this caller's to resume or rewrite.
+        $this->clearPrimedOrder();
+
+        $loggedUser = $this->app->getIdentity();
+
+        if ($loggedUser && $loggedUser->id && !empty($guestSessionId)) {
+            CartHelper::getInstance()->resetCart($guestSessionId, (int) $loggedUser->id);
+        }
+
+        $params = J2CommerceHelper::config();
+
+        if ($loggedUser && $loggedUser->id) {
+            $addressInfo = $this->getUserFirstAddress((int) $loggedUser->id);
+
+            if ($addressInfo) {
+                $taxDefault = $params->get('config_tax_default', 'billing');
+
+                if ($taxDefault === 'shipping') {
+                    $session->set('shipping_country_id', (int) $addressInfo->country_id, 'j2commerce');
+                    $session->set('shipping_zone_id', (int) $addressInfo->zone_id, 'j2commerce');
+                    $session->set('shipping_postcode', $addressInfo->zip ?? '', 'j2commerce');
+                }
+
+                if ($taxDefault === 'billing') {
+                    $session->set('billing_country_id', (int) $addressInfo->country_id, 'j2commerce');
+                    $session->set('billing_zone_id', (int) $addressInfo->zone_id, 'j2commerce');
+                    $session->set('billing_postcode', $addressInfo->zip ?? '', 'j2commerce');
+                }
+            } else {
+                $session->clear('shipping_country_id', 'j2commerce');
+                $session->clear('shipping_zone_id', 'j2commerce');
+                $session->clear('shipping_postcode', 'j2commerce');
+                $session->clear('billing_country_id', 'j2commerce');
+                $session->clear('billing_zone_id', 'j2commerce');
+                $session->clear('billing_postcode', 'j2commerce');
+            }
+
+            // Either arm moves where rates are quoted from, so anything quoted for
+            // the pre-login destination goes with it.
+            $this->clearShippingSelection();
+        }
+
+        $session->clear('guest', 'j2commerce');
+    }
+
+    /** Register form resubmitted for an existing email: only that account's own password earns more than the generic answer. */
+    private function resumeExistingRegistration(User $existingUser, string $email, string $password, string $guestSessionId): array
+    {
+        $exists = ['error' => ['warning' => Text::_('COM_J2COMMERCE_CHECKOUT_EMAIL_EXISTS')]];
+        $json   = [];
+
+        J2CommerceHelper::plugin()->event('CheckoutBeforeLogin', [&$json]);
+
+        if ($json) {
+            return $json;
+        }
+
+        try {
+            // Every attempt goes through login(), so its failure events see this path as they see the
+            // login step. Silent: this path answers a failed login itself.
+            if ($this->app->login(['username' => $email, 'password' => $password], ['silent' => true]) !== true) {
+                // Checked for every failed attempt, whatever the account's state, so the response
+                // time does not depend on that state.
+                $passwordMatches = UserHelper::verifyPassword($password, (string) $existingUser->password, (int) $existingUser->id);
+
+                if (!$passwordMatches || (int) $existingUser->block !== 1) {
+                    return $exists;
+                }
+
+                // An empty activation token on a blocked account is an administrator's block, not a pending
+                // registration; it gets the message plg_user_joomla has just queued for the next page.
+                return ['error' => ['warning' => Text::_(
+                    (string) $existingUser->activation !== '' ? 'COM_J2COMMERCE_CHECKOUT_ACCOUNT_PENDING_ACTIVATION' : 'JERROR_NOLOGIN_BLOCKED'
+                )]];
+            }
+
+            $this->completeCheckoutLogin($guestSessionId);
+        } catch (\Exception $e) {
+            Log::add('checkout.resumeExistingRegistration failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            return ['error' => ['warning' => Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_LOGIN')]];
+        }
+
+        $json = ['redirect' => $this->getCheckoutUrl()];
+
+        $this->dispatchCheckoutLoginEvents($json);
+
+        return $json;
     }
 
     // =========================================================================
@@ -534,15 +592,14 @@ class CheckoutController extends BaseController
         $userFactory  = Factory::getContainer()->get(UserFactoryInterface::class);
         $existingUser = $userFactory->loadUserByUsername($email);
 
+        // Capture the guest session ID before any login changes it
+        $guestSessionId = $session->getId();
+
         if ($existingUser && $existingUser->id > 0) {
-            $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_EMAIL_EXISTS');
-            $this->jsonResponse($json);
+            $this->jsonResponse($this->resumeExistingRegistration($existingUser, $email, $password, $guestSessionId));
 
             return;
         }
-
-        // Capture guest session ID before creating user and auto-login
-        $guestSessionId = $session->getId();
 
         $useractivation = (int) $usersParams->get('useractivation', 0);
 
@@ -618,10 +675,25 @@ class CheckoutController extends BaseController
                 $input->post->set('jform', $savedJform);
             }
 
+            $addressData            = CustomFieldHelper::collectAddressData($fields, $formData);
+            $addressData['user_id'] = (int) $user->id;
+            $addressData['email']   = $email;
+            $addressData['type']    = 'billing';
+
             // Account is blocked pending activation — never auto-login it. The
             // shopper resumes as a guest until they (or an admin) activate.
             if ($useractivation === 1 || $useractivation === 2) {
                 $this->sendCheckoutActivationEmail($user, $useractivation);
+
+                // Keep the address against the new account, as the com_users registration page
+                // does through plg_user_j2commerce, so it is waiting once the shopper activates.
+                // The account and its activation mail already exist, so a failure here must not
+                // replace the activation notice below.
+                try {
+                    $this->saveAddress($addressData);
+                } catch (\Throwable $e) {
+                    Log::add('checkout.registerValidate pending-account address save failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
+                }
 
                 $language = $this->app->getLanguage();
                 $language->load('com_users', JPATH_SITE);
@@ -662,11 +734,6 @@ class CheckoutController extends BaseController
             }
 
             // Save address to database
-            $addressData            = CustomFieldHelper::collectAddressData($fields, $formData);
-            $addressData['user_id'] = (int) $loggedUser->id;
-            $addressData['email']   = $email;
-            $addressData['type']    = 'billing';
-
             $newAddressId = $this->saveAddress($addressData);
 
             $session->set('uaccount', 'register', 'j2commerce');
