@@ -20,6 +20,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UploadHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Filter\InputFilter;
@@ -1036,7 +1037,7 @@ class CartModel extends BaseDatabaseModel
      */
     public function getCheckoutUrl(): string
     {
-        $url = J2CommerceHelper::platform()->getCheckoutUrl();
+        $url = RouteHelper::getActiveCheckoutUrl();
 
         J2CommerceHelper::plugin()->event('GetCheckoutLink', [&$url]);
 

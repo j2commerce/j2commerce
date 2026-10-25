@@ -21,6 +21,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Rule\PasswordRule;
 use Joomla\CMS\Language\Text;
@@ -917,14 +918,18 @@ class MyprofileController extends BaseController
 
         $urlParams = 'index.php?option=com_j2commerce';
 
-        if ($redirectView === 'checkout') {
+        $providerLink = $redirectView === 'checkout' ? RouteHelper::getActiveCheckoutLink() : null;
+
+        if ($providerLink !== null) {
+            $urlParams = $providerLink;
+        } elseif ($redirectView === 'checkout') {
             $urlParams .= '&view=checkout';
         } else {
             $urlParams .= '&view=carts';
         }
 
-        // Use the same menu item as the reorder URL if provided
-        if ($itemId > 0) {
+        // Use the same menu item as the reorder URL if provided; a checkout provider's link carries its own
+        if ($itemId > 0 && $providerLink === null) {
             $urlParams .= '&Itemid=' . $itemId;
         }
 

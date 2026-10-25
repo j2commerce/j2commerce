@@ -15,6 +15,7 @@ declare(strict_types=1);
 use J2Commerce\Component\J2commerce\Administrator\Extension\J2commerceComponent;
 use J2Commerce\Component\J2commerce\Administrator\Service\EmailTypeRegistry;
 use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
+use J2Commerce\Component\J2commerce\Site\Service\CheckoutPlacementService;
 use Joomla\CMS\Component\Router\RouterFactoryInterface;
 use Joomla\CMS\Dispatcher\ComponentDispatcherFactoryInterface;
 use Joomla\CMS\Extension\ComponentInterface;
@@ -22,6 +23,7 @@ use Joomla\CMS\Extension\Service\Provider\CategoryFactory;
 use Joomla\CMS\Extension\Service\Provider\ComponentDispatcherFactory;
 use Joomla\CMS\Extension\Service\Provider\MVCFactory;
 use Joomla\CMS\Extension\Service\Provider\RouterFactory;
+use Joomla\CMS\Factory;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Database\DatabaseInterface;
 use Joomla\DI\Container;
@@ -60,6 +62,16 @@ return new class () implements ServiceProviderInterface {
             },
             true // shared/singleton
         );
+
+        // The site checkout and any checkout app resolve the placement service from the application
+        // container, which a component's own child container does not feed — so it is shared on both.
+        $placement = static fn (): CheckoutPlacementService => new CheckoutPlacementService(
+            Factory::getApplication(),
+            $container->get(MVCFactoryInterface::class)
+        );
+
+        $container->share(CheckoutPlacementService::class, $placement);
+        Factory::getContainer()->share(CheckoutPlacementService::class, $placement);
 
         $container->set(
             ComponentInterface::class,

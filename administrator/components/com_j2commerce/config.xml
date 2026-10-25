@@ -1211,6 +1211,18 @@
             </field>
 
             <field
+                name="checkout_provider"
+                type="plugins"
+                folder="j2commerce"
+                label="COM_J2COMMERCE_CONFIG_CHECKOUT_PROVIDER"
+                description="COM_J2COMMERCE_CONFIG_CHECKOUT_PROVIDER_DESC"
+                default=""
+                filter="cmd"
+            >
+                <option value="">COM_J2COMMERCE_CONFIG_CHECKOUT_PROVIDER_HIGHEST</option>
+            </field>
+
+            <field
                 name="spacer_checkout_1"
                 type="spacer"
                 hr="true"

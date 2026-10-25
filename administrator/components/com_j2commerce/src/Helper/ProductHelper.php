@@ -4230,7 +4230,7 @@ class ProductHelper
         $platform = J2CommerceHelper::platform();
 
         return match (J2CommerceHelper::config()->get('addtocart_checkout_link', 'cart')) {
-            'checkout' => $platform->getCheckoutUrl(),
+            'checkout' => RouteHelper::getActiveCheckoutUrl(),
             default    => $platform->getCartUrl(),
         };
     }

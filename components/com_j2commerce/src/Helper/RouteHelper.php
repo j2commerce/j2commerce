@@ -14,9 +14,12 @@ namespace J2Commerce\Component\J2commerce\Site\Helper;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Multilanguage;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\Pagination\Pagination;
+use Joomla\CMS\Router\Route;
 
 /**
  * J2Commerce Component Route Helper.
@@ -38,6 +41,11 @@ use Joomla\CMS\Pagination\Pagination;
  */
 abstract class RouteHelper
 {
+    /** The provider chosen for this request; null when none answered. Valid only once $checkoutProviderResolved is set. */
+    private static ?array $checkoutProvider = null;
+
+    private static bool $checkoutProviderResolved = false;
+
     /**
      * Get the product route.
      *
@@ -416,7 +424,7 @@ abstract class RouteHelper
      */
     public static function getCheckoutRoute(?string $step = null, ?string $language = null): string
     {
-        $link = 'index.php?option=com_j2commerce&view=checkout';
+        $link = self::getActiveCheckoutLink() ?? 'index.php?option=com_j2commerce&view=checkout';
 
         if ($step) {
             $link .= '&step=' . $step;
@@ -427,6 +435,152 @@ abstract class RouteHelper
         }
 
         return $link;
+    }
+
+    /**
+     * Routed URL of the store's active checkout: the answering provider's menu item, or core's own
+     * checkout when no provider answers.
+     *
+     * @param   array<string, scalar>  $query  Extra query parts (checkout_context, lang, ...).
+     */
+    public static function getActiveCheckoutUrl(array $query = []): string
+    {
+        $link = self::getActiveCheckoutLink($query);
+
+        if ($link === null) {
+            return J2CommerceHelper::platform()->getCheckoutUrl($query);
+        }
+
+        // Route::_() returns null on router error today and will throw from Joomla 7.
+        try {
+            return (string) (Route::_($link, false) ?? $link);
+        } catch (\RuntimeException) {
+            return $link;
+        }
+    }
+
+    /**
+     * Unrouted link to the active provider's menu item, or null when no provider answers
+     * (the caller then builds core's own checkout link exactly as it always did).
+     *
+     * @param   array<string, scalar>  $query  Extra query parts appended after the menu item's own.
+     */
+    public static function getActiveCheckoutLink(array $query = []): ?string
+    {
+        $provider = self::getCheckoutProvider();
+
+        if ($provider === null) {
+            return null;
+        }
+
+        return $query === [] ? $provider['link'] : $provider['link'] . '&' . http_build_query($query);
+    }
+
+    /**
+     * Dispatches onJ2CommerceGetCheckoutProvider once per request and picks the answer to use:
+     * the one named by the checkout_provider option when it answered, otherwise the highest priority.
+     *
+     * A provider appends ['element' => string, 'menu_item_id' => int, 'priority' => int] to `result`, and
+     * optionally 'supports_context' => true when its checkout can run an admin-order checkout_context
+     * (otherwise the admin "Take Payment" link stays on core's checkout). An answer is ignored unless its
+     * menu item resolves for this visitor (published, dates, access, language), belongs to com_j2commerce
+     * and is view=checkout.
+     *
+     * @return  array{element: string, menu_item_id: int, priority: int, link: string, supports_context: bool}|null
+     */
+    public static function getCheckoutProvider(): ?array
+    {
+        if (self::$checkoutProviderResolved) {
+            return self::$checkoutProvider;
+        }
+
+        // Set before the dispatch so a listener that builds a checkout URL cannot recurse into it.
+        self::$checkoutProviderResolved = true;
+        self::$checkoutProvider         = null;
+
+        try {
+            $answers = J2CommerceHelper::plugin()->eventWithArray('GetCheckoutProvider', ['result' => []]);
+        } catch (\Throwable $e) {
+            Log::add('checkout provider lookup failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            return null;
+        }
+
+        $candidates = [];
+
+        foreach ($answers as $answer) {
+            $element    = \is_array($answer) ? (string) ($answer['element'] ?? '') : '';
+            $menuItemId = \is_array($answer) ? (int) ($answer['menu_item_id'] ?? 0) : 0;
+
+            if ($element === '' || $menuItemId <= 0) {
+                continue;
+            }
+
+            $link = self::providerMenuItemLink($menuItemId);
+
+            if ($link === null) {
+                continue;
+            }
+
+            $candidates[] = [
+                'element'          => $element,
+                'menu_item_id'     => $menuItemId,
+                'priority'         => (int) ($answer['priority'] ?? 0),
+                'link'             => $link,
+                'supports_context' => !empty($answer['supports_context']),
+            ];
+        }
+
+        if ($candidates === []) {
+            return null;
+        }
+
+        $chosen = (string) J2CommerceHelper::config()->get('checkout_provider', '');
+        $best   = null;
+
+        foreach ($candidates as $candidate) {
+            if ($chosen !== '' && $candidate['element'] === $chosen) {
+                $best = $candidate;
+                break;
+            }
+
+            if ($best === null || $candidate['priority'] > $best['priority']) {
+                $best = $candidate;
+            }
+        }
+
+        return self::$checkoutProvider = $best;
+    }
+
+    /** The menu item's own link plus its Itemid, or null unless this visitor can reach it as a com_j2commerce checkout item. */
+    private static function providerMenuItemLink(int $menuItemId): ?string
+    {
+        try {
+            $app  = Factory::getApplication();
+            $item = $app->getMenu('site')->getItem($menuItemId);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        if (!$item || $item->component !== 'com_j2commerce' || ($item->query['view'] ?? '') !== 'checkout') {
+            return null;
+        }
+
+        if (!\in_array((int) $item->access, $app->getIdentity()->getAuthorisedViewLevels(), true)) {
+            return null;
+        }
+
+        if (!\in_array((string) $item->language, ['*', '', $app->getLanguage()->getTag()], true)) {
+            return null;
+        }
+
+        $link = (string) $item->link;
+
+        if (!str_starts_with($link, 'index.php?')) {
+            return null;
+        }
+
+        return str_contains($link, 'Itemid=') ? $link : $link . '&Itemid=' . $menuItemId;
     }
 
     /**

@@ -16,6 +16,7 @@ namespace J2Commerce\Module\Cart\Site\Dispatcher;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Dispatcher\AbstractModuleDispatcher;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Router\Route;
@@ -116,6 +117,8 @@ class Dispatcher extends AbstractModuleDispatcher
 
             if ($checkoutMenuItemId > 0) {
                 $checkoutUrl = Route::_('index.php?option=com_j2commerce&view=checkout&Itemid=' . $checkoutMenuItemId);
+            } elseif (($providerLink = RouteHelper::getActiveCheckoutLink()) !== null) {
+                $checkoutUrl = Route::_($providerLink);
             }
 
             $ajaxUrl = Route::_('index.php?option=com_j2commerce&task=carts.ajaxmini&format=raw', false);
