@@ -172,6 +172,7 @@ final class AppCurrencyupdater extends CMSPlugin implements SubscriberInterface
             'exchangerate_api'  => $this->fetchBulkFromExchangerateApi($baseCurrency, $targetCodes),
             'currencyapi'       => $this->fetchBulkFromCurrencyApi($baseCurrency, $targetCodes),
             'openexchangerates' => $this->fetchBulkFromOpenExchangeRates($baseCurrency, $targetCodes),
+            'allratestoday'     => $this->fetchBulkFromAllRatesToday($baseCurrency, $targetCodes),
             'exchangerate_host' => $this->fetchRatesFromEndpoint(
                 "https://api.exchangerate.host/latest?base={$baseCurrency}&symbols=" . implode(',', $targetCodes),
                 'ExchangeRate.host',
@@ -467,6 +468,54 @@ final class AppCurrencyupdater extends CMSPlugin implements SubscriberInterface
             foreach ($codes as $code) {
                 if (isset($data->rates->$code)) {
                     $rates[$code] = (float) $data->rates->$code / $baseRate;
+                }
+            }
+
+            return $rates;
+        } catch (\Throwable $e) {
+            $this->surfaceError($source, $e->getMessage());
+            return [];
+        }
+    }
+
+    private function fetchBulkFromAllRatesToday(string $base, array $codes): array
+    {
+        $source = 'AllRatesToday';
+        $apiKey = $this->params->get('allratestoday_api_key', '');
+
+        if (empty($apiKey)) {
+            $this->surfaceError($source, Text::sprintf('PLG_J2COMMERCE_APP_CURRENCYUPDATER_ERROR_MISSING_API_KEY', $source));
+            return [];
+        }
+
+        // One call returns every rate for the base currency as [{source, target, rate, time}, ...]
+        $url     = "https://allratestoday.com/api/v1/rates?source={$base}";
+        $headers = ['Authorization' => 'Bearer ' . $apiKey];
+
+        try {
+            $http       = $this->createHttp();
+            $response   = $http->get($url, $headers, 30);
+            $statusCode = $response->getStatusCode();
+            $body       = (string) $response->getBody();
+
+            if ($statusCode !== 200) {
+                $decoded = json_decode($body, false);
+                $msg     = $decoded->error ?? ("HTTP {$statusCode}: " . substr($body, 0, 200));
+                $this->surfaceError($source, \is_string($msg) ? $msg : json_encode($msg));
+                return [];
+            }
+
+            $data = json_decode($body, false, 512, JSON_THROW_ON_ERROR);
+
+            if (!\is_array($data)) {
+                $this->surfaceError($source, 'No rates in response');
+                return [];
+            }
+
+            $rates = [];
+            foreach ($data as $row) {
+                if (isset($row->target, $row->rate) && \in_array($row->target, $codes, true)) {
+                    $rates[(string) $row->target] = (float) $row->rate;
                 }
             }
 
