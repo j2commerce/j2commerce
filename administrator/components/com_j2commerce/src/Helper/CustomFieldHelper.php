@@ -799,11 +799,13 @@ class CustomFieldHelper
         return $options;
     }
 
+    /** default_country has no option in config.xml, so the store country is the usual source. */
     private static function getDefaultPhoneIso(): string
     {
-        $defaultCountry = J2CommerceHelper::config()->get('default_country', '223');
+        $config         = J2CommerceHelper::config();
+        $defaultCountry = (int) $config->get('default_country', 0) ?: (int) $config->get('country_id', 223);
 
-        return self::getCountryIso2((int) $defaultCountry) ?: 'US';
+        return self::getCountryIso2($defaultCountry) ?: 'US';
     }
 
     /** Falls back to the legacy phone_all_countries flag when the newer key is absent. */
