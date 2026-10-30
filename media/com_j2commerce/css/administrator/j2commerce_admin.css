@@ -529,6 +529,7 @@ html[data-bs-theme="dark"] {
 }
 
 .boxpacker-boxes-body .form-control.form-control-sm {width: 70px;}
+.boxpacker-boxes-body .form-control.form-control-sm[data-box-field="name"] {width: 200px;}
 .btn .spinner-border {
     width: 2rem !important;
     height: 2rem !important;
