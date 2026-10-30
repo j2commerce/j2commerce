@@ -18,8 +18,11 @@ function initPreview(container) {
     }
 
     function sprintf(str, ...args) {
-        let i = 0;
-        return str.replace(/%[ds]/g, () => args[i++] ?? '');
+        let seq = 0;
+        return str.replace(/%(\d+\$)?[ds]/g, (match, posToken) => {
+            const idx = posToken ? parseInt(posToken, 10) - 1 : seq++;
+            return args[idx] ?? '';
+        });
     }
 
     function el(tag, attrs, children) {
