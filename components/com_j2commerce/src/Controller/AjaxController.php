@@ -70,7 +70,7 @@ class AjaxController extends BaseController
                     foreach ($zones as $zone) {
                         $selected = ($zone->j2commerce_zone_id == $selectedZoneId) ? ' selected="selected"' : '';
                         $html .= '<option value="' . (int) $zone->j2commerce_zone_id . '"' . $selected . '>'
-                            . htmlspecialchars(ConfigHelper::getZoneLabel((string) $zone->zone_code, (string) $zone->zone_name), ENT_QUOTES, 'UTF-8')
+                            . htmlspecialchars(ConfigHelper::getZoneLabel((string) $zone->zone_code, Text::_((string) $zone->zone_name)), ENT_QUOTES, 'UTF-8')
                             . '</option>';
                     }
                 }
