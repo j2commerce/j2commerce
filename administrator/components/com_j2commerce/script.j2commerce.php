@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\StockCommittedSeedHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\VersionHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ZoneDataHelper;
 use Joomla\CMS\Access\Access;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
@@ -1412,6 +1413,28 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
 
     // ── Localisation data install ────────────────────────────────────────────────
 
+    /** Runs only on an already-seeded table; a fresh seed from zones.sql already carries every correction. */
+    private function refreshZoneData(DatabaseInterface $db): void
+    {
+        // The namespace map is read before install runs; on a reinstall over kept tables the
+        // component's namespace may not be in it yet.
+        $helperFile = JPATH_ADMINISTRATOR . '/components/com_j2commerce/src/Helper/ZoneDataHelper.php';
+
+        if (!class_exists(ZoneDataHelper::class) && file_exists($helperFile)) {
+            require_once $helperFile;
+        }
+
+        $result = ZoneDataHelper::apply($db, $this->previousVersion);
+
+        $this->debugLog(\sprintf(
+            'LOCALISATION: zones renamed %d, retired %d, added %d, kept as the store set them %d',
+            $result['renamed'],
+            $result['retired'],
+            $result['added'],
+            $result['kept']
+        ));
+    }
+
     private function installLocalisation(InstallerAdapter $adapter): void
     {
         $this->debugLog("LOCALISATION: start");
@@ -1454,6 +1477,8 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
 
             if ($needsZones) {
                 $this->executeSqlFile($installer->getPath('source') . '/administrator/components/com_j2commerce/sql/install/mysql/zones.sql');
+            } else {
+                $this->refreshZoneData($db);
             }
         } catch (\Throwable $e) {
             $this->debugLog('LOCALISATION: zones error (see the j2commerce log)');
