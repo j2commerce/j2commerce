@@ -2962,8 +2962,9 @@ class CheckoutController extends BaseController
             // capture flow never reaches it (and deliberately clears the session state
             // below that would let it). Without this, nothing that listens on AfterPayment
             // ever runs for a PayPal Smart Buttons payment — notably app_subscriptionproduct,
-            // which creates the subscription record there.
-            if ($orderLoaded) {
+            // which creates the subscription record there. A plugin that already dispatched
+            // it as the settlement owner says so, and listeners run once.
+            if ($orderLoaded && empty($result['after_payment_dispatched'])) {
                 J2CommerceHelper::plugin()->event('AfterPayment', [$orderTable]);
             }
 

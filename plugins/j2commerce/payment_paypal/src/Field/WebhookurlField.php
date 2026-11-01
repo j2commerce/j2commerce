@@ -14,6 +14,7 @@ namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Field;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service\PayPalWebhooks;
 use Joomla\CMS\Form\FormField;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Uri\Uri;
@@ -28,8 +29,24 @@ class WebhookurlField extends FormField
         $siteUrl = rtrim(Uri::root(), '/');
         $url     = $siteUrl . '/index.php?option=com_ajax&group=j2commerce&plugin=payment_paypal&format=raw&task=webhook';
 
-        $input = '<input type="text" class="form-control font-monospace" id="' . htmlspecialchars($this->id, ENT_QUOTES, 'UTF-8')
-            . '" value="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '" readonly>';
+        $id = htmlspecialchars($this->id, ENT_QUOTES, 'UTF-8');
+
+        // The core renderfield layout prints the description as {id}-desc; a custom getInput() has to link it itself.
+        $describedBy = $this->description ? ' aria-describedby="' . $id . '-desc"' : '';
+
+        $input = '<input type="text" class="form-control font-monospace" id="' . $id
+            . '" value="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '"' . $describedBy . ' readonly>';
+
+        $input .= '<div class="form-text">'
+            . '<p class="mb-1" id="' . $id . '-events-label">'
+            . htmlspecialchars(Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_WEBHOOK_EVENTS'), ENT_QUOTES, 'UTF-8')
+            . '</p><ul class="list-unstyled font-monospace mb-0" aria-labelledby="' . $id . '-events-label">';
+
+        foreach (PayPalWebhooks::HANDLED_EVENTS as $eventType) {
+            $input .= '<li>' . htmlspecialchars($eventType, ENT_QUOTES, 'UTF-8') . '</li>';
+        }
+
+        $input .= '</ul></div>';
 
         if (preg_match('/\b(localhost|127\.0\.0\.1|::1|\.local|\.test)\b/i', $siteUrl)) {
             $input .= '<div class="alert alert-warning mt-2 mb-0">'

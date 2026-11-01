@@ -225,6 +225,10 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             return $failed;
         }
 
+        // The same capture read again (a redelivery, the buyer and the webhook both) records nothing new.
+        $repeat = (string) ($orderTable->transaction_id ?? '') === $transactionId
+            && strtoupper((string) ($orderTable->transaction_status ?? '')) === strtoupper($pending ? 'PENDING' : $status);
+
         // Only the transaction columns, and only while the order still awaits payment: a capture
         // webhook that settled it since the load must not have that settlement written back.
         $db         = $this->getDatabase();
@@ -262,11 +266,13 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
         // The hold is recorded: a failed history write must not turn it into a reported failure.
         try {
-            OrderHistoryHelper::add(
-                orderId: (string) $orderTable->order_id,
-                comment: $message,
-                orderStateId: (int) $orderTable->order_state_id
-            );
+            if (!$repeat) {
+                OrderHistoryHelper::add(
+                    orderId: (string) $orderTable->order_id,
+                    comment: $message,
+                    orderStateId: (int) $orderTable->order_state_id
+                );
+            }
         } catch (\Throwable $e) {
             $this->log('Unsettled payment history write failed - ' . $e->getMessage(), Log::ERROR);
         }
@@ -301,7 +307,15 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 ];
             }
 
-            return ['success' => true, 'redirect' => $this->payment->getReturnUrl(), 'send_emails' => false];
+            // An owner that stored the order and died before AfterPayment is finished here once it is stale.
+            PayPalOrderStates::recoverFollowUps($this->getDatabase(), $orderTable, $this->params);
+
+            return [
+                'success'                  => true,
+                'redirect'                 => $this->payment->getReturnUrl(),
+                'send_emails'              => false,
+                'after_payment_dispatched' => true,
+            ];
         }
 
         return [
@@ -744,9 +758,9 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                     return;
                 }
 
-                // addReversal() re-syncs order_refund in the database; storing the copy loaded
-                // before it would write the pre-refund value back.
-                if ($recorded && !$orderTable->load($orderPk)) {
+                // Reloaded after the PayPal call: addReversal() re-syncs order_refund, and a webhook may have
+                // written the row meanwhile, so storing the copy loaded before would write either back.
+                if (!$orderTable->load($orderPk)) {
                     $event->setArgument('result', ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_ORDER_NOT_FOUND')]);
 
                     return;
@@ -2568,11 +2582,12 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             ));
 
             return [
-                'success'                => true,
-                'is_subscription'        => true,
-                'paypal_subscription_id' => $paypalSubscriptionId,
-                'remote_status'          => $status,
-                'redirect'               => $this->payment->getReturnUrl(),
+                'success'                  => true,
+                'is_subscription'          => true,
+                'paypal_subscription_id'   => $paypalSubscriptionId,
+                'remote_status'            => $status,
+                'redirect'                 => $this->payment->getReturnUrl(),
+                'after_payment_dispatched' => true,
             ];
         } catch (\Throwable $e) {
             $this->log('finalizePayPalSubscriptionApproval exception: ' . $e->getMessage(), Log::ERROR);
@@ -2933,6 +2948,15 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 !PayPalOrderStates::isAwaitingPayment((int) $orderTable->order_state_id, $this->params)
                 || (float) ($orderTable->order_refund ?? 0) > 0
             ) {
+                // The approval webhook may have captured and stored this order before the buyer's
+                // own request arrived: the buyer has paid, so they are sent on, not told it failed.
+                if (
+                    (float) ($orderTable->order_refund ?? 0) <= 0
+                    && PayPalOrderStates::isSettledOrSettling((string) ($orderTable->transaction_status ?? ''))
+                ) {
+                    return $this->settledElsewhere($orderTable, 'capture_id', true);
+                }
+
                 $this->log('capturePayPalOrder: Order not in a capturable state - order_id: ' . $orderId . ', state: ' . $orderTable->order_state_id, Log::ERROR);
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
             }
@@ -2943,6 +2967,17 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $result = $orders->captureOrder($paypalOrderId);
 
             $this->log('capturePayPalOrder: PayPal API response - status: ' . $result['status']);
+
+            // The buyer's return and the approval webhook can both capture the same order. The one
+            // PayPal refuses reads the capture back and joins the settlement claim below, so it does
+            // not report a payment the buyer has made as failed.
+            if (
+                $result['status'] === 422
+                && ($result['body']['details'][0]['issue'] ?? '') === 'ORDER_ALREADY_CAPTURED'
+            ) {
+                $this->log('capturePayPalOrder: Order already captured - reading the capture back');
+                $result = $orders->getOrder($paypalOrderId);
+            }
 
             if ($result['status'] >= 200 && $result['status'] < 300) {
                 $capture = $result['body']['purchase_units'][0]['payments']['captures'][0] ?? null;
@@ -2977,16 +3012,13 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                     );
 
                     // Surface it on the order page too — the buyer's money was captured
-                    // but the order stays unpaid until staff review.
-                    OrderHistoryHelper::add(
-                        orderId: (string) $orderTable->order_id,
-                        comment: Text::sprintf(
-                            'COM_J2COMMERCE_ORDER_HISTORY_PAYMENT_MISMATCH',
-                            $captureAmount . ' ' . $captureCurrency,
-                            $expectedAmount . ' ' . $expectedCcy
-                        ),
-                        orderStateId: (int) $orderTable->order_state_id
-                    );
+                    // but the order stays unpaid until staff review. Once only: the buyer's capture,
+                    // the approval webhook and its redeliveries all read the same capture back.
+                    PayPalOrderStates::addHistoryOnce($this->getDatabase(), $orderTable, Text::sprintf(
+                        'COM_J2COMMERCE_ORDER_HISTORY_PAYMENT_MISMATCH',
+                        $captureAmount . ' ' . $captureCurrency,
+                        $expectedAmount . ' ' . $expectedCcy
+                    ));
 
                     return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
                 }
@@ -3057,7 +3089,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                         $transactionDetails['capture_status']   = $captureStatus;
                         $transactionDetails['captured_at']      = date('Y-m-d H:i:s');
                         $transactionDetails['capture_response'] = $result['body'];
-                        $orderTable->transaction_details        = json_encode($transactionDetails);
+                        $orderTable->transaction_details        = json_encode(PayPalOrderStates::withFollowUpsPending($transactionDetails));
 
                         return (bool) $orderTable->store();
                     }
@@ -3081,11 +3113,13 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                     // The Smart Buttons flow lands on the confirmation view and never reaches
                     // confirmPayment(), which is what dispatches AfterPayment on every other path.
                     $this->dispatchAfterPayment($orderTable);
+                    PayPalOrderStates::completeFollowUps($this->getDatabase(), $orderTable);
 
                     $this->log('capturePayPalOrder: Order updated successfully');
                     return [
-                        'success'  => true,
-                        'redirect' => $this->payment->getReturnUrl(),
+                        'success'                  => true,
+                        'redirect'                 => $this->payment->getReturnUrl(),
+                        'after_payment_dispatched' => true,
                     ];
                 }
 
@@ -3114,11 +3148,14 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             );
 
             // The checkout script restarts PayPal's own flow on a declined card, so the issue code
-            // travels on its own field; the message stays a translated string.
+            // travels on its own field; the message stays a translated string. `transient` marks a
+            // failure PayPal may succeed on later (no response, 429, 5xx), so the approval webhook
+            // answers 503 and PayPal redelivers.
             return [
-                'success' => false,
-                'error'   => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED'),
-                'code'    => (string) ($result['body']['details'][0]['issue'] ?? ''),
+                'success'   => false,
+                'error'     => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED'),
+                'code'      => (string) ($result['body']['details'][0]['issue'] ?? ''),
+                'transient' => $result['status'] === 0 || $result['status'] === 429 || $result['status'] >= 500,
             ];
         } catch (\Exception $e) {
             $this->log('capturePayPalOrder: Exception - ' . $e->getMessage(), Log::ERROR);
@@ -3127,7 +3164,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 ['category' => 'j2commerce.paypal']
             );
 
-            return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
+            return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED'), 'transient' => true];
         }
     }
 
@@ -3167,7 +3204,8 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $this->paypalWebhooks = new PayPalWebhooks(
                 $this->getPayPalClient(),
                 $webhookId,
-                $this->getDatabase()
+                $this->getDatabase(),
+                $this->capturePayPalOrder(...)
             );
         }
 

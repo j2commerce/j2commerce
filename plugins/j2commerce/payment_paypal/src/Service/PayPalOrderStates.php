@@ -14,6 +14,7 @@ namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use Joomla\CMS\Factory;
@@ -73,6 +74,9 @@ final class PayPalOrderStates
     private const CLAIM_TTL = 600;
 
     private const CLAIM_PREFIX = 'SETTLING@';
+
+    private const FOLLOW_UPS         = 'after_payment';
+    private const FOLLOW_UPS_PENDING = 'pending@';
 
     /**
      * The checkout capture, the capture webhook and the subscription approval can each see one
@@ -200,6 +204,153 @@ final class PayPalOrderStates
         $decoded = json_decode($json !== '' ? $json : '{}', true);
 
         return \is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * The settlement owner stamps this inside its store and sets it to 'done' once AfterPayment has
+     * run, so an owner that dies between the two leaves a trace a later request can finish from.
+     * Orders settled before the stamp existed carry none and read as done.
+     *
+     * @param array<string, mixed> $details
+     * @return array<string, mixed>
+     */
+    public static function withFollowUpsPending(array $details): array
+    {
+        $details[self::FOLLOW_UPS] = self::FOLLOW_UPS_PENDING . time();
+
+        return $details;
+    }
+
+    /** @return 'done'|'running'|'abandoned' */
+    public static function followUps(object $orderTable): string
+    {
+        $value = (string) (self::details((string) ($orderTable->transaction_details ?? ''))[self::FOLLOW_UPS] ?? '');
+
+        if (!str_starts_with($value, self::FOLLOW_UPS_PENDING)) {
+            return 'done';
+        }
+
+        return (int) substr($value, \strlen(self::FOLLOW_UPS_PENDING)) < time() - self::CLAIM_TTL ? 'abandoned' : 'running';
+    }
+
+    /**
+     * Runs AfterPayment for an owner that stored the order and died before marking it done. Only one
+     * request takes the marker over, but an owner killed between AfterPayment and the done write has
+     * it run again: delivery is at least once. An order since refunded, or moved off the status its
+     * owner left it on (the paid status, or the awaiting one where none resolves), is left alone.
+     * Bookkeeping only, so nothing here throws into the caller.
+     */
+    public static function recoverFollowUps(DatabaseInterface $db, object $orderTable, Registry $params): void
+    {
+        try {
+            $paidStateId = self::resolve($params, self::CONFIRMED);
+            $stateId     = (int) ($orderTable->order_state_id ?? 0);
+
+            if (
+                self::followUps($orderTable) !== 'abandoned'
+                || (float) ($orderTable->order_refund ?? 0) > 0
+                || ($paidStateId > 0 ? $stateId !== $paidStateId : !self::isAwaitingPayment($stateId, $params))
+                || !self::swapFollowUps($db, $orderTable, self::FOLLOW_UPS_PENDING . time())
+            ) {
+                return;
+            }
+        } catch (\Throwable $e) {
+            self::logError('PayPal AfterPayment recovery check failed: ' . $e->getMessage(), $orderTable);
+
+            return;
+        }
+
+        try {
+            J2CommerceHelper::plugin()->eventWithArray('AfterPayment', [$orderTable]);
+        } catch (\Throwable $e) {
+            self::logError('PayPal recovered AfterPayment listener failed: ' . $e->getMessage(), $orderTable);
+        }
+
+        self::completeFollowUps($db, $orderTable);
+    }
+
+    /** Under a row lock, so a concurrent write to the same details neither loses this nor is lost. Never throws. */
+    public static function completeFollowUps(DatabaseInterface $db, object $orderTable): void
+    {
+        $pk = (int) $orderTable->j2commerce_order_id;
+
+        try {
+            $db->transactionStart();
+
+            try {
+                $query = $db->createQuery()
+                    ->setQuery(
+                        'SELECT ' . $db->quoteName('transaction_details')
+                        . ' FROM ' . $db->quoteName('#__j2commerce_orders')
+                        . ' WHERE ' . $db->quoteName('j2commerce_order_id') . ' = :pk FOR UPDATE'
+                    )
+                    ->bind(':pk', $pk, ParameterType::INTEGER);
+
+                $details = self::details((string) $db->setQuery($query)->loadResult());
+
+                $details[self::FOLLOW_UPS] = 'done';
+
+                $new    = json_encode($details);
+                $update = $db->getQuery(true)
+                    ->update($db->quoteName('#__j2commerce_orders'))
+                    ->set($db->quoteName('transaction_details') . ' = :new')
+                    ->where($db->quoteName('j2commerce_order_id') . ' = :pk')
+                    ->bind(':new', $new)
+                    ->bind(':pk', $pk, ParameterType::INTEGER);
+
+                $db->setQuery($update)->execute();
+                $db->transactionCommit();
+
+                $orderTable->transaction_details = $new;
+            } catch (\Throwable $e) {
+                $db->transactionRollback();
+
+                throw $e;
+            }
+        } catch (\Throwable $e) {
+            self::logError('PayPal AfterPayment done marker failed: ' . $e->getMessage(), $orderTable);
+        }
+    }
+
+    /** Writes the marker only if transaction_details is still what $orderTable holds, so no other write is lost. */
+    private static function swapFollowUps(DatabaseInterface $db, object $orderTable, string $value): bool
+    {
+        $old     = (string) ($orderTable->transaction_details ?? '');
+        $details = self::details($old);
+
+        $details[self::FOLLOW_UPS] = $value;
+
+        $new   = json_encode($details);
+        $pk    = (int) $orderTable->j2commerce_order_id;
+        $query = $db->getQuery(true)
+            ->update($db->quoteName('#__j2commerce_orders'))
+            ->set($db->quoteName('transaction_details') . ' = :new')
+            ->where($db->quoteName('j2commerce_order_id') . ' = :pk')
+            ->where($db->quoteName('transaction_details') . ' = :old')
+            ->bind(':new', $new)
+            ->bind(':pk', $pk, ParameterType::INTEGER)
+            ->bind(':old', $old);
+
+        $db->setQuery($query)->execute();
+
+        if ($db->getAffectedRows() !== 1) {
+            return false;
+        }
+
+        $orderTable->transaction_details = $new;
+
+        return true;
+    }
+
+    private static function logError(string $message, object $orderTable): void
+    {
+        try {
+            Factory::getApplication()->getLogger()->error(
+                $message,
+                ['category' => 'j2commerce.paypal', 'order_id' => $orderTable->order_id ?? '']
+            );
+        } catch (\Throwable) {
+        }
     }
 
     /** The query builder has no MySQL row-lock clause, so the statement is written out with a bound id. */
