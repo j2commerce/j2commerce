@@ -459,18 +459,30 @@ class OrdersModel extends ListModel
             $query->where($db->quoteName('a.order_total') . ' > 0');
         }
 
-        // Invoice number range: from (over the displayed number, see InvoiceHelper::invoiceNumberSql())
+        // Invoice number range over the displayed number (InvoiceHelper::invoiceNumberSql()), split into
+        // a stored-number branch and a primary-key branch so each can use its index.
         $fromInvoice = (int) $this->getState('filter.from_invoice', 0);
-        if ($fromInvoice > 0) {
-            $query->where(InvoiceHelper::invoiceNumberSql($db) . ' >= :fromInvoice')
-                ->bind(':fromInvoice', $fromInvoice, ParameterType::INTEGER);
-        }
+        $toInvoice   = (int) $this->getState('filter.to_invoice', 0);
 
-        // Invoice number range: to
-        $toInvoice = (int) $this->getState('filter.to_invoice', 0);
-        if ($toInvoice > 0) {
-            $query->where(InvoiceHelper::invoiceNumberSql($db) . ' <= :toInvoice')
-                ->bind(':toInvoice', $toInvoice, ParameterType::INTEGER);
+        if ($fromInvoice > 0 || $toInvoice > 0) {
+            $stored   = [$db->quoteName('a.invoice_number') . ' > 0'];
+            $fallback = [$db->quoteName('a.invoice_number') . ' <= 0'];
+
+            if ($fromInvoice > 0) {
+                $stored[]   = $db->quoteName('a.invoice_number') . ' >= :fromInvoice';
+                $fallback[] = $db->quoteName('a.j2commerce_order_id') . ' >= :fromInvoicePk';
+                $query->bind(':fromInvoice', $fromInvoice, ParameterType::INTEGER)
+                    ->bind(':fromInvoicePk', $fromInvoice, ParameterType::INTEGER);
+            }
+
+            if ($toInvoice > 0) {
+                $stored[]   = $db->quoteName('a.invoice_number') . ' <= :toInvoice';
+                $fallback[] = $db->quoteName('a.j2commerce_order_id') . ' <= :toInvoicePk';
+                $query->bind(':toInvoice', $toInvoice, ParameterType::INTEGER)
+                    ->bind(':toInvoicePk', $toInvoice, ParameterType::INTEGER);
+            }
+
+            $query->where('((' . implode(' AND ', $stored) . ') OR (' . implode(' AND ', $fallback) . '))');
         }
 
         // Coupon code filter
@@ -531,8 +543,7 @@ class OrdersModel extends ListModel
                 $query->where($db->quoteName('a.user_email') . ' = :searchEmail')
                     ->bind(':searchEmail', $search);
             } else {
-                $searchLike   = '%' . $search . '%';
-                $searchQuoted = $db->quote($searchLike);
+                $searchLike = '%' . $search . '%';
                 $query->where(
                     '(' .
                     $db->quoteName('a.order_id') . ' LIKE :search1 OR ' .
@@ -551,9 +562,9 @@ class OrdersModel extends ListModel
                     ' ON ' . $db->quoteName('oitem.variant_id') . ' = ' . $db->quoteName('v.j2commerce_variant_id') .
                     ' WHERE ' . $db->quoteName('oitem.order_id') . ' = ' . $db->quoteName('a.order_id') .
                     ' AND (' .
-                        $db->quoteName('oitem.orderitem_name') . ' LIKE ' . $searchQuoted . ' OR ' .
-                        $db->quoteName('oitem.orderitem_sku') . ' LIKE ' . $searchQuoted . ' OR ' .
-                        $db->quoteName('v.upc') . ' LIKE ' . $searchQuoted .
+                        $db->quoteName('oitem.orderitem_name') . ' LIKE :search10 OR ' .
+                        $db->quoteName('oitem.orderitem_sku') . ' LIKE :search11 OR ' .
+                        $db->quoteName('v.upc') . ' LIKE :search12' .
                     '))' .
                     ')'
                 )
@@ -565,7 +576,10 @@ class OrdersModel extends ListModel
                     ->bind(':search6', $searchLike)
                     ->bind(':search7', $searchLike)
                     ->bind(':search8', $searchLike)
-                    ->bind(':search9', $searchLike);
+                    ->bind(':search9', $searchLike)
+                    ->bind(':search10', $searchLike)
+                    ->bind(':search11', $searchLike)
+                    ->bind(':search12', $searchLike);
             }
         }
     }

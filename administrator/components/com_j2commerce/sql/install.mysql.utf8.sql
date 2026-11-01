@@ -864,6 +864,7 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_orders` (
   PRIMARY KEY (`j2commerce_order_id`),
   KEY `idx_order_id` (`order_id`),
   KEY `idx_cart_id` (`cart_id`),
+  KEY `idx_invoice_number` (`invoice_number`),
   KEY `idx_access` (`access`),
   KEY `idx_checkout` (`checked_out`),
   KEY `idx_createdby` (`created_by`)
