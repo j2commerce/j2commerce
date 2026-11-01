@@ -9,6 +9,7 @@
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\InvoiceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -55,11 +56,7 @@ J2CommerceHelper::strapper()->addCSS();
                                     <td>
                                         <a href="<?php echo $orderLink; ?>" target="_blank" class="text-decoration-none">
                                             <span class="icon-external-link" aria-hidden="true"></span>
-                                            <?php if (!empty($item->invoice_prefix)) : ?>
-                                                <?php echo htmlspecialchars($item->invoice_prefix . $item->j2commerce_order_id, ENT_QUOTES, 'UTF-8'); ?>
-                                            <?php else : ?>
-                                                <?php echo (int) $item->j2commerce_order_id; ?>
-                                            <?php endif; ?>
+                                            <?php echo htmlspecialchars(InvoiceHelper::getInvoiceNumber($item), ENT_QUOTES, 'UTF-8'); ?>
                                         </a>
                                     </td>
                                     <td>

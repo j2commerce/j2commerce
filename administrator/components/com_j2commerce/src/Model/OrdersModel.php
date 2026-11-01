@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\InvoiceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use Joomla\CMS\Component\ComponentHelper;
@@ -220,11 +221,8 @@ class OrdersModel extends ListModel
 
         // Computed invoice field
         $query->select(
-            'CASE WHEN ' . $db->quoteName('a.invoice_prefix') . ' IS NULL OR ' .
-            $db->quoteName('a.invoice_prefix') . ' = ' . $db->quote('') . ' THEN ' .
-            $db->quoteName('a.j2commerce_order_id') .
-            ' ELSE CONCAT(' . $db->quoteName('a.invoice_prefix') . ', ' .
-            $db->quoteName('a.j2commerce_order_id') . ') END AS ' . $db->quoteName('invoice')
+            'CONCAT(IFNULL(' . $db->quoteName('a.invoice_prefix') . ', ' . $db->quote('') . '), ' .
+            InvoiceHelper::invoiceNumberSql($db) . ') AS ' . $db->quoteName('invoice')
         );
 
         $query->from($db->quoteName('#__j2commerce_orders', 'a'));
@@ -326,7 +324,7 @@ class OrdersModel extends ListModel
 
         if ($orderCol === 'invoice') {
             $query->order($db->quoteName('a.invoice_prefix') . ' ' . $orderDir)
-                ->order($db->quoteName('a.j2commerce_order_id') . ' ' . $orderDir);
+                ->order(InvoiceHelper::invoiceNumberSql($db) . ' ' . $orderDir);
         } else {
             $query->order($db->quoteName($orderCol) . ' ' . $orderDir);
         }
@@ -461,17 +459,17 @@ class OrdersModel extends ListModel
             $query->where($db->quoteName('a.order_total') . ' > 0');
         }
 
-        // Invoice number range: from (invoice = prefix + j2commerce_order_id, so range over PK)
+        // Invoice number range: from (over the displayed number, see InvoiceHelper::invoiceNumberSql())
         $fromInvoice = (int) $this->getState('filter.from_invoice', 0);
         if ($fromInvoice > 0) {
-            $query->where($db->quoteName('a.j2commerce_order_id') . ' >= :fromInvoice')
+            $query->where(InvoiceHelper::invoiceNumberSql($db) . ' >= :fromInvoice')
                 ->bind(':fromInvoice', $fromInvoice, ParameterType::INTEGER);
         }
 
         // Invoice number range: to
         $toInvoice = (int) $this->getState('filter.to_invoice', 0);
         if ($toInvoice > 0) {
-            $query->where($db->quoteName('a.j2commerce_order_id') . ' <= :toInvoice')
+            $query->where(InvoiceHelper::invoiceNumberSql($db) . ' <= :toInvoice')
                 ->bind(':toInvoice', $toInvoice, ParameterType::INTEGER);
         }
 
@@ -547,7 +545,7 @@ class OrdersModel extends ListModel
                     $db->quoteName('oi.billing_first_name') . ' LIKE :search7 OR ' .
                     $db->quoteName('oi.billing_last_name') . ' LIKE :search8 OR ' .
                     'CONCAT(IFNULL(' . $db->quoteName('a.invoice_prefix') . ', ' . $db->quote('') . '), ' .
-                    $db->quoteName('a.j2commerce_order_id') . ') LIKE :search9 OR ' .
+                    InvoiceHelper::invoiceNumberSql($db) . ') LIKE :search9 OR ' .
                     'EXISTS (SELECT 1 FROM ' . $db->quoteName('#__j2commerce_orderitems', 'oitem') .
                     ' LEFT JOIN ' . $db->quoteName('#__j2commerce_variants', 'v') .
                     ' ON ' . $db->quoteName('oitem.variant_id') . ' = ' . $db->quoteName('v.j2commerce_variant_id') .
@@ -787,11 +785,8 @@ class OrdersModel extends ListModel
         ]);
 
         $query->select(
-            'CASE WHEN ' . $db->quoteName('a.invoice_prefix') . ' IS NULL OR ' .
-            $db->quoteName('a.invoice_prefix') . ' = ' . $db->quote('') . ' THEN ' .
-            $db->quoteName('a.j2commerce_order_id') .
-            ' ELSE CONCAT(' . $db->quoteName('a.invoice_prefix') . ', ' .
-            $db->quoteName('a.j2commerce_order_id') . ') END AS ' . $db->quoteName('invoice')
+            'CONCAT(IFNULL(' . $db->quoteName('a.invoice_prefix') . ', ' . $db->quote('') . '), ' .
+            InvoiceHelper::invoiceNumberSql($db) . ') AS ' . $db->quoteName('invoice')
         );
 
         $query->from($db->quoteName('#__j2commerce_orders', 'a'));

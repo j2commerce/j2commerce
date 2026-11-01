@@ -537,24 +537,24 @@ class InvoiceHelper
         return $db->loadObjectList() ?: [];
     }
 
-    /**
-     * Get invoice number formatted with prefix
-     *
-     * @param   object  $order  The order object
-     *
-     * @return  string  The formatted invoice number (prefix + number)
-     *
-     * @since   6.0.0
-     */
+    /** Prefix + stored invoice_number (the number the customer was issued), else the order primary key. */
     public static function getInvoiceNumber(object $order): string
     {
-        $orderId = (string) ($order->j2commerce_order_id ?? '');
+        $number = max(0, (int) ($order->invoice_number ?? 0)) ?: (int) ($order->j2commerce_order_id ?? 0);
 
-        if ($orderId === '') {
+        if ($number <= 0) {
             return '';
         }
 
-        return ($order->invoice_prefix ?? '') . $orderId;
+        return ($order->invoice_prefix ?? '') . $number;
+    }
+
+    /** SQL twin of getInvoiceNumber(): the stored invoice_number, else the order primary key. */
+    public static function invoiceNumberSql(DatabaseInterface $db, string $alias = 'a'): string
+    {
+        $number = $db->quoteName($alias . '.invoice_number');
+
+        return 'CASE WHEN ' . $number . ' > 0 THEN ' . $number . ' ELSE ' . $db->quoteName($alias . '.j2commerce_order_id') . ' END';
     }
 
     /**
