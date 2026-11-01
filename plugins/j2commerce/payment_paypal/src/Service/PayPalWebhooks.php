@@ -14,6 +14,7 @@ namespace J2Commerce\Plugin\J2Commerce\PaymentPaypal\Service;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
@@ -35,10 +36,31 @@ final class PayPalWebhooks
     private const EVENT_RESOURCE  = 'paypal_webhook_events';
     private const EVENT_METAKEY   = 'webhook_event_id';
 
+    /** Every event type handleEvent() acts on; the plugin form lists them for the merchant to subscribe to. */
+    public const HANDLED_EVENTS = [
+        'CHECKOUT.ORDER.APPROVED',
+        'PAYMENT.CAPTURE.COMPLETED',
+        'PAYMENT.CAPTURE.PENDING',
+        'PAYMENT.CAPTURE.DENIED',
+        'PAYMENT.CAPTURE.REFUNDED',
+        'PAYMENT.CAPTURE.REVERSED',
+        'CUSTOMER.DISPUTE.CREATED',
+        'CUSTOMER.DISPUTE.RESOLVED',
+        'BILLING.SUBSCRIPTION.ACTIVATED',
+        'BILLING.SUBSCRIPTION.CANCELLED',
+        'BILLING.SUBSCRIPTION.SUSPENDED',
+        'BILLING.SUBSCRIPTION.EXPIRED',
+        'BILLING.SUBSCRIPTION.PAYMENT.FAILED',
+        'PAYMENT.SALE.COMPLETED',
+        'PAYMENT.SALE.REFUNDED',
+    ];
+
+    /** @param \Closure(string, string): array<string, mixed> $captureApprovedOrder checkout capture: (PayPal order id, local order_id) */
     public function __construct(
         private PayPalClient $client,
         private string $webhookId,
-        private DatabaseInterface $db
+        private DatabaseInterface $db,
+        private \Closure $captureApprovedOrder
     ) {
     }
 
@@ -84,6 +106,7 @@ final class PayPalWebhooks
 
         try {
             $result = match ($event['event_type']) {
+                'CHECKOUT.ORDER.APPROVED'             => $this->handleOrderApproved($event, $params),
                 'PAYMENT.CAPTURE.COMPLETED'           => $this->handleCaptureCompleted($event, $params),
                 'PAYMENT.CAPTURE.PENDING'             => $this->handleCapturePending($event, $params),
                 'PAYMENT.CAPTURE.DENIED'              => $this->handleCaptureDenied($event, $params),
@@ -541,6 +564,8 @@ final class PayPalWebhooks
                 $this->noteCaptureOnClosedOrder($orderTable, $captureId);
             }
 
+            PayPalOrderStates::recoverFollowUps($this->db, $orderTable, $params);
+
             return ['status' => 409, 'message' => 'Order not in a capturable state'];
         }
 
@@ -604,7 +629,7 @@ final class PayPalWebhooks
                     $this->noteCaptureOnClosedOrder($orderTable, $captureId);
                 }
 
-                return ['status' => 200, 'message' => 'Order already settled'];
+                return $this->followUpsResponse($orderTable, $params) ?? ['status' => 200, 'message' => 'Order already settled'];
             }
 
             Factory::getApplication()->getLogger()->error(
@@ -638,7 +663,7 @@ final class PayPalWebhooks
 
                 $orderTable->transaction_id      = $captureId;
                 $orderTable->transaction_status  = 'COMPLETED';
-                $orderTable->transaction_details = json_encode($details);
+                $orderTable->transaction_details = json_encode(PayPalOrderStates::withFollowUpsPending($details));
 
                 return TableSaveHelper::store($orderTable, 'paypal.webhook.capture_completed');
             }
@@ -679,7 +704,127 @@ final class PayPalWebhooks
 
         $this->sendOrderEmails((string) $orderTable->order_id, true);
 
+        PayPalOrderStates::completeFollowUps($this->db, $orderTable);
+
         return ['status' => 200, 'message' => 'Capture completed'];
+    }
+
+    /**
+     * Captures an order the buyer approved at PayPal but never returned to the shop to finish.
+     * The checkout capture runs it, so the binding, state and amount guards and the settlement
+     * claim are the same; the buyer's own capture, if it arrives too, joins the same claim.
+     *
+     * @param array<string, mixed> $event
+     * @return array{status: int, message: string}
+     */
+    private function handleOrderApproved(array $event, Registry $params): array
+    {
+        $resource      = $event['resource'] ?? [];
+        $paypalOrderId = (string) ($resource['id'] ?? '');
+        $customId      = (string) ($resource['purchase_units'][0]['custom_id'] ?? '');
+
+        if (
+            strtoupper((string) ($resource['status'] ?? '')) !== 'APPROVED'
+            || strtoupper((string) ($resource['intent'] ?? '')) !== 'CAPTURE'
+        ) {
+            return ['status' => 200, 'message' => 'Order not awaiting capture; ignored'];
+        }
+
+        $order = $customId !== '' ? $this->loadOrderByLocalId($customId) : null;
+
+        if (!$order) {
+            return ['status' => 200, 'message' => 'Order not found; ignored'];
+        }
+
+        $storedDetails = json_decode($order->transaction_details ?? '{}', true);
+        $boundPayPalId = (string) (\is_array($storedDetails) ? ($storedDetails['paypal_order_id'] ?? '') : '');
+
+        if ($paypalOrderId === '' || $boundPayPalId === '' || !hash_equals($boundPayPalId, $paypalOrderId)) {
+            return ['status' => 200, 'message' => 'PayPal order id not bound to local order; ignored'];
+        }
+
+        // Settled, being settled, closed or refunded: a redelivery after any of those has nothing to capture.
+        // An owner that settled it may still be running, or may have died before, its AfterPayment.
+        if (
+            !PayPalOrderStates::isAwaitingPayment((int) $order->order_state_id, $params)
+            || (float) ($order->order_refund ?? 0) > 0
+            || PayPalOrderStates::isSettledOrSettling((string) ($order->transaction_status ?? ''))
+        ) {
+            return $this->followUpsResponse($order, $params) ?? ['status' => 200, 'message' => 'Order no longer awaiting payment'];
+        }
+
+        // A held payment is settled by the PAYMENT.CAPTURE.* webhooks, not by capturing again.
+        if (strtoupper((string) ($order->transaction_status ?? '')) === 'PENDING' && (string) ($order->transaction_id ?? '') !== '') {
+            return ['status' => 200, 'message' => 'Payment held; settled by the capture webhooks'];
+        }
+
+        $result = ($this->captureApprovedOrder)($paypalOrderId, (string) $order->order_id);
+
+        if (!empty($result['success'])) {
+            // A request that found the order settled by the buyer's own capture sends nothing.
+            if (($result['send_emails'] ?? true) !== false) {
+                $this->sendOrderEmails((string) $order->order_id, true);
+            }
+
+            // The buyer is not on this request, so their cart would otherwise survive the purchase.
+            CartHelper::emptyCart((string) $order->order_id);
+
+            return ['status' => 200, 'message' => 'Approved order captured'];
+        }
+
+        // Held by PayPal, or another request holds the settlement and has not stored it yet. Either way
+        // PayPal delivers this again: a held payment then stops at the check above, and a claim owner
+        // that failed has handed the claim back so the redelivery can settle the order.
+        if (!empty($result['pending'])) {
+            CartHelper::emptyCart((string) $order->order_id);
+
+            return ['status' => 503, 'message' => 'Payment pending; retry'];
+        }
+
+        // Only a failure without a usable PayPal answer (no response, 429, 5xx) is worth PayPal delivering this again.
+        if (!empty($result['transient'])) {
+            return ['status' => 503, 'message' => 'Capture not reached; retry'];
+        }
+
+        return ['status' => 200, 'message' => 'Capture refused; order left awaiting payment'];
+    }
+
+    /**
+     * For an order another request settled: 503 while its owner may still be running AfterPayment,
+     * so PayPal comes back; an owner gone longer than the claim lifetime is finished here.
+     *
+     * @return array{status: int, message: string}|null
+     */
+    private function followUpsResponse(object $order, Registry $params): ?array
+    {
+        $status = strtoupper((string) ($order->transaction_status ?? ''));
+        $state  = PayPalOrderStates::followUps($order);
+
+        // A live claim not yet stored: if its owner fails it hands the claim back, and only a
+        // redelivery would then settle the order.
+        if ($state === 'running' || ($status !== 'COMPLETED' && PayPalOrderStates::isSettledOrSettling($status))) {
+            return ['status' => 503, 'message' => 'Settlement follow-ups in progress'];
+        }
+
+        if ($state === 'abandoned') {
+            try {
+                $orderTable = Factory::getApplication()
+                    ->bootComponent('com_j2commerce')
+                    ->getMVCFactory()
+                    ->createTable('Order', 'Administrator');
+
+                if ($orderTable->load((int) $order->j2commerce_order_id)) {
+                    PayPalOrderStates::recoverFollowUps($this->db, $orderTable, $params);
+                }
+            } catch (\Throwable $e) {
+                Factory::getApplication()->getLogger()->error(
+                    'PayPal AfterPayment recovery load failed: ' . $e->getMessage(),
+                    ['category' => 'j2commerce.paypal', 'order_id' => $order->order_id ?? '']
+                );
+            }
+        }
+
+        return null;
     }
 
     /**
