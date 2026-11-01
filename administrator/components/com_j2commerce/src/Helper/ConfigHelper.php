@@ -1026,6 +1026,35 @@ class ConfigHelper
         return (int) self::get('auto_apply_shipping_rate', 1) === 1;
     }
 
+    /** Storefront zone dropdown label per the zone_display setting; a zone without a code keeps its name. */
+    public static function getZoneLabel(string $code, string $name): string
+    {
+        $code = trim($code);
+
+        if ($code === '') {
+            return $name;
+        }
+
+        return match ((string) self::get('zone_display', 'name')) {
+            'code'      => $code,
+            'code_name' => $code . ' - ' . $name,
+            default     => $name,
+        };
+    }
+
+    /** ORDER BY expression for the storefront zone dropdown, so the list reads in the order of its labels. */
+    public static function getZoneOrderBy(DatabaseInterface $db, string $prefix = ''): string
+    {
+        $name = $db->quoteName($prefix . 'zone_name');
+
+        if (!\in_array((string) self::get('zone_display', 'name'), ['code', 'code_name'], true)) {
+            return $name . ' ASC';
+        }
+
+        // A zone without a code is labeled by its name, so it sorts by its name among the codes.
+        return 'COALESCE(NULLIF(TRIM(' . $db->quoteName($prefix . 'zone_code') . "), ''), " . $name . ') ASC, ' . $name . ' ASC';
+    }
+
     /**
      * Check if shipping should be hidden until address is selected
      *

@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Site\Controller;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use Joomla\CMS\Application\CMSApplicationInterface;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -55,12 +56,12 @@ class AjaxController extends BaseController
                 $db    = Factory::getContainer()->get(DatabaseInterface::class);
                 $query = $db->getQuery(true);
 
-                $query->select($db->quoteName(['j2commerce_zone_id', 'zone_name']))
+                $query->select($db->quoteName(['j2commerce_zone_id', 'zone_code', 'zone_name']))
                     ->from($db->quoteName('#__j2commerce_zones'))
                     ->where($db->quoteName('country_id') . ' = :country_id')
                     ->where($db->quoteName('enabled') . ' = 1')
                     ->bind(':country_id', $countryId, ParameterType::INTEGER)
-                    ->order($db->quoteName('zone_name') . ' ASC');
+                    ->order(ConfigHelper::getZoneOrderBy($db));
 
                 $db->setQuery($query);
                 $zones = $db->loadObjectList();
@@ -69,7 +70,7 @@ class AjaxController extends BaseController
                     foreach ($zones as $zone) {
                         $selected = ($zone->j2commerce_zone_id == $selectedZoneId) ? ' selected="selected"' : '';
                         $html .= '<option value="' . (int) $zone->j2commerce_zone_id . '"' . $selected . '>'
-                            . htmlspecialchars($zone->zone_name, ENT_QUOTES, 'UTF-8')
+                            . htmlspecialchars(ConfigHelper::getZoneLabel((string) $zone->zone_code, (string) $zone->zone_name), ENT_QUOTES, 'UTF-8')
                             . '</option>';
                     }
                 }

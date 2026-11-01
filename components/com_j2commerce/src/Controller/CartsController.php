@@ -1574,8 +1574,10 @@ class CartsController extends BaseController
         $session   = $this->app->getSession();
         $set       = $session->get('j2commerce_country_zone', [], 'j2commerce');
         $countryId = $this->input->getInt('country_id', 0);
+        // Keyed by the label setting too, so a change to it is not masked by this session's cache.
+        $cacheKey = $countryId . ':' . ConfigHelper::get('zone_display', 'name');
 
-        if (!isset($set[$countryId])) {
+        if (!isset($set[$cacheKey])) {
             // Load country via native MVC factory
             $countryModel = $this->app->bootComponent('com_j2commerce')
                 ->getMVCFactory()
@@ -1593,7 +1595,7 @@ class CartsController extends BaseController
                     ->where($db->quoteName('a.enabled') . ' = 1')
                     ->where($db->quoteName('a.country_id') . ' = :countryId')
                     ->bind(':countryId', $countryId, ParameterType::INTEGER)
-                    ->order($db->quoteName('a.zone_name') . ' ASC');
+                    ->order(ConfigHelper::getZoneOrderBy($db, 'a.'));
 
                 $db->setQuery($query);
 
@@ -1604,7 +1606,7 @@ class CartsController extends BaseController
                 }
 
                 foreach ($zones as &$zone) {
-                    $zone->zone_name = Text::_($zone->zone_name);
+                    $zone->zone_name = ConfigHelper::getZoneLabel((string) $zone->zone_code, Text::_($zone->zone_name));
                 }
 
                 if (\is_array($zones)) {
@@ -1618,11 +1620,11 @@ class CartsController extends BaseController
                 }
             }
 
-            $set[$countryId] = $json;
+            $set[$cacheKey] = $json;
             $session->set('j2commerce_country_zone', $set, 'j2commerce');
         }
 
-        $this->sendJsonResponse($set[$countryId] ?? []);
+        $this->sendJsonResponse($set[$cacheKey] ?? []);
     }
 
     /**
