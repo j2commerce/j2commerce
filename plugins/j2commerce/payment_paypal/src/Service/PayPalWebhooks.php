@@ -114,7 +114,7 @@ final class PayPalWebhooks
                 'PAYMENT.CAPTURE.REVERSED'            => $this->handleCaptureReversed($event, $params),
                 'CUSTOMER.DISPUTE.CREATED'            => $this->handleDisputeCreated($event, $params),
                 'CUSTOMER.DISPUTE.RESOLVED'           => $this->handleDisputeResolved($event, $params),
-                'BILLING.SUBSCRIPTION.ACTIVATED'      => $this->handleSubscriptionActivated($event),
+                'BILLING.SUBSCRIPTION.ACTIVATED'      => $this->handleSubscriptionActivated($event, $params),
                 'BILLING.SUBSCRIPTION.CANCELLED'      => $this->handleSubscriptionStatusChange($event, 'canceled'),
                 'BILLING.SUBSCRIPTION.SUSPENDED'      => $this->handleSubscriptionStatusChange($event, 'pending'),
                 'BILLING.SUBSCRIPTION.EXPIRED'        => $this->handleSubscriptionStatusChange($event, 'expired'),
@@ -181,10 +181,22 @@ final class PayPalWebhooks
      * @param array<string, mixed> $event
      * @return array{status: int, message: string}
      */
-    private function handleSubscriptionActivated(array $event): array
+    private function handleSubscriptionActivated(array $event, Registry $params): array
     {
         $paypalSubId  = (string) ($event['resource']['id'] ?? '');
         $subscription = $this->loadLocalSubscriptionByPayPalId($paypalSubId);
+
+        // AfterPayment creates the local subscription. Its order's approval may still be running it,
+        // or may have died before it could, in which case this delivery finishes it.
+        if ($subscription === null && ($order = $this->loadOrderByPayPalSubscriptionId($paypalSubId))) {
+            $pending = $this->followUpsResponse($order, $params);
+
+            if ($pending !== null) {
+                return $pending;
+            }
+
+            $subscription = $this->loadLocalSubscriptionByPayPalId($paypalSubId);
+        }
 
         if ($subscription === null) {
             return ['status' => 404, 'message' => 'Local subscription not found for ' . $paypalSubId];
@@ -1339,6 +1351,34 @@ final class PayPalWebhooks
         );
 
         return false;
+    }
+
+    /** The order a subscription approval settled: it stores the PayPal subscription id as its transaction id. */
+    private function loadOrderByPayPalSubscriptionId(string $paypalSubscriptionId): ?\stdClass
+    {
+        if ($paypalSubscriptionId === '') {
+            return null;
+        }
+
+        $type  = 'payment_paypal';
+        $query = $this->db->getQuery(true)
+            ->select('*')
+            ->from($this->db->quoteName('#__j2commerce_orders'))
+            ->where($this->db->quoteName('transaction_id') . ' = :sub_id')
+            ->where($this->db->quoteName('orderpayment_type') . ' = :type')
+            ->bind(':sub_id', $paypalSubscriptionId)
+            ->bind(':type', $type)
+            ->setLimit(1);
+
+        $order = $this->db->setQuery($query)->loadObject();
+
+        if (!$order) {
+            return null;
+        }
+
+        $bound = (string) (PayPalOrderStates::details((string) ($order->transaction_details ?? ''))['paypal_subscription_id'] ?? '');
+
+        return $bound !== '' && hash_equals($bound, $paypalSubscriptionId) ? $order : null;
     }
 
     /**
