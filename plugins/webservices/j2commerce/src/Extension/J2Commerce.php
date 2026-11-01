@@ -98,8 +98,14 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             new Route(['POST'], 'v1/j2commerce/orders/:id/tracking', 'orderfulfilment.saveTracking', ['id' => '(\d+)'], $private),
             new Route(['POST'], 'v1/j2commerce/orders/:id/label', 'orderfulfilment.createLabel', ['id' => '(\d+)'], $private),
 
-            // Product variants
+            // Product variants: the list stays on the variants resource; writes go through the
+            // product's type handler and answer with the product, whose `variants` block carries the ids.
+            // Rules are bare patterns: Route wraps each in its own capture group, so a '(\d+)' rule
+            // doubles the group and the second var of a route reads the first var's inner match.
             new Route(['GET'], 'v1/j2commerce/products/:id/variants', 'variants.displayList', ['id' => '(\d+)'], $private),
+            new Route(['POST'], 'v1/j2commerce/products/:id/variants', 'products.createVariant', ['id' => '\d+'], $private),
+            new Route(['PATCH'], 'v1/j2commerce/products/:id/variants/:vid', 'products.updateVariant', ['id' => '\d+', 'vid' => '\d+'], $private),
+            new Route(['DELETE'], 'v1/j2commerce/products/:id/variants/:vid', 'products.deleteVariant', ['id' => '\d+', 'vid' => '\d+'], $private),
 
             // Customer addresses
             new Route(['GET'], 'v1/j2commerce/customers/:id/addresses', 'addresses.displayList', ['id' => '(\d+)'], $private),
