@@ -262,6 +262,15 @@ class ProductModel extends AdminModel
             $product->enabled = 0;
             $product->hits    = 0;
 
+            // The draft was disabled by the system, so Content - J2Commerce's state mirror turns it on
+            // when its article is first published, whatever the source product's history.
+            $params = json_decode((string) $product->params ?: '{}');
+
+            if ($params instanceof \stdClass) {
+                $params->mirror_disabled = 1;
+                $product->params         = json_encode($params);
+            }
+
             if (!$product->check() || !$product->store()) {
                 throw new \RuntimeException($product->getError());
             }
