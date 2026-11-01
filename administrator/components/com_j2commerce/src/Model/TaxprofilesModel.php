@@ -147,7 +147,7 @@ class TaxprofilesModel extends ListModel
 
     /**
      * Override getItems to fire onJ2CommerceAfterGetTaxprofiles so plugins
-     * (e.g. app_taxrate, app_avalaratax) can inject virtual tax profiles.
+     * (e.g. app_taxmanager) can inject virtual tax profiles.
      *
      * Plugins receive `result` (array of tax profile objects) and may
      * append additional profiles via $event->setArgument('result', $list).

@@ -79,7 +79,7 @@ class TaxprofileField extends ListField
             $profiles = $db->loadObjectList() ?: [];
 
             // Let plugins inject virtual tax profiles (e.g. app_taxmanager tax
-            // classes, app_avalaratax) via the same seam TaxprofilesModel uses.
+            // classes) via the same seam TaxprofilesModel uses.
             $event    = J2CommerceHelper::plugin()->event('AfterGetTaxprofiles', ['result' => $profiles]);
             $merged   = $event->getEventResult();
             $profiles = \is_array($merged) ? $merged : $profiles;

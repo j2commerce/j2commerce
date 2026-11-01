@@ -967,7 +967,7 @@ class CartOrder
      * Resolve tax rates for a given tax profile against the current customer address.
      *
      * Builds an initial rateset from the geozone-matched DB rate (if any), then
-     * fires `onJ2CommerceAfterGetTaxRateItems` so plugins (Avalara, app_taxrate,
+     * fires `onJ2CommerceAfterGetTaxRateItems` so plugins (Avalara, app_taxmanager,
      * etc.) can append, override, or replace rates based on the raw country/zone/
      * postcode + address_type + taxprofile_id context.
      *

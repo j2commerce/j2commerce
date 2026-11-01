@@ -250,7 +250,7 @@ final class TaxHelper
     /**
      * Resolve rate objects for a profile + geozone set, then dispatch
      * `onJ2CommerceAfterGetTaxRateItems` so tax-engine plugins (Avalara,
-     * app_taxrate, EU VAT, etc.) can append, override, or replace the rates.
+     * app_taxmanager, EU VAT, etc.) can append, override, or replace the rates.
      *
      * @param   \stdClass|null  $address  Optional pre-resolved address used for the event payload.
      *
