@@ -202,6 +202,18 @@ final class PayPalWebhooks
             return ['status' => 404, 'message' => 'Local subscription not found for ' . $paypalSubId];
         }
 
+        $current = (string) ($subscription->status ?? '');
+
+        // Activation lands as active, in_trial or future (the listener maps it by date), so a replay on a live
+        // subscription would repeat its history and email. PayPal never reactivates an ended subscription.
+        if (\in_array($current, ['active', 'in_trial', 'future'], true)) {
+            return ['status' => 200, 'message' => 'Subscription #' . $subscription->id . ' already active'];
+        }
+
+        if (\in_array($current, ['canceled', 'expired'], true)) {
+            return ['status' => 200, 'message' => 'Subscription #' . $subscription->id . ' has ended; activation ignored'];
+        }
+
         Factory::getApplication()->getDispatcher()->dispatch(
             'onJ2CommerceChangeSubscriptionStatus',
             new Event('onJ2CommerceChangeSubscriptionStatus', [(int) $subscription->id, 'active', 1])
@@ -803,7 +815,7 @@ final class PayPalWebhooks
 
     /**
      * For an order another request settled: 503 while its owner may still be running AfterPayment,
-     * so PayPal comes back; an owner gone longer than the claim lifetime is finished here.
+     * so PayPal comes back; an owner gone past the follow-up window (an hour) is finished here.
      *
      * @return array{status: int, message: string}|null
      */

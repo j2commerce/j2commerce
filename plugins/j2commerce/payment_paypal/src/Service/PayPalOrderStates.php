@@ -78,6 +78,9 @@ final class PayPalOrderStates
     private const FOLLOW_UPS         = 'after_payment';
     private const FOLLOW_UPS_PENDING = 'pending@';
 
+    /** Far past any PHP execution limit, so an owner still running AfterPayment is never taken over. */
+    private const FOLLOW_UPS_TTL = 3600;
+
     /**
      * The checkout capture, the capture webhook and the subscription approval can each see one
      * payment complete. Whichever writes its claim token here owns the settlement: it alone stores
@@ -230,7 +233,7 @@ final class PayPalOrderStates
             return 'done';
         }
 
-        return (int) substr($value, \strlen(self::FOLLOW_UPS_PENDING)) < time() - self::CLAIM_TTL ? 'abandoned' : 'running';
+        return (int) substr($value, \strlen(self::FOLLOW_UPS_PENDING)) < time() - self::FOLLOW_UPS_TTL ? 'abandoned' : 'running';
     }
 
     /**
