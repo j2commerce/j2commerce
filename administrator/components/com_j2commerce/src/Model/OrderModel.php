@@ -70,6 +70,8 @@ class OrderModel extends AdminModel
 
     public $typeAlias = 'com_j2commerce.order';
 
+    private bool $paymentTypeKept = false;
+
     protected $text_prefix = 'COM_J2COMMERCE_ORDER';
 
     /** Option types the order editor can change on an existing line; any other type stays as recorded. */
@@ -1718,6 +1720,35 @@ class OrderModel extends AdminModel
         return (bool) $executed;
     }
 
+    /** True when the last saveOrderEditData() call left a submitted payment type unsaved. */
+    public function paymentTypeWasKept(): bool
+    {
+        return $this->paymentTypeKept;
+    }
+
+    /** Accepts the order's current type, "none", or an enabled payment plugin. An imported order keeps its type. */
+    private function isSelectablePaymentType(int $pk, string $paymentType): bool
+    {
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('orderpayment_type'))
+            ->from($db->quoteName('#__j2commerce_orders'))
+            ->where($db->quoteName('j2commerce_order_id') . ' = :pk')
+            ->bind(':pk', $pk, ParameterType::INTEGER);
+        $current = (string) $db->setQuery($query)->loadResult();
+
+        if ($paymentType === $current) {
+            return true;
+        }
+
+        if (str_starts_with($current, 'imported')) {
+            return false;
+        }
+
+        return $paymentType === 'none'
+            || (str_starts_with($paymentType, 'payment_') && PluginHelper::isEnabled('j2commerce', $paymentType));
+    }
+
     /**
      * Persist the editable order-edit form fields (order + shipping details).
      */
@@ -1767,10 +1798,18 @@ class OrderModel extends AdminModel
                 ->bind(':createdOn', $createdSql);
         }
 
+        $this->paymentTypeKept = false;
+
         if (\array_key_exists('orderpayment_type', $data)) {
-            $paymentType = (string) $data['orderpayment_type'];
-            $update->set($db->quoteName('orderpayment_type') . ' = :paymentType')
-                ->bind(':paymentType', $paymentType);
+            $paymentType = \is_scalar($data['orderpayment_type']) ? (string) $data['orderpayment_type'] : '';
+
+            if ($this->isSelectablePaymentType($pk, $paymentType)) {
+                $update->set($db->quoteName('orderpayment_type') . ' = :paymentType')
+                    ->bind(':paymentType', $paymentType);
+            } else {
+                $this->paymentTypeKept = true;
+                Log::add('Order ' . $pk . ': payment type not changed, the submitted value is not an enabled payment plugin.', Log::WARNING, 'com_j2commerce');
+            }
         }
 
         $db->setQuery($update);
