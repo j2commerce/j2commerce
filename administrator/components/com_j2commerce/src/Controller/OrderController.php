@@ -92,6 +92,10 @@ class OrderController extends FormController
 
             $model->saveOrderEditData($orderId, $jform);
 
+            if ($model->paymentTypeWasKept()) {
+                $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_ORDER_PAYMENT_TYPE_NOT_CHANGED'), 'warning');
+            }
+
             if (!empty($qty) || !empty($price)) {
                 $model->updateOrderItemLines($order->order_id, $qty, $price, $model->isStockCommitted($order));
             }
@@ -853,9 +857,15 @@ class OrderController extends FormController
 
             $totals = $model->recalculateOrderTotals($order->order_id);
 
+            $message = Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED');
+
+            if ($model->paymentTypeWasKept()) {
+                $message .= ' ' . Text::_('COM_J2COMMERCE_ORDER_PAYMENT_TYPE_NOT_CHANGED');
+            }
+
             $this->sendJson([
                 'success' => true,
-                'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED'),
+                'message' => $message,
                 'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
