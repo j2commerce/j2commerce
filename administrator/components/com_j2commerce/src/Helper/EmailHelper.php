@@ -923,7 +923,7 @@ class EmailHelper
         $tagTaxTotal    = (float) ($order->order_tax ?? 0) + (float) ($order->order_shipping_tax ?? 0) + $tagFeeTax;
 
         // Get invoice number
-        $invoiceNumber = $this->getInvoiceNumber($order);
+        $invoiceNumber = InvoiceHelper::getInvoiceNumber($order);
 
         // Get order items as HTML
         $items = $standIn ? '' : $this->loadItemsTemplate($order, $receiverType, $language);
@@ -3227,26 +3227,6 @@ class EmailHelper
         $db->setQuery($query);
 
         return $db->loadColumn() ?: [];
-    }
-
-    /**
-     * Get invoice number for order
-     *
-     * @param   object  $order  The order object
-     *
-     * @return  string  The formatted invoice number
-     *
-     * @since   6.0.0
-     */
-    protected function getInvoiceNumber(object $order): string
-    {
-        $orderId = (string) ($order->j2commerce_order_id ?? '');
-
-        if ($orderId === '') {
-            return '';
-        }
-
-        return ($order->invoice_prefix ?? '') . $orderId;
     }
 
     /**

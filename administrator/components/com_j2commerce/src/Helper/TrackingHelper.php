@@ -166,10 +166,8 @@ final class TrackingHelper
             );
         }
 
-        $invoiceNumber = (int) ($order->invoice_number ?? 0);
-
         $tokens['ORDER_ID']        = self::jsString((string) ($order->order_id ?? ''));
-        $tokens['ORDER_NUMBER']    = self::jsString($invoiceNumber > 0 ? ((string) ($order->invoice_prefix ?? '') . $invoiceNumber) : '');
+        $tokens['ORDER_NUMBER']    = self::jsString(InvoiceHelper::getInvoiceNumber($order));
         $tokens['CURRENCY_CODE']   = self::jsString((string) ($order->currency_code ?? '') ?: CurrencyHelper::getCode());
         $tokens['PAYMENT_METHOD']  = self::jsString((string) ($order->orderpayment_type ?? ''));
         $tokens['TRANSACTION_ID']  = self::jsString((string) ($order->transaction_id ?? ''));

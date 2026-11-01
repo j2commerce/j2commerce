@@ -22,6 +22,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\InvoiceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderCascadeHelper;
@@ -1086,22 +1087,9 @@ class OrderModel extends AdminModel
         ];
     }
 
-    /**
-     * Get formatted invoice number for an order.
-     *
-     * @param   object  $order  The order object.
-     *
-     * @return  string  Formatted invoice number.
-     */
     public function getInvoiceNumber(object $order): string
     {
-        $orderId = (string) ($order->j2commerce_order_id ?? '');
-
-        if ($orderId === '') {
-            return '';
-        }
-
-        return ($order->invoice_prefix ?? '') . $orderId;
+        return InvoiceHelper::getInvoiceNumber($order);
     }
 
     /**
@@ -1477,11 +1465,8 @@ class OrderModel extends AdminModel
         $query = $db->getQuery(true)
             ->select([
                 $db->quoteName('a') . '.*',
-                'CASE WHEN ' . $db->quoteName('a.invoice_prefix') . ' IS NULL OR ' .
-                $db->quoteName('a.invoice_prefix') . ' = ' . $db->quote('') . ' THEN ' .
-                $db->quoteName('a.j2commerce_order_id') .
-                ' ELSE CONCAT(' . $db->quoteName('a.invoice_prefix') . ', ' .
-                $db->quoteName('a.j2commerce_order_id') . ') END AS ' . $db->quoteName('invoice'),
+                'CONCAT(IFNULL(' . $db->quoteName('a.invoice_prefix') . ', ' . $db->quote('') . '), ' .
+                InvoiceHelper::invoiceNumberSql($db) . ') AS ' . $db->quoteName('invoice'),
                 $db->quoteName('os.orderstatus_name'),
                 $db->quoteName('os.orderstatus_cssclass'),
             ])
