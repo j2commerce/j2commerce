@@ -2443,6 +2443,10 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 || (float) ($orderTable->order_refund ?? 0) > 0
             ) {
                 $this->log('finalizePayPalSubscriptionApproval: order not in a finalizable state - order_id: ' . $orderIdString . ', state: ' . $orderTable->order_state_id, Log::ERROR);
+
+                // A repeat approval finishes AfterPayment for an order whose owner stored it and died first.
+                PayPalOrderStates::recoverFollowUps($this->getDatabase(), $orderTable, $this->params);
+
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
             }
 
@@ -2509,6 +2513,11 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             $claim = PayPalOrderStates::claimSettlement($this->getDatabase(), $orderPk, $this->params);
 
             if ($claim === null) {
+                // Where no paid status resolves, a settled order is still awaiting payment and lands here.
+                if ($orderTable->load($orderPk)) {
+                    PayPalOrderStates::recoverFollowUps($this->getDatabase(), $orderTable, $this->params);
+                }
+
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
             }
 
@@ -2535,7 +2544,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                     $details['subscription_status']    = $status;
                     $details['approved_at']            = date('Y-m-d H:i:s');
 
-                    $orderTable->transaction_details = json_encode($details);
+                    $orderTable->transaction_details = json_encode(PayPalOrderStates::withFollowUpsPending($details));
 
                     return TableSaveHelper::store($orderTable, 'paypal.subscription_approved');
                 }
@@ -2573,6 +2582,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             // This approval is reached from the Smart Buttons onApprove call, which never passes
             // through confirmPayment(): the subscription row and its PayPal link are written here.
             $this->dispatchAfterPayment($orderTable);
+            PayPalOrderStates::completeFollowUps($this->getDatabase(), $orderTable);
 
             $this->log(\sprintf(
                 'finalizePayPalSubscriptionApproval: order=%s paypal_sub=%s status=%s',
