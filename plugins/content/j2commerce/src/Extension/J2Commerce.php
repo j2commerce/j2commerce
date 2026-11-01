@@ -69,6 +69,9 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     /** Article state as stored before the current edit-form save, keyed by article id. */
     private array $previousArticleStates = [];
 
+    /** Articles whose J2Commerce tab switch changed the product's enabled flag in the current save. */
+    private array $tabChangedEnabled = [];
+
     /**
      * Shortcode option → FileLayout ID mapping for card-style (list) rendering.
      *
@@ -109,6 +112,9 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
     /** Marks where the price/SKU/UPC group's wrapper div is inserted once its contents are known. */
     private const PRICE_SKU_GROUP_PLACEHOLDER = '<!--j2commerce-price-sku-group-->';
+
+    /** Product params key set when the state mirror disabled the product, so a later publish restores only those. */
+    private const MIRROR_DISABLED_KEY = 'mirror_disabled';
 
     /** Ids already emitted by earlier {j2commerce} blocks on this page, so a repeat can rename its own. */
     private static array $renderedShortcodeIds = [];
@@ -687,15 +693,14 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
 
         // If being disabled, update existing product record and stop
         if (empty($j2data->enabled)) {
-            if ($existingProduct && !empty($existingProduct->j2commerce_product_id)) {
-                $db        = $this->getDatabase();
-                $productId = (int) $existingProduct->j2commerce_product_id;
-                $query     = $db->getQuery(true)
-                    ->update($db->quoteName('#__j2commerce_products'))
-                    ->set($db->quoteName('enabled') . ' = 0')
-                    ->where($db->quoteName('j2commerce_product_id') . ' = :productId')
-                    ->bind(':productId', $productId, ParameterType::INTEGER);
-                $db->setQuery($query)->execute();
+            // Only a real switch-off writes: a product already off may carry the mirror's restore marker.
+            if ($existingProduct && !empty($existingProduct->enabled)) {
+                foreach ($this->loadArticleProductRows([$articleId]) as $row) {
+                    $this->writeProductState($row, 0, false);
+                }
+
+                $this->tabChangedEnabled[$articleId] = true;
+                $this->clearArticleCache($articleId);
             }
 
             return;
@@ -704,7 +709,12 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         // Re-enabling only flips the flag: the tab posts no product data for a disabled
         // product, so saveProduct() would try to insert a second row for this article.
         if ($existingProduct && empty($existingProduct->enabled)) {
-            $this->setArticleProductEnabled($articleId, 1);
+            foreach ($this->loadArticleProductRows([$articleId]) as $row) {
+                $this->writeProductState($row, 1, false);
+            }
+
+            $this->tabChangedEnabled[$articleId] = true;
+            $this->clearArticleCache($articleId);
 
             return;
         }
@@ -788,9 +798,11 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     private function mirrorArticleStateOnSave(int $articleId, int $state, bool $isNew): void
     {
         $previousState = $this->previousArticleStates[$articleId] ?? null;
-        unset($this->previousArticleStates[$articleId]);
+        $tabChanged    = isset($this->tabChangedEnabled[$articleId]);
+        unset($this->previousArticleStates[$articleId], $this->tabChangedEnabled[$articleId]);
 
-        if ($isNew || $previousState === null || $previousState === $state || !$this->params->get('mirror_state', 1)) {
+        // A switch the editor changed in this same save is an explicit choice and outranks the mirror.
+        if ($isNew || $tabChanged || $previousState === null || $previousState === $state || !$this->params->get('mirror_state', 1)) {
             return;
         }
 
@@ -799,24 +811,82 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $this->setArticleProductEnabled($articleId, $state === 1 ? 1 : 0);
+        $this->mirrorArticleProductState([$articleId], $state === 1);
     }
 
-    private function setArticleProductEnabled(int $articleId, int $enabled): void
+    /** Unpublishing disables and marks enabled products; publishing re-enables only marked ones. */
+    private function mirrorArticleProductState(array $articleIds, bool $publish): void
     {
+        $articleIds = array_values(array_unique(array_map('intval', $articleIds)));
+
+        foreach ($this->loadArticleProductRows($articleIds) as $row) {
+            if ($publish) {
+                if (!empty($row->params->{self::MIRROR_DISABLED_KEY})) {
+                    $this->writeProductState($row, 1, false);
+                }
+            } elseif ((int) $row->enabled === 1) {
+                $this->writeProductState($row, 0, true);
+            }
+        }
+
+        foreach ($articleIds as $articleId) {
+            $this->clearArticleCache($articleId);
+        }
+    }
+
+    /** Product rows for the given article ids; `params` is decoded to an object, or null when it does not hold a JSON object. */
+    private function loadArticleProductRows(array $articleIds): array
+    {
+        if (!$articleIds) {
+            return [];
+        }
+
         $source = 'com_content';
         $db     = $this->getDatabase();
         $query  = $db->getQuery(true)
+            ->select($db->quoteName(['j2commerce_product_id', 'enabled', 'params']))
+            ->from($db->quoteName('#__j2commerce_products'))
+            ->where($db->quoteName('product_source') . ' = :source')
+            ->whereIn($db->quoteName('product_source_id'), $articleIds)
+            ->bind(':source', $source);
+        $rows = $db->setQuery($query)->loadObjectList();
+
+        foreach ($rows as $row) {
+            $raw         = trim((string) $row->params);
+            $decoded     = ($raw === '' || $raw === 'null') ? new \stdClass() : json_decode($raw);
+            $row->params = $decoded instanceof \stdClass ? $decoded : null;
+        }
+
+        return $rows;
+    }
+
+    /** Sets the enabled flag and the mirror marker; params that are not a JSON object are left untouched. */
+    private function writeProductState(object $row, int $enabled, bool $mirrorDisabled): void
+    {
+        $productId = (int) $row->j2commerce_product_id;
+        $db        = $this->getDatabase();
+        $query     = $db->getQuery(true)
             ->update($db->quoteName('#__j2commerce_products'))
             ->set($db->quoteName('enabled') . ' = :enabled')
-            ->where($db->quoteName('product_source') . ' = :source')
-            ->where($db->quoteName('product_source_id') . ' = :articleId')
+            ->where($db->quoteName('j2commerce_product_id') . ' = :productId')
             ->bind(':enabled', $enabled, ParameterType::INTEGER)
-            ->bind(':source', $source)
-            ->bind(':articleId', $articleId, ParameterType::INTEGER);
-        $db->setQuery($query)->execute();
+            ->bind(':productId', $productId, ParameterType::INTEGER);
 
-        $this->clearArticleCache($articleId);
+        if ($row->params !== null && !empty($row->params->{self::MIRROR_DISABLED_KEY}) !== $mirrorDisabled) {
+            $params = clone $row->params;
+
+            if ($mirrorDisabled) {
+                $params->{self::MIRROR_DISABLED_KEY} = 1;
+            } else {
+                unset($params->{self::MIRROR_DISABLED_KEY});
+            }
+
+            $encoded = json_encode($params);
+            $query->set($db->quoteName('params') . ' = :params')
+                ->bind(':params', $encoded);
+        }
+
+        $db->setQuery($query)->execute();
     }
 
     /**
@@ -974,22 +1044,8 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        // Only state=1 (published) enables the product; anything else disables it
-        $enabled    = ($value === 1) ? 1 : 0;
-        $articleIds = array_map('intval', (array) $pks);
-
-        $db    = $this->getDatabase();
-        $query = $db->getQuery(true)
-            ->update($db->quoteName('#__j2commerce_products'))
-            ->set($db->quoteName('enabled') . ' = :enabled')
-            ->where($db->quoteName('product_source') . ' = ' . $db->quote('com_content'))
-            ->whereIn($db->quoteName('product_source_id'), $articleIds)
-            ->bind(':enabled', $enabled, ParameterType::INTEGER);
-        $db->setQuery($query)->execute();
-
-        foreach ($articleIds as $articleId) {
-            $this->clearArticleCache($articleId);
-        }
+        // Only state=1 (published) restores the product; anything else disables it
+        $this->mirrorArticleProductState((array) $pks, $value === 1);
     }
 
     /** @since 6.0.0 */
