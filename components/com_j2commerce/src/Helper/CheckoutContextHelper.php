@@ -55,6 +55,7 @@ class CheckoutContextHelper
     /** Per-request resolved cache — reset on setContext / clearContext. */
     private static ?CheckoutContextInterface $resolvedCache = null;
     private static bool $resolveAttempted                   = false;
+    private static bool $pricingFinal                       = false;
 
     /**
      * Write a checkout context to session.
@@ -107,6 +108,38 @@ class CheckoutContextHelper
     public static function isActive(): bool
     {
         return self::getContext() !== null;
+    }
+
+    /** Marks pricing final for an order built outside the site checkout; pair it with markPricingFinal(false) in a finally. */
+    public static function markPricingFinal(bool $final = true): void
+    {
+        self::$pricingFinal = $final;
+    }
+
+    /** True when totals are the ones the order is placed at: the site checkout, or a caller-marked request. */
+    public static function isPricingFinal(): bool
+    {
+        if (self::$pricingFinal) {
+            return true;
+        }
+
+        $app = Factory::getApplication();
+
+        if (!$app->isClient('site')) {
+            return false;
+        }
+
+        $input = $app->getInput();
+
+        if ($input->getCmd('option') !== 'com_j2commerce') {
+            return false;
+        }
+
+        // The checkout's AJAX steps post `task=checkout.<step>`; after dispatch Joomla has split that
+        // into `controller=checkout` plus `task=<step>`, so both forms are matched.
+        return strtolower($input->getCmd('view', '')) === 'checkout'
+            || strtolower($input->getCmd('controller', '')) === 'checkout'
+            || str_starts_with(strtolower($input->getCmd('task', '')), 'checkout.');
     }
 
     /** Whether the context has been activated via a matching nonce URL parameter. */
