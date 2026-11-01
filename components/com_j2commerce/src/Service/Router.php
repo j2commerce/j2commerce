@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Site\Helper\TagTreeHelper;
 use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\Categories\CategoryFactoryInterface;
 use Joomla\CMS\Categories\CategoryInterface;
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Component\Router\RouterView;
 use Joomla\CMS\Component\Router\RouterViewConfiguration;
 use Joomla\CMS\Component\Router\Rules\MenuRules;
@@ -1613,7 +1614,14 @@ class Router extends RouterView
             return;
         }
 
-        $query->whereIn($this->db->quoteName($column), [$this->app->getLanguage()->getTag(), '*'], ParameterType::STRING);
+        $query->whereIn($this->db->quoteName($column), [$this->requestLanguageTag(), '*'], ParameterType::STRING);
+    }
+
+    /** A site URL built from the admin or CLI (Smart Search indexing) has no site language loaded; use the site default. */
+    private function requestLanguageTag(): string
+    {
+        return $this->app->getLanguage()?->getTag()
+            ?? (string) ComponentHelper::getParams('com_languages')->get('site', 'en-GB');
     }
 
     /**
@@ -1772,7 +1780,7 @@ class Router extends RouterView
 
         $language = $menu->language ?? '*';
 
-        if ($language === $this->app->getLanguage()->getTag()) {
+        if ($language === $this->requestLanguageTag()) {
             return 0;
         }
 

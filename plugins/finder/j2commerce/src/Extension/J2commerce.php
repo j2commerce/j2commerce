@@ -657,7 +657,8 @@ final class J2commerce extends Adapter implements SubscriberInterface
             $route  = str_replace(Uri::base(true) . '/', '', $route);
 
             return $route;
-        } catch (\Exception $e) {
+        } catch (\Throwable) {
+            // One item that cannot be routed keeps its raw URL instead of stopping the whole index run.
             return $url;
         }
     }
