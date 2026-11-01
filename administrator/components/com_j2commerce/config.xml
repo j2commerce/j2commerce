@@ -1393,6 +1393,20 @@
                 <option value="floating">COM_J2COMMERCE_CONFIG_FIELD_STYLE_FLOATING</option>
             </field>
 
+            <field
+                name="zone_display"
+                type="list"
+                label="COM_J2COMMERCE_CONFIG_ZONE_DISPLAY"
+                description="COM_J2COMMERCE_CONFIG_ZONE_DISPLAY_DESC"
+                default="name"
+                class="form-select"
+                validate="options"
+            >
+                <option value="name">COM_J2COMMERCE_FIELD_NAME</option>
+                <option value="code">COM_J2COMMERCE_FIELD_CODE</option>
+                <option value="code_name">COM_J2COMMERCE_CONFIG_ZONE_DISPLAY_CODE_NAME</option>
+            </field>
+
         </fieldset>
     </fieldset>
 
