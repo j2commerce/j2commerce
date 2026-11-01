@@ -100,7 +100,7 @@ final class PayPalSubscriptions
         // entry in billing_cycles[] — extend this array accordingly.
         $totalCycles   = max(0, (int) ($subscription->subscription_length ?? 0));
         $renewalAmount = PayPalCurrencyHelper::format(
-            CurrencyHelper::convertForOrder((float) ($order->order_total ?? $subscription->renewal_amount ?? 0), $order),
+            CurrencyHelper::convertForOrder((float) ($context['recurring_total'] ?? $order->order_total ?? $subscription->renewal_amount ?? 0), $order),
             (string) $context['currency_code']
         );
         $sitename      = (string) $context['brand_name'];
@@ -141,6 +141,16 @@ final class PayPalSubscriptions
                 'payment_failure_threshold' => 3,
             ],
         ];
+
+        // A plan on a store-set schedule bills this order once as the setup fee, then the full
+        // price from the subscription's start_time.
+        if (isset($context['recurring_total'])) {
+            $body['payment_preferences']['setup_fee_failure_action'] = 'CANCEL';
+            $body['payment_preferences']['setup_fee']                = [
+                'value'         => PayPalCurrencyHelper::format(CurrencyHelper::convertForOrder((float) ($order->order_total ?? 0), $order), (string) $context['currency_code']),
+                'currency_code' => strtoupper((string) $context['currency_code']),
+            ];
+        }
 
         $response = $this->client->requestWithRetry('POST', '/v1/billing/plans', $body);
 
@@ -198,6 +208,10 @@ final class PayPalSubscriptions
             ],
             'custom_id' => 'j2c-sub-' . (int) ($subscription->id ?? 0),
         ];
+
+        if (!empty($context['start_time'])) {
+            $body['start_time'] = (string) $context['start_time'];
+        }
 
         $response = $this->client->requestWithRetry('POST', '/v1/billing/subscriptions', $body);
 
