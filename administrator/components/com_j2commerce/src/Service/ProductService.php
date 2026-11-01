@@ -152,6 +152,9 @@ class ProductService
         /** @var ProductsModel $model */
         $model = $this->mvcFactory->createModel('Products', 'Administrator', ['ignore_request' => true]);
 
+        // Product behaviors do not dispatch these events (DefaultBehavior is unused), so dispatch them here.
+        J2CommerceHelper::plugin()->event('BeforeSaveProduct', [&$data, $model]);
+
         // Call onBeforeSave to validate and transform data
         $behavior->onBeforeSave($model, $data);
 
@@ -230,6 +233,8 @@ class ProductService
         // Call onAfterSave to save related data (variants, options, images, filters)
         $behavior->onAfterSave($modelWrapper);
 
+        J2CommerceHelper::plugin()->event('AfterSaveProduct', [$productTable, $data]);
+
         return (int) $productTable->j2commerce_product_id;
     }
 
@@ -269,6 +274,8 @@ class ProductService
         /** @var ProductsModel $model */
         $model = $this->mvcFactory->createModel('Products', 'Administrator', ['ignore_request' => true]);
         $model->setState('product.id', $productId);
+
+        J2CommerceHelper::plugin()->event('BeforeDeleteProduct', [$productId, $model]);
 
         // Call onBeforeDelete to clean up related data (variants, etc.)
         $behavior->onBeforeDelete($model);
