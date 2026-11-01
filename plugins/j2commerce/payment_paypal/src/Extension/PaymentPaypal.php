@@ -2132,10 +2132,15 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         $db    = $this->getDatabase();
         $query = $db->getQuery(true);
         $query->select(['oi.product_id', 'oi.orderitem_finalprice', 'oi.orderitem_name', 'p.params'])
+            ->select($db->quoteName('v.params', 'variant_params'))
             ->from($db->quoteName('#__j2commerce_orderitems', 'oi'))
             ->innerJoin(
                 $db->quoteName('#__j2commerce_products', 'p')
                 . ' ON ' . $db->quoteName('p.j2commerce_product_id') . ' = ' . $db->quoteName('oi.product_id')
+            )
+            ->leftJoin(
+                $db->quoteName('#__j2commerce_variants', 'v')
+                . ' ON ' . $db->quoteName('v.j2commerce_variant_id') . ' = ' . $db->quoteName('oi.variant_id')
             )
             ->where($db->quoteName('oi.order_id') . ' = :oid')
             ->where($db->quoteName('oi.product_type') . ' IN (' . implode(',', $query->bindArray($types, ParameterType::STRING)) . ')')
@@ -2150,8 +2155,12 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             return null;
         }
 
+        // Variable plans keep their billing terms on the ordered variant, not on the product.
         $productParams = json_decode((string) ($row->params ?? '{}'), true);
-        $subParams     = $productParams['subscriptionproduct'] ?? [];
+        $variantParams = json_decode((string) ($row->variant_params ?? '{}'), true);
+        $subParams     = !empty($variantParams['subscriptionproduct']['subscription_period'])
+            ? $variantParams['subscriptionproduct']
+            : ($productParams['subscriptionproduct'] ?? []);
 
         $period      = strtoupper((string) ($subParams['subscription_period'] ?? 'M'));
         $periodMap   = ['D' => 'DAY', 'W' => 'WEEK', 'M' => 'MONTH', 'Y' => 'YEAR'];
@@ -2168,6 +2177,17 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             'renewal_amount'      => (float) ($row->orderitem_finalprice ?? 0),
             'product_name'        => (string) ($row->orderitem_name ?? 'Subscription'),
         ];
+    }
+
+    /** A start date this close could pass before the buyer finishes approving. */
+    private const MIN_START_LEAD_SECONDS = 3600;
+
+    /** A plan needs a recurring price and a first billing date PayPal will still accept. */
+    private static function isUsableSchedule(array $schedule): bool
+    {
+        $start = \DateTimeImmutable::createFromFormat('!Y-m-d\TH:i:s\Z', (string) ($schedule['start_time'] ?? ''), new \DateTimeZone('UTC'));
+
+        return (float) ($schedule['recurring_total'] ?? 0) > 0.0 && $start !== false && $start->getTimestamp() > time() + self::MIN_START_LEAD_SECONDS;
     }
 
     /**
@@ -2243,6 +2263,23 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 'catalog_prefix' => 'j2c',
             ];
 
+            // A subscription app can set its own billing date; the plan then follows it.
+            $scheduleEvent = new Event('onJ2CommerceGetSubscriptionGatewaySchedule', ['order' => $orderTable, 'result' => null]);
+            Factory::getApplication()->getDispatcher()->dispatch('onJ2CommerceGetSubscriptionGatewaySchedule', $scheduleEvent);
+            $schedule = $scheduleEvent->getArgument('result');
+
+            if (\is_array($schedule)) {
+                // Falling back to a plain plan would bill the wrong amount on the wrong date, so an unusable schedule stops here.
+                if (!self::isUsableSchedule($schedule)) {
+                    $this->log('createPayPalSubscriptionForOrder: unusable gateway schedule for order ' . $orderId, Log::ERROR);
+
+                    return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
+                }
+
+                $context['recurring_total'] = (float) $schedule['recurring_total'];
+                $context['start_time']      = (string) $schedule['start_time'];
+            }
+
             $subs = $this->getPayPalSubscriptions();
 
             $productId = $subs->getOrCreateCatalogProduct($stub, $context);
@@ -2296,12 +2333,18 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_PAYMENT_FAILED')];
             }
 
+            // A retry on a plain plan must not keep an earlier attempt's figure, and a plain plan otherwise stores no key.
+            $recurringTotal    = isset($context['recurring_total'])
+                ? PayPalCurrencyHelper::format(CurrencyHelper::convertForOrder($context['recurring_total'], $orderTable), $currency)
+                : null;
+            $hadRecurringTotal = isset(PayPalOrderStates::details((string) ($orderTable->transaction_details ?? ''))['paypal_recurring_total']);
+
             $bound = $this->bindPayPalReference($orderTable, [
                 'paypal_subscription_id' => $created['id'],
                 'paypal_plan_id'         => $planId,
                 'paypal_product_id'      => $productId,
                 'subscription_status'    => $created['status'],
-            ]);
+            ] + ($recurringTotal !== null || $hadRecurringTotal ? ['paypal_recurring_total' => $recurringTotal] : []));
 
             if (!$bound) {
                 $this->log(

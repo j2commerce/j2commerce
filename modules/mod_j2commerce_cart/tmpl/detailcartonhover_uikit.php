@@ -54,6 +54,8 @@ try {
 }
 
 $panelId = 'j2commerce-cart-detail-' . $moduleId;
+
+$checkoutPriceDisplay = (int) J2CommerceHelper::config()->get('checkout_price_display_options', 0);
 ?>
 <?php if (!$isAjax) : ?>
 <div class="j2commerce-cart-module j2commerce-cart-module-<?php echo $moduleId; ?> <?php echo $moduleClassSfx; ?>">
@@ -126,6 +128,8 @@ $panelId = 'j2commerce-cart-detail-' . $moduleId;
                     }
 
                     $itemPrice  = (float) ($item->orderitem_final_price ?? $item->orderitem_price ?? 0);
+                    $unitQty      = max(1, (int) ($item->orderitem_quantity ?? 1));
+                    $discountInfo = ($order ?? null) && method_exists($order, 'get_lineitem_discount_info') ? $order->get_lineitem_discount_info($item, $checkoutPriceDisplay) : null;
                 ?>
                 <li>
                     <div class="uk-flex uk-flex-top uk-grid-small" uk-grid>
@@ -158,7 +162,12 @@ $panelId = 'j2commerce-cart-detail-' . $moduleId;
                                 <?php if ($showQty) : ?>
                                     <span class="j2commerce-cart-item-qty"><?php echo (int) ($item->orderitem_quantity ?? 0); ?></span> &times;
                                 <?php endif; ?>
-                                <?php echo CurrencyHelper::format($itemPrice); ?>
+                                <?php if ($discountInfo && $discountInfo->original_price > $discountInfo->final_price) : ?>
+                                    <del class="uk-text-decoration-line-through"><?php echo CurrencyHelper::format($discountInfo->original_price / $unitQty); ?></del>
+                                    <?php echo CurrencyHelper::format($discountInfo->final_price / $unitQty); ?>
+                                <?php else : ?>
+                                    <?php echo CurrencyHelper::format($itemPrice); ?>
+                                <?php endif; ?>
                             </div>
 
                             <?php if (!empty($item->orderitemattributes)) : ?>

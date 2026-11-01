@@ -101,9 +101,11 @@ try {
 
                 $unitPrice = 0.0;
                 $lineTotal = 0.0;
+                $discountInfo = null;
                 if ($order && method_exists($order, 'get_formatted_lineitem_price')) {
                     $unitPrice = $order->get_formatted_lineitem_price($item, $checkoutPriceDisplay);
                     $lineTotal = $order->get_formatted_lineitem_total($item, $checkoutPriceDisplay);
+                    $discountInfo = method_exists($order, 'get_lineitem_discount_info') ? $order->get_lineitem_discount_info($item, $checkoutPriceDisplay) : null;
                 } else {
                     $unitPrice = (float) ($item->orderitem_price ?? 0);
                     $lineTotal = (float) ($item->orderitem_final_price ?? $unitPrice * $itemQty);
@@ -158,8 +160,13 @@ try {
                                     <?php echo CurrencyHelper::format($unitPrice); ?>
                                 <?php endif; ?>
                             </span>
-                            <span class="fw-bold">
-                                <?php echo CurrencyHelper::format($lineTotal); ?>
+                            <span class="fw-bold text-end">
+                                <?php if ($discountInfo && $discountInfo->original_price > $discountInfo->final_price) : ?>
+                                    <del class="d-block small fw-normal text-decoration-line-through text-body-secondary"><?php echo CurrencyHelper::format($discountInfo->original_price); ?></del>
+                                    <span class="d-block"><?php echo CurrencyHelper::format($discountInfo->final_price); ?></span>
+                                <?php else : ?>
+                                    <?php echo CurrencyHelper::format($lineTotal); ?>
+                                <?php endif; ?>
                             </span>
                         </div>
                     </div>

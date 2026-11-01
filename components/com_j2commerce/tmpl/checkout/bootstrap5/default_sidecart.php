@@ -119,7 +119,13 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
                         </div>
 
                         <div class="fw-medium flex-shrink-0">
-                            <?php echo $this->currency->format($lineTotal); ?>
+                            <?php $discountInfo = ($this->order && method_exists($this->order, 'get_lineitem_discount_info')) ? $this->order->get_lineitem_discount_info($item, $checkoutPriceDisplay) : null; ?>
+                            <?php if ($discountInfo && $discountInfo->original_price > $discountInfo->final_price): ?>
+                                <del class="d-block small fw-normal text-decoration-line-through text-body-secondary"><?php echo $this->currency->format($discountInfo->original_price); ?></del>
+                                <span class="d-block"><?php echo $this->currency->format($discountInfo->final_price); ?></span>
+                            <?php else: ?>
+                                <?php echo $this->currency->format($lineTotal); ?>
+                            <?php endif; ?>
                         </div>
                     </div>
                 <?php endforeach; ?>

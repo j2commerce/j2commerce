@@ -240,6 +240,17 @@ final class PayPalWebhooks
                 $expectedCurrency
             );
 
+        // A plan on a store-set schedule bills the parent order once, then this figure every cycle.
+        $recurring = $parentOrder === null ? null : (json_decode((string) ($parentOrder->transaction_details ?? ''), true)['paypal_recurring_total'] ?? null);
+
+        // Only a sale at the setup amount can be the first one; any other sale at the recurring figure is a renewal.
+        $isRenewalAmount = $recurring !== null && PayPalCurrencyHelper::sameAmount($saleAmount, (float) $recurring, $saleCurrency)
+            && !($expectedAmount !== null && PayPalCurrencyHelper::sameAmount($saleAmount, $expectedAmount, $saleCurrency));
+
+        if ($recurring !== null && PayPalCurrencyHelper::sameAmount($saleAmount, (float) $recurring, $saleCurrency)) {
+            $expectedAmount = (float) $recurring;
+        }
+
         if (
             $expectedAmount === null
             || $expectedCurrency === ''
@@ -274,7 +285,7 @@ final class PayPalWebhooks
         $orderedAt = strtotime((string) ($parentOrder->created_on ?? '') . ' UTC') ?: 0;
         $saleAt    = strtotime((string) ($resource['create_time'] ?? '')) ?: 0;
 
-        if ($saleId !== '' && $charges === []) {
+        if ($saleId !== '' && $charges === [] && !$isRenewalAmount) {
             // Most first sales post within minutes. A later (or redelivered) one is the first cycle
             // when PayPal lists no other sale on the subscription before it.
             $isFirstCycle = $orderedAt > 0 && $saleAt > 0 && abs($saleAt - $orderedAt) < 86400;
@@ -302,6 +313,21 @@ final class PayPalWebhooks
 
                 return ['status' => 200, 'message' => 'First-cycle sale recorded on the checkout order'];
             }
+        }
+
+        // The setup amount is billed once; a second sale at it is not what this plan charges.
+        if ($recurring !== null && !PayPalCurrencyHelper::sameAmount($saleAmount, (float) $recurring, $saleCurrency)) {
+            Factory::getApplication()->getLogger()->error(
+                'PayPal webhook renewal amount mismatch — manual review required',
+                [
+                    'category'     => 'j2commerce.paypal',
+                    'subscription' => $subscription->id ?? '',
+                    'received'     => $saleAmount . ' ' . $saleCurrency,
+                    'expected'     => $recurring . ' ' . $expectedCurrency,
+                ]
+            );
+
+            return ['status' => 409, 'message' => 'Amount/currency mismatch'];
         }
 
         // Build a minimal order-like object the renewal helper can consume.
