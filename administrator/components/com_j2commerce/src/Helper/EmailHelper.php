@@ -1079,8 +1079,8 @@ class EmailHelper
         $tags['[SOCIAL_INSTAGRAM]'] = $attr((string) $params->get('email_social_instagram', ''));
         $tags['[SOCIAL_TWITTER]']   = $attr((string) $params->get('email_social_twitter', ''));
 
-        // Text on an accent-filled button: white while it keeps the 4.5:1 minimum on the accent, slate otherwise.
-        $tags['[ACCENT_TEXT_COLOR]'] = self::whiteReadsOn($tags['[ACCENT_COLOR]']) ? '#FFFFFF' : '#0F172A';
+        // Text on an accent-filled button: the first of white, slate, black that keeps 4.5:1 on the accent.
+        $tags['[ACCENT_TEXT_COLOR]'] = self::readableTextOn($tags['[ACCENT_COLOR]']);
 
         // With no width to emit, take the attribute out with its tag. Sweeping ' width=""' from
         // the finished body would also take a merchant's own empty width attribute with it.
@@ -3630,19 +3630,34 @@ class EmailHelper
         ];
     }
 
-    /** Whether white text on a validated hex colour meets the WCAG 4.5:1 contrast minimum. */
-    private static function whiteReadsOn(string $hex): bool
+    /** Text color for a validated hex background: white, else slate, else black, the first to meet WCAG 4.5:1. */
+    private static function readableTextOn(string $hex): string
     {
-        $hex = ltrim($hex, '#');
-        $hex = \strlen($hex) < 6 ? $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2] : substr($hex, 0, 6);
-        $lum = 0.0;
+        $lum = static function (string $h): float {
+            $h   = ltrim($h, '#');
+            $h   = \strlen($h) < 6 ? $h[0] . $h[0] . $h[1] . $h[1] . $h[2] . $h[2] : substr($h, 0, 6);
+            $l   = 0.0;
 
-        foreach ([0.2126, 0.7152, 0.0722] as $i => $weight) {
-            $c    = hexdec(substr($hex, $i * 2, 2)) / 255;
-            $lum += $weight * ($c <= 0.04045 ? $c / 12.92 : (($c + 0.055) / 1.055) ** 2.4);
+            foreach ([0.2126, 0.7152, 0.0722] as $i => $weight) {
+                $c  = hexdec(substr($h, $i * 2, 2)) / 255;
+                $l += $weight * ($c <= 0.04045 ? $c / 12.92 : (($c + 0.055) / 1.055) ** 2.4);
+            }
+
+            return $l;
+        };
+
+        $bg = $lum($hex);
+
+        // Slate misses 4.5:1 on mid-tone accents white also misses (luminance ~0.18-0.21); black covers that band.
+        foreach (['#FFFFFF', '#0F172A'] as $text) {
+            $fg = $lum($text);
+
+            if ((max($bg, $fg) + 0.05) / (min($bg, $fg) + 0.05) >= 4.5) {
+                return $text;
+            }
         }
 
-        return 1.05 / ($lum + 0.05) >= 4.5;
+        return '#000000';
     }
 
     /** Joomla's live_site, else the Email Site URL option; '' when neither is set. */
