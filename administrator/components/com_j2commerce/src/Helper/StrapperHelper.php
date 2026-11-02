@@ -117,12 +117,7 @@ class StrapperHelper
             $this->params = ComponentHelper::getParams('com_j2commerce');
         } catch (\Exception $e) {
             // Log error and continue with null instances
-            if ($this->app !== null) {
-                $this->app->enqueueMessage(
-                    'Error initializing StrapperHelper: ' . $e->getMessage(),
-                    'error'
-                );
-            }
+            $this->logError('Error initializing StrapperHelper: ' . $e->getMessage());
         }
     }
 
@@ -993,10 +988,8 @@ class StrapperHelper
                 'com_j2commerce'
             );
         } catch (\Exception $e) {
-            // Fallback to error message if logging fails
-            if ($this->app !== null) {
-                $this->app->enqueueMessage($message, 'error');
-            }
+            // Logger unavailable: keep the detail server-side, never in the page.
+            error_log('com_j2commerce: ' . $message);
         }
     }
 
