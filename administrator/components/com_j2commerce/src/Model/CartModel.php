@@ -175,9 +175,22 @@ class CartModel extends BaseDatabaseModel
             $posted = $app->getInput()->get('product_option', [], 'ARRAY');
 
             if (\is_array($posted) && $posted !== []) {
+                $offeredOptions = $product->product_options ?? [];
+
+                // A configurable product lists only its top-level options on the storefront; the child
+                // options a parent value reveals are offered too, and the model keeps its published check.
+                if (($product->product_type ?? '') === 'configurable') {
+                    $optionsModel = $app->bootComponent('com_j2commerce')->getMVCFactory()
+                        ->createModel('ProductOptions', 'Administrator', ['ignore_request' => true]);
+                    $optionsModel->setState('filter.product_id', $productId);
+                    $optionsModel->setState('list.limit', 0);
+                    $optionsModel->setState('list.start', 0);
+                    $offeredOptions = $optionsModel->getItems() ?: [];
+                }
+
                 $offered = array_flip(array_map(
                     'intval',
-                    array_column($product->product_options ?? [], 'j2commerce_productoption_id')
+                    array_column($offeredOptions, 'j2commerce_productoption_id')
                 ));
                 $app->getInput()->set('product_option', array_intersect_key($posted, $offered));
             }

@@ -138,6 +138,71 @@ class CartConfigurable
             }
         }
 
+        // A child option counts only when a selected value of its parent reveals it: a choice child
+        // must hold a value that parent value offers, an input child is revealed whole. Children of
+        // children resolve in later passes, so the loop runs until nothing new is revealed.
+        $revealed = [];
+        $isUsable = static function (int $poId, $value) use (&$revealed, $optionIndex): bool {
+            if ((int) ($optionIndex[$poId]->parent_id ?? -1) === 0) {
+                return true;
+            }
+
+            $allowed = $revealed[$poId] ?? null;
+
+            return $allowed === true
+                || (\is_array($allowed) && !array_diff(array_map('intval', (array) $value), $allowed));
+        };
+
+        do {
+            $before = $revealed;
+
+            foreach ($options as $poId => $value) {
+                $parent = $optionIndex[(int) $poId] ?? null;
+
+                // Only a choice option has values that can reveal children.
+                if (!$parent || !\in_array($parent->type ?? '', ['select', 'radio', 'checkbox', 'color'], true)
+                    || !$isUsable((int) $poId, $value)) {
+                    continue;
+                }
+
+                foreach ((array) $value as $parentValue) {
+                    $children = ProductHelper::getChildProductOptions(
+                        (int) $product->j2commerce_product_id,
+                        (int) $parent->option_id,
+                        (int) $parentValue
+                    );
+
+                    foreach ($children as $child) {
+                        $childId = (int) $child['productoption_id'];
+
+                        if (!\is_array($child['optionvalue'])) {
+                            $revealed[$childId] = true;
+                        } elseif ($child['optionvalue'] !== [] && ($revealed[$childId] ?? null) !== true) {
+                            $revealed[$childId] = array_values(array_unique(array_merge(
+                                $revealed[$childId] ?? [],
+                                array_map('intval', array_column($child['optionvalue'], 'product_optionvalue_id'))
+                            )));
+                        }
+                    }
+                }
+            }
+        } while ($revealed !== $before);
+
+        foreach ($options as $poId => $value) {
+            if (!$isUsable((int) $poId, $value)) {
+                unset($options[$poId]);
+            }
+        }
+
+        foreach (array_keys($revealed) as $childId) {
+            if (!empty($optionIndex[$childId]->required) && empty($options[$childId])) {
+                $errors['error']['option'][$childId] = Text::sprintf(
+                    'COM_J2COMMERCE_ADDTOCART_PRODUCT_OPTION_REQUIRED',
+                    J2htmlHelper::translateKey((string) ($optionIndex[$childId]->option_name ?? ''))
+                );
+            }
+        }
+
         // Validate stock (skip for wishlist)
         $cart = $model->getCart();
 

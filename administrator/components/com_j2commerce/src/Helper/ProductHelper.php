@@ -3591,7 +3591,7 @@ class ProductHelper
     {
         static $cache = [];
 
-        $cacheKey = $productId . '_' . $parentId;
+        $cacheKey = $productId . '_' . $parentId . '_' . $parentOptionvalueId;
 
         if (isset($cache[$cacheKey])) {
             return $cache[$cacheKey];
