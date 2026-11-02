@@ -448,8 +448,15 @@ class ImageHelper
             return $imagePath;
         }
 
-        $params     = self::getImageUploadParams();
         $normalized = self::normalizePath($imagePath);
+
+        // Same refusal as imageDimensions() and getProductImage(): normalizePath() does not
+        // resolve '..', and a derivative is only looked for beside a real media-field image.
+        if (str_contains($normalized, '..')) {
+            return $imagePath;
+        }
+
+        $params     = self::getImageUploadParams();
         $dir        = \dirname($normalized);
         $file       = basename($normalized);
 
