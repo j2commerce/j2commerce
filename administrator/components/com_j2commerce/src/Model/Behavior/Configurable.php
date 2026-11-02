@@ -16,6 +16,9 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model\Behavior;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiHandlerInterface;
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiOptionsTrait;
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiSchema;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
@@ -35,8 +38,10 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
 
-class Configurable
+class Configurable implements ProductApiHandlerInterface
 {
+    use ProductApiOptionsTrait;
+
     private array $_rawData = [];
 
     protected MVCFactoryInterface $mvcFactory;
@@ -135,7 +140,7 @@ class Configurable
 
         $floatFields = ['price', 'length', 'width', 'height', 'weight', 'min_sale_qty', 'max_sale_qty', 'notify_qty'];
         foreach ($floatFields as $key) {
-            $data[$key] = !empty($data[$key]) ? (float) $data[$key] : 0;
+            $data[$key] = ProductApiSchema::decimal($data[$key] ?? null);
         }
 
         if (\is_object($data['quantity'] ?? null)
@@ -537,5 +542,19 @@ class Configurable
         $pluginHelper->event('AfterUpdateProductReturn', [&$return, $product, $config]);
 
         return $return;
+    }
+
+    public function apiSchema(): ProductApiSchema
+    {
+        return new ProductApiSchema('configurable', [
+            'options' => ProductApiSchema::key('list|object', false, 'both', 'Create: [{option_id, required?, parent_option_id?, values: [{optionvalue_id, price?, '
+                . 'prefix?, weight?, weight_prefix?, sku?, default?, parent_values?: [optionvalue ids of the parent option]}]}]. '
+                . 'Patch: {attach, detach, values: {upsert: [{productoption_id, optionvalue_id, ..., parent_values?: [optionvalue ids of the parent option]}], delete}}.'),
+        ]);
+    }
+
+    protected function apiOptionParents(): bool
+    {
+        return true;
     }
 }

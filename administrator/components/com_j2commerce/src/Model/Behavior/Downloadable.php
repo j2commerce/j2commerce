@@ -16,12 +16,18 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model\Behavior;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiException;
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiHandlerInterface;
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiOptionsTrait;
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiSchema;
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductPayload;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\ProductOptionsModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\VariantsModel;
+use J2Commerce\Component\J2commerce\Administrator\Service\ProductOptionService;
 use J2Commerce\Component\J2commerce\Administrator\Table\ProductfileTable;
 use J2Commerce\Component\J2commerce\Administrator\Table\ProductfilterTable;
 use J2Commerce\Component\J2commerce\Administrator\Table\ProductimageTable;
@@ -44,8 +50,10 @@ use Joomla\Registry\Registry;
  *
  * @since 6.0.0
  */
-class Downloadable
+class Downloadable implements ProductApiHandlerInterface
 {
+    use ProductApiOptionsTrait;
+
     /**
      * Raw data storage for passing between events
      *
@@ -198,9 +206,7 @@ class Downloadable
             'notify_qty',
         ];
         foreach ($floatFields as $key) {
-            $data[$key] = isset($data[$key]) && !empty($data[$key])
-                ? (float) $data[$key]
-                : 0.0;
+            $data[$key] = ProductApiSchema::decimal($data[$key] ?? null);
         }
 
         // Process quantity data
@@ -747,5 +753,84 @@ class Downloadable
     public function setRawData(array $data): void
     {
         $this->_rawData = $data;
+    }
+
+    public function apiSchema(): ProductApiSchema
+    {
+        return new ProductApiSchema('downloadable', [
+            'options' => ProductApiSchema::key('list|object', false, 'both', 'Create: [{option_id, required?, values: [optionvalue id | {optionvalue_id, price?, '
+                . 'prefix?, weight?, weight_prefix?, sku?, default?}]}]. Patch: {attach, detach, values: {upsert, delete}}.'),
+            'files' => ProductApiSchema::key('list', false, 'both', '[{path, display_name?}], each under a store download folder. '
+                . 'On patch the list replaces the stored set; omit the key to leave files alone.'),
+        ]);
+    }
+
+    public function apiValidateCreate(ProductPayload $payload): void
+    {
+        $this->apiOptionsDocument($payload);
+        $this->apiFiles($payload);
+    }
+
+    public function apiValidatePatch(int $productId, ProductPayload $payload): void
+    {
+        $this->apiOptionsPatch($productId, $payload);
+        $this->apiFiles($payload);
+    }
+
+    protected function apiNeedsProductSave(ProductPayload $payload): bool
+    {
+        return $payload->needsProductSave() || $payload->has('files');
+    }
+
+    /** The row with the validated `files` list, which saveProductFiles() replaces the stored set with. */
+    protected function apiProductRow(ProductPayload $payload): array
+    {
+        $row = $payload->productRow();
+
+        if ($payload->has('files')) {
+            $row['files'] = $this->apiFiles($payload);
+        }
+
+        return $row;
+    }
+
+    /** @return list<array{path: string, display_name: string}>|null  The validated list; null when not sent. */
+    private function apiFiles(ProductPayload $payload): ?array
+    {
+        if (!$payload->has('files')) {
+            return null;
+        }
+
+        return $this->apiMemo($payload, 'files', fn (): array => $this->validateFiles($payload->get('files')));
+    }
+
+    /**
+     * @return list<array{path: string, display_name: string}>  Checked against the download roots, as saveProductFiles() checks them.
+     * @throws ProductApiException
+     */
+    private function validateFiles(mixed $files): array
+    {
+        if (!\is_array($files) || !array_is_list($files)) {
+            throw ProductApiException::single(400, '/files', 'must be a list of {"path", "display_name"}.');
+        }
+
+        ProductOptionService::assertListSize($files, '/files');
+
+        $out = [];
+
+        foreach ($files as $n => $file) {
+            $path = \is_array($file) ? trim((string) ($file['path'] ?? '')) : '';
+            $name = \is_array($file) ? trim((string) ($file['display_name'] ?? '')) : '';
+
+            if (!\is_array($file) || array_diff_key($file, array_flip(['path', 'display_name'])) !== [] || $path === ''
+                || mb_strlen($path) > 255 || mb_strlen($name) > 255
+                || preg_match('#^[a-z][a-z0-9+.-]*://#i', $path) || !DownloadHelper::isAllowedLocalPath(str_replace('\\', '/', $path))) {
+                throw ProductApiException::single(400, '/files/' . $n, 'path must be a file under the store download folders; display_name is optional.');
+            }
+
+            $out[] = ['path' => str_replace('\\', '/', $path), 'display_name' => $name];
+        }
+
+        return $out;
     }
 }

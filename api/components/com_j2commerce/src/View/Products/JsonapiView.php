@@ -45,6 +45,9 @@ class JsonapiView extends J2CommerceJsonapiView
         'plugins',
         'created_on',
         'modified_on',
+        'variants',
+        'options',
+        'type_data',
         'article',
         'jcfields',
     ];

@@ -803,7 +803,8 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_orderitems` (
   `orderitem_weight` varchar(255) NOT NULL,
   `orderitem_weight_total` varchar(255) NOT NULL,
   PRIMARY KEY (`j2commerce_orderitem_id`),
-  KEY `orderitem_order_id` (`order_id`)
+  KEY `orderitem_order_id` (`order_id`),
+  KEY `idx_orderitem_variant_id` (`variant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1384,7 +1385,8 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_variants` (
   `allow_backorder` int NOT NULL,
   `isdefault_variant` int NOT NULL,
   PRIMARY KEY (`j2commerce_variant_id`),
-  KEY `variant_product_id` (`product_id`)
+  KEY `variant_product_id` (`product_id`),
+  KEY `idx_variant_sku` (`sku`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------

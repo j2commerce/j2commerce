@@ -14,7 +14,9 @@ namespace J2Commerce\Component\J2commerce\Api\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Api\Model\ProductModel;
 use Joomla\CMS\Filter\InputFilter;
+use Tobscure\JsonApi\Exception\InvalidParameterException;
 
 class ProductsController extends J2CommerceApiController
 {
@@ -80,5 +82,81 @@ class ProductsController extends J2CommerceApiController
         }
 
         return parent::displayList();
+    }
+
+    /** POST products/:id/variants: the body is one `variants.upsert` entry without an id; answers the product. */
+    public function createVariant(): void
+    {
+        $this->assertAllowed($this->readAction);
+        $this->assertAllowed($this->writeAction, 'core.create');
+
+        $productId = $this->routeInt('id');
+        $entry     = $this->bodyObject();
+
+        if (\array_key_exists('id', $entry)) {
+            throw new InvalidParameterException('A new variant has no id; use PATCH products/:id/variants/:vid to change one.', 400, null, 'id');
+        }
+
+        $this->productModel()->applyVariantDocument($productId, ['upsert' => [$entry]]);
+
+        $this->app->setHeader('status', 201);
+        $this->displayItem($productId);
+    }
+
+    /** PATCH products/:id/variants/:vid — the body is the entry's fields; answers with the product. */
+    public function updateVariant(): void
+    {
+        $this->assertAllowed($this->readAction);
+        $this->assertAllowed($this->writeAction, 'core.edit');
+
+        $productId = $this->routeInt('id');
+        $entry     = $this->bodyObject();
+
+        if (\array_key_exists('id', $entry)) {
+            throw new InvalidParameterException('The variant id comes from the route, not the body.', 400, null, 'id');
+        }
+
+        $this->productModel()->applyVariantDocument($productId, ['upsert' => [['id' => $this->routeInt('vid')] + $entry]]);
+
+        $this->displayItem($productId);
+    }
+
+    /** DELETE products/:id/variants/:vid — 409 when the variant appears on an order. */
+    public function deleteVariant(): void
+    {
+        $this->assertAllowed($this->writeAction, 'core.delete');
+
+        $this->productModel()->applyVariantDocument($this->routeInt('id'), ['delete' => [$this->routeInt('vid')]]);
+
+        $this->app->setHeader('status', 204);
+    }
+
+    private function productModel(): ProductModel
+    {
+        return $this->getModel('Product', 'Api', ['ignore_request' => true]);
+    }
+
+    /** A route var lands in the POST input on a POST request and in the main input otherwise. */
+    private function routeInt(string $key): int
+    {
+        $id = $this->input->getInt($key, 0) ?: $this->input->post->getInt($key, 0);
+
+        if ($id <= 0) {
+            throw new InvalidParameterException('JLIB_FORM_VALIDATE_FIELD_INVALID', 400, null, $key);
+        }
+
+        return $id;
+    }
+
+    /** @return array<string, mixed> */
+    private function bodyObject(): array
+    {
+        $body = json_decode((string) $this->input->json->getRaw(), true);
+
+        if (!\is_array($body) || ($body !== [] && array_is_list($body))) {
+            throw new InvalidParameterException('The request body must be a JSON object.', 400);
+        }
+
+        return $body;
     }
 }
