@@ -16,7 +16,9 @@ namespace J2Commerce\Component\J2commerce\Administrator\Service;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiHandlerInterface;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\Behavior\Configurable;
 use J2Commerce\Component\J2commerce\Administrator\Model\Behavior\Downloadable;
 use J2Commerce\Component\J2commerce\Administrator\Model\Behavior\Flexivariable;
@@ -44,6 +46,10 @@ use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
  */
 class ProductService
 {
+    private const CORE_TYPES = ['simple', 'configurable', 'downloadable', 'flexivariable', 'variable'];
+
+    private const API_METHODS = ['apiSchema', 'apiValidateCreate', 'apiCreate', 'apiValidatePatch', 'apiPatch', 'apiRead'];
+
     /**
      * MVC Factory for creating models and tables
      *
@@ -59,6 +65,9 @@ class ProductService
      * @since 6.0.0
      */
     private array $behaviors = [];
+
+    /** @var list<string>|null */
+    private ?array $creatableTypes = null;
 
     /**
      * Constructor
@@ -99,6 +108,88 @@ class ProductService
         }
 
         return $this->behaviors[$productType];
+    }
+
+    /** The behavior registered for a type, or null; the Simple fallback stays in getBehavior() for saveProduct(). */
+    public function findBehavior(string $productType): ?object
+    {
+        if (\in_array($productType, self::CORE_TYPES, true)) {
+            return $this->getBehavior($productType);
+        }
+
+        $event = J2CommerceHelper::plugin()->event('GetProductBehavior', [$productType, $this->mvcFactory]);
+
+        foreach ($event->getArgument('result', []) as $result) {
+            if (\is_object($result)) {
+                return $this->behaviors[$productType] = $result;
+            }
+        }
+
+        return null;
+    }
+
+    // A subclass of a core behavior opts in by declaring apiSchema() itself (or the interface); an inherited apiSchema() alone is not a handler.
+    public function apiHandler(string $productType): ?object
+    {
+        $behavior = $this->findBehavior($productType);
+
+        if ($behavior === null || !self::isApiHandler($behavior) || !self::declaresApiHandler($behavior)) {
+            return null;
+        }
+
+        return $behavior->apiSchema()->type === $productType ? $behavior : null;
+    }
+
+    /**
+     * Whether the behavior's own class declares apiSchema() or lists ProductApiHandlerInterface. A
+     * plugin subtype that only extends a core behavior (Variable reports static::PRODUCT_TYPE) would
+     * otherwise pass the type check with core's handler and no validation of its own.
+     */
+    private static function declaresApiHandler(object $behavior): bool
+    {
+        $class = new \ReflectionClass($behavior);
+
+        if ($class->getMethod('apiSchema')->getDeclaringClass()->getName() === $class->getName()) {
+            return true;
+        }
+
+        $parent = $class->getParentClass();
+
+        return $class->implementsInterface(ProductApiHandlerInterface::class)
+            && ($parent === false || !$parent->implementsInterface(ProductApiHandlerInterface::class));
+    }
+
+    /** @return list<string>  Types the API can create: the core types plus every registered type with a handler. */
+    public function creatableTypes(): array
+    {
+        if ($this->creatableTypes !== null) {
+            return $this->creatableTypes;
+        }
+
+        $types = array_unique(array_merge(self::CORE_TYPES, array_map('strval', array_keys(ProductHelper::getProductTypes()))));
+
+        return $this->creatableTypes = array_values(array_filter($types, fn (string $type): bool => $this->apiHandler($type) !== null));
+    }
+
+    /**
+     * A plugin behavior cannot `implements` an interface its host core may not ship yet (a fatal
+     * at class load), so until the floor moves a behavior that carries all six api*() methods
+     * counts as a handler.
+     * DELETE WHEN: minimum supported J2Commerce core >= the release that ships ProductApiHandlerInterface.
+     */
+    public static function isApiHandler(object $behavior): bool
+    {
+        if ($behavior instanceof ProductApiHandlerInterface) {
+            return true;
+        }
+
+        foreach (self::API_METHODS as $method) {
+            if (!method_exists($behavior, $method)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

@@ -16,6 +16,11 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model\Behavior;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiException;
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiHandlerInterface;
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiOptionsTrait;
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiSchema;
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductPayload;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\LengthHelper;
@@ -24,6 +29,8 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\WeightHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\ProductOptionsModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\VariantsModel;
+use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
+use J2Commerce\Component\J2commerce\Administrator\Service\VariantMatrixService;
 use J2Commerce\Component\J2commerce\Administrator\Table\ProductTable;
 use J2Commerce\Component\J2commerce\Administrator\Table\VariantTable;
 use Joomla\CMS\Component\ComponentHelper;
@@ -45,8 +52,10 @@ use Joomla\Registry\Registry;
  *
  * @since 6.0.0
  */
-class Variable
+class Variable implements ProductApiHandlerInterface
 {
+    use ProductApiOptionsTrait;
+
     /** The type token this behavior acts on; a subclass for a plugin-added type overrides it. */
     protected const PRODUCT_TYPE = 'variable';
 
@@ -168,7 +177,7 @@ class Variable
         // Cast float fields
         $floatFields = ['price', 'length', 'width', 'height', 'weight', 'min_sale_qty', 'max_sale_qty', 'notify_qty'];
         foreach ($floatFields as $key) {
-            $data[$key] = isset($data[$key]) && !empty($data[$key]) ? (float) $data[$key] : 0;
+            $data[$key] = ProductApiSchema::decimal($data[$key] ?? null);
         }
 
         // Process quantity data
@@ -289,7 +298,7 @@ class Variable
 
                 $floatFields = ['price', 'length', 'width', 'height', 'weight', 'min_sale_qty', 'max_sale_qty', 'notify_qty'];
                 foreach ($floatFields as $key) {
-                    $item->$key = isset($item->$key) && !empty($item->$key) && $item->$key > 0 ? (float) $item->$key : 0;
+                    $item->$key = isset($item->$key) && $item->$key > 0 ? ProductApiSchema::decimal($item->$key) : 0;
                 }
 
                 $item->use_store_config_max_sale_qty = !empty($item->use_store_config_max_sale_qty) ? 1 : 0;
@@ -406,52 +415,10 @@ class Variable
         }
     }
 
-    /**
-     * Calculate and store min/max price indexes for the product
-     */
+    /** Min/max price index over the priced children, one aggregate query. */
     public function runIndexes(object $table): void
     {
-        /** @var VariantsModel $variantModel */
-        $variantModel = $this->mvcFactory->createModel('Variants', 'Administrator', ['ignore_request' => true]);
-        $variantModel->getState();
-        $variantModel->setState('filter.product_id', $table->j2commerce_product_id);
-        $variantModel->setState('filter.is_master', 0);
-        $variantModel->setState('list.limit', 0);
-
-        $variants = $variantModel->getItems();
-
-        $minPrice = null;
-        $maxPrice = null;
-
-        foreach ($variants as $variant) {
-            if ($variant->price === '' || $variant->price == 0) {
-                continue;
-            }
-
-            if ($minPrice === null || $variant->price < $minPrice) {
-                $minPrice = $variant->price;
-            }
-
-            if ($variant->price > $maxPrice) {
-                $maxPrice = $variant->price;
-            }
-        }
-
-        $db        = Factory::getContainer()->get('DatabaseDriver');
-        $productId = (int) $table->j2commerce_product_id;
-
-        $priceIndex = $this->mvcFactory->createTable('Productpriceindex', 'Administrator');
-        $values     = (object) [
-            'product_id' => $productId,
-            'min_price'  => $minPrice ?? 0,
-            'max_price'  => $maxPrice ?? 0,
-        ];
-
-        if ($priceIndex->load($productId)) {
-            $db->updateObject('#__j2commerce_productprice_index', $values, 'product_id');
-        } else {
-            $db->insertObject('#__j2commerce_productprice_index', $values);
-        }
+        $this->variantService()->refreshPriceIndex((int) $table->j2commerce_product_id);
     }
 
     /**
@@ -873,5 +840,194 @@ class Variable
         $pluginHelper->event('AfterUpdateProductReturn', [&$return, $product, $config]);
 
         return $return;
+    }
+
+    public function apiSchema(): ProductApiSchema
+    {
+        return new ProductApiSchema(static::PRODUCT_TYPE, [
+            'options' => ProductApiSchema::key('list|object', true, 'both', 'Create: [{option_id, values: [optionvalue ids]}]. '
+                . 'Patch: {attach: [...], detach: [productoption ids], values: {upsert: [{productoption_id, optionvalue_id}], delete: [product_optionvalue ids]}}; '
+                . 'a deleted value takes the variants built on it, unless one is on an order.'),
+            'variants' => ProductApiSchema::key('list|object', true, 'both', 'Create: [{options: [one optionvalue id per option], sku?, upc?, price, quantity?, '
+                . 'isdefault_variant?, params?}]. Patch: {upsert: [{id, ...} | {options: [...], price, ...}], delete: [variant ids]}. '
+                . 'quantity sent turns stock management on for the child; shipping follows the master; the master quantity is refused.'),
+        ]);
+    }
+
+    /** Extra keys a `variants` entry accepts; a subclass for a plugin type validates them in its own api*() methods. */
+    protected function apiVariantKeys(): array
+    {
+        return [];
+    }
+
+    public function apiValidateCreate(ProductPayload $payload): void
+    {
+        $this->apiRefuseMasterQuantity($payload);
+        $this->apiCreateDocument($payload);
+    }
+
+    /** @return array{options: list<array>, variants: list<array>}  The normalised create document. */
+    protected function apiCreateDocument(ProductPayload $payload): array
+    {
+        return $this->apiMemo($payload, 'create', function () use ($payload): array {
+            $options  = $this->optionService()->validateOptionsDocument($payload->get('options'), '/options', false);
+            $variants = $this->variantService()->validateMatrixDocument($options, $payload->get('variants'), '/variants', $this->apiVariantKeys());
+            $this->variantService()->assertEntrySkus($variants, '/variants');
+
+            return ['options' => $options, 'variants' => $variants];
+        });
+    }
+
+    public function apiCreate(ProductPayload $payload): int
+    {
+        $document           = $this->apiCreateDocument($payload);
+        $row                = $payload->productRow();
+        $row['has_options'] = 1;
+        $id                 = (int) (new ProductService($this->mvcFactory))->saveProduct($row);
+
+        if ($id < 1) {
+            return 0;
+        }
+
+        $maps = $this->optionService()->writeOptions($id, $document['options'], 1);
+        $this->variantService()->generate($id, $this->apiMatrixEntries($document['variants'], $maps['values']));
+
+        return $id;
+    }
+
+    /**
+     * The generator's entries for validated matrix variants; a subclass folds its own keys into `params` here.
+     *
+     * @param array<int, int> $valueMap  optionvalue_id => product_optionvalue_id
+     */
+    protected function apiMatrixEntries(array $variants, array $valueMap): array
+    {
+        $entries = [];
+
+        foreach ($variants as $variant) {
+            $entries[] = [
+                'product_optionvalue_ids' => array_map(static fn (int $id): int => $valueMap[$id], $variant['options']),
+                'sku'                     => $variant['sku'],
+                'upc'                     => $variant['upc'],
+                'price'                   => $variant['price'],
+                'quantity'                => $variant['quantity'] ?? null,
+                'isdefault_variant'       => $variant['isdefault_variant'],
+                'params'                  => $variant['params'],
+                'pointer'                 => $variant['pointer'] ?? null,
+            ];
+        }
+
+        return $entries;
+    }
+
+    public function apiValidatePatch(int $productId, ProductPayload $payload): void
+    {
+        $this->apiRefuseMasterQuantity($payload);
+        $this->apiPatchDocument($productId, $payload);
+    }
+
+    /** @return array{options: ?array, variants: ?array} */
+    protected function apiPatchDocument(int $productId, ProductPayload $payload): array
+    {
+        return $this->apiMemo($payload, 'patch', fn (): array => [
+            'options'  => $payload->has('options') ? $this->optionService()->validateOptionsPatch($productId, $payload->get('options'), '/options', false) : null,
+            'variants' => $payload->has('variants') ? $this->variantService()->validateVariantsPatch($productId, $payload->get('variants'), '/variants', 'matrix', $this->apiVariantKeys()) : null,
+        ]);
+    }
+
+    public function apiPatch(int $productId, ProductPayload $payload): void
+    {
+        $document = $this->apiPatchDocument($productId, $payload);
+        $variants = $this->variantService();
+
+        if ($document['options'] !== null) {
+            $this->optionService()->applyOptionsPatch($productId, $document['options'], 1, $variants);
+            $this->optionService()->syncHasOptions($productId);
+        }
+
+        $variable = $document['variants'] !== null ? $this->apiApplyVariants($productId, $document['variants'], $variants) : [];
+
+        $this->apiSaveProduct($payload, $variable);
+
+        if ($document['variants'] !== null) {
+            $variants->assertPricesStored(array_column(array_filter($document['variants']['update'], static fn (array $e): bool => isset($e['price'])), 'price', 'id'));
+            $variants->ensureDefault($productId);
+        }
+    }
+
+    /**
+     * The deletes, the adds and the update snapshots of a validated `variants` document. Every default
+     * is applied before the snapshots are read, so a snapshot cannot re-flag the old default.
+     *
+     * @return array<int, array>  variant id => childFormEntry(), for the behavior's `variable[]` loop.
+     */
+    protected function apiApplyVariants(int $productId, array $document, VariantMatrixService $variants): array
+    {
+        // The index is refreshed by the generate() or save that follows an add or an update.
+        $variants->deleteVariants($productId, $document['delete'], refreshIndex: $document['add'] === [] && $document['update'] === []);
+
+        if ($document['add'] !== []) {
+            $valueMap = [];
+
+            foreach ($this->optionService()->productOptions($productId) as $option) {
+                foreach ($option->values as $value) {
+                    $valueMap[(int) $value->optionvalue_id] = (int) $value->j2commerce_product_optionvalue_id;
+                }
+            }
+
+            // The renames are applied after the adds: a generated SKU keeps clear of them.
+            $reserved = array_filter(array_column($document['update'], 'sku'), static fn (string $sku): bool => $sku !== '');
+            $variants->generate($productId, $this->apiMatrixEntries($document['add'], $valueMap), array_values($reserved));
+        }
+
+        foreach ($document['update'] as $entry) {
+            if (($entry['isdefault_variant'] ?? 0) === 1) {
+                $variants->setDefault($productId, $entry['id']);
+            }
+        }
+
+        $stored   = $variants->childVariants($productId, array_column($document['update'], 'id'));
+        $variable = [];
+
+        foreach ($document['update'] as $entry) {
+            if (!isset($stored[$entry['id']])) {
+                throw ProductApiException::single(409, '/variants/upsert', \sprintf('variant %d is removed by the options change in this request.', $entry['id']));
+            }
+
+            $variable[$entry['id']] = $variants->childFormEntry($stored[$entry['id']], $this->apiChildChanges($entry));
+        }
+
+        return $variable;
+    }
+
+    /** The product save, when a master field, a behavior column or a child snapshot has to go through it. */
+    protected function apiSaveProduct(ProductPayload $payload, array $variable): void
+    {
+        if (!$payload->needsProductSave() && $variable === []) {
+            return;
+        }
+
+        $row = $payload->productRow();
+
+        if ($variable !== []) {
+            // The behavior's own `variable[]` loop writes the children, as the admin form save does.
+            $row['variable'] = $variable;
+        }
+
+        (new ProductService($this->mvcFactory))->saveProduct($row);
+    }
+
+    /** The child changes a validated upsert entry carries; a subclass folds its own keys into `params` here. */
+    protected function apiChildChanges(array $entry): array
+    {
+        return array_diff_key($entry, ['id' => 1]);
+    }
+
+    /** Stock lives on the children; a master `quantity` would be accepted by the shared schema and dropped. */
+    protected function apiRefuseMasterQuantity(ProductPayload $payload): void
+    {
+        if ($payload->quantity !== null) {
+            throw ProductApiException::single(400, '/quantity', \sprintf('a %s product keeps its stock per variant; send quantity on the variants entries.', static::PRODUCT_TYPE));
+        }
     }
 }

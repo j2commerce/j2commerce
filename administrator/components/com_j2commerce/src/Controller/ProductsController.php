@@ -14,11 +14,14 @@ namespace J2Commerce\Component\J2commerce\Administrator\Controller;
 
 \defined('_JEXEC') or die;
 
-use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiException;
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiSchema;
 use J2Commerce\Component\J2commerce\Administrator\Helper\FilterSourceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
+use J2Commerce\Component\J2commerce\Administrator\Service\ProductOptionService;
+use J2Commerce\Component\J2commerce\Administrator\Service\VariantMatrixService;
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Application\CMSWebApplicationInterface;
 use Joomla\CMS\Factory;
@@ -29,6 +32,7 @@ use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\AdminController;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\CMS\Router\Route;
+use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use Joomla\Input\Input;
 use Joomla\Utilities\ArrayHelper;
@@ -926,7 +930,7 @@ class ProductsController extends AdminController
         return true;
     }
 
-    /** Applies the filter attribute each control declares in forms/batch_products.xml. Not an authorisation boundary — batch() still allow-lists the keys. */
+    /** Applies each control's filter attribute from forms/batch_products.xml; batch() still allow-lists the keys. */
     private function filterBatchCommands(array $commands): array
     {
         $form = Form::getInstance(
@@ -1941,75 +1945,24 @@ class ProductsController extends AdminController
         }
 
         $app = Factory::getApplication();
-        $db  = Factory::getContainer()->get('DatabaseDriver');
 
-        $productId         = $app->getInput()->getInt('product_id', 0);
         $productOptionId   = $app->getInput()->getInt('productoption_id', 0);
         $optionValueId     = $app->getInput()->getInt('optionvalue_id', 0);
-        $price             = $app->getInput()->getFloat('product_optionvalue_price', 0.0);
-        $pricePrefix       = $app->getInput()->getString('product_optionvalue_prefix', '+');
-        $weight            = $app->getInput()->getFloat('product_optionvalue_weight', 0.0);
-        $weightPrefix      = $app->getInput()->getString('product_optionvalue_weight_prefix', '+');
-        $ordering          = $app->getInput()->getInt('ordering', 0);
-        $attribs           = $app->getInput()->getString('product_optionvalue_attribs', '');
         $parentOptionValue = $app->getInput()->get('parent_optionvalue', [], 'array');
 
         $response = ['success' => false, 'message' => ''];
 
-        // Check if option is a variant option (no price modifier)
-        $query = $db->getQuery(true);
-        $query->select($db->quoteName('is_variant'))
-            ->from($db->quoteName('#__j2commerce_product_options'))
-            ->where($db->quoteName('j2commerce_productoption_id') . ' = :poId')
-            ->bind(':poId', $productOptionId, ParameterType::INTEGER);
-
-        $db->setQuery($query);
-        $isVariant = (int) $db->loadResult();
-
-        // Reset price for variant options
-        if ($isVariant) {
-            $price = 0.0;
-        }
-
-        // Insert the new product option value
-        $parentValue = !empty($parentOptionValue) ? implode(',', $parentOptionValue) : '';
-        $emptyString = '';
-        $zero        = 0;
-
-        $columns = [
-            'productoption_id',
-            'optionvalue_id',
-            'parent_optionvalue',
-            'product_optionvalue_price',
-            'product_optionvalue_prefix',
-            'product_optionvalue_weight',
-            'product_optionvalue_weight_prefix',
-            'product_optionvalue_sku',
-            'product_optionvalue_default',
-            'ordering',
-            'product_optionvalue_attribs',
-        ];
-
-        $query = $db->getQuery(true);
-        $query->insert($db->quoteName('#__j2commerce_product_optionvalues'))
-            ->columns($db->quoteName($columns))
-            ->values(':productoption_id, :optionvalue_id, :parent_optionvalue, :price, :price_prefix, :weight, :weight_prefix, :sku, :default, :ordering, :attribs')
-            ->bind(':productoption_id', $productOptionId, ParameterType::INTEGER)
-            ->bind(':optionvalue_id', $optionValueId, ParameterType::INTEGER)
-            ->bind(':parent_optionvalue', $parentValue)
-            ->bind(':price', $price)
-            ->bind(':price_prefix', $pricePrefix)
-            ->bind(':weight', $weight)
-            ->bind(':weight_prefix', $weightPrefix)
-            ->bind(':sku', $emptyString)
-            ->bind(':default', $zero, ParameterType::INTEGER)
-            ->bind(':ordering', $ordering, ParameterType::INTEGER)
-            ->bind(':attribs', $attribs);
-
-        $db->setQuery($query);
-
         try {
-            $db->execute();
+            // The service zeroes the price when the option defines the variant matrix.
+            (new ProductOptionService($this->factory))->addOptionValue($productOptionId, $optionValueId, [
+                'parent_optionvalue'                => !empty($parentOptionValue) ? implode(',', $parentOptionValue) : '',
+                'product_optionvalue_price'         => $app->getInput()->getFloat('product_optionvalue_price', 0.0),
+                'product_optionvalue_prefix'        => $app->getInput()->getString('product_optionvalue_prefix', '+'),
+                'product_optionvalue_weight'        => $app->getInput()->getFloat('product_optionvalue_weight', 0.0),
+                'product_optionvalue_weight_prefix' => $app->getInput()->getString('product_optionvalue_weight_prefix', '+'),
+                'ordering'                          => $app->getInput()->getInt('ordering', 0),
+                'product_optionvalue_attribs'       => $app->getInput()->getString('product_optionvalue_attribs', ''),
+            ]);
             $response['success'] = true;
             $response['message'] = Text::_('COM_J2COMMERCE_PRODUCT_OPTION_VALUE_CREATED');
         } catch (\Exception $e) {
@@ -2257,8 +2210,6 @@ class ProductsController extends AdminController
             return;
         }
 
-        $db = Factory::getContainer()->get('DatabaseDriver');
-
         // Use raw input to preserve numeric values, then sanitize manually
         // The 'array' filter can sometimes have issues with numeric values
         $rawInput      = $app->getInput()->post->getArray();
@@ -2266,8 +2217,7 @@ class ProductsController extends AdminController
             ? $rawInput['variant_combin']
             : [];
 
-        $productId  = $app->getInput()->getInt('flexi_product_id', 0);
-        $formPrefix = $app->getInput()->getString('form_prefix', 'jform[attribs][j2commerce]');
+        $productId = $app->getInput()->getInt('flexi_product_id', 0);
 
         if (empty($variantCombin) || empty($productId)) {
             $response['message'] = Text::_('COM_J2COMMERCE_INVALID_DATA');
@@ -2276,133 +2226,31 @@ class ProductsController extends AdminController
         }
 
         try {
-            $productOptionvalueIds = [];
+            $picks = [];
 
-            // Create product option values for the variant
             foreach ($variantCombin as $variantKey => $variantValue) {
-                $productOptionvalue = new \stdClass();
-                // Sanitize keys and values as integers
-                $productOptionvalue->productoption_id                  = (int) $variantKey;
-                $productOptionvalue->optionvalue_id                    = (int) $variantValue;
-                $productOptionvalue->parent_optionvalue                = '';
-                $productOptionvalue->product_optionvalue_price         = 0;
-                $productOptionvalue->product_optionvalue_prefix        = '+';
-                $productOptionvalue->product_optionvalue_weight        = 0;
-                $productOptionvalue->product_optionvalue_weight_prefix = '+';
-                $productOptionvalue->product_optionvalue_sku           = '';
-                $productOptionvalue->product_optionvalue_default       = 0;
-                $productOptionvalue->ordering                          = 0;
-                $productOptionvalue->product_optionvalue_attribs       = '{}';
-
-                $db->insertObject('#__j2commerce_product_optionvalues', $productOptionvalue, 'j2commerce_product_optionvalue_id');
-                $productOptionvalueIds[] = $productOptionvalue->j2commerce_product_optionvalue_id;
+                $picks[(int) $variantKey] = (int) $variantValue;
             }
 
-            if (!empty($productOptionvalueIds)) {
-                // Get config defaults for weight and length class IDs
-                $defaultWeightClassId = ConfigHelper::getDefaultWeightClassId();
-                $defaultLengthClassId = ConfigHelper::getDefaultLengthClassId();
+            $db      = Factory::getContainer()->get(DatabaseInterface::class);
+            $service = new VariantMatrixService($this->factory, $db);
 
-                // Get current timestamp and user
-                $date   = Factory::getDate()->toSql();
-                $user   = $app->getIdentity();
-                $userId = $user ? $user->id : 0;
+            $db->transactionStart();
 
-                // Create variant record with all fields properly defaulted
-                $variant             = new \stdClass();
-                $variant->product_id = $productId;
-                $variant->is_master  = 0;
+            try {
+                $variantId = $service->addCombination($productId, $picks);
+                $db->transactionCommit();
+            } catch (\Throwable $e) {
+                $db->transactionRollback();
 
-                // Varchar fields - empty strings (not null)
-                $variant->sku                = '';
-                $variant->upc                = '';
-                $variant->params             = '{"variant_main_image":""}';
-                $variant->pricing_calculator = 'standard';
-
-                // Decimal fields - "0.00000" (not null)
-                $variant->price        = '0.00000';
-                $variant->length       = '0.00000';
-                $variant->width        = '0.00000';
-                $variant->height       = '0.00000';
-                $variant->weight       = '0.00000';
-                $variant->min_sale_qty = '0.00000';
-                $variant->max_sale_qty = '0.00000';
-                $variant->notify_qty   = '0.00000';
-
-                // Integer fields with defaults from config
-                $variant->length_class_id = $defaultLengthClassId;
-                $variant->weight_class_id = $defaultWeightClassId;
-
-                // Integer boolean fields - 0 (not null)
-                $variant->shipping                      = 0;
-                $variant->manage_stock                  = 0;
-                $variant->quantity_restriction          = 0;
-                $variant->use_store_config_min_sale_qty = 0;
-                $variant->use_store_config_max_sale_qty = 0;
-                $variant->use_store_config_notify_qty   = 0;
-                // 1, matching the other two variant-creation paths below — a variant born
-                // unavailable cannot be sold until an order happens to resync the flag.
-                $variant->availability                  = 1;
-                $variant->allow_backorder               = 0;
-                $variant->isdefault_variant             = 0;
-
-                // Timestamp fields
-                $variant->created_on  = $date;
-                $variant->created_by  = $userId;
-                $variant->modified_on = $date;
-                $variant->modified_by = $userId;
-
-                $db->insertObject('#__j2commerce_variants', $variant, 'j2commerce_variant_id');
-
-                // Update SKU with variant ID (Flexi_[id] format)
-                $variantId = $variant->j2commerce_variant_id;
-                $newSku    = 'Flexi_' . $variantId;
-
-                $query = $db->getQuery(true)
-                    ->update($db->quoteName('#__j2commerce_variants'))
-                    ->set($db->quoteName('sku') . ' = :sku')
-                    ->where($db->quoteName('j2commerce_variant_id') . ' = :variantId')
-                    ->bind(':sku', $newSku)
-                    ->bind(':variantId', $variantId, ParameterType::INTEGER);
-
-                $db->setQuery($query);
-                $db->execute();
-
-                // Create product quantity record
-                $productQuantity                     = new \stdClass();
-                $productQuantity->variant_id         = $variantId;
-                $productQuantity->quantity           = 0;
-                $productQuantity->on_hold            = 0;
-                $productQuantity->sold               = 0;
-                $productQuantity->product_attributes = '';
-
-                $db->insertObject('#__j2commerce_productquantities', $productQuantity, 'j2commerce_productquantity_id');
-
-                // Create product variant optionvalues mapping
-                $productVariantOptionValue                          = new \stdClass();
-                $productVariantOptionValue->variant_id              = $variantId;
-                $productVariantOptionValue->product_optionvalue_ids = ProductHelper::normaliseOptionvalueKey($productOptionvalueIds);
-
-                $db->insertObject('#__j2commerce_product_variant_optionvalues', $productVariantOptionValue);
-
-                // Get total variants count (non-master)
-                // Note: We don't render individual HTML here since JS reloads the full list
-                $query = $db->getQuery(true)
-                    ->select('COUNT(*)')
-                    ->from($db->quoteName('#__j2commerce_variants'))
-                    ->where($db->quoteName('product_id') . ' = :productId')
-                    ->where($db->quoteName('is_master') . ' = 0')
-                    ->bind(':productId', $productId, ParameterType::INTEGER);
-
-                $db->setQuery($query);
-                $total = (int) $db->loadResult();
-
-                $response['success']    = true;
-                $response['message']    = Text::_('COM_J2COMMERCE_VARIANT_ADDED');
-                $response['variant_id'] = $variantId;
-                $response['html']       = ''; // JS reloads full list via loadVariantList()
-                $response['total']      = $total;
+                throw $e;
             }
+
+            $response['success']    = true;
+            $response['message']    = Text::_('COM_J2COMMERCE_VARIANT_ADDED');
+            $response['variant_id'] = $variantId;
+            $response['html']       = ''; // JS reloads full list via loadVariantList()
+            $response['total']      = $service->childVariantCount($productId);
         } catch (\Exception $e) {
             Log::add('products.addVariantAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
             $response['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
@@ -2444,26 +2292,39 @@ class ProductsController extends AdminController
         $variantId = $app->getInput()->getInt('variant_id', 0);
         $productId = $app->getInput()->getInt('product_id', 0);
 
-        if ($variantId > 0 && $this->deleteSingleVariant($variantId)) {
-            $response['success'] = true;
-            $response['message'] = Text::_('COM_J2COMMERCE_VARIANT_DELETED');
+        if ($variantId <= 0 || $productId <= 0) {
+            $response['message'] = Text::_('COM_J2COMMERCE_INVALID_DATA');
+            $this->sendJson($response);
 
-            // Get remaining total
-            if ($productId > 0) {
-                $db    = Factory::getContainer()->get('DatabaseDriver');
-                $query = $db->getQuery(true)
-                    ->select('COUNT(*)')
-                    ->from($db->quoteName('#__j2commerce_variants'))
-                    ->where($db->quoteName('product_id') . ' = :productId')
-                    ->where($db->quoteName('is_master') . ' = 0')
-                    ->bind(':productId', $productId, ParameterType::INTEGER);
-
-                $db->setQuery($query);
-                $response['total'] = (int) $db->loadResult();
-            }
-        } else {
-            $response['message'] = Text::_('COM_J2COMMERCE_VARIANT_DELETE_ERROR');
+            return;
         }
+
+        $db      = Factory::getContainer()->get(DatabaseInterface::class);
+        $service = new VariantMatrixService($this->factory, $db);
+
+        $db->transactionStart();
+
+        try {
+            $service->deleteVariant($productId, $variantId);
+            $db->transactionCommit();
+        } catch (ProductApiException $e) {
+            $db->transactionRollback();
+            $response['message'] = Text::_($e->getCode() === 409 ? 'COM_J2COMMERCE_ERR_VARIANT_ON_ORDERS' : 'COM_J2COMMERCE_ERR_VARIANT_NOT_IN_PRODUCT');
+            $this->sendJson($response);
+
+            return;
+        } catch (\Throwable $e) {
+            $db->transactionRollback();
+            Log::add('products.deleteVariantAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $response['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
+            $this->sendJson($response);
+
+            return;
+        }
+
+        $response['success'] = true;
+        $response['message'] = Text::_('COM_J2COMMERCE_VARIANT_DELETED');
+        $response['total']   = $service->childVariantCount($productId);
 
         $this->sendJson($response);
     }
@@ -2498,34 +2359,43 @@ class ProductsController extends AdminController
             return;
         }
 
-        $db        = Factory::getContainer()->get('DatabaseDriver');
         $productId = $app->getInput()->getInt('product_id', 0);
 
-        if ($productId > 0) {
-            // Get all non-master variant IDs
-            $query = $db->getQuery(true)
-                ->select($db->quoteName('j2commerce_variant_id'))
-                ->from($db->quoteName('#__j2commerce_variants'))
-                ->where($db->quoteName('product_id') . ' = :productId')
-                ->where($db->quoteName('is_master') . ' = 0')
-                ->bind(':productId', $productId, ParameterType::INTEGER);
-
-            $db->setQuery($query);
-            $variants = $db->loadColumn();
-
-            $deletedCount = 0;
-            foreach ($variants as $variantId) {
-                if ($this->deleteSingleVariant((int) $variantId)) {
-                    $deletedCount++;
-                }
-            }
-
-            $response['success']       = true;
-            $response['message']       = Text::plural('COM_J2COMMERCE_N_VARIANTS_DELETED', $deletedCount);
-            $response['deleted_count'] = $deletedCount;
-        } else {
+        if ($productId <= 0) {
             $response['message'] = Text::_('COM_J2COMMERCE_INVALID_PRODUCT');
+            $this->sendJson($response);
+
+            return;
         }
+
+        $db      = Factory::getContainer()->get(DatabaseInterface::class);
+        $service = new VariantMatrixService($this->factory, $db);
+
+        $db->transactionStart();
+
+        try {
+            $deletedCount = $service->deleteChildren($productId);
+            $db->transactionCommit();
+        } catch (ProductApiException $e) {
+            $db->transactionRollback();
+            $response['message'] = $e->getCode() === 409
+                ? Text::sprintf('COM_J2COMMERCE_ERR_VARIANTS_ON_ORDERS', \count($service->orderedVariantIds($service->variantIds($productId))))
+                : Text::_('COM_J2COMMERCE_ERR_GENERIC');
+            $this->sendJson($response);
+
+            return;
+        } catch (\Throwable $e) {
+            $db->transactionRollback();
+            Log::add('products.deleteAllVariantsAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $response['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
+            $this->sendJson($response);
+
+            return;
+        }
+
+        $response['success']       = true;
+        $response['message']       = Text::plural('COM_J2COMMERCE_N_VARIANTS_DELETED', $deletedCount);
+        $response['deleted_count'] = $deletedCount;
 
         $this->sendJson($response);
     }
@@ -2564,37 +2434,45 @@ class ProductsController extends AdminController
         $variantIds = $app->getInput()->get('variant_ids', [], 'array');
         $productId  = $app->getInput()->getInt('product_id', 0);
 
-        $variantIds = ArrayHelper::toInteger($variantIds);
-        $variantIds = array_filter($variantIds);
+        $variantIds = array_values(array_filter(ArrayHelper::toInteger($variantIds)));
 
-        if (!empty($variantIds)) {
-            $deletedCount = 0;
-            foreach ($variantIds as $variantId) {
-                if ($this->deleteSingleVariant((int) $variantId)) {
-                    $deletedCount++;
-                }
-            }
+        if ($variantIds === [] || $productId <= 0) {
+            $response['message'] = Text::_($variantIds === [] ? 'COM_J2COMMERCE_NO_ITEM_SELECTED' : 'COM_J2COMMERCE_INVALID_PRODUCT');
+            $this->sendJson($response);
 
-            $response['success']       = true;
-            $response['message']       = Text::plural('COM_J2COMMERCE_N_VARIANTS_DELETED', $deletedCount);
-            $response['deleted_count'] = $deletedCount;
-
-            // Get remaining total
-            if ($productId > 0) {
-                $db    = Factory::getContainer()->get('DatabaseDriver');
-                $query = $db->getQuery(true)
-                    ->select('COUNT(*)')
-                    ->from($db->quoteName('#__j2commerce_variants'))
-                    ->where($db->quoteName('product_id') . ' = :productId')
-                    ->where($db->quoteName('is_master') . ' = 0')
-                    ->bind(':productId', $productId, ParameterType::INTEGER);
-
-                $db->setQuery($query);
-                $response['total'] = (int) $db->loadResult();
-            }
-        } else {
-            $response['message'] = Text::_('COM_J2COMMERCE_NO_ITEM_SELECTED');
+            return;
         }
+
+        $db      = Factory::getContainer()->get(DatabaseInterface::class);
+        $service = new VariantMatrixService($this->factory, $db);
+
+        $db->transactionStart();
+
+        try {
+            // Ids that are not this product's children are left alone and not counted.
+            $deletedCount = \count($service->deleteVariants($productId, $variantIds));
+            $db->transactionCommit();
+        } catch (ProductApiException $e) {
+            $db->transactionRollback();
+            $response['message'] = $e->getCode() === 409
+                ? Text::sprintf('COM_J2COMMERCE_ERR_VARIANTS_ON_ORDERS', \count($service->orderedVariantIds(array_keys($service->childVariants($productId, $variantIds)))))
+                : Text::_('COM_J2COMMERCE_ERR_GENERIC');
+            $this->sendJson($response);
+
+            return;
+        } catch (\Throwable $e) {
+            $db->transactionRollback();
+            Log::add('products.deleteSelectedVariantsAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $response['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
+            $this->sendJson($response);
+
+            return;
+        }
+
+        $response['success']       = true;
+        $response['message']       = Text::plural('COM_J2COMMERCE_N_VARIANTS_DELETED', $deletedCount);
+        $response['deleted_count'] = $deletedCount;
+        $response['total']         = $service->childVariantCount($productId);
 
         $this->sendJson($response);
     }
@@ -2602,7 +2480,6 @@ class ProductsController extends AdminController
     public function generateVariantsAjax(): void
     {
         $app = Factory::getApplication();
-        $db  = Factory::getContainer()->get('DatabaseDriver');
 
         $response = ['success' => false, 'message' => '', 'total' => 0];
 
@@ -2626,176 +2503,45 @@ class ProductsController extends AdminController
             return;
         }
 
-        $traits = ProductHelper::getTraits($productId);
-
-        if (empty($traits)) {
+        if (empty(ProductHelper::getTraits($productId))) {
             $response['message'] = Text::_('COM_J2COMMERCE_ERROR_NO_TRAITS_DEFINED');
             $this->sendJson($response);
             return;
         }
 
-        // Build option arrays using product_optionvalue_id (for mapping table)
-        $optionArrays = [];
-        foreach ($traits as $trait) {
-            if (!empty($trait->values)) {
-                $values = [];
-                foreach ($trait->values as $value) {
-                    $values[] = [
-                        'option_id'              => $trait->option_id,
-                        'product_optionvalue_id' => $value->j2commerce_product_optionvalue_id,
-                        'optionvalue_name'       => $value->optionvalue_name ?? '',
-                        'sku_suffix'             => $value->product_optionvalue_sku ?? '',
-                        'price_prefix'           => $value->product_optionvalue_prefix ?? '+',
-                        'price'                  => $value->product_optionvalue_price ?? 0,
-                    ];
-                }
-                $optionArrays[] = $values;
-            }
-        }
+        $db      = Factory::getContainer()->get(DatabaseInterface::class);
+        $service = new VariantMatrixService($this->factory, $db);
 
-        if (empty($optionArrays)) {
-            $response['message'] = Text::_('COM_J2COMMERCE_ERROR_NO_OPTION_VALUES');
+        $db->transactionStart();
+
+        try {
+            $result = $service->generate($productId);
+            $db->transactionCommit();
+        } catch (ProductApiException $e) {
+            $db->transactionRollback();
+            Log::add('products.generateVariantsAjax refused: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
+            $pointer             = $e->errors[0]['pointer'] ?? '';
+            $response['message'] = match (true) {
+                str_starts_with($pointer, '/options')  => Text::_('COM_J2COMMERCE_ERROR_NO_OPTION_VALUES'),
+                str_starts_with($pointer, '/variants') => Text::sprintf('COM_J2COMMERCE_ERR_TOO_MANY_VARIANTS', ProductApiSchema::MAX_LIST),
+                default                                => Text::_('COM_J2COMMERCE_ERR_GENERIC'),
+            };
+            $this->sendJson($response);
+            return;
+        } catch (\Throwable $e) {
+            $db->transactionRollback();
+            Log::add('products.generateVariantsAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $response['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
             $this->sendJson($response);
             return;
         }
 
-        $combinations         = ProductHelper::getCombinations($optionArrays);
-        $masterVariant        = ProductHelper::getMasterVariant($productId);
-        $baseSku              = $masterVariant->sku ?? 'PROD-' . $productId;
-        $basePrice            = (float) ($masterVariant->price ?? 0);
-        $date                 = \Joomla\CMS\Factory::getDate()->toSql();
-        $defaultWeightClassId = ConfigHelper::getDefaultWeightClassId();
-        $defaultLengthClassId = ConfigHelper::getDefaultLengthClassId();
-
-        // Load existing mapping CSVs for duplicate detection
-        $query = $db->getQuery(true)
-            ->select($db->quoteName('product_optionvalue_ids'))
-            ->from($db->quoteName('#__j2commerce_product_variant_optionvalues', 'pvo'))
-            ->join('INNER', $db->quoteName('#__j2commerce_variants', 'v')
-                . ' ON ' . $db->quoteName('v.j2commerce_variant_id') . ' = ' . $db->quoteName('pvo.variant_id'))
-            ->where($db->quoteName('v.product_id') . ' = :pid')
-            ->where($db->quoteName('v.is_master') . ' = 0')
-            ->bind(':pid', $productId, ParameterType::INTEGER);
-        $db->setQuery($query);
-        $existingCsvs = $db->loadColumn() ?: [];
-
-        // Normalize existing CSVs for comparison
-        $existingNormalized = [];
-        foreach ($existingCsvs as $csv) {
-            $existingNormalized[] = ProductHelper::normaliseOptionvalueKey($csv);
-        }
-
-        // Check if any existing variant is already set as default
-        $query = $db->getQuery(true)
-            ->select('COUNT(*)')
-            ->from($db->quoteName('#__j2commerce_variants'))
-            ->where($db->quoteName('product_id') . ' = :piddef')
-            ->where($db->quoteName('is_master') . ' = 0')
-            ->where($db->quoteName('isdefault_variant') . ' = 1')
-            ->bind(':piddef', $productId, ParameterType::INTEGER);
-        $db->setQuery($query);
-        $hasDefault = (int) $db->loadResult() > 0;
-
-        $createdCount = 0;
-        $skippedCount = 0;
-
-        foreach ($combinations as $combination) {
-            $skuParts        = [];
-            $priceAdjustment = 0.0;
-            $povIds          = [];
-
-            foreach ($combination as $optionValue) {
-                if (!empty($optionValue['sku_suffix'])) {
-                    $skuParts[] = $optionValue['sku_suffix'];
-                }
-
-                $price = (float) $optionValue['price'];
-                $priceAdjustment += ($optionValue['price_prefix'] === '-') ? -$price : $price;
-
-                $povIds[] = (int) $optionValue['product_optionvalue_id'];
-            }
-
-            // Skip combinations with missing/invalid option value IDs
-            $povIdsCsv = ProductHelper::normaliseOptionvalueKey($povIds);
-
-            if ($povIdsCsv === '') {
-                continue;
-            }
-
-            // Check for existing variant with same option combination
-            if (\in_array($povIdsCsv, $existingNormalized, true)) {
-                $skippedCount++;
-                continue;
-            }
-
-            $variantSku = $baseSku . (!empty($skuParts) ? '-' . implode('-', $skuParts) : '-V' . ($createdCount + 1));
-
-            $variantData = (object) [
-                'product_id'                    => $productId,
-                'sku'                           => $variantSku,
-                'upc'                           => '',
-                'price'                         => $basePrice + $priceAdjustment,
-                'pricing_calculator'            => 'standard',
-                'shipping'                      => 0,
-                'length'                        => 0,
-                'width'                         => 0,
-                'height'                        => 0,
-                'length_class_id'               => $defaultLengthClassId,
-                'weight'                        => 0,
-                'weight_class_id'               => $defaultWeightClassId,
-                'manage_stock'                  => 0,
-                'quantity_restriction'          => 0,
-                'min_out_qty'                   => 0,
-                'use_store_config_min_out_qty'  => 1,
-                'min_sale_qty'                  => 0,
-                'use_store_config_min_sale_qty' => 1,
-                'max_sale_qty'                  => 0,
-                'use_store_config_max_sale_qty' => 1,
-                'notify_qty'                    => 0,
-                'use_store_config_notify_qty'   => 1,
-                'availability'                  => 1,
-                'sold'                          => 0,
-                'allow_backorder'               => 0,
-                'isdefault_variant'             => (!$hasDefault && $createdCount === 0) ? 1 : 0,
-                'is_master'                     => 0,
-                'created_on'                    => $date,
-                'modified_on'                   => $date,
-            ];
-
-            try {
-                $db->insertObject('#__j2commerce_variants', $variantData, 'j2commerce_variant_id');
-                $variantId = (int) $variantData->j2commerce_variant_id;
-
-                // Insert into mapping table
-                $mapping = (object) [
-                    'variant_id'              => $variantId,
-                    'product_optionvalue_ids' => $povIdsCsv,
-                ];
-                $db->insertObject('#__j2commerce_product_variant_optionvalues', $mapping);
-
-                $existingNormalized[] = $povIdsCsv;
-                $createdCount++;
-            } catch (\Throwable $e) {
-                $skippedCount++;
-            }
-        }
-
-        // Count total variants
-        $query = $db->getQuery(true)
-            ->select('COUNT(*)')
-            ->from($db->quoteName('#__j2commerce_variants'))
-            ->where($db->quoteName('product_id') . ' = :pid2')
-            ->where($db->quoteName('is_master') . ' = 0')
-            ->bind(':pid2', $productId, ParameterType::INTEGER);
-        $db->setQuery($query);
-        $total = (int) $db->loadResult();
-
         $response['success'] = true;
-        $response['total']   = $total;
-        $response['message'] = Text::sprintf('COM_J2COMMERCE_VARIANTS_CREATED', $createdCount);
+        $response['total']   = $service->childVariantCount($productId);
+        $response['message'] = Text::sprintf('COM_J2COMMERCE_VARIANTS_CREATED', $result['created']);
 
-        if ($skippedCount > 0) {
-            $response['message'] .= ' ' . Text::sprintf('COM_J2COMMERCE_VARIANTS_SKIPPED', $skippedCount);
+        if ($result['skipped'] > 0) {
+            $response['message'] .= ' ' . Text::sprintf('COM_J2COMMERCE_VARIANTS_SKIPPED', $result['skipped']);
         }
 
         $this->sendJson($response);
@@ -2830,8 +2576,8 @@ class ProductsController extends AdminController
             return;
         }
 
-        // Build the replacement set before anything is removed - an empty result leaves
-        // the existing variants in place instead of wiping a matrix it cannot rebuild.
+        // Check the replacement set before anything is removed - a matrix the generator
+        // cannot rebuild is left in place instead of wiped.
         $traits = ProductHelper::getTraits($productId);
 
         if (empty($traits)) {
@@ -2840,162 +2586,38 @@ class ProductsController extends AdminController
             return;
         }
 
-        $optionArrays = [];
-        foreach ($traits as $trait) {
-            if (!empty($trait->values)) {
-                $values = [];
-                foreach ($trait->values as $value) {
-                    $values[] = [
-                        'option_id'              => $trait->option_id,
-                        'product_optionvalue_id' => $value->j2commerce_product_optionvalue_id,
-                        'optionvalue_name'       => $value->optionvalue_name ?? '',
-                        'sku_suffix'             => $value->product_optionvalue_sku ?? '',
-                        'price_prefix'           => $value->product_optionvalue_prefix ?? '+',
-                        'price'                  => $value->product_optionvalue_price ?? 0,
-                    ];
-                }
-                $optionArrays[] = $values;
-            }
-        }
-
-        if (empty($optionArrays)) {
+        if (!array_filter($traits, static fn (object $trait): bool => !empty($trait->values))) {
             $response['message'] = Text::_('COM_J2COMMERCE_ERROR_NO_OPTION_VALUES');
             $this->sendJson($response);
             return;
         }
 
-        // Get existing non-master variant IDs for this product
-        $query = $db->getQuery(true)
-            ->select($db->quoteName('j2commerce_variant_id'))
-            ->from($db->quoteName('#__j2commerce_variants'))
-            ->where($db->quoteName('product_id') . ' = :pid')
-            ->where($db->quoteName('is_master') . ' = 0')
-            ->bind(':pid', $productId, ParameterType::INTEGER);
-        $db->setQuery($query);
-        $variantIds = $db->loadColumn() ?: [];
+        $service = new VariantMatrixService($this->factory, $db);
 
-        // Delete everything these variants own, matching deleteSingleVariant()
-        if (!empty($variantIds)) {
-            $ids = ArrayHelper::toInteger($variantIds);
+        $db->transactionStart();
 
-            foreach ([
-                '#__j2commerce_product_variant_optionvalues',
-                '#__j2commerce_productquantities',
-                '#__j2commerce_product_prices',
-            ] as $childTable) {
-                $query = $db->getQuery(true)
-                    ->delete($db->quoteName($childTable))
-                    ->whereIn($db->quoteName('variant_id'), $ids);
-                $db->setQuery($query);
-                $db->execute();
-            }
+        try {
+            $service->deleteChildren($productId, false);
+            $result = $service->generate($productId);
+            $db->transactionCommit();
+        } catch (ProductApiException $e) {
+            $db->transactionRollback();
+            $response['message'] = $e->getCode() === 409
+                ? Text::sprintf('COM_J2COMMERCE_ERR_VARIANTS_ON_ORDERS', \count($service->orderedVariantIds($service->variantIds($productId))))
+                : Text::_('COM_J2COMMERCE_ERR_GENERIC');
+            $this->sendJson($response);
+            return;
+        } catch (\Throwable $e) {
+            $db->transactionRollback();
+            Log::add('products.regenerateVariantsAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $response['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
+            $this->sendJson($response);
+            return;
         }
-
-        // Delete all existing non-master variants
-        $query = $db->getQuery(true)
-            ->delete($db->quoteName('#__j2commerce_variants'))
-            ->where($db->quoteName('product_id') . ' = :pid2')
-            ->where($db->quoteName('is_master') . ' = 0')
-            ->bind(':pid2', $productId, ParameterType::INTEGER);
-        $db->setQuery($query);
-        $db->execute();
-
-        $combinations         = ProductHelper::getCombinations($optionArrays);
-        $masterVariant        = ProductHelper::getMasterVariant($productId);
-        $baseSku              = $masterVariant->sku ?? 'PROD-' . $productId;
-        $basePrice            = (float) ($masterVariant->price ?? 0);
-        $date                 = \Joomla\CMS\Factory::getDate()->toSql();
-        $defaultWeightClassId = ConfigHelper::getDefaultWeightClassId();
-        $defaultLengthClassId = ConfigHelper::getDefaultLengthClassId();
-
-        $createdCount = 0;
-
-        foreach ($combinations as $combination) {
-            $skuParts        = [];
-            $priceAdjustment = 0.0;
-            $povIds          = [];
-
-            foreach ($combination as $optionValue) {
-                if (!empty($optionValue['sku_suffix'])) {
-                    $skuParts[] = $optionValue['sku_suffix'];
-                }
-
-                $price = (float) $optionValue['price'];
-                $priceAdjustment += ($optionValue['price_prefix'] === '-') ? -$price : $price;
-
-                $povIds[] = (int) $optionValue['product_optionvalue_id'];
-            }
-
-            // Skip combinations with missing/invalid option value IDs
-            $povIdsCsv = ProductHelper::normaliseOptionvalueKey($povIds);
-
-            if ($povIdsCsv === '') {
-                continue;
-            }
-
-            $variantSku = $baseSku . (!empty($skuParts) ? '-' . implode('-', $skuParts) : '-V' . ($createdCount + 1));
-
-            $variantData = (object) [
-                'product_id'                    => $productId,
-                'sku'                           => $variantSku,
-                'upc'                           => '',
-                'price'                         => $basePrice + $priceAdjustment,
-                'pricing_calculator'            => 'standard',
-                'shipping'                      => 0,
-                'length'                        => 0,
-                'width'                         => 0,
-                'height'                        => 0,
-                'length_class_id'               => $defaultLengthClassId,
-                'weight'                        => 0,
-                'weight_class_id'               => $defaultWeightClassId,
-                'manage_stock'                  => 0,
-                'quantity_restriction'          => 0,
-                'min_out_qty'                   => 0,
-                'use_store_config_min_out_qty'  => 1,
-                'min_sale_qty'                  => 0,
-                'use_store_config_min_sale_qty' => 1,
-                'max_sale_qty'                  => 0,
-                'use_store_config_max_sale_qty' => 1,
-                'notify_qty'                    => 0,
-                'use_store_config_notify_qty'   => 1,
-                'availability'                  => 1,
-                'sold'                          => 0,
-                'allow_backorder'               => 0,
-                'isdefault_variant'             => ($createdCount === 0) ? 1 : 0,
-                'is_master'                     => 0,
-                'created_on'                    => $date,
-                'modified_on'                   => $date,
-            ];
-
-            try {
-                $db->insertObject('#__j2commerce_variants', $variantData, 'j2commerce_variant_id');
-                $variantId = (int) $variantData->j2commerce_variant_id;
-
-                $mapping = (object) [
-                    'variant_id'              => $variantId,
-                    'product_optionvalue_ids' => $povIdsCsv,
-                ];
-                $db->insertObject('#__j2commerce_product_variant_optionvalues', $mapping);
-
-                $createdCount++;
-            } catch (\Throwable $e) {
-                // Skip on error
-            }
-        }
-
-        // Count total
-        $query = $db->getQuery(true)
-            ->select('COUNT(*)')
-            ->from($db->quoteName('#__j2commerce_variants'))
-            ->where($db->quoteName('product_id') . ' = :pid3')
-            ->where($db->quoteName('is_master') . ' = 0')
-            ->bind(':pid3', $productId, ParameterType::INTEGER);
-        $db->setQuery($query);
-        $total = (int) $db->loadResult();
 
         $response['success'] = true;
-        $response['total']   = $total;
-        $response['message'] = Text::sprintf('COM_J2COMMERCE_VARIANTS_REGENERATED_COUNT', $createdCount);
+        $response['total']   = $service->childVariantCount($productId);
+        $response['message'] = Text::sprintf('COM_J2COMMERCE_VARIANTS_REGENERATED_COUNT', $result['created']);
 
         $this->sendJson($response);
     }
@@ -3292,7 +2914,6 @@ class ProductsController extends AdminController
             return;
         }
 
-        $db        = Factory::getContainer()->get('DatabaseDriver');
         $variantId = $app->getInput()->getInt('variant_id', 0);
         $productId = $app->getInput()->getInt('product_id', 0);
 
@@ -3302,31 +2923,22 @@ class ProductsController extends AdminController
             return;
         }
 
+        $service = new VariantMatrixService($this->factory);
+
+        // Only a child of this product can be its default; a foreign or master id changes nothing.
+        if (!$service->childVariant($productId, $variantId)) {
+            $response['message'] = Text::_('COM_J2COMMERCE_ERR_VARIANT_NOT_IN_PRODUCT');
+            $this->sendJson($response);
+            return;
+        }
+
         try {
-            // First, reset ALL variants for this product to isdefault_variant = 0
-            $query = $db->getQuery(true)
-                ->update($db->quoteName('#__j2commerce_variants'))
-                ->set($db->quoteName('isdefault_variant') . ' = 0')
-                ->where($db->quoteName('product_id') . ' = :productId')
-                ->bind(':productId', $productId, ParameterType::INTEGER);
-
-            $db->setQuery($query);
-            $db->execute();
-
-            // Then, set the specified variant as default
-            $query = $db->getQuery(true)
-                ->update($db->quoteName('#__j2commerce_variants'))
-                ->set($db->quoteName('isdefault_variant') . ' = 1')
-                ->where($db->quoteName('j2commerce_variant_id') . ' = :variantId')
-                ->bind(':variantId', $variantId, ParameterType::INTEGER);
-
-            $db->setQuery($query);
-            $db->execute();
+            $service->setDefault($productId, $variantId);
 
             $response['success']    = true;
             $response['message']    = Text::_('COM_J2COMMERCE_VARIANT_SET_DEFAULT_SUCCESS');
             $response['variant_id'] = $variantId;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::add('products.setDefaultVariantAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
             $response['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
         }
@@ -3395,69 +3007,6 @@ class ProductsController extends AdminController
         }
 
         $this->sendJson($response);
-    }
-
-    /**
-     * Delete a single variant and all related data.
-     *
-     * @param   int  $variantId  The variant ID to delete.
-     *
-     * @return  bool  True on success.
-     *
-     * @since   6.0.3
-     */
-    protected function deleteSingleVariant(int $variantId): bool
-    {
-        if ($variantId <= 0) {
-            return false;
-        }
-
-        $db = Factory::getContainer()->get('DatabaseDriver');
-
-        try {
-            // Delete inventory
-            $query = $db->getQuery(true)
-                ->delete($db->quoteName('#__j2commerce_productquantities'))
-                ->where($db->quoteName('variant_id') . ' = :variantId')
-                ->bind(':variantId', $variantId, ParameterType::INTEGER);
-
-            $db->setQuery($query);
-            $db->execute();
-
-            // Delete prices
-            $query = $db->getQuery(true)
-                ->delete($db->quoteName('#__j2commerce_product_prices'))
-                ->where($db->quoteName('variant_id') . ' = :variantId')
-                ->bind(':variantId', $variantId, ParameterType::INTEGER);
-
-            $db->setQuery($query);
-            $db->execute();
-
-            // Delete variant-to-optionvalue mapping (NOT the product_optionvalues
-            // themselves — those are product-level configuration shared across variants)
-            $query = $db->getQuery(true)
-                ->delete($db->quoteName('#__j2commerce_product_variant_optionvalues'))
-                ->where($db->quoteName('variant_id') . ' = :variantId')
-                ->bind(':variantId', $variantId, ParameterType::INTEGER);
-
-            $db->setQuery($query);
-            $db->execute();
-
-            // Delete variant
-            $query = $db->getQuery(true)
-                ->delete($db->quoteName('#__j2commerce_variants'))
-                ->where($db->quoteName('j2commerce_variant_id') . ' = :variantId')
-                ->bind(':variantId', $variantId, ParameterType::INTEGER);
-
-            $db->setQuery($query);
-            $db->execute();
-
-            return true;
-        } catch (\Exception $e) {
-            Log::add('products.deleteSingleVariant failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
-            Factory::getApplication()->enqueueMessage(Text::_('COM_J2COMMERCE_ERR_GENERIC'), 'error');
-            return false;
-        }
     }
 
     /**
@@ -3604,44 +3153,14 @@ class ProductsController extends AdminController
             return;
         }
 
-        // Check duplicate
-        $query = $db->getQuery(true)
-            ->select('COUNT(*)')
-            ->from($db->quoteName('#__j2commerce_product_options'))
-            ->where($db->quoteName('product_id') . ' = :pid')
-            ->where($db->quoteName('option_id') . ' = :oid')
-            ->bind(':pid', $productId, ParameterType::INTEGER)
-            ->bind(':oid', $optionId, ParameterType::INTEGER);
-        $db->setQuery($query);
+        $service = new ProductOptionService($this->factory, $db);
 
-        if ((int) $db->loadResult() > 0) {
+        try {
+            $productOptionId = $service->attachOption($productId, $optionId);
+        } catch (ProductApiException) {
             $response['message'] = Text::_('COM_J2COMMERCE_OPTION_ALREADY_ADDED');
             $this->sendJson($response);
             return;
-        }
-
-        // Get next ordering
-        $query = $db->getQuery(true)
-            ->select('COALESCE(MAX(' . $db->quoteName('ordering') . '), 0) + 1')
-            ->from($db->quoteName('#__j2commerce_product_options'))
-            ->where($db->quoteName('product_id') . ' = :pid2')
-            ->bind(':pid2', $productId, ParameterType::INTEGER);
-        $db->setQuery($query);
-        $nextOrdering = (int) $db->loadResult();
-
-        // Insert
-        $poTable             = $this->factory->createTable('Productoption', 'Administrator');
-        $poTable->option_id  = $optionId;
-        $poTable->product_id = $productId;
-        $poTable->ordering   = $nextOrdering;
-        $poTable->required   = 0;
-        $poTable->is_variant = 1;
-        $poTable->parent_id  = 0;
-
-        try {
-            if (!$poTable->store()) {
-                throw new \RuntimeException($poTable->getError());
-            }
         } catch (\Throwable $e) {
             Log::add('products.addProductOptionAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
             $response['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
@@ -3659,11 +3178,11 @@ class ProductsController extends AdminController
         $optionMeta = $db->loadObject();
 
         $response['success']            = true;
-        $response['productoption_id']   = $poTable->j2commerce_productoption_id;
+        $response['productoption_id']   = $productOptionId;
         $response['option_name']        = J2htmlHelper::translateKey($optionMeta->option_name ?? '');
         $response['option_unique_name'] = $optionMeta->option_unique_name ?? '';
         $response['option_type']        = $optionMeta->type ?? '';
-        $response['ordering']           = $nextOrdering;
+        $response['ordering']           = (int) ($service->findProductOption($productId, $productOptionId)->ordering ?? 0);
         $response['product_id']         = $productId;
 
         $this->sendJson($response);
@@ -3692,31 +3211,30 @@ class ProductsController extends AdminController
 
         $productOptionId = $app->getInput()->getInt('productoption_id', 0);
 
-        if (!$productOptionId) {
+        $options = new ProductOptionService($this->factory, $db);
+
+        // The form posts only the option row id; the product is read from that row.
+        $productId = $productOptionId > 0 ? $options->productIdOf($productOptionId) : 0;
+
+        if ($productId <= 0) {
             $response['message'] = Text::_('COM_J2COMMERCE_INVALID_PRODUCT_OR_OPTION');
             $this->sendJson($response);
             return;
         }
 
+        $matrix = new VariantMatrixService($this->factory, $db);
+
         $db->transactionStart();
         try {
-            // Delete cascading option values first
-            $query = $db->getQuery(true)
-                ->delete($db->quoteName('#__j2commerce_product_optionvalues'))
-                ->where($db->quoteName('productoption_id') . ' = :poId')
-                ->bind(':poId', $productOptionId, ParameterType::INTEGER);
-            $db->setQuery($query);
-            $db->execute();
-
-            // Delete the product option
-            $query = $db->getQuery(true)
-                ->delete($db->quoteName('#__j2commerce_product_options'))
-                ->where($db->quoteName('j2commerce_productoption_id') . ' = :poId2')
-                ->bind(':poId2', $productOptionId, ParameterType::INTEGER);
-            $db->setQuery($query);
-            $db->execute();
-
+            $options->detachOption($productId, $productOptionId, $matrix);
             $db->transactionCommit();
+        } catch (ProductApiException $e) {
+            $db->transactionRollback();
+            $response['message'] = $e->getCode() === 409
+                ? Text::sprintf('COM_J2COMMERCE_ERR_VARIANTS_ON_ORDERS', \count($matrix->orderedVariantIds($options->dependentVariantIds($productId, $productOptionId, $matrix))))
+                : Text::_('COM_J2COMMERCE_INVALID_PRODUCT_OR_OPTION');
+            $this->sendJson($response);
+            return;
         } catch (\Throwable $e) {
             $db->transactionRollback();
             Log::add('products.removeProductOptionAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
@@ -3775,6 +3293,8 @@ class ProductsController extends AdminController
         try {
             $db->transactionStart();
 
+            $service = new ProductOptionService($this->factory, $db);
+
             foreach ($options as $opt) {
                 $optionId = (int) ($opt['option_id'] ?? 0);
                 $ordering = (int) ($opt['ordering'] ?? 0);
@@ -3783,26 +3303,10 @@ class ProductsController extends AdminController
                     continue;
                 }
 
-                // Check if product_option already exists
-                $query = $db->getQuery(true)
-                    ->select('COUNT(*)')
-                    ->from($db->quoteName('#__j2commerce_product_options'))
-                    ->where($db->quoteName('product_id') . ' = :pid')
-                    ->where($db->quoteName('option_id') . ' = :oid')
-                    ->bind(':pid', $productId, ParameterType::INTEGER)
-                    ->bind(':oid', $optionId, ParameterType::INTEGER);
-
-                $db->setQuery($query);
-
-                if ((int) $db->loadResult() === 0) {
-                    $record             = new \stdClass();
-                    $record->product_id = $productId;
-                    $record->option_id  = $optionId;
-                    $record->parent_id  = 0;
-                    $record->ordering   = $ordering;
-                    $record->required   = 0;
-                    $record->is_variant = 1;
-                    $db->insertObject('#__j2commerce_product_options', $record, 'j2commerce_productoption_id');
+                try {
+                    $service->attachOption($productId, $optionId, $ordering);
+                } catch (ProductApiException) {
+                    continue; // Already attached.
                 }
             }
 

@@ -16,6 +16,9 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model\Behavior;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiHandlerInterface;
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiOptionsTrait;
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiSchema;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
@@ -28,8 +31,10 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
 use Joomla\Registry\Registry;
 
-class Simple
+class Simple implements ProductApiHandlerInterface
 {
+    use ProductApiOptionsTrait;
+
     protected MVCFactoryInterface $mvcFactory;
 
     private array $_rawData = [];
@@ -158,11 +163,7 @@ class Simple
             'notify_qty',
         ];
         foreach ($floatFields as $key) {
-            if (isset($data[$key]) && !empty($data[$key])) {
-                $data[$key] = (float)$data[$key];
-            } else {
-                $data[$key] = 0;
-            }
+            $data[$key] = ProductApiSchema::decimal($data[$key] ?? null);
         }
 
         // Process quantity data
@@ -549,5 +550,14 @@ class Simple
         $pluginHelper->event('AfterUpdateProductReturn', [&$return, $product, $config]);
 
         return $return;
+    }
+
+    public function apiSchema(): ProductApiSchema
+    {
+        return new ProductApiSchema('simple', [
+            'options' => ProductApiSchema::key('list|object', false, 'both', 'Create: [{option_id, required?, values: [optionvalue id | {optionvalue_id, price?, '
+                . 'prefix?, weight?, weight_prefix?, sku?, default?}]}]. Patch: {attach: [...], detach: [productoption ids], '
+                . 'values: {upsert: [{productoption_id, optionvalue_id, ...}], delete: [product_optionvalue ids]}}.'),
+        ]);
     }
 }

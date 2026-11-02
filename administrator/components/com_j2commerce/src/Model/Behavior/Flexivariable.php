@@ -16,6 +16,11 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model\Behavior;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiException;
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiHandlerInterface;
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiOptionsTrait;
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiSchema;
+use J2Commerce\Component\J2commerce\Administrator\Api\ProductPayload;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\LengthHelper;
@@ -25,6 +30,8 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\WeightHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\OptionvaluesModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\ProductOptionsModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\VariantsModel;
+use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
+use J2Commerce\Component\J2commerce\Administrator\Service\VariantMatrixService;
 use J2Commerce\Component\J2commerce\Administrator\Table\ProductTable;
 use J2Commerce\Component\J2commerce\Administrator\Table\VariantTable;
 use Joomla\CMS\Component\ComponentHelper;
@@ -43,8 +50,10 @@ use Joomla\Registry\Registry;
  *
  * @since 6.0.0
  */
-class Flexivariable
+class Flexivariable implements ProductApiHandlerInterface
 {
+    use ProductApiOptionsTrait;
+
     private array $_rawData = [];
 
     protected MVCFactoryInterface $mvcFactory;
@@ -190,7 +199,7 @@ class Flexivariable
         // Cast float fields
         $floatFields = ['price', 'length', 'width', 'height', 'weight', 'min_sale_qty', 'max_sale_qty', 'notify_qty'];
         foreach ($floatFields as $key) {
-            $data[$key] = isset($data[$key]) && !empty($data[$key]) ? (float) $data[$key] : 0;
+            $data[$key] = ProductApiSchema::decimal($data[$key] ?? null);
         }
 
         // Process quantity data
@@ -367,7 +376,7 @@ class Flexivariable
                 // Cast float fields
                 $floatFields = ['price', 'length', 'width', 'height', 'weight', 'min_sale_qty', 'max_sale_qty', 'notify_qty'];
                 foreach ($floatFields as $key) {
-                    $item->$key = isset($item->$key) && !empty($item->$key) && $item->$key > 0 ? (float) $item->$key : 0;
+                    $item->$key = isset($item->$key) && $item->$key > 0 ? ProductApiSchema::decimal($item->$key) : 0;
                 }
 
                 // Process store config checkboxes (XML checkbox value="1", absent when unchecked)
@@ -489,52 +498,10 @@ class Flexivariable
         }
     }
 
-    /**
-     * Calculate and store min/max price indexes for the product
-     */
+    /** Min/max price index over the priced children, one aggregate query. */
     public function runIndexes(object $table): void
     {
-        /** @var VariantsModel $variantModel */
-        $variantModel = $this->mvcFactory->createModel('Variants', 'Administrator', ['ignore_request' => true]);
-        $variantModel->getState();
-        $variantModel->setState('filter.product_id', $table->j2commerce_product_id);
-        $variantModel->setState('filter.is_master', 0);
-        $variantModel->setState('list.limit', 0);
-
-        $variants = $variantModel->getItems();
-
-        $minPrice = null;
-        $maxPrice = null;
-
-        foreach ($variants as $variant) {
-            if ($variant->price === '' || $variant->price == 0) {
-                continue;
-            }
-
-            if ($minPrice === null || $variant->price < $minPrice) {
-                $minPrice = $variant->price;
-            }
-
-            if ($variant->price > $maxPrice) {
-                $maxPrice = $variant->price;
-            }
-        }
-
-        $db        = Factory::getContainer()->get('DatabaseDriver');
-        $productId = (int) $table->j2commerce_product_id;
-
-        $priceIndex = $this->mvcFactory->createTable('Productpriceindex', 'Administrator');
-        $values     = (object) [
-            'product_id' => $productId,
-            'min_price'  => $minPrice ?? 0,
-            'max_price'  => $maxPrice ?? 0,
-        ];
-
-        if ($priceIndex->load($productId)) {
-            $db->updateObject('#__j2commerce_productprice_index', $values, 'product_id');
-        } else {
-            $db->insertObject('#__j2commerce_productprice_index', $values);
-        }
+        $this->variantService()->refreshPriceIndex((int) $table->j2commerce_product_id);
     }
 
     /**
@@ -1165,5 +1132,191 @@ class Flexivariable
         $pluginHelper->event('AfterUpdateProductReturn', [&$return, $product, $config]);
 
         return $return;
+    }
+
+    public function apiSchema(): ProductApiSchema
+    {
+        return new ProductApiSchema('flexivariable', [
+            'options' => ProductApiSchema::key('list|object', true, 'both', 'Create: [{option_id, values: [optionvalue ids the picks may use]}]. '
+                . 'Patch: {attach: [...], detach: [productoption ids]}; values are created per pick, not shared.'),
+            'variants' => ProductApiSchema::key('list|object', true, 'both', 'Create: [{picks: {"<option_id>": optionvalue id | 0 for any}, sku?, upc?, price, '
+                . 'quantity?, isdefault_variant?, params?}]. Patch: {upsert: [{id, ...} | {picks, price, ...}], delete: [variant ids]}. '
+                . 'quantity sent turns stock management on for the child; shipping follows the master; the master quantity is refused.'),
+        ]);
+    }
+
+    public function apiValidateCreate(ProductPayload $payload): void
+    {
+        $this->apiRefuseMasterQuantity($payload);
+        $this->apiCreateDocument($payload);
+    }
+
+    /** @return array{options: list<array>, variants: list<array>} */
+    private function apiCreateDocument(ProductPayload $payload): array
+    {
+        return $this->apiMemo($payload, 'create', function () use ($payload): array {
+            $options  = $this->optionService()->validateOptionsDocument($payload->get('options'), '/options', false);
+            $variants = $this->variantService()->validatePicksDocument($options, $payload->get('variants'), '/variants');
+            $this->variantService()->assertEntrySkus($variants, '/variants');
+
+            return ['options' => $options, 'variants' => $variants];
+        });
+    }
+
+    public function apiCreate(ProductPayload $payload): int
+    {
+        $document           = $this->apiCreateDocument($payload);
+        $row                = $payload->productRow();
+        $row['has_options'] = 1;
+        $id                 = (int) (new ProductService($this->mvcFactory))->saveProduct($row);
+
+        if ($id < 1) {
+            return 0;
+        }
+
+        $optionMap = [];
+
+        // No shared values: addCombination() writes one product_optionvalues row per pick, as the admin editor does.
+        foreach ($document['options'] as $i => $option) {
+            $optionMap[$option['option_id']] = $this->optionService()->attachOption($id, $option['option_id'], $i + 1, 0, 0, 1);
+        }
+
+        $this->apiAddPicks($id, $document['variants'], $optionMap);
+
+        return $id;
+    }
+
+    public function apiValidatePatch(int $productId, ProductPayload $payload): void
+    {
+        $this->apiRefuseMasterQuantity($payload);
+        $this->apiPatchDocument($productId, $payload);
+    }
+
+    /** @return array{options: ?array, variants: ?array} */
+    private function apiPatchDocument(int $productId, ProductPayload $payload): array
+    {
+        return $this->apiMemo($payload, 'patch', function () use ($productId, $payload): array {
+            $options = $payload->has('options') ? $this->optionService()->validateOptionsPatch($productId, $payload->get('options'), '/options', false) : null;
+
+            if ($options !== null && ($options['upsert'] !== [] || $options['delete'] !== [])) {
+                throw ProductApiException::single(400, '/options/values', 'a flexivariable product creates its values per variant pick; use variants instead.');
+            }
+
+            return [
+                'options'  => $options,
+                'variants' => $payload->has('variants') ? $this->variantService()->validateVariantsPatch($productId, $payload->get('variants'), '/variants', 'picks') : null,
+            ];
+        });
+    }
+
+    public function apiPatch(int $productId, ProductPayload $payload): void
+    {
+        $document = $this->apiPatchDocument($productId, $payload);
+        $options  = $this->optionService();
+        $variants = $this->variantService();
+
+        if ($document['options'] !== null) {
+            foreach ($document['options']['detach'] as $poId) {
+                $options->detachOption($productId, $poId, $variants);
+            }
+
+            foreach ($document['options']['attach'] as $option) {
+                $options->attachOption($productId, $option['option_id'], null, 0, 0, 1);
+            }
+
+            $options->syncHasOptions($productId);
+        }
+
+        $variable = $document['variants'] !== null ? $this->apiApplyVariants($productId, $document['variants'], $variants) : [];
+
+        if ($payload->needsProductSave() || $variable !== []) {
+            $row = $payload->productRow();
+
+            if ($variable !== []) {
+                $row['variable'] = $variable;
+            }
+
+            (new ProductService($this->mvcFactory))->saveProduct($row);
+        }
+
+        if ($document['variants'] !== null) {
+            $variants->assertPricesStored(array_column(array_filter($document['variants']['update'], static fn (array $e): bool => isset($e['price'])), 'price', 'id'));
+            $variants->ensureDefault($productId);
+        }
+    }
+
+    /**
+     * The deletes, the adds and the update snapshots of a validated `variants` document. Every default
+     * is applied before the snapshots are read, so a snapshot cannot re-flag the old default.
+     *
+     * @return array<int, array>  variant id => childFormEntry(), for the behavior's `variable[]` loop.
+     */
+    private function apiApplyVariants(int $productId, array $document, VariantMatrixService $variants): array
+    {
+        // The index is refreshed by the generate() or save that follows an add or an update.
+        $variants->deleteVariants($productId, $document['delete'], refreshIndex: $document['add'] === [] && $document['update'] === []);
+
+        if ($document['add'] !== []) {
+            $optionMap = [];
+
+            foreach ($this->optionService()->productOptions($productId) as $option) {
+                $optionMap[(int) $option->option_id] = (int) $option->j2commerce_productoption_id;
+            }
+
+            $this->apiAddPicks($productId, $document['add'], $optionMap);
+        }
+
+        foreach ($document['update'] as $entry) {
+            if (($entry['isdefault_variant'] ?? 0) === 1) {
+                $variants->setDefault($productId, $entry['id']);
+            }
+        }
+
+        $stored   = $variants->childVariants($productId, array_column($document['update'], 'id'));
+        $variable = [];
+
+        foreach ($document['update'] as $entry) {
+            if (!isset($stored[$entry['id']])) {
+                throw ProductApiException::single(409, '/variants/upsert', \sprintf('variant %d is removed by the options change in this request.', $entry['id']));
+            }
+
+            $variable[$entry['id']] = $variants->childFormEntry($stored[$entry['id']], array_diff_key($entry, ['id' => 1]));
+        }
+
+        return $variable;
+    }
+
+    /**
+     * One child per validated pick entry, the price index refreshed once after the loop.
+     *
+     * @param array<int, int> $optionMap  option_id => productoption_id
+     */
+    private function apiAddPicks(int $productId, array $entries, array $optionMap): void
+    {
+        $variants = $this->variantService();
+        $master   = $variants->masterVariant($productId);
+        $prices   = [];
+
+        foreach ($entries as $variant) {
+            $picks = [];
+
+            foreach ($variant['picks'] as $optionId => $valueId) {
+                $picks[$optionMap[$optionId]] = $valueId;
+            }
+
+            $fields = array_intersect_key($variant, array_flip(['price', 'upc', 'quantity', 'isdefault_variant', 'params']));
+            $variants->addCombination($productId, $picks, $variant['sku'] !== '' ? $variant['sku'] : null, $fields, false, $master, $prices);
+        }
+
+        $variants->assertPricesStored($prices);
+        $variants->refreshPriceIndex($productId);
+    }
+
+    /** Stock lives on the children; a master `quantity` would be accepted by the shared schema and dropped. */
+    private function apiRefuseMasterQuantity(ProductPayload $payload): void
+    {
+        if ($payload->quantity !== null) {
+            throw ProductApiException::single(400, '/quantity', 'a flexivariable product keeps its stock per variant; send quantity on the variants entries.');
+        }
     }
 }
