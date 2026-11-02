@@ -1253,7 +1253,8 @@ class Flexivariable implements ProductApiHandlerInterface
      */
     private function apiApplyVariants(int $productId, array $document, VariantMatrixService $variants): array
     {
-        $variants->deleteVariants($productId, $document['delete']);
+        // The index is refreshed by the generate() or save that follows an add or an update.
+        $variants->deleteVariants($productId, $document['delete'], refreshIndex: $document['add'] === [] && $document['update'] === []);
 
         if ($document['add'] !== []) {
             $optionMap = [];
@@ -1275,6 +1276,10 @@ class Flexivariable implements ProductApiHandlerInterface
         $variable = [];
 
         foreach ($document['update'] as $entry) {
+            if (!isset($stored[$entry['id']])) {
+                throw ProductApiException::single(409, '/variants/upsert', \sprintf('variant %d is removed by the options change in this request.', $entry['id']));
+            }
+
             $variable[$entry['id']] = $variants->childFormEntry($stored[$entry['id']], array_diff_key($entry, ['id' => 1]));
         }
 
@@ -1289,6 +1294,8 @@ class Flexivariable implements ProductApiHandlerInterface
     private function apiAddPicks(int $productId, array $entries, array $optionMap): void
     {
         $variants = $this->variantService();
+        $master   = $variants->masterVariant($productId);
+        $prices   = [];
 
         foreach ($entries as $variant) {
             $picks = [];
@@ -1298,9 +1305,10 @@ class Flexivariable implements ProductApiHandlerInterface
             }
 
             $fields = array_intersect_key($variant, array_flip(['price', 'upc', 'quantity', 'isdefault_variant', 'params']));
-            $variants->addCombination($productId, $picks, $variant['sku'] !== '' ? $variant['sku'] : null, $fields, false);
+            $variants->addCombination($productId, $picks, $variant['sku'] !== '' ? $variant['sku'] : null, $fields, false, $master, $prices);
         }
 
+        $variants->assertPricesStored($prices);
         $variants->refreshPriceIndex($productId);
     }
 

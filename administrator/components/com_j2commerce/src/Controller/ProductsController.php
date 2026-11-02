@@ -2232,8 +2232,19 @@ class ProductsController extends AdminController
                 $picks[(int) $variantKey] = (int) $variantValue;
             }
 
-            $service   = new VariantMatrixService($this->factory);
-            $variantId = $service->addCombination($productId, $picks);
+            $db      = Factory::getContainer()->get(DatabaseInterface::class);
+            $service = new VariantMatrixService($this->factory, $db);
+
+            $db->transactionStart();
+
+            try {
+                $variantId = $service->addCombination($productId, $picks);
+                $db->transactionCommit();
+            } catch (\Throwable $e) {
+                $db->transactionRollback();
+
+                throw $e;
+            }
 
             $response['success']    = true;
             $response['message']    = Text::_('COM_J2COMMERCE_VARIANT_ADDED');
@@ -2359,20 +2370,20 @@ class ProductsController extends AdminController
 
         $db      = Factory::getContainer()->get(DatabaseInterface::class);
         $service = new VariantMatrixService($this->factory, $db);
-        $ordered = $service->orderedVariantIds($service->variantIds($productId));
-
-        if ($ordered !== []) {
-            $response['message'] = Text::sprintf('COM_J2COMMERCE_ERR_VARIANTS_ON_ORDERS', \count($ordered));
-            $this->sendJson($response);
-
-            return;
-        }
 
         $db->transactionStart();
 
         try {
             $deletedCount = $service->deleteChildren($productId);
             $db->transactionCommit();
+        } catch (ProductApiException $e) {
+            $db->transactionRollback();
+            $response['message'] = $e->getCode() === 409
+                ? Text::sprintf('COM_J2COMMERCE_ERR_VARIANTS_ON_ORDERS', \count($service->orderedVariantIds($service->variantIds($productId))))
+                : Text::_('COM_J2COMMERCE_ERR_GENERIC');
+            $this->sendJson($response);
+
+            return;
         } catch (\Throwable $e) {
             $db->transactionRollback();
             Log::add('products.deleteAllVariantsAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
@@ -2434,14 +2445,6 @@ class ProductsController extends AdminController
 
         $db      = Factory::getContainer()->get(DatabaseInterface::class);
         $service = new VariantMatrixService($this->factory, $db);
-        $ordered = $service->orderedVariantIds($variantIds);
-
-        if ($ordered !== []) {
-            $response['message'] = Text::sprintf('COM_J2COMMERCE_ERR_VARIANTS_ON_ORDERS', \count($ordered));
-            $this->sendJson($response);
-
-            return;
-        }
 
         $db->transactionStart();
 
@@ -2449,6 +2452,14 @@ class ProductsController extends AdminController
             // Ids that are not this product's children are left alone and not counted.
             $deletedCount = \count($service->deleteVariants($productId, $variantIds));
             $db->transactionCommit();
+        } catch (ProductApiException $e) {
+            $db->transactionRollback();
+            $response['message'] = $e->getCode() === 409
+                ? Text::sprintf('COM_J2COMMERCE_ERR_VARIANTS_ON_ORDERS', \count($service->orderedVariantIds(array_keys($service->childVariants($productId, $variantIds)))))
+                : Text::_('COM_J2COMMERCE_ERR_GENERIC');
+            $this->sendJson($response);
+
+            return;
         } catch (\Throwable $e) {
             $db->transactionRollback();
             Log::add('products.deleteSelectedVariantsAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
@@ -2498,20 +2509,27 @@ class ProductsController extends AdminController
             return;
         }
 
-        $service = new VariantMatrixService($this->factory);
+        $db      = Factory::getContainer()->get(DatabaseInterface::class);
+        $service = new VariantMatrixService($this->factory, $db);
+
+        $db->transactionStart();
 
         try {
             $result = $service->generate($productId);
+            $db->transactionCommit();
         } catch (ProductApiException $e) {
+            $db->transactionRollback();
             Log::add('products.generateVariantsAjax refused: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
+            $pointer             = $e->errors[0]['pointer'] ?? '';
             $response['message'] = match (true) {
-                str_starts_with($e->getMessage(), '/options')  => Text::_('COM_J2COMMERCE_ERROR_NO_OPTION_VALUES'),
-                str_starts_with($e->getMessage(), '/variants') => Text::sprintf('COM_J2COMMERCE_ERR_TOO_MANY_VARIANTS', ProductApiSchema::MAX_LIST),
-                default                                        => Text::_('COM_J2COMMERCE_ERR_GENERIC'),
+                str_starts_with($pointer, '/options')  => Text::_('COM_J2COMMERCE_ERROR_NO_OPTION_VALUES'),
+                str_starts_with($pointer, '/variants') => Text::sprintf('COM_J2COMMERCE_ERR_TOO_MANY_VARIANTS', ProductApiSchema::MAX_LIST),
+                default                                => Text::_('COM_J2COMMERCE_ERR_GENERIC'),
             };
             $this->sendJson($response);
             return;
         } catch (\Throwable $e) {
+            $db->transactionRollback();
             Log::add('products.generateVariantsAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
             $response['message'] = Text::_('COM_J2COMMERCE_ERR_GENERIC');
             $this->sendJson($response);
@@ -2575,13 +2593,6 @@ class ProductsController extends AdminController
         }
 
         $service = new VariantMatrixService($this->factory, $db);
-        $ordered = $service->orderedVariantIds($service->variantIds($productId));
-
-        if ($ordered !== []) {
-            $response['message'] = Text::sprintf('COM_J2COMMERCE_ERR_VARIANTS_ON_ORDERS', \count($ordered));
-            $this->sendJson($response);
-            return;
-        }
 
         $db->transactionStart();
 
@@ -2589,6 +2600,13 @@ class ProductsController extends AdminController
             $service->deleteChildren($productId, false);
             $result = $service->generate($productId);
             $db->transactionCommit();
+        } catch (ProductApiException $e) {
+            $db->transactionRollback();
+            $response['message'] = $e->getCode() === 409
+                ? Text::sprintf('COM_J2COMMERCE_ERR_VARIANTS_ON_ORDERS', \count($service->orderedVariantIds($service->variantIds($productId))))
+                : Text::_('COM_J2COMMERCE_ERR_GENERIC');
+            $this->sendJson($response);
+            return;
         } catch (\Throwable $e) {
             $db->transactionRollback();
             Log::add('products.regenerateVariantsAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
@@ -3193,13 +3211,10 @@ class ProductsController extends AdminController
 
         $productOptionId = $app->getInput()->getInt('productoption_id', 0);
 
+        $options = new ProductOptionService($this->factory, $db);
+
         // The form posts only the option row id; the product is read from that row.
-        $query = $db->getQuery(true)
-            ->select($db->quoteName('product_id'))
-            ->from($db->quoteName('#__j2commerce_product_options'))
-            ->where($db->quoteName('j2commerce_productoption_id') . ' = :poId')
-            ->bind(':poId', $productOptionId, ParameterType::INTEGER);
-        $productId = $productOptionId > 0 ? (int) $db->setQuery($query)->loadResult() : 0;
+        $productId = $productOptionId > 0 ? $options->productIdOf($productOptionId) : 0;
 
         if ($productId <= 0) {
             $response['message'] = Text::_('COM_J2COMMERCE_INVALID_PRODUCT_OR_OPTION');
@@ -3207,21 +3222,19 @@ class ProductsController extends AdminController
             return;
         }
 
-        $options    = new ProductOptionService($this->factory, $db);
-        $matrix     = new VariantMatrixService($this->factory, $db);
-        $dependents = $options->dependentVariantIds($productId, $productOptionId, $matrix);
-        $ordered    = $matrix->orderedVariantIds($dependents);
-
-        if ($ordered !== []) {
-            $response['message'] = Text::sprintf('COM_J2COMMERCE_ERR_VARIANTS_ON_ORDERS', \count($ordered));
-            $this->sendJson($response);
-            return;
-        }
+        $matrix = new VariantMatrixService($this->factory, $db);
 
         $db->transactionStart();
         try {
-            $options->detachOption($productId, $productOptionId, $matrix, $dependents);
+            $options->detachOption($productId, $productOptionId, $matrix);
             $db->transactionCommit();
+        } catch (ProductApiException $e) {
+            $db->transactionRollback();
+            $response['message'] = $e->getCode() === 409
+                ? Text::sprintf('COM_J2COMMERCE_ERR_VARIANTS_ON_ORDERS', \count($matrix->orderedVariantIds($options->dependentVariantIds($productId, $productOptionId, $matrix))))
+                : Text::_('COM_J2COMMERCE_INVALID_PRODUCT_OR_OPTION');
+            $this->sendJson($response);
+            return;
         } catch (\Throwable $e) {
             $db->transactionRollback();
             Log::add('products.removeProductOptionAjax failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
@@ -3293,6 +3306,7 @@ class ProductsController extends AdminController
                 try {
                     $service->attachOption($productId, $optionId, $ordering);
                 } catch (ProductApiException) {
+                    continue; // Already attached.
                 }
             }
 

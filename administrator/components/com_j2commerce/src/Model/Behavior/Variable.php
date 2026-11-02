@@ -963,7 +963,8 @@ class Variable implements ProductApiHandlerInterface
      */
     protected function apiApplyVariants(int $productId, array $document, VariantMatrixService $variants): array
     {
-        $variants->deleteVariants($productId, $document['delete']);
+        // The index is refreshed by the generate() or save that follows an add or an update.
+        $variants->deleteVariants($productId, $document['delete'], refreshIndex: $document['add'] === [] && $document['update'] === []);
 
         if ($document['add'] !== []) {
             $valueMap = [];
@@ -989,6 +990,10 @@ class Variable implements ProductApiHandlerInterface
         $variable = [];
 
         foreach ($document['update'] as $entry) {
+            if (!isset($stored[$entry['id']])) {
+                throw ProductApiException::single(409, '/variants/upsert', \sprintf('variant %d is removed by the options change in this request.', $entry['id']));
+            }
+
             $variable[$entry['id']] = $variants->childFormEntry($stored[$entry['id']], $this->apiChildChanges($entry));
         }
 

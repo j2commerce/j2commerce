@@ -90,9 +90,9 @@ final class VariantMatrixService
     }
 
     /** The master SKU, else `PROD-<id>`; an empty master SKU never yields a bare `-V1`. */
-    public function baseSku(int $productId): string
+    public function baseSku(int $productId, ?object $master = null): string
     {
-        $sku = trim((string) ($this->masterVariant($productId)?->sku ?? ''));
+        $sku = trim((string) (($master ?? $this->masterVariant($productId))?->sku ?? ''));
 
         return $sku !== '' ? $sku : 'PROD-' . $productId;
     }
@@ -235,10 +235,11 @@ final class VariantMatrixService
      * set. Ids that are not the product's children are ignored. Returns the ids removed.
      *
      * @param list<int> $variantIds
+     * @param bool      $refreshIndex  False when a save that refreshes the price index follows.
      * @return list<int>
      * @throws ProductApiException  409 at `$pointer` naming the ordered children.
      */
-    public function deleteVariants(int $productId, array $variantIds, string $pointer = '/variants/delete'): array
+    public function deleteVariants(int $productId, array $variantIds, string $pointer = '/variants/delete', bool $refreshIndex = true): array
     {
         $owned = array_keys($this->childVariants($productId, array_values(array_unique(array_map('intval', $variantIds)))));
 
@@ -252,7 +253,10 @@ final class VariantMatrixService
 
         $this->purge($productId, $owned);
         $this->ensureDefault($productId);
-        $this->refreshPriceIndex($productId);
+
+        if ($refreshIndex) {
+            $this->refreshPriceIndex($productId);
+        }
 
         return $owned;
     }
@@ -319,13 +323,13 @@ final class VariantMatrixService
             ->select($db->quoteName('product_optionvalue_ids'))
             ->from($db->quoteName('#__j2commerce_product_variant_optionvalues'))
             ->whereIn($db->quoteName('variant_id'), $variantIds);
-        $ids = [];
+        $parts = [];
 
         foreach ($db->setQuery($query)->loadColumn() as $csv) {
-            $ids = array_merge($ids, ProductHelper::normaliseOptionvalueIds((string) $csv));
+            $parts[] = ProductHelper::normaliseOptionvalueIds((string) $csv);
         }
 
-        return array_values(array_unique($ids));
+        return array_values(array_unique(array_merge(...$parts)));
     }
 
     private function productType(int $productId): string
@@ -361,7 +365,7 @@ final class VariantMatrixService
     {
         $byKey   = array_flip($this->existingKeys($productId, true));
         $master  = $this->masterVariant($productId);
-        $entries = $requested === null ? $this->cartesianEntries($productId, $master) : $this->requestedEntries($productId, $requested, $byKey, $reservedSkus);
+        $entries = $requested === null ? $this->cartesianEntries($productId, $master) : $this->requestedEntries($productId, $requested, $byKey, $reservedSkus, $master);
         $default = $requested === null && !$this->hasDefault($productId) ? 0 : null;
         $result  = $this->insertEntries($productId, $entries, $byKey, $master, $requested !== null, $default);
 
@@ -464,9 +468,9 @@ final class VariantMatrixService
      * @param array<string, int> $existing      combination key => variant id, for the 409.
      * @param list<string>       $reservedSkus
      */
-    private function requestedEntries(int $productId, array $requested, array $existing, array $reservedSkus): array
+    private function requestedEntries(int $productId, array $requested, array $existing, array $reservedSkus, ?object $master): array
     {
-        $base      = $this->baseSku($productId);
+        $base      = $this->baseSku($productId, $master);
         $taken     = $this->takenSuffixes($productId, $base, array_merge(array_column($requested, 'sku'), $reservedSkus));
         $generated = [];
 
@@ -545,26 +549,39 @@ final class VariantMatrixService
      * @param array<int, int>      $picks         productoption_id => optionvalue_id; a 0 value means "any".
      * @param array<string, mixed> $fields        price (validated string), upc, quantity, isdefault_variant, params for the API path.
      * @param bool                 $refreshIndex  False inside a loop that refreshes once after it.
+     * @param object|null          $master        The product's master variant when the caller already holds it.
+     * @param array<int, string>|null $prices     A loop's collector: variant_id => price written, read back by the caller once with assertPricesStored(); null reads this child back at once.
      */
-    public function addCombination(int $productId, array $picks, ?string $sku = null, array $fields = [], bool $refreshIndex = true): int
+    public function addCombination(int $productId, array $picks, ?string $sku = null, array $fields = [], bool $refreshIndex = true, ?object $master = null, ?array &$prices = null): int
     {
-        $db        = $this->db;
-        $row       = $this->pickRow($productId, $fields);
-        $variantId = $this->insertChild($row, ProductHelper::normaliseOptionvalueKey($this->insertPickValues($picks)));
-        $newSku    = $sku !== null && $sku !== '' ? $sku : 'Flexi_' . $variantId;
+        $db  = $this->db;
+        $row = $this->pickRow($productId, $fields, $master);
 
-        $query = $db->getQuery(true)
-            ->update($db->quoteName('#__j2commerce_variants'))
-            ->set($db->quoteName('sku') . ' = :sku')
-            ->where($db->quoteName('j2commerce_variant_id') . ' = :vid')
-            ->bind(':sku', $newSku)
-            ->bind(':vid', $variantId, ParameterType::INTEGER);
-        $db->setQuery($query)->execute();
+        if ($sku !== null && $sku !== '') {
+            $row->sku = $sku;
+        }
+
+        $variantId = $this->insertChild($row, ProductHelper::normaliseOptionvalueKey($this->insertPickValues($picks)));
+
+        if ($row->sku === '') {
+            $newSku = 'Flexi_' . $variantId;
+            $query  = $db->getQuery(true)
+                ->update($db->quoteName('#__j2commerce_variants'))
+                ->set($db->quoteName('sku') . ' = :sku')
+                ->where($db->quoteName('j2commerce_variant_id') . ' = :vid')
+                ->bind(':sku', $newSku)
+                ->bind(':vid', $variantId, ParameterType::INTEGER);
+            $db->setQuery($query)->execute();
+        }
 
         $this->writeQuantity($variantId, (int) ($fields['quantity'] ?? 0));
 
         if ($fields !== []) {
-            $this->assertPriceStored($variantId, $row->price);
+            if ($prices === null) {
+                $this->assertPriceStored($variantId, $row->price);
+            } else {
+                $prices[$variantId] = $row->price;
+            }
         }
 
         if ((int) $row->isdefault_variant === 1) {
@@ -579,10 +596,10 @@ final class VariantMatrixService
     }
 
     /** The flexivariable child row, with the column defaults the admin editor has always written. */
-    private function pickRow(int $productId, array $fields): object
+    private function pickRow(int $productId, array $fields, ?object $master): object
     {
-        $master = $this->masterVariant($productId);
-        $row    = $this->childVariantRow($productId, '', $fields['price'] ?? 0.0, (int) ($fields['isdefault_variant'] ?? 0), (string) ($fields['upc'] ?? ''), [
+        $master ??= $this->masterVariant($productId);
+        $row   = $this->childVariantRow($productId, '', $fields['price'] ?? 0.0, (int) ($fields['isdefault_variant'] ?? 0), (string) ($fields['upc'] ?? ''), [
             'params'                        => json_encode(['variant_main_image' => ''] + ($fields['params'] ?? []), JSON_THROW_ON_ERROR),
             'shipping'                      => (int) ($master?->shipping ?? 0),
             'manage_stock'                  => (int) isset($fields['quantity']),
@@ -701,6 +718,8 @@ final class VariantMatrixService
     {
         $sku = mb_strtolower($sku);
 
+        // ext-intl is optional in Joomla 6; without it accent folding is skipped and skuPointer() falls back to the DB collation.
+        // DELETE WHEN: ext-intl is a hard Joomla requirement.
         if (class_exists(\Normalizer::class)) {
             $sku = preg_replace('/\p{Mn}+/u', '', (string) \Normalizer::normalize($sku, \Normalizer::FORM_D)) ?? $sku;
         }
@@ -969,7 +988,7 @@ final class VariantMatrixService
      * @return list<array<string, mixed>>  Entries with `options` as a sorted list of optionvalue ids.
      * @throws ProductApiException
      */
-    public function validateMatrixDocument(array $options, mixed $variants, string $pointer, array $extraKeys = []): array
+    public function validateMatrixDocument(array $options, mixed $variants, string $pointer, array $extraKeys = [], array $positions = []): array
     {
         if (!\is_array($variants) || $variants === [] || !array_is_list($variants)) {
             throw ProductApiException::single(400, $pointer, 'must be a non-empty list of {"options": [one optionvalue id per option], "price", ...}.');
@@ -990,7 +1009,7 @@ final class VariantMatrixService
         $out  = [];
 
         foreach ($variants as $n => $variant) {
-            $at = $pointer . '/' . $n;
+            $at = $pointer . '/' . ($positions[$n] ?? $n);
 
             if (!\is_array($variant) || array_diff_key($variant, array_flip($keys)) !== []) {
                 throw ProductApiException::single(400, $at, 'accepts: ' . implode(', ', $keys) . '.');
@@ -1003,7 +1022,7 @@ final class VariantMatrixService
                 throw ProductApiException::single(400, $at, \sprintf('repeats the option combination of %s/%s.', $pointer, $seen[$key]));
             }
 
-            $seen[$key]       = $n;
+            $seen[$key]       = $positions[$n] ?? $n;
             $entry            = $this->normaliseEntry($variant, $at, true);
             $entry['options'] = $pick;
             $out[]            = $entry;
@@ -1045,7 +1064,7 @@ final class VariantMatrixService
      *
      * @return list<array<string, mixed>>  Entries with `picks` as option_id => optionvalue_id.
      */
-    public function validatePicksDocument(array $options, mixed $variants, string $pointer, array $extraKeys = []): array
+    public function validatePicksDocument(array $options, mixed $variants, string $pointer, array $extraKeys = [], array $positions = []): array
     {
         if (!\is_array($variants) || $variants === [] || !array_is_list($variants)) {
             throw ProductApiException::single(400, $pointer, 'must be a non-empty list of {"picks": {"<option_id>": optionvalue_id}, "price", ...}.');
@@ -1059,15 +1078,22 @@ final class VariantMatrixService
             $allowed[$option['option_id']] = array_column($option['values'], 'optionvalue_id');
         }
 
-        $keys = array_merge(['picks'], self::ENTRY_KEYS, $extraKeys);
-        $seen = [];
-        $out  = [];
+        $keys  = array_merge(['picks'], self::ENTRY_KEYS, $extraKeys);
+        $seen  = [];
+        $out   = [];
+        $total = 0;
 
         foreach ($variants as $n => $variant) {
-            $at = $pointer . '/' . $n;
+            $at = $pointer . '/' . ($positions[$n] ?? $n);
 
             if (!\is_array($variant) || array_diff_key($variant, array_flip($keys)) !== [] || !\is_array($variant['picks'] ?? null) || $variant['picks'] === []) {
                 throw ProductApiException::single(400, $at, 'accepts: ' . implode(', ', $keys) . '; picks is required.');
+            }
+
+            $total += \count($variant['picks']);
+
+            if ($total > ProductApiSchema::MAX_LIST) {
+                throw ProductApiException::single(400, $at . '/picks', \sprintf('the picks of all entries must not add up to more than %d.', ProductApiSchema::MAX_LIST));
             }
 
             $picks = $this->picksOf($variant['picks'], $at, $allowed);
@@ -1077,7 +1103,7 @@ final class VariantMatrixService
                 throw ProductApiException::single(400, $at, \sprintf('repeats the picks of %s/%s.', $pointer, $seen[$key]));
             }
 
-            $seen[$key]     = $n;
+            $seen[$key]     = $positions[$n] ?? $n;
             $entry          = $this->normaliseEntry($variant, $at, true);
             $entry['picks'] = $picks;
             $out[]          = $entry;
@@ -1253,8 +1279,8 @@ final class VariantMatrixService
 
         $positions = array_keys($add);
         $validated = $mode === 'picks'
-            ? $this->validatePicksDocument($options, array_values($add), $pointer . '/upsert', $extraKeys)
-            : $this->validateMatrixDocument($options, array_values($add), $pointer . '/upsert', $extraKeys);
+            ? $this->validatePicksDocument($options, array_values($add), $pointer . '/upsert', $extraKeys, $positions)
+            : $this->validateMatrixDocument($options, array_values($add), $pointer . '/upsert', $extraKeys, $positions);
 
         $existingPicks = $mode === 'picks' ? array_flip($this->existingPickKeys($productId, $attached)) : [];
 
@@ -1368,6 +1394,27 @@ final class VariantMatrixService
             throw ProductApiException::single(400, $pointer . '/params', 'must be an object.');
         }
 
+        // Variant images follow the product image rule: a path under a store image folder.
+        $main = $params['variant_main_image'] ?? '';
+
+        if (!\is_string($main) || ($main !== '' && !ProductApiSchema::isLocalImage($main))) {
+            throw ProductApiException::single(400, $pointer . '/params/variant_main_image', 'must be a file in one of the store image folders.');
+        }
+
+        $images = $params['variant_images'] ?? [];
+
+        if (!\is_array($images)) {
+            throw ProductApiException::single(400, $pointer . '/params/variant_images', 'must be a list of images.');
+        }
+
+        foreach ($images as $n => $image) {
+            $path = \is_array($image) ? ($image['path'] ?? '') : $image;
+
+            if (!\is_string($path) || ($path !== '' && !ProductApiSchema::isLocalImage($path))) {
+                throw ProductApiException::single(400, $pointer . '/params/variant_images/' . $n, 'must be a file in one of the store image folders.');
+            }
+        }
+
         return ['params' => $params];
     }
 
@@ -1393,7 +1440,7 @@ final class VariantMatrixService
     private function cartesianEntries(int $productId, ?object $master): array
     {
         $optionArrays = $this->traitValues($productId);
-        $base         = $this->baseSku($productId);
+        $base         = $this->baseSku($productId, $master);
         $basePrice    = (float) ($master?->price ?? 0);
         $entries      = [];
         $n            = 0;

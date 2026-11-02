@@ -18,7 +18,6 @@ use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiException;
 use J2Commerce\Component\J2commerce\Administrator\Api\ProductApiSchema;
 use J2Commerce\Component\J2commerce\Administrator\Api\ProductPayload;
 use J2Commerce\Component\J2commerce\Administrator\Event\Api\ProductReadEvent;
-use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\FilterSourceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\ProductModel as AdminProductModel;
 use J2Commerce\Component\J2commerce\Administrator\Service\ProductOptionService;
@@ -142,14 +141,16 @@ class ProductModel extends AdminProductModel
 
     private function createThroughHandler(array $posted, array $merged): bool
     {
-        $type = $posted['product_type'] ?? '';
+        $type = $posted['product_type'] ?? null;
 
-        if (!\is_scalar($type) || trim((string) $type) === '') {
+        if (!\is_string($type) || trim($type) === '') {
             throw ProductApiException::single(400, '/product_type', \sprintf('is required. Creatable types: %s.', implode(', ', $this->productService()->creatableTypes())));
         }
 
-        $handler = $this->requireHandler(trim((string) $type), 'created');
-        $schema  = ProductApiSchema::shared()->merge($handler->apiSchema());
+        $type                   = trim($type);
+        $posted['product_type'] = $type;
+        $handler                = $this->requireHandler($type, 'created');
+        $schema                 = ProductApiSchema::shared()->merge($handler->apiSchema());
 
         $this->assertKnownKeys($posted, $schema->keys('create'));
 
@@ -445,7 +446,7 @@ class ProductModel extends AdminProductModel
 
         foreach (['sku', 'upc'] as $field) {
             if (\array_key_exists($field, $posted)) {
-                if (!\is_scalar($posted[$field]) || mb_strlen(trim((string) $posted[$field])) > self::TEXT_MAX_LENGTH) {
+                if (!(\is_string($posted[$field]) || \is_int($posted[$field])) || mb_strlen(trim((string) $posted[$field])) > self::TEXT_MAX_LENGTH) {
                     $errors[] = ['pointer' => '/' . $field, 'detail' => \sprintf('must be a string of %d characters or fewer.', self::TEXT_MAX_LENGTH)];
                 } else {
                     $out[$field] = trim((string) $posted[$field]);
@@ -732,7 +733,7 @@ class ProductModel extends AdminProductModel
 
             if (str_ends_with($field, '_alt')) {
                 $images[$field] = mb_substr(strip_tags($value), 0, self::TEXT_MAX_LENGTH);
-            } elseif ($value !== '' && !$this->isLocalImage($value)) {
+            } elseif ($value !== '' && !ProductApiSchema::isLocalImage($value)) {
                 $errors[] = ['pointer' => '/' . $field, 'detail' => 'must be a file in one of the store image folders.'];
             } else {
                 $images[$field] = $value;
@@ -742,26 +743,7 @@ class ProductModel extends AdminProductModel
         return $images;
     }
 
-    private function isLocalImage(string $value): bool
-    {
-        $path = explode('#', $value, 2)[0];
-
-        if (str_contains($path, '..') || str_contains($path, ':') || preg_match('/["\'<>\\\\`\x00-\x1F\x7F]/', $value)) {
-            return false;
-        }
-
-        foreach (ConfigHelper::getImageDirectoryPaths() as $root) {
-            $root = trim($root, '/');
-
-            if ($root !== '' && str_starts_with($path, $root . '/')) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /** One transaction around the write; a ProductApiException keeps its status, the rest is logged and generic. */
+    /** One transaction around the write; a ProductApiException keeps its status, the rest is a logged server fault with a generic message. */
     private function inTransaction(callable $write, string $verb): mixed
     {
         $db = $this->getDatabase();
@@ -780,11 +762,7 @@ class ProductModel extends AdminProductModel
             $db->transactionRollback();
             Log::add('API product ' . $verb . ': ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
 
-            if (str_contains($e->getMessage(), 'Duplicate entry')) {
-                throw ProductApiException::single(409, '/', 'A product for this article already exists.');
-            }
-
-            throw ProductApiException::single(400, '/', 'The product could not be ' . $verb . '.');
+            throw ProductApiException::single(500, '/', 'The product could not be ' . $verb . '.');
         }
     }
 

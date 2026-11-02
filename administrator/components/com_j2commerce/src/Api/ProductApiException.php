@@ -20,7 +20,7 @@ use Joomla\CMS\MVC\Controller\Exception\Save;
 final class ProductApiException extends Save
 {
     /** @param list<array{pointer: string, detail: string}> $errors */
-    public function __construct(int $status, array $errors)
+    public function __construct(int $status, public readonly array $errors)
     {
         parent::__construct(
             implode("\n", array_map(static fn (array $e): string => $e['pointer'] . ': ' . $e['detail'], $errors)),

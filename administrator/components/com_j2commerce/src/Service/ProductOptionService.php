@@ -276,6 +276,19 @@ final class ProductOptionService
         return (int) $db->setQuery($query)->loadResult() === 1;
     }
 
+    /** The product a product_options row belongs to; 0 when the row does not exist. */
+    public function productIdOf(int $productOptionId): int
+    {
+        $db    = $this->db;
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('product_id'))
+            ->from($db->quoteName('#__j2commerce_product_options'))
+            ->where($db->quoteName('j2commerce_productoption_id') . ' = :poid')
+            ->bind(':poid', $productOptionId, ParameterType::INTEGER);
+
+        return (int) $db->setQuery($query, 0, 1)->loadResult();
+    }
+
     /** The product_options row when it belongs to the product. */
     public function findProductOption(int $productId, int $productOptionId): ?object
     {
@@ -441,8 +454,15 @@ final class ProductOptionService
             $allowed[] = 'parent_option_id';
         }
 
+        $total = 0;
+
         foreach ($options as $n => $option) {
             $entry = $this->normaliseOption($option, $pointer . '/' . $n, $allowed, $modifiers, $optionAt, $attached);
+            $total += \count($entry['values']);
+
+            if ($total > ProductApiSchema::MAX_LIST) {
+                throw ProductApiException::single(400, $pointer, \sprintf('must not list more than %d values in total.', ProductApiSchema::MAX_LIST));
+            }
 
             $optionAt[$entry['option_id']] = $n;
             $out[]                         = $entry;
@@ -889,7 +909,14 @@ final class ProductOptionService
             $attrs = array_diff_key($value, array_flip(['productoption_id', 'optionvalue_id', 'parent_values']));
 
             if (\array_key_exists('parent_values', $value)) {
-                $attrs['parent_optionvalue'] = implode(',', array_map(static fn (int $id): int => $stored[$parentOf[$poId]][$id], $value['parent_values']));
+                $parentIds = [];
+
+                foreach ($value['parent_values'] as $id) {
+                    $parentIds[] = $stored[$parentOf[$poId]][$id]
+                        ?? throw ProductApiException::single(400, '/options/values/upsert', \sprintf('parent value %d is removed in this request.', $id));
+                }
+
+                $attrs['parent_optionvalue'] = implode(',', $parentIds);
             }
 
             $povId = $byPoId[$poId][$value['optionvalue_id']] ?? 0;

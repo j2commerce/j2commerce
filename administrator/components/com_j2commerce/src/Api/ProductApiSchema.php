@@ -14,6 +14,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Api;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
+
 /** Keys a product type accepts through the API; `type`, with the class that declares apiSchema(), is how ProductService::apiHandler() tells a real handler from an inherited one. */
 final class ProductApiSchema
 {
@@ -133,5 +135,25 @@ final class ProductApiSchema
         }
 
         return $keys;
+    }
+
+    /** A path under one of the store image folders (the part after # is ignored); never relative, scheme-bearing or quoted. */
+    public static function isLocalImage(string $value): bool
+    {
+        $path = explode('#', $value, 2)[0];
+
+        if (str_contains($path, '..') || str_contains($path, ':') || preg_match('/["\'<>\\\\`\x00-\x1F\x7F]/', $value)) {
+            return false;
+        }
+
+        foreach (ConfigHelper::getImageDirectoryPaths() as $root) {
+            $root = trim($root, '/');
+
+            if ($root !== '' && str_starts_with($path, $root . '/')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
