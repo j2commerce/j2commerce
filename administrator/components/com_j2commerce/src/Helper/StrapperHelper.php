@@ -841,6 +841,12 @@ class StrapperHelper
             $wa->registerAndUseStyle('com_j2commerce.site', 'media/com_j2commerce/css/site/j2commerce.css');
         }
 
+        $imageCss = ImageHelper::getDisplayCss();
+
+        if ($imageCss !== '') {
+            $wa->addInlineStyle($imageCss, ['name' => 'com_j2commerce.image-display']);
+        }
+
         if (file_exists(JPATH_SITE . '/media/com_j2commerce/css/site/j2commerce-j2store.css')) {
             $wa->registerAndUseStyle(
                 'com_j2commerce.site.j2store',

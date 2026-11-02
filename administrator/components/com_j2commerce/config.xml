@@ -1871,6 +1871,32 @@
         </field>
 
         <field
+            name="image_aspect_ratio"
+            type="list"
+            label="COM_J2COMMERCE_CONFIG_IMAGE_ASPECT_RATIO"
+            description="COM_J2COMMERCE_CONFIG_IMAGE_ASPECT_RATIO_DESC"
+            default=""
+        >
+            <option value="">COM_J2COMMERCE_CONFIG_IMAGE_LAYOUT_DEFAULT</option>
+            <option value="1 / 1">1:1</option>
+            <option value="4 / 3">4:3</option>
+            <option value="3 / 4">3:4</option>
+            <option value="16 / 9">16:9</option>
+        </field>
+
+        <field
+            name="image_fit"
+            type="list"
+            label="COM_J2COMMERCE_CONFIG_IMAGE_FIT"
+            description="COM_J2COMMERCE_CONFIG_IMAGE_FIT_DESC"
+            default=""
+        >
+            <option value="">COM_J2COMMERCE_CONFIG_IMAGE_LAYOUT_DEFAULT</option>
+            <option value="contain">COM_J2COMMERCE_CONFIG_IMAGE_FIT_CONTAIN</option>
+            <option value="cover">COM_J2COMMERCE_CONFIG_IMAGE_FIT_COVER</option>
+        </field>
+
+        <field
             name="image_auto_thumbnail"
             type="radio"
             label="COM_J2COMMERCE_CONFIG_IMAGE_AUTO_THUMBNAIL"

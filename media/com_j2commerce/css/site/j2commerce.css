@@ -107,7 +107,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    aspect-ratio: 1 / 1;
+    aspect-ratio: var(--j2c-img-ratio, 1 / 1);
     overflow: hidden;
     position: relative;
     background: var(--product-color-bg-muted);
@@ -115,7 +115,13 @@
 .product-gallery-main .swiper-slide img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: var(--j2c-img-fit, cover);
+}
+/* zoom-vanilla moves the image out of its slide and sizes it inline; show it at its own shape. */
+img.j2commerce-product-main-image.zoom-img {
+    aspect-ratio: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
 }
 
 /* Zoom icon overlay — visible when zoom-vanilla.js is active */
@@ -216,8 +222,8 @@
 .product-gallery-thumbs .swiper-slide {
     /* Swiper sets the slide width inline (slidesPerView), so a fixed height makes the
        thumb non-square. Track the swiper-computed width with aspect-ratio so thumbs
-       stay perfectly square regardless of how many fit across. */
-    aspect-ratio: 1 / 1;
+       keep the display ratio (square by default) regardless of how many fit across. */
+    aspect-ratio: var(--j2c-img-ratio, 1 / 1);
     height: auto;
     align-self: flex-start;
     width: 100px;
@@ -233,8 +239,15 @@
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: var(--j2c-img-fit, cover);
     border-radius: var(--product-radius-sm);
+}
+/* Bootstrap .ratio thumbs (tmpl/product/default_images.php): beats .ratio-1x1, which stays as the fallback. */
+.j2commerce-image-container.ratio {
+    --bs-aspect-ratio: var(--j2c-img-ratio-pct, 100%);
+}
+.j2commerce-image-container.ratio > img {
+    object-fit: var(--j2c-img-fit, fill);
 }
 .product-gallery-thumbs .swiper-slide:hover {
     opacity: 0.8;
