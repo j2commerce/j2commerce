@@ -1764,7 +1764,9 @@ class OrderModel extends AdminModel
             ->bind(':modifiedOn', $now)
             ->bind(':pk', $pk, ParameterType::INTEGER);
 
-        if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $emailValid = $email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL);
+
+        if ($emailValid) {
             $update->set($db->quoteName('user_email') . ' = :userEmail')
                 ->bind(':userEmail', $email);
         }
@@ -1797,8 +1799,33 @@ class OrderModel extends AdminModel
             }
         }
 
-        $db->setQuery($update);
-        $db->execute();
+        $db->transactionStart(true);
+
+        try {
+            $db->setQuery($update)->execute();
+
+            // Download rows (guest lookup) and coupon redemptions (per-customer limits) each keep
+            // their own copy of the order's email, so both follow it.
+            if ($emailValid) {
+                $orderIdStr = (string) $orderId;
+
+                foreach (['#__j2commerce_orderdownloads' => 'user_email', '#__j2commerce_orderdiscounts' => 'discount_customer_email'] as $table => $column) {
+                    $copy = $db->getQuery(true)
+                        ->update($db->quoteName($table))
+                        ->set($db->quoteName($column) . ' = :copyEmail')
+                        ->where($db->quoteName('order_id') . ' = :copyOrderId')
+                        ->bind(':copyEmail', $email)
+                        ->bind(':copyOrderId', $orderIdStr);
+                    $db->setQuery($copy)->execute();
+                }
+            }
+
+            $db->transactionCommit(true);
+        } catch (\Throwable $e) {
+            $db->transactionRollback(true);
+
+            throw $e;
+        }
 
         if (array_intersect_key(array_flip(self::SHIPPING_SAVE_FIELDS), $data)) {
             $this->saveOrderShipping($orderId, $data);

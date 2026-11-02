@@ -41,8 +41,9 @@ $item = $this->item;
                 <span class="fa-solid fa-plus me-1" aria-hidden="true"></span> <?php echo Text::_('COM_J2COMMERCE_CUSTOMER_NEW'); ?>
             </button>
         </div>
-        <div class="col-md-6" data-showon='[{"field":"jform[customer_type]","values":["guest"],"sign":"=","op":""}]'>
-            <label for="jform_user_email" class="form-label fw-semibold j2c-field-label"><?php echo Text::_('COM_J2COMMERCE_FIELD_GUEST_EMAIL'); ?></label>
+        <?php // A new registered order takes the account email, so only an existing order offers it to edit. ?>
+        <div class="col-md-6"<?php echo $this->isNew ? ' data-showon=\'[{"field":"jform[customer_type]","values":["guest"],"sign":"=","op":""}]\'' : ''; ?>>
+            <label for="jform_user_email" class="form-label fw-semibold j2c-field-label"><?php echo Text::_($this->isNew ? 'COM_J2COMMERCE_FIELD_GUEST_EMAIL' : 'COM_J2COMMERCE_FIELD_EMAIL'); ?></label>
             <?php echo $this->form->getInput('user_email'); ?>
         </div>
 
