@@ -2378,13 +2378,7 @@ class ProductHelper
      */
     public static function validateFlexivariants(array $variants, array $options): bool
     {
-        // A variant is valid when its product_optionvalue_ids contain exactly one value from each
-        // option. This used to be checked by building the full Cartesian product of every option's
-        // values with getCombinations() and searching it with in_array(). Flexivariable products
-        // store one product_optionvalues row per option per variant, so that list grows as
-        // variants^options (48 variants x 4 options = 5.3 million combinations), which costs
-        // seconds of CPU and over 1 GB of memory per product load. Match each variant's IDs to the
-        // options directly instead, which is linear in variants x options.
+        // Match IDs to options directly: a Cartesian product grows as variants^options here.
         $traits = [];
 
         foreach ($options as $option) {
@@ -2418,15 +2412,9 @@ class ProductHelper
     }
 
     /**
-     * Check that each ID can be assigned to a different trait (option) that contains it, so that
-     * the IDs form exactly one value per option regardless of their order.
+     * Whether each ID can take a distinct option that contains it (one value per option, any order).
      *
-     * @param   array<int, int>                $ids     Normalised product_optionvalue IDs of a variant.
-     * @param   array<int, array<int, bool>>   $traits  Option value ID sets, one per option.
-     *
-     * @return  bool
-     *
-     * @since   6.6.4
+     * @since   6.6.6
      */
     private static function matchOptionvalueIdsToTraits(array $ids, array $traits): bool
     {
@@ -2460,7 +2448,7 @@ class ProductHelper
 
         return true;
     }
-    
+
     // =========================================================================
     // PRICING METHODS
     // =========================================================================
