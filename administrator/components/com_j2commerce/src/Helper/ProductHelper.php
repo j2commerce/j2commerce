@@ -2378,6 +2378,7 @@ class ProductHelper
      */
     public static function validateFlexivariants(array $variants, array $options): bool
     {
+        // Match IDs to options directly: a Cartesian product grows as variants^options here.
         $traits = [];
 
         foreach ($options as $option) {
@@ -2385,24 +2386,62 @@ class ProductHelper
                 $attributes = [];
 
                 foreach ($option['optionvalue'] as $pov) {
-                    $attributes[] = $pov['product_optionvalue_id'];
+                    $attributes[(int) $pov['product_optionvalue_id']] = true;
                 }
 
                 $traits[] = $attributes;
             }
         }
 
-        // getCombinations() returns array of arrays — convert to normalised CSV keys for comparison
-        $csvArray = array_map(
-            static fn (array $combo): string => self::normaliseOptionvalueKey($combo),
-            self::getCombinations($traits)
-        );
+        $traitCount = \count($traits);
 
         foreach ($variants as $variant) {
             // Use variant_name_ids (original CSV) if available, fall back to variant_name
-            $variantCsv = self::normaliseOptionvalueKey($variant->variant_name_ids ?? $variant->variant_name ?? '');
+            $variantIds = self::normaliseOptionvalueIds($variant->variant_name_ids ?? $variant->variant_name ?? '');
 
-            if (!\in_array($variantCsv, $csvArray, true)) {
+            if ($traitCount === 0 || \count($variantIds) !== $traitCount) {
+                return false;
+            }
+
+            if (!self::matchOptionvalueIdsToTraits($variantIds, $traits)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Whether each ID can take a distinct option that contains it (one value per option, any order).
+     *
+     * @since   6.6.6
+     */
+    private static function matchOptionvalueIdsToTraits(array $ids, array $traits): bool
+    {
+        $traitOwner = [];
+
+        $assign = static function (int $idIndex, array &$visited) use (&$assign, $ids, $traits, &$traitOwner): bool {
+            foreach ($traits as $traitIndex => $members) {
+                if (!isset($members[$ids[$idIndex]]) || isset($visited[$traitIndex])) {
+                    continue;
+                }
+
+                $visited[$traitIndex] = true;
+
+                if (!isset($traitOwner[$traitIndex]) || $assign($traitOwner[$traitIndex], $visited)) {
+                    $traitOwner[$traitIndex] = $idIndex;
+
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        foreach (array_keys($ids) as $idIndex) {
+            $visited = [];
+
+            if (!$assign($idIndex, $visited)) {
                 return false;
             }
         }
