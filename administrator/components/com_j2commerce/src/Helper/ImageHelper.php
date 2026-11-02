@@ -39,6 +39,53 @@ class ImageHelper
 
     private static ?array $imageUploadParams = null;
 
+    /** Allow-list for the image_aspect_ratio setting: CSS value => [width, height]. */
+    private const DISPLAY_RATIOS = [
+        '1 / 1'  => [1, 1],
+        '4 / 3'  => [4, 3],
+        '3 / 4'  => [3, 4],
+        '16 / 9' => [16, 9],
+    ];
+
+    private const DISPLAY_FITS = ['contain', 'cover'];
+
+    /** @return array{0:int,1:int}|null Null when the layout default ratio applies. */
+    public static function getDisplayRatio(): ?array
+    {
+        return self::DISPLAY_RATIOS[(string) ComponentHelper::getParams('com_j2commerce')->get('image_aspect_ratio', '')] ?? null;
+    }
+
+    /** Height matching $width at the configured display ratio; $width (square) when none is set. */
+    public static function displayHeight(int $width): int
+    {
+        $ratio = self::getDisplayRatio();
+
+        return $ratio ? (int) round($width * $ratio[1] / $ratio[0]) : $width;
+    }
+
+    /** Inline CSS for the display ratio/fit settings; empty when both use the layout default. */
+    public static function getDisplayCss(): string
+    {
+        $params = ComponentHelper::getParams('com_j2commerce');
+        $ratio  = (string) $params->get('image_aspect_ratio', '');
+        $fit    = (string) $params->get('image_fit', '');
+        $vars   = '';
+        $rules  = '';
+
+        if (isset(self::DISPLAY_RATIOS[$ratio])) {
+            [$w, $h] = self::DISPLAY_RATIOS[$ratio];
+            $vars .= '--j2c-img-ratio:' . $ratio . ';--j2c-img-ratio-pct:' . round($h / $w * 100, 3) . '%;';
+            // Listing images (category, tag, product modules) have no layout ratio, so one is only imposed when set.
+            $rules = '.j2commerce-product-image img{width:100%;aspect-ratio:var(--j2c-img-ratio);object-fit:var(--j2c-img-fit,contain)}';
+        }
+
+        if (\in_array($fit, self::DISPLAY_FITS, true)) {
+            $vars .= '--j2c-img-fit:' . $fit . ';';
+        }
+
+        return $vars === '' ? '' : ':root{' . $vars . '}' . $rules;
+    }
+
     /**
      * Get the singleton instance
      *

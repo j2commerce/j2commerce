@@ -122,7 +122,7 @@ $thumbsId  = 'product-gallery-thumbs-' . $productId;
         <div class="swiper-wrapper">
             <?php foreach ($slides as $slide) : ?>
                 <div class="swiper-slide">
-                    <img src="<?php echo $this->escape(ImageHelper::getProductImage($slide['src'], $main_width, 'raw')); ?>" alt="<?php echo $this->escape($slide['alt']); ?>" class="j2commerce-product-main-image" <?php if ($enableZoom && empty($slide['decorative'])) : ?>data-action="zoom"<?php endif; ?> width="<?php echo $main_width;?>" height="<?php echo $main_width;?>" />
+                    <img src="<?php echo $this->escape(ImageHelper::getProductImage($slide['src'], $main_width, 'raw')); ?>" alt="<?php echo $this->escape($slide['alt']); ?>" class="j2commerce-product-main-image" <?php if ($enableZoom && empty($slide['decorative'])) : ?>data-action="zoom"<?php endif; ?> width="<?php echo $main_width;?>" height="<?php echo ImageHelper::displayHeight($main_width); ?>" />
                     <?php if ($enableZoom && empty($slide['decorative'])) : ?>
                         <span class="product-zoom-icon" aria-hidden="true">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
