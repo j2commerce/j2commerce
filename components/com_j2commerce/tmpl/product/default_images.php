@@ -11,6 +11,7 @@
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use Joomla\CMS\Factory;
@@ -39,6 +40,11 @@ $defaultThumbImage = 'images/default_800_thumb.webp';
 
 $additional_images = json_decode($this->item->additional_images);
 $additional_images = array_filter((array)$additional_images);
+
+// A product with no image at all shows the store's Default Product Image, when one is set.
+$defaultImage = (empty($this->item->main_image) && !$additional_images)
+    ? HTMLHelper::_('cleanImageURL', $platform->getImagePath(ImageHelper::getDefaultProductImage()))->url
+    : '';
 
 ?>
 <div class="position-relative j2commerce-product-image">
@@ -85,6 +91,10 @@ $additional_images = array_filter((array)$additional_images);
                     </button>
                 </div>
             <?php endif;?>
+        </div>
+    <?php elseif ($this->params->get('item_show_product_main_image', 1) && $defaultImage !== '') : ?>
+        <div class="mb-7 text-center">
+            <img src="<?php echo $this->escape($defaultImage); ?>" alt="" class="img-fluid rounded-1 j2commerce-product-default-image">
         </div>
     <?php endif; ?>
     <?php if( $this->params->get('item_show_product_additional_image', 1) && isset($this->item->additional_images) && !empty($this->item->additional_images)):

@@ -11,6 +11,7 @@
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -64,7 +65,9 @@ $grandTotalValue = $totals['grandtotal']['value'] ?? '';
                     <?php
                     $itemParams = $platform->getRegistry($item->orderitem_params ?? '{}');
 
-                    $rawThumb = (string) $itemParams->get('thumb_image', '');
+                    $rawThumb = $showThumbCart
+                        ? ImageHelper::getLineItemImage((string) $itemParams->get('thumb_image', ''), (int) ($item->product_id ?? 0))
+                        : '';
                     $thumbImage = '';
                     if ($showThumbCart && $rawThumb !== '') {
                         $thumbImage = HTMLHelper::_('cleanImageURL', $platform->getImagePath($rawThumb))->url;

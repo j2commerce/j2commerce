@@ -38,6 +38,11 @@ if ($imageType === 'thumbimage' || $imageType === 'thumbnail') {
     $image = $platform->getImagePath($product->main_image ?? '');
     $imageAlt = ($product->main_image_alt ?? '') ?: ($product->product_name ?? '');
 }
+// Only a product with no image at all takes the store default; one missing just this size keeps today's behaviour.
+if ($image === '' && empty($product->main_image) && empty($product->thumb_image)) {
+    $image = $platform->getImagePath(ImageHelper::getDefaultProductImage());
+}
+
 $image = HTMLHelper::_('cleanImageURL', $image)->url;
 
 if (empty($image)) {
