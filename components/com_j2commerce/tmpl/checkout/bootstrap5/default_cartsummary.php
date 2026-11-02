@@ -11,6 +11,7 @@
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -61,7 +62,9 @@ if ($showItemTax && isset($this->taxes) && \count($this->taxes)) {
                 <?php foreach ($this->items as $item) : ?>
                     <?php
                     $itemParams = $platform->getRegistry($item->orderitem_params ?? '{}');
-                    $rawThumbImage = (string) $itemParams->get('thumb_image', '');
+                    $rawThumbImage = $showThumbCart
+                        ? ImageHelper::getLineItemImage((string) $itemParams->get('thumb_image', ''), (int) ($item->product_id ?? 0))
+                        : '';
                     $thumbImage = $rawThumbImage !== ''
                         ? HTMLHelper::_('cleanImageURL', $platform->getImagePath($rawThumbImage))->url
                         : '';

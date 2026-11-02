@@ -11,8 +11,10 @@ declare(strict_types=1);
 
 defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Router\Route;
 
@@ -29,7 +31,11 @@ $productUrl = !empty($product->product_view_url)
         (int) ($product->catid ?? 0) ?: null
     ));
 
-$imageSrc = $product->thumb_image ?? $product->main_image ?? '';
+$imageSrc = ($product->thumb_image ?? '') ?: ($product->main_image ?? '');
+
+if ($imageSrc === '') {
+    $imageSrc = HTMLHelper::_('cleanImageURL', J2CommerceHelper::platform()->getImagePath(ImageHelper::getDefaultProductImage()))->url;
+}
 ?>
 <div class="j2commerce-product-item card h-100 product-<?php echo (int) $product->j2commerce_product_id; ?> <?php echo $this->escape($product->product_type ?? 'simple'); ?>">
     <?php if ($params->get('list_show_image', 1) && !empty($imageSrc)) : ?>

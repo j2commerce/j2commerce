@@ -1781,6 +1781,14 @@
     >
 
         <field
+            name="default_product_image"
+            type="media"
+            label="COM_J2COMMERCE_CONFIG_DEFAULT_PRODUCT_IMAGE"
+            description="COM_J2COMMERCE_CONFIG_DEFAULT_PRODUCT_IMAGE_DESC"
+            preview="tooltip"
+        />
+
+        <field
             name="image_directories"
             type="subform"
             label="COM_J2COMMERCE_CONFIG_IMAGE_DIRECTORIES"

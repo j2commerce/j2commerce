@@ -569,6 +569,11 @@ final class J2commerce extends Adapter implements SubscriberInterface
         if ($this->params->get('show_product_image', 1)) {
             $imagePath = ($item->main_image ?? '') ?: (($item->thumb_image ?? '') ?: ($item->tiny_image ?? ''));
 
+            // Off by default: a placeholder in a search result says nothing about the product.
+            if ($imagePath === '' && $this->params->get('use_placeholder_image', 0)) {
+                $imagePath = ImageHelper::getDefaultProductImage() ?: 'media/com_j2commerce/images/placeholder.svg';
+            }
+
             if ($imagePath !== '' && ImageHelper::isValidImagePath($imagePath)) {
                 $item->imagePath = $imagePath;
                 $item->imageUrl  = $imagePath;

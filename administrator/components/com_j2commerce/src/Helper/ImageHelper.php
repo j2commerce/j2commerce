@@ -254,6 +254,23 @@ class ImageHelper
         return $path;
     }
 
+    /** The store's Default Product Image setting, for a product that has no image of its own; empty when unset. */
+    public static function getDefaultProductImage(): string
+    {
+        return trim((string) ComponentHelper::getParams('com_j2commerce')->get('default_product_image', ''));
+    }
+
+    /** Cart or order line image: the line snapshot (absent on pre-snapshot orders, on product types that never record one and on main-image-only products), else the product's own images, else the store default. */
+    public static function getLineItemImage(string $snapshot, int $productId): string
+    {
+        if ($snapshot === '' && $productId > 0) {
+            $images   = ProductHelper::getProductImages($productId);
+            $snapshot = $images ? ProductHelper::getGalleryThumbSource($images) : '';
+        }
+
+        return $snapshot !== '' ? $snapshot : self::getDefaultProductImage();
+    }
+
     /** Stand-in for an image whose file is missing. Scalable, so width/height only size the tag. */
     public static function getPlaceholderUrl(int $width = 150, int $height = 150, string $text = ''): string
     {

@@ -13,6 +13,7 @@ declare(strict_types=1);
 defined('_JEXEC') or die;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\HTML\HTMLHelper;
@@ -119,7 +120,7 @@ $checkoutPriceDisplay = (int) J2CommerceHelper::config()->get('checkout_price_di
 
                     if ($showThumb) {
                         $itemParams = new Registry($item->orderitem_params ?? '{}');
-                        $rawThumbImage = (string) $itemParams->get('thumb_image', '');
+                        $rawThumbImage = ImageHelper::getLineItemImage((string) $itemParams->get('thumb_image', ''), (int) ($item->product_id ?? 0));
 
                         if ($rawThumbImage !== '') {
                             $thumbSource = $platform ? $platform->getImagePath($rawThumbImage) : $rawThumbImage;
