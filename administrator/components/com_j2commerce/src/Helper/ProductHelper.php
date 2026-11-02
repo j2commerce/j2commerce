@@ -2378,6 +2378,13 @@ class ProductHelper
      */
     public static function validateFlexivariants(array $variants, array $options): bool
     {
+        // A variant is valid when its product_optionvalue_ids contain exactly one value from each
+        // option. This used to be checked by building the full Cartesian product of every option's
+        // values with getCombinations() and searching it with in_array(). Flexivariable products
+        // store one product_optionvalues row per option per variant, so that list grows as
+        // variants^options (48 variants x 4 options = 5.3 million combinations), which costs
+        // seconds of CPU and over 1 GB of memory per product load. Match each variant's IDs to the
+        // options directly instead, which is linear in variants x options.
         $traits = [];
 
         foreach ($options as $option) {
@@ -2385,24 +2392,24 @@ class ProductHelper
                 $attributes = [];
 
                 foreach ($option['optionvalue'] as $pov) {
-                    $attributes[] = $pov['product_optionvalue_id'];
+                    $attributes[(int) $pov['product_optionvalue_id']] = true;
                 }
 
                 $traits[] = $attributes;
             }
         }
 
-        // getCombinations() returns array of arrays — convert to normalised CSV keys for comparison
-        $csvArray = array_map(
-            static fn (array $combo): string => self::normaliseOptionvalueKey($combo),
-            self::getCombinations($traits)
-        );
+        $traitCount = \count($traits);
 
         foreach ($variants as $variant) {
             // Use variant_name_ids (original CSV) if available, fall back to variant_name
-            $variantCsv = self::normaliseOptionvalueKey($variant->variant_name_ids ?? $variant->variant_name ?? '');
+            $variantIds = self::normaliseOptionvalueIds($variant->variant_name_ids ?? $variant->variant_name ?? '');
 
-            if (!\in_array($variantCsv, $csvArray, true)) {
+            if ($traitCount === 0 || \count($variantIds) !== $traitCount) {
+                return false;
+            }
+
+            if (!self::matchOptionvalueIdsToTraits($variantIds, $traits)) {
                 return false;
             }
         }
@@ -2410,6 +2417,50 @@ class ProductHelper
         return true;
     }
 
+    /**
+     * Check that each ID can be assigned to a different trait (option) that contains it, so that
+     * the IDs form exactly one value per option regardless of their order.
+     *
+     * @param   array<int, int>                $ids     Normalised product_optionvalue IDs of a variant.
+     * @param   array<int, array<int, bool>>   $traits  Option value ID sets, one per option.
+     *
+     * @return  bool
+     *
+     * @since   6.6.4
+     */
+    private static function matchOptionvalueIdsToTraits(array $ids, array $traits): bool
+    {
+        $traitOwner = [];
+
+        $assign = static function (int $idIndex, array &$visited) use (&$assign, $ids, $traits, &$traitOwner): bool {
+            foreach ($traits as $traitIndex => $members) {
+                if (!isset($members[$ids[$idIndex]]) || isset($visited[$traitIndex])) {
+                    continue;
+                }
+
+                $visited[$traitIndex] = true;
+
+                if (!isset($traitOwner[$traitIndex]) || $assign($traitOwner[$traitIndex], $visited)) {
+                    $traitOwner[$traitIndex] = $idIndex;
+
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        foreach (array_keys($ids) as $idIndex) {
+            $visited = [];
+
+            if (!$assign($idIndex, $visited)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    
     // =========================================================================
     // PRICING METHODS
     // =========================================================================
