@@ -76,7 +76,7 @@
             <fieldset name="basic" label="PLG_J2COMMERCE_REPORT_PRODUCTS">
                 <field
                     name="report_toolbar"
-                    type="ReportToolbar"
+                    type="Reporttoolbar"
                 />
             </fieldset>
         </fields>
