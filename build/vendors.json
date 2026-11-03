@@ -4,7 +4,7 @@
         {
             "name": "Swiper",
             "npm": "swiper",
-            "version": "14.2.0",
+            "version": "14.3.0",
             "files": [
                 {
                     "src": "swiper-bundle.min.js",
@@ -19,7 +19,7 @@
         {
             "name": "Chart.js",
             "npm": "chart.js",
-            "version": "4.5.1",
+            "version": "4.6.1",
             "files": [
                 {
                     "src": "dist/chart.umd.min.js",
@@ -60,7 +60,7 @@
         {
             "name": "GrapesJS",
             "npm": "grapesjs",
-            "version": "0.23.6",
+            "version": "0.23.8",
             "files": [
                 {
                     "src": "dist/grapes.min.js",
@@ -86,7 +86,7 @@
         {
             "name": "Uppy",
             "npm": "uppy",
-            "version": "6.0.1",
+            "version": "6.0.5",
             "files": [
                 {
                     "src": "dist/uppy.min.js",
