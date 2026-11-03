@@ -1395,9 +1395,10 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         } elseif ($paypalSubId !== '') {
             [$status, $error, $extra] = $this->renewViaModernSubscriptionsApi($paypalSubId, $subscription, $order);
         } else {
-            $result[] = ['success' => false, 'error' => 'No PayPal payment credential stored — neither billing_agreement_id (legacy NVP) nor paypal_subscription_id (modern REST) metakey exists for this subscription.'];
+            $error    = 'No PayPal payment credential stored — neither billing_agreement_id (legacy NVP) nor paypal_subscription_id (modern REST) metakey exists for this subscription.';
+            $result[] = ['success' => false, 'error' => $error];
             $event->setArgument('result', $result);
-            $this->dispatchRenewalOutcome('onJ2CommerceFailedRenewalPayment', $subscription, $order);
+            $this->dispatchRenewalOutcome('onJ2CommerceFailedRenewalPayment', $subscription, $order, null, $error);
             return;
         }
 
@@ -1414,7 +1415,7 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             default       => 'onJ2CommerceFailedRenewalPayment',
         };
 
-        $this->dispatchRenewalOutcome($followUp, $subscription, $order, $status === 'success' ? true : null);
+        $this->dispatchRenewalOutcome($followUp, $subscription, $order, $status === 'success' ? true : null, $status === 'success' ? '' : (string) $error);
     }
 
     /**
@@ -1876,12 +1877,16 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
         ];
     }
 
-    private function dispatchRenewalOutcome(string $eventName, object $subscription, object $order, ?bool $updateRenewalDate = null): void
+    private function dispatchRenewalOutcome(string $eventName, object $subscription, object $order, ?bool $updateRenewalDate = null, string $failureReason = ''): void
     {
         $args = ['subscription' => $subscription, 'order' => $order];
 
         if ($updateRenewalDate !== null) {
             $args['updateRenewalDate'] = $updateRenewalDate;
+        }
+
+        if ($failureReason !== '') {
+            $args['failure_reason'] = $failureReason;
         }
 
         Factory::getApplication()->getDispatcher()->dispatch($eventName, new Event($eventName, $args));
