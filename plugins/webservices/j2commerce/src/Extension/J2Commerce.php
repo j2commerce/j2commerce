@@ -58,6 +58,12 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
         $router->createCRUDRoutes('v1/j2commerce/countries', 'countries', $component);
         $router->createCRUDRoutes('v1/j2commerce/zones', 'zones', $component);
 
+        // Product filters — authenticated, read only
+        $router->addRoutes([
+            new Route(['GET'], 'v1/j2commerce/filters', 'filters.displayList', [], array_merge(['public' => false], $component)),
+            new Route(['GET'], 'v1/j2commerce/filters/:id', 'filters.displayItem', ['id' => '(\d+)'], array_merge(['public' => false], $component)),
+        ]);
+
         // Shipping & Payment — authenticated
         $router->createCRUDRoutes('v1/j2commerce/shippingmethods', 'shippingmethods', $component);
         $router->createCRUDRoutes('v1/j2commerce/paymentmethods', 'paymentmethods', $component);
