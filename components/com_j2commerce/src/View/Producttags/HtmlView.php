@@ -230,7 +230,7 @@ class HtmlView extends BaseHtmlView
         // a template plugin handles the actual HTML rendering
         if (!empty($viewHtml)) {
             $this->_prepareDocument();
-            echo $viewHtml;
+            $this->displayPrebuilt($viewHtml);
 
             return;
         }
@@ -241,7 +241,7 @@ class HtmlView extends BaseHtmlView
 
             if ($customHtml !== null) {
                 $this->_prepareDocument();
-                echo $customHtml;
+                $this->displayPrebuilt($customHtml);
 
                 return;
             }

@@ -144,7 +144,7 @@ class HtmlView extends BaseHtmlView
         $viewHtml = $event->getArgument('html', '');
 
         if (!empty($viewHtml)) {
-            echo $viewHtml;
+            $this->displayPrebuilt($viewHtml);
 
             return;
         }
@@ -153,7 +153,7 @@ class HtmlView extends BaseHtmlView
             $customHtml = $this->renderCustomSubtemplate();
 
             if ($customHtml !== null) {
-                echo $customHtml;
+                $this->displayPrebuilt($customHtml);
 
                 return;
             }
