@@ -104,19 +104,6 @@ class HtmlView extends BaseHtmlView
 
     public string $displayMode = 'products';
 
-    /**
-     * HTML already rendered by a template plugin or custom subtemplate.
-     *
-     * Echoed by the "passthrough" layout rather than directly from display(), so
-     * that output is still routed through parent::display() -- keeping
-     * Joomla's own onBeforeDisplay/onAfterDisplay events and template-override
-     * lookup intact for integrations that rely on them (e.g. YOOtheme Pro).
-     *
-     * @var    string
-     * @since  6.6.6
-     */
-    public string $renderedHtml = '';
-
     public function display($tpl = null): void
     {
         $app   = Factory::getApplication();
@@ -215,15 +202,10 @@ class HtmlView extends BaseHtmlView
 
         $this->prepareDocument();
 
-        // If a plugin provided HTML output, hand it to parent::display() via the
-        // "passthrough" layout instead of echoing it directly, so the core Joomla
-        // view events still fire for it. The layout is reset to 'default' first --
-        // a plugin may have changed it while building that HTML, and loadTemplate()
-        // builds the filename to look for from the current layout.
+        // If a plugin provided HTML output, route it back through parent::display()
+        // instead of echoing it directly, so the core Joomla view events still fire for it.
         if (!empty($view_html)) {
-            $this->renderedHtml = $view_html;
-            $this->setLayout('default');
-            parent::display('passthrough');
+            $this->displayPrebuilt($view_html);
 
             return;
         }
@@ -233,9 +215,7 @@ class HtmlView extends BaseHtmlView
             $customHtml = $this->renderCustomSubtemplate();
 
             if ($customHtml !== null) {
-                $this->renderedHtml = $customHtml;
-                $this->setLayout('default');
-                parent::display('passthrough');
+                $this->displayPrebuilt($customHtml);
 
                 return;
             }
