@@ -19,6 +19,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use J2Commerce\Component\J2commerce\Site\Model\CartsModel;
+use J2Commerce\Component\J2commerce\Site\View\CustomSubtemplateTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
@@ -34,6 +35,8 @@ use Joomla\Registry\Registry;
  */
 class HtmlView extends BaseHtmlView
 {
+    use CustomSubtemplateTrait;
+
     /**
      * The cart items array
      *
@@ -347,7 +350,7 @@ class HtmlView extends BaseHtmlView
         // the body -- this is what the product and listing views already do.
         if (!empty($viewHtml)) {
             $this->_prepareDocument();
-            echo $viewHtml;
+            $this->displayPrebuilt($viewHtml);
 
             return;
         }
