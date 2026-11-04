@@ -122,6 +122,8 @@ $currency    = ConfigHelper::get('config_currency', 'USD');
 $weightId    = (int) ConfigHelper::get('config_weight_class_id', 2);
 $lengthId    = (int) ConfigHelper::get('config_length_class_id', 1);
 $resumeStep  = OnboardingHelper::getResumeStep();
+$hasProducts = $this->productsCount > 0;
+$readyCol    = $hasProducts ? 'col-md-4' : 'col-md-3';
 
 // Pre-fill admin email from super admin if empty
 if ($adminEmail === '') {
@@ -701,6 +703,7 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
             </div>
           </div>
 
+          <?php if (!$hasProducts) : ?>
           <div id="ob-sampledata-prompt" class="d-none">
             <div class="alert alert-info text-center">
               <p class="mb-2"><?php echo Text::_('COM_J2COMMERCE_ONBOARDING_SAMPLEDATA_PROMPT'); ?></p>
@@ -713,27 +716,30 @@ $e = fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
               </button>
             </div>
           </div>
+          <?php endif; ?>
 
           <div class="row g-3 text-center">
-            <div class="col-md-3">
+            <div class="<?php echo $readyCol; ?>">
               <button type="button" class="btn btn-outline-secondary w-100 shadow-none" data-action="back">
                 <span class="fa-solid fa-chevron-left me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_BTN_BACK'); ?>
               </button>
             </div>
+            <?php if (!$hasProducts) : ?>
             <div class="col-md-3">
               <a href="index.php?option=com_content&view=article&layout=edit" class="btn btn-primary w-100 shadow-none">
                 <span class="fa-solid fa-plus me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_READY_ADD_PRODUCT'); ?>
               </a>
             </div>
-            <div class="col-md-3">
+            <?php endif; ?>
+            <div class="<?php echo $readyCol; ?>">
               <button type="button" class="btn btn-primary w-100 shadow-none" data-action="close-onboarding">
                 <span class="fa-solid fa-gauge-high me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_READY_DASHBOARD'); ?>
               </button>
             </div>
-            <div class="col-md-3">
+            <div class="<?php echo $readyCol; ?>">
               <a href="index.php?option=com_config&view=component&component=com_j2commerce" class="btn btn-outline-secondary w-100 shadow-none">
                 <span class="fa-solid fa-gear me-1" aria-hidden="true"></span>
                 <?php echo Text::_('COM_J2COMMERCE_ONBOARDING_READY_SETTINGS'); ?>

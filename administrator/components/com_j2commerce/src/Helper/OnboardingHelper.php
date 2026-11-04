@@ -14,6 +14,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Cache\CacheControllerFactoryInterface;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\LanguageHelper;
@@ -432,6 +433,12 @@ class OnboardingHelper
 
         $db->setQuery($update)->execute();
 
+        // Same as a com_config save: drop the cached component list so the next request reads the new params.
+        Factory::getContainer()->get(CacheControllerFactoryInterface::class)
+            ->createCacheController('callback', ['defaultgroup' => '_system'])
+            ->clean('_system');
+
+        ComponentHelper::getComponent('com_j2commerce')->setParams($params);
         ConfigHelper::reset();
     }
 
