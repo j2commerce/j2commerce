@@ -481,8 +481,7 @@ abstract class RouteHelper
     }
 
     /**
-     * Dispatches onJ2CommerceGetCheckoutProvider once per request and picks the answer to use:
-     * the one named by the checkout_provider option when it answered, otherwise the highest priority.
+     * Dispatches onJ2CommerceGetCheckoutProvider once per request and uses the highest-priority answer.
      *
      * A provider appends ['element' => string, 'menu_item_id' => int, 'priority' => int] to `result`, and
      * optionally 'supports_context' => true when its checkout can run an admin-order checkout_context
@@ -545,15 +544,9 @@ abstract class RouteHelper
             ];
         }
 
-        $chosen = (string) J2CommerceHelper::config()->get('checkout_provider', '');
-        $best   = null;
+        $best = null;
 
         foreach ($candidates as $candidate) {
-            if ($chosen !== '' && $candidate['element'] === $chosen) {
-                $best = $candidate;
-                break;
-            }
-
             if ($best === null || $candidate['priority'] > $best['priority']) {
                 $best = $candidate;
             }
