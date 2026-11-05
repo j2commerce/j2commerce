@@ -30,6 +30,13 @@ $wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2
 $wa->registerAndUseScript('com_j2commerce.optionvalues-sortable', 'media/com_j2commerce/js/administrator/optionvalues-sortable.js', [], ['defer' => true]);
 $wa->registerAndUseStyle('com_j2commerce.optionvalues-sortable', 'media/com_j2commerce/css/administrator/optionvalues-sortable.css');
 
+// Same reason: the "Set Values" and "Set Parent Value(s)" modals both render a
+// joomla.form.field.list-fancy-select parent-value picker, but only once adopted into THIS
+// page - so the webcomponent and its Choices.js preset need registering here, not there.
+Text::script('JGLOBAL_SELECT_NO_RESULTS_MATCH');
+Text::script('JGLOBAL_SELECT_PRESS_TO_SELECT');
+$wa->usePreset('choicesjs')->useScript('webcomponent.field-fancy-select');
+
 $item = $displayData['product'];
 $formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 
@@ -95,6 +102,13 @@ $csrfToken = \Joomla\CMS\Session\Session::getFormToken();
                                                     data-option-name="<?php echo $this->escape(J2htmlHelper::translateKey($poption->option_name)); ?>">
                                                 <span class="icon-cog me-1"></span> <?php echo Text::_('COM_J2COMMERCE_OPTION_SET_VALUES'); ?>
                                             </button>
+                                        <?php else : ?>
+                                            <button type="button" class="small ms-3 btn btn-outline-primary btn-sm j2commerce-parent-value-link<?php echo ((int) $poption->parent_id === 0) ? ' d-none' : ''; ?>"
+                                                    data-product-id="<?php echo $item->j2commerce_product_id; ?>"
+                                                    data-option-id="<?php echo $poption->j2commerce_productoption_id; ?>"
+                                                    data-option-name="<?php echo $this->escape(J2htmlHelper::translateKey($poption->option_name)); ?>">
+                                                <span class="icon-cog me-1"></span> <?php echo Text::_('COM_J2COMMERCE_OPTION_SET_PARENT_VALUES'); ?>
+                                            </button>
                                         <?php endif; ?>
                                     </div>
                                     <div>
@@ -102,7 +116,7 @@ $csrfToken = \Joomla\CMS\Session\Session::getFormToken();
                                     </div>
                                 </td>
                                 <td>
-                                    <select class="form-select" name="<?php echo $formPrefix . '[item_options][' . $poption->j2commerce_productoption_id . '][parent_id]'; ?>">
+                                    <select class="form-select j2commerce-parent-option-select" name="<?php echo $formPrefix . '[item_options][' . $poption->j2commerce_productoption_id . '][parent_id]'; ?>" data-product-id="<?php echo $item->j2commerce_product_id; ?>">
                                         <?php foreach ($parentOptions as $parentValue => $parentLabel) : ?>
                                             <option value="<?php echo (int) $parentValue; ?>"<?php echo ((int) $poption->parent_id === (int) $parentValue) ? ' selected' : ''; ?>><?php echo $this->escape($parentLabel); ?></option>
                                         <?php endforeach; ?>
@@ -172,7 +186,16 @@ $csrfToken = \Joomla\CMS\Session\Session::getFormToken();
                 <h2 class="modal-title fs-5" id="configOptionValuesModalLabel"><?php echo Text::_('COM_J2COMMERCE_OPTION_SET_VALUES'); ?></h2>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php echo Text::_('JCLOSE'); ?>"></button>
             </div>
-            <div class="modal-body" id="j2commerceConfigOptionValuesModalBody" style="max-height: 70vh; overflow-y: auto;">
+            <?php /*
+             * No max-height/overflow-y here on purpose: a fancy-select's dropdown is an
+             * absolutely-positioned child, which an overflow:auto ancestor still counts
+             * toward its scrollable area - the dropdown was forcing this box to grow a
+             * second, nested scrollbar every time one opened, clipping the dropdown
+             * against it (worse on mobile, where nested scroll regions are awkward to
+             * use). Leaving overflow to the default lets Bootstrap's own .modal scroll
+             * the whole dialog instead, which has no such ancestor to clip against.
+             */ ?>
+            <div class="modal-body" id="j2commerceConfigOptionValuesModalBody" style="min-height: 320px;">
                 <div class="text-center py-5">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_LOADING'); ?></span>
@@ -206,6 +229,49 @@ document.addEventListener('DOMContentLoaded', () => {
         spinner.setAttribute('aria-hidden', 'true');
         el.replaceChildren(spinner);
         el.append(' ' + label);
+    }
+
+    // A fancy-select's dropdown lives inside a .table-responsive box (overflow-x:auto on a
+    // table so narrow screens still get usably-sized columns). That axis being non-visible
+    // forces overflow-y to compute as auto too, which clips the dropdown the instant it opens.
+    // Rather than give up the horizontal scrollbox, the open dropdown is switched to
+    // position:fixed at its current on-screen coordinates - fixed positioning isn't subject to
+    // an ancestor's overflow clipping at all, so it escapes the scrollbox while every other
+    // sizing/flip decision Choices.js already made (above vs. below, width, etc.) is kept as-is.
+    function escapeFancySelectDropdowns(root) {
+        root.querySelectorAll('.choices').forEach((choicesEl) => {
+            if (choicesEl.dataset.dropdownEscapeBound) return;
+            choicesEl.dataset.dropdownEscapeBound = '1';
+
+            const dropdown = choicesEl.querySelector('.choices__list--dropdown');
+            if (!dropdown) return;
+
+            const observer = new MutationObserver(() => {
+                if (choicesEl.classList.contains('is-open')) {
+                    const rect = dropdown.getBoundingClientRect();
+                    dropdown.style.position = 'fixed';
+                    dropdown.style.left = rect.left + 'px';
+                    dropdown.style.top = rect.top + 'px';
+                    // .is-flipped (dropdown opening upward) sets bottom:100% in CSS; left alone,
+                    // that still applies here and fights the inline top above, collapsing the
+                    // dropdown's height to ~0. Pinning bottom:auto leaves top as the only
+                    // vertical constraint, in either orientation.
+                    dropdown.style.bottom = 'auto';
+                    dropdown.style.width = rect.width + 'px';
+                    dropdown.style.margin = '0';
+                    dropdown.style.zIndex = '1065';
+                } else {
+                    dropdown.style.position = '';
+                    dropdown.style.left = '';
+                    dropdown.style.top = '';
+                    dropdown.style.bottom = '';
+                    dropdown.style.width = '';
+                    dropdown.style.margin = '';
+                    dropdown.style.zIndex = '';
+                }
+            });
+            observer.observe(choicesEl, { attributes: true, attributeFilter: ['class'] });
+        });
     }
     // Spinner carrying the label for assistive tech only.
     function setSpinnerOnly(el, label) {
@@ -277,6 +343,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     syncOptionSelect();
 
+    // A non-list option's "Set Parent Value(s)" button only makes sense once it has a parent -
+    // show/hide it as the admin picks or clears one, so it never promises a modal with nothing
+    // to configure. list-type rows have no such button, so this is a no-op for them.
+    document.getElementById('j2commerce-product-configoptions')?.addEventListener('change', (e) => {
+        if (!e.target.matches('.j2commerce-parent-option-select')) return;
+
+        const row = e.target.closest('tr');
+        const btn = row?.querySelector('.j2commerce-parent-value-link');
+        if (btn) {
+            btn.classList.toggle('d-none', !e.target.value || e.target.value === '0');
+        }
+    });
+
     if (addOptionBtn) {
         addOptionBtn.addEventListener('click', () => {
             if (!optionSelect) return;
@@ -312,15 +391,26 @@ document.addEventListener('DOMContentLoaded', () => {
             nameCell.textContent = optionName;
 
             const parentCell = document.createElement('td');
-            const parentNote = document.createElement('span');
-            parentNote.className = 'text-body-secondary small';
-            parentNote.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_PARENT_OPTION_SAVE_FIRST'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+            const parentSelect = document.createElement('select');
+            parentSelect.className = 'form-select j2commerce-parent-option-select';
+            parentSelect.name = fieldName('parent_id');
+            parentSelect.dataset.productId = '<?php echo $item->j2commerce_product_id; ?>';
+            // parent_id stores the master option id (see SelectHelper::getParentOption()), not
+            // a productoption_id, so a brand-new, unsaved row can take a parent immediately -
+            // nothing here depends on this option already having a saved productoption row.
+            parentSelect.append(new Option(<?php echo json_encode(Text::_('COM_J2COMMERCE_SELECT_PARENT_OPTION'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, '0'));
+            if (optionSelect) {
+                Array.from(optionSelect.options).forEach(opt => {
+                    if (opt.value === optionValue) return; // an option cannot be its own parent
+                    parentSelect.append(new Option(opt.dataset.optionLabel || opt.textContent, opt.value));
+                });
+            }
+            parentCell.append(parentSelect);
 
-            const parentIdInput = document.createElement('input');
-            parentIdInput.type = 'hidden';
-            parentIdInput.name = fieldName('parent_id');
-            parentIdInput.value = '0';
-            parentCell.append(parentNote, parentIdInput);
+            // A brand-new row has no j2commerce_productoption_id yet, so there is nothing for
+            // "Set Parent Value(s)" (an immediate AJAX save, like "Set Values") to attach to -
+            // same limitation that already keeps "Set Values" off new list-type rows too. The
+            // button appears once the product is saved and the row is server-rendered.
 
             const requiredCell = document.createElement('td');
             const requiredSelect = document.createElement('select');
@@ -508,9 +598,100 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // "Set Parent Value(s)" modal - the non-list-type sibling of loadOptionValuesContent().
+    // parentOptionId is the row's CURRENT "Parent Option" selection (possibly changed but not
+    // yet saved), so the modal always reflects what the admin just picked, not stale DB state.
+    async function loadParentOptionvalueContent(productId, productOptionId, parentOptionId) {
+        showModalLoading();
+
+        try {
+            const formData = new FormData();
+            formData.append('option', 'com_j2commerce');
+            formData.append('task', 'products.getParentOptionvalueModalAjax');
+            formData.append('product_id', productId);
+            formData.append('productoption_id', productOptionId);
+            formData.append('parent_option_id', parentOptionId || '');
+            formData.append(csrfToken, 1);
+
+            const response = await fetch('index.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                J2CommerceDom.adopt(optionValuesModalBody, data.html);
+                modalLabel.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_PAO_SET_OPTIONS_FOR'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?> + ': ' + data.optionName;
+                initParentOptionvalueHandlers();
+            } else {
+                showModalError(data.message || <?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_LOADING_CONTENT'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
+            }
+        } catch (error) {
+            console.error('Error loading parent option values:', error);
+            showModalError(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_LOADING_CONTENT'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
+        }
+    }
+
+    function initParentOptionvalueHandlers() {
+        const container = document.querySelector('.j2commerce-ajax-parentoptionvalue');
+        if (!container) return;
+
+        escapeFancySelectDropdowns(container);
+
+        const productId = container.dataset.productId;
+        const productOptionId = container.dataset.productoptionId;
+
+        const saveBtn = document.getElementById('j2commerce-save-parentoptionvalue-btn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', async () => {
+                saveBtn.disabled = true;
+                const originalLabel = saveBtn.textContent;
+                setSpinnerLabel(saveBtn, <?php echo json_encode(Text::_('COM_J2COMMERCE_SAVING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>);
+
+                const formData = new FormData();
+                formData.append('option', 'com_j2commerce');
+                formData.append('task', 'products.saveParentOptionvalueAjax');
+                formData.append('product_id', productId);
+                formData.append('productoption_id', productOptionId);
+                formData.append(csrfToken, 1);
+
+                const select = document.getElementById('j2commerce-parentoptionvalue-select');
+                if (select) {
+                    Array.from(select.selectedOptions).forEach(opt => {
+                        formData.append('parent_optionvalue[]', opt.value);
+                    });
+                }
+
+                try {
+                    const response = await fetch('index.php', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        showModalMessage(data.message, 'success');
+                    } else {
+                        showModalMessage(data.message, 'danger');
+                    }
+                } catch (error) {
+                    console.error('Error saving parent option values:', error);
+                    showModalMessage(<?php echo json_encode(Text::_('COM_J2COMMERCE_ERROR_SAVING'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>, 'danger');
+                }
+
+                saveBtn.disabled = false;
+                saveBtn.textContent = originalLabel;
+            });
+        }
+    }
+
     function initOptionValuesHandlers() {
         const container = document.querySelector('.j2commerce-ajax-optionvalues');
         if (!container) return;
+
+        escapeFancySelectDropdowns(container);
 
         const productId = container.dataset.productId;
         const productOptionId = container.dataset.productoptionId;
@@ -790,6 +971,31 @@ document.addEventListener('DOMContentLoaded', () => {
         modalInstance.show();
 
         loadOptionValuesContent(productId, productOptionId);
+    });
+
+    // Event delegation for parent-value links (non-list types)
+    document.getElementById('j2commerce-product-configoptions')?.addEventListener('click', (e) => {
+        const link = e.target.closest('.j2commerce-parent-value-link');
+        if (!link) return;
+
+        e.preventDefault();
+        const row = link.closest('tr');
+        const productId = link.getAttribute('data-product-id');
+        const productOptionId = link.getAttribute('data-option-id');
+        const optionName = link.getAttribute('data-option-name');
+        const parentOptionId = row?.querySelector('.j2commerce-parent-option-select')?.value;
+
+        currentProductId = productId;
+        currentProductOptionId = productOptionId;
+
+        modalLabel.textContent = <?php echo json_encode(Text::_('COM_J2COMMERCE_PAO_SET_OPTIONS_FOR'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?> + ': ' + optionName;
+
+        if (!modalInstance) {
+            modalInstance = new bootstrap.Modal(optionValuesModal);
+        }
+        modalInstance.show();
+
+        loadParentOptionvalueContent(productId, productOptionId, parentOptionId);
     });
 
     // Clear modal content when hidden
