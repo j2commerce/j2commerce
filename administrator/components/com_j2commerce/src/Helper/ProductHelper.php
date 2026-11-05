@@ -2160,6 +2160,169 @@ class ProductHelper
     }
 
     /**
+     * Reads the single parent_optionvalue carrier row a non-list option (text, textarea,
+     * number, date, file, ...) keeps on #__j2commerce_product_optionvalues (see
+     * Configurable::saveNonListParentOptionvalue()), for pre-selecting the Options tab's
+     * inline "Parent Value(s)" picker. Empty when the option has no parent link yet.
+     *
+     * @param   int  $productOptionId  The option's j2commerce_productoption_id.
+     *
+     * @return  int[]
+     *
+     * @since   6.6.6
+     */
+    public static function getNonListParentOptionvalueIds(int $productOptionId): array
+    {
+        if (!$productOptionId) {
+            return [];
+        }
+
+        $db    = self::getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('parent_optionvalue'))
+            ->from($db->quoteName('#__j2commerce_product_optionvalues'))
+            ->where($db->quoteName('productoption_id') . ' = :poId')
+            ->bind(':poId', $productOptionId, ParameterType::INTEGER)
+            ->setLimit(1);
+        $db->setQuery($query);
+        $csv = (string) $db->loadResult();
+
+        return $csv === '' ? [] : array_values(array_filter(array_map('intval', explode(',', $csv))));
+    }
+
+    /**
+     * Resolves a candidate parent option's own saved values for a product, for the Options
+     * tab's "Parent Value(s)" picker (both its initial render and the AJAX refetch fired when
+     * the admin changes which option is the parent). $parentOptionId is the master option_id
+     * (as in product_options.parent_id), never a productoption_id.
+     *
+     * @param   int  $parentOptionId  Master option_id of the candidate parent.
+     * @param   int  $productId       The product being edited.
+     *
+     * @return  array<int, array{id: int, label: string}>
+     *
+     * @since   6.6.6
+     */
+    public static function getParentOptionValuesForProduct(int $parentOptionId, int $productId): array
+    {
+        if (!$parentOptionId || !$productId) {
+            return [];
+        }
+
+        $db    = self::getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('j2commerce_productoption_id'))
+            ->from($db->quoteName('#__j2commerce_product_options'))
+            ->where($db->quoteName('option_id') . ' = :parentOptId')
+            ->where($db->quoteName('product_id') . ' = :productId')
+            ->bind(':parentOptId', $parentOptionId, ParameterType::INTEGER)
+            ->bind(':productId', $productId, ParameterType::INTEGER);
+        $db->setQuery($query);
+        $parentProductOptionId = (int) $db->loadResult();
+
+        if ($parentProductOptionId <= 0) {
+            return [];
+        }
+
+        $values = [];
+
+        foreach (self::getProductOptionValues($parentProductOptionId) as $value) {
+            $values[] = [
+                'id'    => (int) $value->j2commerce_product_optionvalue_id,
+                'label' => $value->optionvalue_name ?? '',
+            ];
+        }
+
+        return $values;
+    }
+
+    /**
+     * Keeps a non-list option's single parent_optionvalue carrier row in sync with the admin's
+     * selection from the "Set Parent Value(s)" modal. There is at most one such row per
+     * productoption_id - it holds no optionvalue_id of its own, it exists purely so
+     * getChildProductOptions() can gate the option exactly as it already does for
+     * select/radio/checkbox/color values.
+     *
+     * @param   int    $productOptionId       The option this link belongs to.
+     * @param   array  $parentOptionvalueIds  Parent optionvalue ids the admin picked, or empty to clear.
+     *
+     * @since   6.6.6
+     */
+    public static function saveNonListParentOptionvalue(int $productOptionId, array $parentOptionvalueIds): void
+    {
+        if (!$productOptionId) {
+            return;
+        }
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', $parentOptionvalueIds))));
+        $db  = self::getDatabase();
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('j2commerce_product_optionvalue_id'))
+            ->from($db->quoteName('#__j2commerce_product_optionvalues'))
+            ->where($db->quoteName('productoption_id') . ' = :poId')
+            ->bind(':poId', $productOptionId, ParameterType::INTEGER)
+            ->setLimit(1);
+        $db->setQuery($query);
+        $existingId = (int) $db->loadResult();
+
+        if (empty($ids)) {
+            if ($existingId > 0) {
+                $db->setQuery(
+                    $db->getQuery(true)
+                        ->delete($db->quoteName('#__j2commerce_product_optionvalues'))
+                        ->where($db->quoteName('j2commerce_product_optionvalue_id') . ' = :id')
+                        ->bind(':id', $existingId, ParameterType::INTEGER)
+                )->execute();
+            }
+
+            return;
+        }
+
+        $csv = implode(',', $ids);
+
+        if ($existingId > 0) {
+            $db->setQuery(
+                $db->getQuery(true)
+                    ->update($db->quoteName('#__j2commerce_product_optionvalues'))
+                    ->set($db->quoteName('parent_optionvalue') . ' = :csv')
+                    ->where($db->quoteName('j2commerce_product_optionvalue_id') . ' = :id')
+                    ->bind(':csv', $csv)
+                    ->bind(':id', $existingId, ParameterType::INTEGER)
+            )->execute();
+
+            return;
+        }
+
+        $plus  = '+';
+        $empty = '';
+
+        $db->setQuery(
+            $db->getQuery(true)
+                ->insert($db->quoteName('#__j2commerce_product_optionvalues'))
+                ->columns($db->quoteName([
+                    'productoption_id',
+                    'parent_optionvalue',
+                    'product_optionvalue_price',
+                    'product_optionvalue_prefix',
+                    'product_optionvalue_weight',
+                    'product_optionvalue_weight_prefix',
+                    'product_optionvalue_sku',
+                    'product_optionvalue_default',
+                    'ordering',
+                    'product_optionvalue_attribs',
+                ]))
+                ->values(':poId, :csv, 0, :plus, 0, :plus2, :empty, 0, 0, :empty2')
+                ->bind(':poId', $productOptionId, ParameterType::INTEGER)
+                ->bind(':csv', $csv)
+                ->bind(':plus', $plus)
+                ->bind(':plus2', $plus)
+                ->bind(':empty', $empty)
+                ->bind(':empty2', $empty)
+        )->execute();
+    }
+
+    /**
      * Get default/selected product options.
      *
      * @param   array  $options  Processed option data from getProductOptions().
@@ -3591,6 +3754,9 @@ class ProductHelper
     {
         static $cache = [];
 
+        // parentOptionvalueId is part of the key: the same (product, parent option) pair is
+        // queried again for every value the shopper picks on the parent, and each call must
+        // re-filter by parent_optionvalue below rather than reuse another value's result.
         $cacheKey = $productId . '_' . $parentId . '_' . $parentOptionvalueId;
 
         if (isset($cache[$cacheKey])) {
@@ -3668,8 +3834,23 @@ class ProductHelper
                     'required'           => $productOption->required ?? 0,
                 ];
             } else {
-                // An input type carries no rows in #__j2commerce_product_optionvalues, so - as in
-                // getProductOptions() at first paint - it is appended with no value lookup.
+                // A non-list type (text, textarea, number, date, file, ...) has no choices of
+                // its own, but it can still carry exactly one #__j2commerce_product_optionvalues
+                // row (optionvalue_id left empty) whose sole job is to hold parent_optionvalue -
+                // the same column list types use. Mirrors j2store4's getChildProductOptions():
+                // such a child only ever appears once a row here names the parent value picked,
+                // so making a non-list option a child always requires linking it to specific
+                // value(s) - there is no "show for any value" case, by the same design.
+                $hasMatchingParentLink = !empty(self::getChildProductOptionValues(
+                    (int) $productOption->j2commerce_productoption_id,
+                    $productId,
+                    $parentOptionvalueId
+                ));
+
+                if (!$hasMatchingParentLink) {
+                    continue;
+                }
+
                 $productOptionData[] = [
                     'productoption_id'   => $productOption->j2commerce_productoption_id,
                     'option_id'          => $productOption->option_id,
