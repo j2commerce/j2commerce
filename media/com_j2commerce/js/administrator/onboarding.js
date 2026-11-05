@@ -659,7 +659,7 @@ document.addEventListener('DOMContentLoaded', () => {
             case 6: {
                 buildSummary(data);
                 const sdPrompt = modal.querySelector('#ob-sampledata-prompt');
-                if (sdPrompt) sdPrompt.classList.remove('d-none');
+                if (sdPrompt && !options.hasProducts) sdPrompt.classList.remove('d-none');
                 break;
             }
         }
