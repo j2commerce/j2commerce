@@ -26,7 +26,6 @@ $productCount   = (int) ($productCount ?? 0);
 $formattedTotal = (string) ($formattedTotal ?? '');
 $cartUrl        = (string) ($cartUrl ?? '');
 $checkoutUrl    = (string) ($checkoutUrl ?? '');
-$ajaxUrl        = (string) ($ajaxUrl ?? '');
 $isAjax         = !empty($isAjax ?? false);
 $items          = $items ?? [];
 $order          = $order ?? null;
@@ -264,7 +263,6 @@ Text::script('ERROR');
 ?>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    var ajaxUrl = <?php echo json_encode($ajaxUrl, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     var baseUrl = <?php echo json_encode(rtrim(Uri::base(true), '/') . '/index.php', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
     // A hidden Joomla form-token input reproduces exactly the shape core's page cache
@@ -273,33 +271,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const readFormToken = () =>
         (Array.from(document.querySelectorAll('input[type="hidden"][value="1"]'))
             .find((el) => /^[0-9a-f]{32}$/.test(el.name)) || {}).name || '';
-
-    function replaceWithFragment(el, html) {
-        var frag = document.createRange().createContextualFragment(html);
-        el.replaceChildren(frag);
-    }
-
-    function refreshMiniCart() {
-        fetch(ajaxUrl, {
-            method: 'GET',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(function (response) { return response.json(); })
-        .then(function (json) {
-            if (json && json.response) {
-                Object.keys(json.response).forEach(function (key) {
-                    document.querySelectorAll('.j2commerce-cart-module-' + key).forEach(function (el) {
-                        replaceWithFragment(el, json.response[key]);
-                    });
-                });
-            }
-        })
-        .catch(function (error) {
-            console.error('Cart module refresh error:', error);
-        });
-    }
-
-    document.addEventListener('j2commerce:cart:updated', refreshMiniCart);
 
     document.addEventListener('click', function (e) {
         var btn = e.target.closest('.j2commerce-minicart-remove');

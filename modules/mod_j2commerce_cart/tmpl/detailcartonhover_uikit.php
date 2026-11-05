@@ -27,7 +27,6 @@ $productCount   = (int) ($productCount ?? 0);
 $formattedTotal = (string) ($formattedTotal ?? '');
 $cartUrl        = (string) ($cartUrl ?? '');
 $checkoutUrl    = (string) ($checkoutUrl ?? '');
-$ajaxUrl        = (string) ($ajaxUrl ?? '');
 $isAjax         = !empty($isAjax ?? false);
 $items          = $items ?? [];
 $title          = $params->get('cart_module_title', '');
@@ -248,94 +247,81 @@ $checkoutPriceDisplay = (int) J2CommerceHelper::config()->get('checkout_price_di
 }
 </style>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    function openPanel(trigger) {
-        var panelId = trigger.getAttribute('data-j2commerce-cart-toggle');
-        var panel = document.getElementById(panelId);
-        if (!panel) return;
-        panel.style.display = 'block';
-        trigger.setAttribute('aria-expanded', 'true');
+(() => {
+    if (window.j2commerceCartHoverBound === true) {
+        return;
     }
+    window.j2commerceCartHoverBound = true;
 
-    function closePanel(trigger) {
-        var panelId = trigger.getAttribute('data-j2commerce-cart-toggle');
-        var panel = document.getElementById(panelId);
-        if (!panel) return;
-        panel.style.display = 'none';
-        trigger.setAttribute('aria-expanded', 'false');
-    }
+    const panelFor = (trigger) => document.getElementById(trigger.getAttribute('data-j2commerce-cart-toggle'));
+    const isOpen = (trigger) => {
+        const panel = panelFor(trigger);
+        return !!panel && panel.style.display !== 'none';
+    };
+    const setPanel = (trigger, open) => {
+        const panel = panelFor(trigger);
+        if (!panel) {
+            return;
+        }
+        panel.style.display = open ? 'block' : 'none';
+        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+    const triggerIn = (wrapper) => wrapper.querySelector('[data-j2commerce-cart-toggle]');
+    const eachOpen = (fn) => document.querySelectorAll('.j2commerce-minicart-button').forEach((wrapper) => {
+        const trigger = triggerIn(wrapper);
+        if (trigger && isOpen(trigger)) {
+            fn(wrapper, trigger);
+        }
+    });
 
-    // Toggle panel on click
-    document.querySelectorAll('[data-j2commerce-cart-toggle]').forEach(function (trigger) {
-        trigger.addEventListener('click', function (e) {
-            if (e.target.closest('a')) return;
+    // Delegated from the document: the cart refresh replaces the trigger and its wrapper.
+    document.addEventListener('click', (e) => {
+        const trigger = e.target.closest('[data-j2commerce-cart-toggle]');
 
-            var panelId = this.getAttribute('data-j2commerce-cart-toggle');
-            var panel = document.getElementById(panelId);
-            if (!panel) return;
+        if (trigger && !e.target.closest('a')) {
+            setPanel(trigger, !isOpen(trigger));
+        }
 
-            var isVisible = panel.style.display !== 'none';
-            panel.style.display = isVisible ? 'none' : 'block';
-            this.setAttribute('aria-expanded', isVisible ? 'false' : 'true');
-        });
-
-        trigger.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                this.click();
+        eachOpen((wrapper, open) => {
+            if (!wrapper.contains(e.target)) {
+                setPanel(open, false);
             }
         });
     });
 
-    // Open/close panel on hover
-    document.querySelectorAll('.j2commerce-minicart-button').forEach(function (wrapper) {
-        var trigger = wrapper.querySelector('[data-j2commerce-cart-toggle]');
-        if (!trigger) return;
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            eachOpen((wrapper, open) => {
+                const hadFocus = wrapper.contains(document.activeElement);
+                setPanel(open, false);
+                if (hadFocus) {
+                    open.focus();
+                }
+            });
+            return;
+        }
 
-        wrapper.addEventListener('mouseenter', function () {
-            openPanel(trigger);
-        });
-
-        wrapper.addEventListener('mouseleave', function () {
-            closePanel(trigger);
-        });
+        const trigger = e.target.closest('[data-j2commerce-cart-toggle]');
+        if (trigger && e.target === trigger && !e.repeat && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            trigger.click();
+        }
     });
 
-    document.addEventListener('click', function (e) {
-        document.querySelectorAll('.j2commerce-cart-detail-panel').forEach(function (panel) {
-            if (panel.style.display === 'none') return;
-            var parent = panel.closest('.j2commerce-minicart-button');
-            if (parent && !parent.contains(e.target)) {
-                panel.style.display = 'none';
-                var trigger = parent.querySelector('[data-j2commerce-cart-toggle]');
-                if (trigger) trigger.setAttribute('aria-expanded', 'false');
-            }
-        });
-    });
-
-    function replaceWithFragment(el, html) {
-        var frag = document.createRange().createContextualFragment(html);
-        el.replaceChildren(frag);
-    }
-    document.addEventListener('j2commerce:cart:updated', function () {
-        fetch('<?php echo htmlspecialchars($ajaxUrl, ENT_QUOTES, 'UTF-8'); ?>', {
-            method: 'GET',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(function (response) { return response.json(); })
-        .then(function (json) {
-            if (json && json.response) {
-                Object.keys(json.response).forEach(function (key) {
-                    document.querySelectorAll('.j2commerce-cart-module-' + key).forEach(function (el) {
-                        replaceWithFragment(el, json.response[key]);
-                    });
-                });
-            }
-        })
-        .catch(function (error) {
-            console.error('Cart module refresh error:', error);
-        });
-    });
-});
+    // Mouse only: a tap's emulated hover would open the panel and its click would close it again.
+    // relatedTarget keeps moves between the wrapper's own children from toggling the panel.
+    const hover = (open) => (e) => {
+        if (e.pointerType !== 'mouse') {
+            return;
+        }
+        const wrapper = e.target.closest('.j2commerce-minicart-button');
+        const trigger = wrapper && triggerIn(wrapper);
+        if (trigger && !wrapper.contains(e.relatedTarget)) {
+            setPanel(trigger, open);
+        }
+    };
+    document.addEventListener('pointerover', hover(true));
+    document.addEventListener('pointerout', hover(false));
+})();
 </script>
 <?php endif; ?>
