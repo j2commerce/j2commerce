@@ -323,7 +323,8 @@ $ajaxBase = json_encode(\Joomla\CMS\Uri\Uri::base() . 'index.php', JSON_HEX_TAG 
                     option: 'com_j2commerce',
                     task: 'products.searchproductfilters',
                     format: 'raw',
-                    q: term
+                    q: term,
+                    [<?php echo json_encode(\Joomla\CMS\Session\Session::getFormToken()); ?>]: '1'
                 };
 
                 var formData = new URLSearchParams(searchFilter).toString();
