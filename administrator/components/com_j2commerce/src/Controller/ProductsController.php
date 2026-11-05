@@ -58,6 +58,7 @@ class ProductsController extends AdminController
             'searchSingleVariantProducts',
             'getBoxBuilderProducts',
             'getProductOptionValuesAjax',
+            'getParentOptionvalueModalAjax',
             'getVariantListAjax',
         ];
     }
@@ -3105,24 +3106,172 @@ class ProductsController extends AdminController
             return [];
         }
 
-        $parentOptionId  = (int) $productOption->parent_id;
-        $parentProductId = (int) $productOption->product_id;
-        $db              = Factory::getContainer()->get('DatabaseDriver');
-        $query           = $db->getQuery(true)
+        $parentProductOptionId = $this->resolveParentProductOptionId(
+            (int) $productOption->parent_id,
+            (int) $productOption->product_id
+        );
+
+        return $parentProductOptionId > 0 ? ProductHelper::getProductOptionValues($parentProductOptionId) : [];
+    }
+
+    /**
+     * Translates a parent's global option_id (as stored in product_options.parent_id) into
+     * that parent's own productoption_id for THIS product - the id product_optionvalues rows
+     * are actually keyed by.
+     */
+    private function resolveParentProductOptionId(int $parentOptionId, int $productId): int
+    {
+        if (!$parentOptionId || !$productId) {
+            return 0;
+        }
+
+        $db    = Factory::getContainer()->get('DatabaseDriver');
+        $query = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_productoption_id'))
             ->from($db->quoteName('#__j2commerce_product_options'))
             ->where($db->quoteName('option_id') . ' = :parentOptId')
             ->where($db->quoteName('product_id') . ' = :parentProdId')
             ->bind(':parentOptId', $parentOptionId, ParameterType::INTEGER)
-            ->bind(':parentProdId', $parentProductId, ParameterType::INTEGER);
+            ->bind(':parentProdId', $productId, ParameterType::INTEGER);
         $db->setQuery($query);
-        $parentProductOptionId = (int) $db->loadResult();
 
-        if ($parentProductOptionId > 0) {
-            return ProductHelper::getProductOptionValues($parentProductOptionId);
+        return (int) $db->loadResult();
+    }
+
+    /**
+     * AJAX: render the "Set Parent Value(s)" modal for a non-list option (text, textarea,
+     * number, date, file, ...) - the sibling of getProductOptionValuesAjax() for option types
+     * that have no values of their own. $parent_option_id (request) overrides the saved
+     * parent_id when present, so the modal reflects a Parent Option change the admin made
+     * client-side but has not saved yet.
+     */
+    public function getParentOptionvalueModalAjax(): void
+    {
+        $app      = Factory::getApplication();
+        $response = ['success' => false, 'html' => '', 'message' => ''];
+
+        if (!\Joomla\CMS\Session\Session::checkToken('request')) {
+            $response['message'] = Text::_('JINVALID_TOKEN');
+            $this->sendJson($response);
+
+            return;
         }
 
-        return [];
+        if (!$this->canDo('core.edit')) {
+            $response['message'] = Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN');
+            $this->sendJson($response);
+
+            return;
+        }
+
+        $db = Factory::getContainer()->get('DatabaseDriver');
+
+        $productId       = $app->getInput()->getInt('product_id', 0);
+        $productOptionId = $app->getInput()->getInt('productoption_id', 0);
+        $parentOptionId  = $app->getInput()->getInt('parent_option_id', 0);
+
+        if (!$productId || !$productOptionId) {
+            $response['message'] = Text::_('COM_J2COMMERCE_INVALID_PRODUCT_OR_OPTION');
+            $this->sendJson($response);
+
+            return;
+        }
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['po.j2commerce_productoption_id', 'po.parent_id', 'po.product_id', 'o.option_name']))
+            ->from($db->quoteName('#__j2commerce_product_options', 'po'))
+            ->leftJoin(
+                $db->quoteName('#__j2commerce_options', 'o') .
+                ' ON ' . $db->quoteName('po.option_id') . ' = ' . $db->quoteName('o.j2commerce_option_id')
+            )
+            ->where($db->quoteName('po.j2commerce_productoption_id') . ' = :poId')
+            ->where($db->quoteName('po.product_id') . ' = :productId')
+            ->bind(':poId', $productOptionId, ParameterType::INTEGER)
+            ->bind(':productId', $productId, ParameterType::INTEGER);
+        $db->setQuery($query);
+        $productOption = $db->loadObject();
+
+        if (!$productOption) {
+            $response['message'] = Text::_('COM_J2COMMERCE_PRODUCT_OPTION_NOT_FOUND');
+            $this->sendJson($response);
+
+            return;
+        }
+
+        $effectiveParentId = $parentOptionId > 0 ? $parentOptionId : (int) $productOption->parent_id;
+
+        // Labels are translated in the layout, same convention as form_ajax_optionvalues.php.
+        $parentValues = ProductHelper::getParentOptionValuesForProduct($effectiveParentId, $productId);
+
+        $layout = new FileLayout('form_ajax_parentoptionvalue', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product');
+        $html   = $layout->render([
+            'product_id'       => $productId,
+            'productoption_id' => $productOptionId,
+            'parent_values'    => $parentValues,
+            'selected_values'  => ProductHelper::getNonListParentOptionvalueIds($productOptionId),
+        ]);
+
+        $response['success']    = true;
+        $response['html']       = $html;
+        $response['optionName'] = J2htmlHelper::translateKey($productOption->option_name ?? '');
+
+        $this->sendJson($response);
+    }
+
+    /**
+     * AJAX: save which of the parent's values trigger a non-list option, from the
+     * "Set Parent Value(s)" modal. Independent of the main product save, matching how the
+     * list-type "Set Values" modal already persists immediately.
+     */
+    public function saveParentOptionvalueAjax(): void
+    {
+        $app      = Factory::getApplication();
+        $response = ['success' => false, 'message' => ''];
+
+        if (!\Joomla\CMS\Session\Session::checkToken('request')) {
+            $response['message'] = Text::_('JINVALID_TOKEN');
+            $this->sendJson($response);
+
+            return;
+        }
+
+        if (!$this->canDo('core.edit')) {
+            $response['message'] = Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN');
+            $this->sendJson($response);
+
+            return;
+        }
+
+        $db = Factory::getContainer()->get('DatabaseDriver');
+
+        $productId        = $app->getInput()->getInt('product_id', 0);
+        $productOptionId  = $app->getInput()->getInt('productoption_id', 0);
+        $parentValueIds   = $app->getInput()->get('parent_optionvalue', [], 'array');
+
+        // The option must actually belong to the named product - the client sends both,
+        // but only this combination is ever trusted to resolve which row gets written.
+        $query = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__j2commerce_product_options'))
+            ->where($db->quoteName('j2commerce_productoption_id') . ' = :poId')
+            ->where($db->quoteName('product_id') . ' = :productId')
+            ->bind(':poId', $productOptionId, ParameterType::INTEGER)
+            ->bind(':productId', $productId, ParameterType::INTEGER);
+        $db->setQuery($query);
+
+        if (!$productOptionId || !$productId || !(int) $db->loadResult()) {
+            $response['message'] = Text::_('COM_J2COMMERCE_PRODUCT_OPTION_NOT_FOUND');
+            $this->sendJson($response);
+
+            return;
+        }
+
+        ProductHelper::saveNonListParentOptionvalue($productOptionId, $parentValueIds);
+
+        $response['success'] = true;
+        $response['message'] = Text::_('COM_J2COMMERCE_PRODUCT_OPTION_VALUES_SAVED');
+
+        $this->sendJson($response);
     }
 
     public function addProductOptionAjax(): void
