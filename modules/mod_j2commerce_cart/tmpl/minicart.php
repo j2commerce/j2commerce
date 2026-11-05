@@ -29,9 +29,11 @@ $badgeAttr    = ' data-j2c-cart-badge';
 
 // check_empty bakes a hide/show decision into cacheable HTML, so the wrapper is rendered
 // hidden rather than omitted — a shopper with items replaying a cache primed by an empty
-// cart still gets a cart icon once hydration runs.
-$emptyHidden = ((int) $params->get('check_empty', 0) === 1 && $productCount < 1);
-$wrapAttr    = ' data-j2c-cart-wrapper';
+// cart still gets a cart icon once hydration runs. Only those modules carry the wrapper hook:
+// the hydrator hides every hooked wrapper on an empty cart.
+$hideEmpty   = (int) $params->get('check_empty', 0) === 1;
+$emptyHidden = $hideEmpty && $productCount < 1;
+$wrapAttr    = $hideEmpty ? ' data-j2c-cart-wrapper' : '';
 $wrapHidden  = $emptyHidden ? ' hidden style="display:none"' : '';
 
 $customCss = strip_tags((string) $params->get('custom_css', ''));
