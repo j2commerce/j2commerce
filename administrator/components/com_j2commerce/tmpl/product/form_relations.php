@@ -228,7 +228,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 task: 'products.getRelatedProducts',
                 format: 'raw',
                 product_id: productId,
-                q: term
+                q: term,
+                [<?php echo json_encode(\Joomla\CMS\Session\Session::getFormToken()); ?>]: '1'
             };
 
             var formData = new URLSearchParams(searchData).toString();

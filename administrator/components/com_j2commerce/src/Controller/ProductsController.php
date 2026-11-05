@@ -114,6 +114,15 @@ class ProductsController extends AdminController
         return $user && !$user->guest && $user->authorise($action, 'com_j2commerce');
     }
 
+    /** Non-negative amount + `+`/`-` prefix, as the products API stores it; a negative amount flips the prefix. */
+    private static function modifier(mixed $amount, mixed $prefix): array
+    {
+        $amount = is_numeric($amount) && is_finite((float) $amount) ? (float) $amount : 0.0;
+        $prefix = $prefix === '-' ? '-' : '+';
+
+        return $amount < 0 ? [-$amount, $prefix === '+' ? '-' : '+'] : [$amount, $prefix];
+    }
+
     /** JSON exit for the AJAX tasks. close() is exit(), so the headers flush first. */
     private function sendJson(mixed $data): void
     {
@@ -241,7 +250,7 @@ class ProductsController extends AdminController
         $app = Factory::getApplication();
 
         // Called only by the admin product edit form, so it takes the same capability its write twins do.
-        if (!$this->canDo('core.edit')) {
+        if (!\Joomla\CMS\Session\Session::checkToken('request') || !$this->canDo('core.edit')) {
             $this->sendJson([]);
 
             return;
@@ -442,7 +451,7 @@ class ProductsController extends AdminController
 
         // Returns the product catalogue with SKUs. Reached only from the admin product
         // edit form and the product selector fields plugins add to it.
-        if (!$this->canDo('core.edit')) {
+        if (!\Joomla\CMS\Session\Session::checkToken('request') || !$this->canDo('core.edit')) {
             $this->sendJson(['products' => []]);
 
             return;
@@ -522,7 +531,7 @@ class ProductsController extends AdminController
     {
         $app = Factory::getApplication();
 
-        if (!$this->canDo('core.edit')) {
+        if (!\Joomla\CMS\Session\Session::checkToken('request') || !$this->canDo('core.edit')) {
             $this->sendJson(['products' => []]);
 
             return;
@@ -1578,14 +1587,18 @@ class ProductsController extends AdminController
 
         $response = ['success' => false, 'message' => ''];
 
+        $input                   = $app->getInput();
+        [$price, $pricePrefix]   = self::modifier($input->getFloat('product_optionvalue_price', 0.0), $input->getString('product_optionvalue_prefix', '+'));
+        [$weight, $weightPrefix] = self::modifier($input->getFloat('product_optionvalue_weight', 0.0), $input->getString('product_optionvalue_weight_prefix', '+'));
+
         try {
             // The service zeroes the price when the option defines the variant matrix.
             (new ProductOptionService($this->factory))->addOptionValue($productOptionId, $optionValueId, [
                 'parent_optionvalue'                => !empty($parentOptionValue) ? implode(',', $parentOptionValue) : '',
-                'product_optionvalue_price'         => $app->getInput()->getFloat('product_optionvalue_price', 0.0),
-                'product_optionvalue_prefix'        => $app->getInput()->getString('product_optionvalue_prefix', '+'),
-                'product_optionvalue_weight'        => $app->getInput()->getFloat('product_optionvalue_weight', 0.0),
-                'product_optionvalue_weight_prefix' => $app->getInput()->getString('product_optionvalue_weight_prefix', '+'),
+                'product_optionvalue_price'         => $price,
+                'product_optionvalue_prefix'        => $pricePrefix,
+                'product_optionvalue_weight'        => $weight,
+                'product_optionvalue_weight_prefix' => $weightPrefix,
                 'ordering'                          => $app->getInput()->getInt('ordering', 0),
                 'product_optionvalue_attribs'       => $app->getInput()->getString('product_optionvalue_attribs', ''),
             ]);
@@ -1632,13 +1645,11 @@ class ProductsController extends AdminController
                     }
 
                     // Prepare data
-                    $optionValueId = isset($data['optionvalue_id']) ? (int) $data['optionvalue_id'] : 0;
-                    $price         = isset($data['product_optionvalue_price']) ? (float) $data['product_optionvalue_price'] : 0.0;
-                    $pricePrefix   = isset($data['product_optionvalue_prefix']) ? $data['product_optionvalue_prefix'] : '+';
-                    $weight        = isset($data['product_optionvalue_weight']) ? (float) $data['product_optionvalue_weight'] : 0.0;
-                    $weightPrefix  = isset($data['product_optionvalue_weight_prefix']) ? $data['product_optionvalue_weight_prefix'] : '+';
-                    $ordering      = isset($data['ordering']) ? (int) $data['ordering'] : 0;
-                    $parentValue   = isset($data['parent_optionvalue']) && \is_array($data['parent_optionvalue'])
+                    $optionValueId           = isset($data['optionvalue_id']) ? (int) $data['optionvalue_id'] : 0;
+                    [$price, $pricePrefix]   = self::modifier($data['product_optionvalue_price'] ?? 0, $data['product_optionvalue_prefix'] ?? '+');
+                    [$weight, $weightPrefix] = self::modifier($data['product_optionvalue_weight'] ?? 0, $data['product_optionvalue_weight_prefix'] ?? '+');
+                    $ordering                = isset($data['ordering']) ? (int) $data['ordering'] : 0;
+                    $parentValue             = isset($data['parent_optionvalue']) && \is_array($data['parent_optionvalue'])
                         ? implode(',', $data['parent_optionvalue'])
                         : '';
                     $attribs = isset($data['product_optionvalue_attribs']) ? $data['product_optionvalue_attribs'] : '';
