@@ -68,25 +68,26 @@ $checkoutPriceDisplay = (int) J2CommerceHelper::config()->get('checkout_price_di
     <?php endif; ?>
 
     <div class="j2commerce-minicart-button uk-position-relative">
-        <div class="j2commerce-cart-info" role="button" tabindex="0"
-             aria-expanded="false" aria-controls="<?php echo $panelId; ?>"
-             aria-haspopup="true"
-             aria-label="<?php echo htmlspecialchars(Text::_('MOD_J2COMMERCE_CART_TOGGLE_LABEL'), ENT_QUOTES, 'UTF-8'); ?>"
-             data-j2commerce-cart-toggle="<?php echo $panelId; ?>">
-            <span class="j2commerce-cart-icon uk-margin-small-right" uk-icon="icon: cart" aria-hidden="true"></span>
-            <?php if ($productCount > 0) : ?>
-                <span class="j2commerce-cart-text">
-                    <?php echo htmlspecialchars(Text::sprintf('MOD_J2COMMERCE_CART_TOTAL', $productCount, $formattedTotal), ENT_QUOTES, 'UTF-8'); ?>
-                </span>
-                <?php if (!empty($cartUrl)) : ?>
-                    <a class="j2commerce-view-cart-link uk-margin-small-left" href="<?php echo htmlspecialchars($cartUrl, ENT_QUOTES, 'UTF-8'); ?>">
-                        <?php echo Text::_('MOD_J2COMMERCE_CART_VIEW_CART'); ?>
-                    </a>
+        <div class="j2commerce-cart-info">
+            <button type="button" class="j2commerce-cart-toggle"
+                    aria-expanded="false" aria-controls="<?php echo $panelId; ?>"
+                    data-j2commerce-cart-toggle="<?php echo $panelId; ?>">
+                <span class="j2commerce-cart-icon uk-margin-small-right" uk-icon="icon: cart" aria-hidden="true"></span>
+                <?php if ($productCount > 0) : ?>
+                    <span class="j2commerce-cart-text">
+                        <?php echo htmlspecialchars(Text::sprintf('MOD_J2COMMERCE_CART_TOTAL', $productCount, $formattedTotal), ENT_QUOTES, 'UTF-8'); ?>
+                    </span>
+                <?php else : ?>
+                    <span class="j2commerce-cart-empty"><?php echo Text::_('MOD_J2COMMERCE_CART_EMPTY'); ?></span>
                 <?php endif; ?>
-            <?php else : ?>
-                <span class="j2commerce-cart-empty"><?php echo Text::_('MOD_J2COMMERCE_CART_EMPTY'); ?></span>
+                <span class="uk-hidden-visually"><?php echo htmlspecialchars(Text::_('MOD_J2COMMERCE_CART_TOGGLE_LABEL'), ENT_QUOTES, 'UTF-8'); ?></span>
+                <span class="j2commerce-cart-caret uk-margin-small-left" uk-icon="icon: chevron-down; ratio: 0.8" aria-hidden="true"></span>
+            </button>
+            <?php if ($productCount > 0 && $showViewCart && !empty($cartUrl)) : ?>
+                <a class="j2commerce-view-cart-link uk-margin-small-left" href="<?php echo htmlspecialchars($cartUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                    <?php echo Text::_('MOD_J2COMMERCE_CART_VIEW_CART'); ?>
+                </a>
             <?php endif; ?>
-            <span class="j2commerce-cart-caret uk-margin-small-left" uk-icon="icon: chevron-down; ratio: 0.8" aria-hidden="true"></span>
         </div>
 
         <!-- Detail dropdown panel -->
@@ -234,12 +235,27 @@ $checkoutPriceDisplay = (int) J2CommerceHelper::config()->get('checkout_price_di
     overflow-y: auto;
 }
 .j2commerce-cart-info {
-    cursor: pointer;
     display: inline-flex;
     align-items: center;
 }
-.j2commerce-cart-info:hover .j2commerce-cart-icon,
-.j2commerce-cart-info:focus .j2commerce-cart-icon {
+.j2commerce-cart-toggle {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    min-height: 24px;
+}
+.j2commerce-view-cart-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+}
+.j2commerce-cart-toggle:hover .j2commerce-cart-icon,
+.j2commerce-cart-toggle:focus-visible .j2commerce-cart-icon {
     transform: scale(1.05);
 }
 .j2commerce-cart-icon {
@@ -278,7 +294,7 @@ $checkoutPriceDisplay = (int) J2CommerceHelper::config()->get('checkout_price_di
     document.addEventListener('click', (e) => {
         const trigger = e.target.closest('[data-j2commerce-cart-toggle]');
 
-        if (trigger && !e.target.closest('a')) {
+        if (trigger) {
             setPanel(trigger, !isOpen(trigger));
         }
 
@@ -298,13 +314,15 @@ $checkoutPriceDisplay = (int) J2CommerceHelper::config()->get('checkout_price_di
                     open.focus();
                 }
             });
-            return;
         }
+    });
 
-        const trigger = e.target.closest('[data-j2commerce-cart-toggle]');
-        if (trigger && e.target === trigger && !e.repeat && (e.key === 'Enter' || e.key === ' ')) {
-            e.preventDefault();
-            trigger.click();
+    // Keyboard users leaving the wrapper close its panel; a pointer still over it keeps it open.
+    document.addEventListener('focusout', (e) => {
+        const wrapper = e.target.closest('.j2commerce-minicart-button');
+        const trigger = wrapper && triggerIn(wrapper);
+        if (trigger && e.relatedTarget && !wrapper.contains(e.relatedTarget) && !(wrapper.matches(':hover') && window.matchMedia('(hover: hover)').matches)) {
+            setPanel(trigger, false);
         }
     });
 

@@ -85,28 +85,40 @@
                     return;
                 }
 
+                // Read every module's state before replacing any of them, so one module's update
+                // cannot change what another one restores.
+                const modules = [];
+
                 Object.keys(json.response).forEach((key) => {
                     if (!/^\d+$/.test(key)) {
                         return;
                     }
 
                     document.querySelectorAll('.j2commerce-cart-module-' + key).forEach((el) => {
-                        const hadFocus = el.contains(document.activeElement);
-                        const wasOpen = !!el.querySelector(toggleSelector + '[aria-expanded="true"]');
-
-                        replaceWithMarkup(el, json.response[key]);
-
-                        // The server renders the panel closed; reopen one the shopper was using.
-                        const toggle = wasOpen && el.querySelector(toggleSelector);
-
-                        if (toggle && toggle.getAttribute('aria-expanded') !== 'true') {
-                            toggle.click();
-                        }
-
-                        if (hadFocus) {
-                            restoreFocus(el);
-                        }
+                        modules.push({
+                            el,
+                            html: json.response[key],
+                            hadFocus: el.contains(document.activeElement),
+                            wasOpen: !!el.querySelector(toggleSelector + '[aria-expanded="true"]'),
+                        });
                     });
+                });
+
+                modules.forEach(({ el, html, hadFocus, wasOpen }) => {
+                    replaceWithMarkup(el, html);
+
+                    // The server renders the panel closed; reopen one the shopper was using.
+                    const toggle = wasOpen && el.querySelector(toggleSelector);
+                    const panel = toggle && document.getElementById(toggle.getAttribute('data-j2commerce-cart-toggle'));
+
+                    if (panel) {
+                        panel.style.display = 'block';
+                        toggle.setAttribute('aria-expanded', 'true');
+                    }
+
+                    if (hadFocus) {
+                        restoreFocus(el);
+                    }
                 });
             })
             .catch((error) => {
