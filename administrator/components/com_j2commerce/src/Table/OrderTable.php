@@ -23,6 +23,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\OrderUploadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\RedemptionHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
@@ -44,7 +45,8 @@ class OrderTable extends Table
         try {
             parent::check();
         } catch (\Exception $e) {
-            $this->setError($e->getMessage());
+            Log::add('Order check failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->setError(Text::_('JERROR_AN_ERROR_HAS_OCCURRED'));
             return false;
         }
 

@@ -974,7 +974,7 @@ class InventoryHelper
 
     // New is not placed yet, Cancelled gave its units back, Failed is a dead end nothing sweeps.
     // Refunded holds, as in RedemptionHelper: partial refunds share the type. Unclassified holds.
-    private const NON_HOLDING_TYPES = [
+    public const NON_HOLDING_TYPES = [
         OrderStatusHelper::TYPE_NEW,
         OrderStatusHelper::TYPE_FAILED,
         OrderStatusHelper::TYPE_CANCELLED,

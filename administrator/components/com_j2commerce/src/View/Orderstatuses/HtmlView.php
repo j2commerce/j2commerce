@@ -14,8 +14,10 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Orderstatuses;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -132,6 +134,23 @@ class HtmlView extends BaseHtmlView
             );
 
             Text::script('JERROR_AN_ERROR_HAS_OCCURRED');
+        }
+
+        // A renamed core row is left unclassified by the type seed, and an unclassified status
+        // holds stock, so name each non-holding type that no status carries.
+        $unassigned = array_filter(
+            InventoryHelper::NON_HOLDING_TYPES,
+            static fn (string $type): bool => !OrderStatusHelper::idsOfType($type)
+        );
+
+        if ($unassigned) {
+            Factory::getApplication()->enqueueMessage(
+                Text::sprintf(
+                    'COM_J2COMMERCE_ORDERSTATUS_TYPES_UNASSIGNED',
+                    implode(', ', array_map(OrderStatusHelper::getTypeLabel(...), $unassigned))
+                ),
+                'warning'
+            );
         }
 
         $this->addToolbar();
