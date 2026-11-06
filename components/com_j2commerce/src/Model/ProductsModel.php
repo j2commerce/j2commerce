@@ -370,11 +370,13 @@ class ProductsModel extends ListModel
     protected function getStoreId($id = ''): string
     {
         $id .= ':' . serialize($this->getState('filter.catids'));
+        $id .= ':' . $this->getState('filter.subcategory_levels');
         $id .= ':' . $this->getState('filter.search');
         $id .= ':' . $this->getState('filter.featured');
         $id .= ':' . $this->getState('filter.language');
         $id .= ':' . serialize($this->getState('filter.manufacturer_ids', []));
         $id .= ':' . serialize($this->getState('filter.vendor_ids', []));
+        $id .= ':' . serialize($this->getState('filter.product_ids', []));
         $id .= ':' . serialize($this->getState('filter.productfilter_ids', []));
         $id .= ':' . $this->getState('filter.price_from', 0);
         $id .= ':' . $this->getState('filter.price_to', 0);
@@ -569,6 +571,12 @@ class ProductsModel extends ListModel
         $vendorIds = $this->getState('filter.vendor_ids', []);
         if (!empty($vendorIds)) {
             $query->whereIn($db->quoteName('p.vendor_id'), array_map('intval', $vendorIds));
+        }
+
+        $productIds = $this->getState('filter.product_ids', []);
+        if (!empty($productIds)) {
+            $productIds = \is_string($productIds) ? explode(',', $productIds) : (array) $productIds;
+            $query->whereIn($db->quoteName('p.j2commerce_product_id'), array_map('intval', $productIds));
         }
 
         // Filter by product filter IDs (custom attributes): OR within a group, AND between
