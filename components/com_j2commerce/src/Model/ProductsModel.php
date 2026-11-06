@@ -375,6 +375,7 @@ class ProductsModel extends ListModel
         $id .= ':' . $this->getState('filter.language');
         $id .= ':' . serialize($this->getState('filter.manufacturer_ids', []));
         $id .= ':' . serialize($this->getState('filter.vendor_ids', []));
+        $id .= ':' . serialize($this->getState('filter.product_ids', []));
         $id .= ':' . serialize($this->getState('filter.productfilter_ids', []));
         $id .= ':' . $this->getState('filter.price_from', 0);
         $id .= ':' . $this->getState('filter.price_to', 0);
@@ -569,6 +570,11 @@ class ProductsModel extends ListModel
         $vendorIds = $this->getState('filter.vendor_ids', []);
         if (!empty($vendorIds)) {
             $query->whereIn($db->quoteName('p.vendor_id'), array_map('intval', $vendorIds));
+        }
+
+        $productIds = $this->getState('filter.product_ids', []);
+        if (!empty($productIds)) {
+            $query->whereIn($db->quoteName('p.j2commerce_product_id'), array_map('intval', $productIds));
         }
 
         // Filter by product filter IDs (custom attributes): OR within a group, AND between
