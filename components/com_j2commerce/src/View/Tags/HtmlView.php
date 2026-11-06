@@ -138,10 +138,11 @@ class HtmlView extends BaseHtmlView
         }
 
         // Before the event: template plugins render inside it and print the page heading this sets.
-        $this->prepareDocument();
+        $this->_prepareDocument();
 
-        $event    = J2CommerceHelper::plugin()->eventWithHtml('ViewTagsListHtml', [null, &$this, $model]);
-        $viewHtml = $event->getArgument('html', '');
+        $viewHtml = J2CommerceHelper::plugin()
+            ->eventWithHtml('ViewTagsListHtml', [null, &$this, $model])
+            ->getArgument('html', '');
 
         if (!empty($viewHtml)) {
             $this->displayPrebuilt($viewHtml);
@@ -162,7 +163,7 @@ class HtmlView extends BaseHtmlView
         parent::display($tpl);
     }
 
-    protected function prepareDocument(): void
+    protected function _prepareDocument(): void
     {
         $app          = Factory::getApplication();
         $menu         = $app->getMenu()->getActive();
