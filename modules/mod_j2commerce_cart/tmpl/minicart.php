@@ -15,7 +15,6 @@ declare(strict_types=1);
 $moduleId       = (int) $module->id;
 $productCount   = (int) ($productCount ?? 0);
 $cartUrl        = (string) ($cartUrl ?? '');
-$ajaxUrl        = (string) ($ajaxUrl ?? '');
 $isAjax         = !empty($isAjax ?? false);
 $iconClass      = htmlspecialchars($params->get('minicart_cart_icon_class', 'bi bi-cart3'), ENT_QUOTES, 'UTF-8');
 $moduleClassSfx = htmlspecialchars($params->get('moduleclass_sfx', ''), ENT_QUOTES, 'UTF-8');
@@ -58,7 +57,7 @@ if (!empty($customCss)) {
                href="<?php echo htmlspecialchars($cartUrl, ENT_QUOTES, 'UTF-8'); ?>">
                 <span class="<?php echo $iconClass; ?>" aria-hidden="true"></span>
                 <span class="visually-hidden"><?php echo $viewCartText; ?></span>
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger j2commerce-cart-badge"
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger j2commerce-cart-badge"
                       <?php echo $badgeAttr; ?><?php echo $productCount > 0 ? '' : ' hidden style="display:none"'; ?>>
                     <span<?php echo $countAttr; ?>><?php echo $productCount; ?></span>
                     <span class="visually-hidden"><?php echo $itemsText; ?></span>
@@ -67,7 +66,7 @@ if (!empty($customCss)) {
         <?php else : ?>
             <span class="j2commerce-minicart-link position-relative d-inline-block">
                 <span class="<?php echo $iconClass; ?>" aria-hidden="true"></span>
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger j2commerce-cart-badge"
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-danger j2commerce-cart-badge"
                       <?php echo $badgeAttr; ?><?php echo $productCount > 0 ? '' : ' hidden style="display:none"'; ?>>
                     <span<?php echo $countAttr; ?>><?php echo $productCount; ?></span>
                     <span class="visually-hidden"><?php echo $itemsText; ?></span>
@@ -82,45 +81,3 @@ if (!empty($customCss)) {
     <?php \Joomla\CMS\Factory::getApplication()->setUserState('mod_j2commerce_mini_cart.isAjax', 0); ?>
 <?php endif; ?>
 
-<?php if (!$isAjax) : ?>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    function replaceWithFragment(el, html) {
-        var frag = document.createRange().createContextualFragment(html);
-        el.replaceChildren(frag);
-    }
-    document.addEventListener('j2commerce:cart:updated', function () {
-        fetch('<?php echo htmlspecialchars($ajaxUrl, ENT_QUOTES, 'UTF-8'); ?>', {
-            method: 'GET',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(function (response) { return response.json(); })
-        .then(function (json) {
-            if (json && json.response) {
-                Object.keys(json.response).forEach(function (key) {
-                    document.querySelectorAll('.j2commerce-cart-module-' + key).forEach(function (el) {
-                        // Replacing the children destroys a focused cart link; hand focus to its replacement,
-                        // or to the module itself when the new markup has no visible link (emptied and hidden).
-                        var hadFocus = el.contains(document.activeElement);
-                        replaceWithFragment(el, json.response[key]);
-                        if (hadFocus) {
-                            var link = el.querySelector('a.j2commerce-minicart-link');
-                            if (link) {
-                                link.focus();
-                            }
-                            if (document.activeElement !== link) {
-                                el.setAttribute('tabindex', '-1');
-                                el.focus();
-                            }
-                        }
-                    });
-                });
-            }
-        })
-        .catch(function (error) {
-            console.error('Cart module refresh error:', error);
-        });
-    });
-});
-</script>
-<?php endif; ?>
