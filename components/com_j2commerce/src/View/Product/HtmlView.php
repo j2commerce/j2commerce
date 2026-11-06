@@ -159,18 +159,14 @@ class HtmlView extends BaseHtmlView
         $this->_prepareDocument();
 
         // Dispatch event to allow template plugins to render the view
-        // The eventWithHtml() helper properly handles passing data to/from plugins
-        // and collects the rendered HTML via the 'html' argument
-        $event = J2CommerceHelper::plugin()->eventWithHtml(
-            'ViewProductHtml',
-            [null, &$this, $model]
-        );
-        $view_html = $event->getArgument('html', '');
+        $viewHtml = J2CommerceHelper::plugin()
+            ->eventWithHtml('ViewProductHtml', [null, &$this, $model])
+            ->getArgument('html', '');
 
         // If a plugin provided HTML output, route it back through parent::display()
         // instead of echoing it directly, so the core Joomla view events still fire for it.
-        if (!empty($view_html)) {
-            $this->displayPrebuilt($view_html);
+        if (!empty($viewHtml)) {
+            $this->displayPrebuilt($viewHtml);
 
             return;
         }
