@@ -48,12 +48,15 @@ class VouchersController extends J2CommerceApiController
         $amount         = (float) $this->input->json->getFloat('amount', 0.0);
         $reason         = (string) $this->input->json->getString('reason', '');
         $note           = (string) $this->input->json->getString('note', '') ?: null;
+        // Optional. A credit naming an order is capped at what that order is still owed, and an
+        // amount of 0 credits all of it; see VoucherModel::adjustManually().
+        $orderId        = trim((string) $this->input->json->getString('order_id', '')) ?: null;
 
         /** @var \J2Commerce\Component\J2commerce\Administrator\Model\VoucherModel $model */
         $model = $this->getModel('Voucher');
 
         try {
-            $newBalance = $model->adjustBalance($id, $adjustmentType, $amount, $reason, $note);
+            $result = $model->adjustManually($id, $adjustmentType, $amount, $reason, $note, $orderId);
         } catch (\InvalidArgumentException | \RuntimeException $e) {
             throw new InvalidParameterException($e->getMessage(), 400, null, 'amount');
         } catch (\Throwable $e) {
@@ -62,11 +65,13 @@ class VouchersController extends J2CommerceApiController
             throw new \RuntimeException('COM_J2COMMERCE_VOUCHER_ADJUSTMENT_FAILED', 500);
         }
 
-        $this->logBalanceAdjustment($id, $adjustmentType, $amount, $newBalance);
+        $this->logBalanceAdjustment($id, $adjustmentType, $adjustmentType === 'correction' ? $amount : $result['amount'], $result['balance']);
 
         return $this->emit((object) [
             'id'                => $id,
-            'remaining_balance' => $newBalance,
+            'order_id'          => $orderId,
+            'amount'            => $result['amount'],
+            'remaining_balance' => $result['balance'],
         ]);
     }
 

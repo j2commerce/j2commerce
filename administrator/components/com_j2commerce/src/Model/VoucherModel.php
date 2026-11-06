@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\Exception\VoucherRejection;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\RedemptionHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\Trait\CascadingDeleteTrait;
 use J2Commerce\Component\J2commerce\Administrator\Table\VoucheradjustmentTable;
 use Joomla\CMS\Component\ComponentHelper;
@@ -662,8 +663,161 @@ class VoucherModel extends AdminModel
             throw new \InvalidArgumentException(Text::_('COM_J2COMMERCE_ERR_ADJUSTMENT_AMOUNT_INVALID'));
         }
 
+        return $this->writeLocked($id, static fn (): array => [$type, $delta, $reason, $note, $orderId])['balance'];
+    }
+
+    /**
+     * Credit back what an order still has outstanding on this voucher: its redemption less every
+     * credit already naming it, net of debits naming it. $amount null credits all of it; a larger
+     * amount is cut to it, so no path can return an order's value twice.
+     *
+     * @return  array{amount: float, balance: float}  amount is 0 when nothing is owed.
+     *
+     * @throws  \InvalidArgumentException  The order holds no redemption of this voucher.
+     */
+    public function creditForOrder(int $id, string $orderId, ?float $amount, string $reason, ?string $note = null): array
+    {
+        if ($orderId === '' || $this->getOrderRedemption($id, $orderId) <= 0) {
+            throw new \InvalidArgumentException(Text::_('COM_J2COMMERCE_ERR_VOUCHER_ORDER_NO_REDEMPTION'));
+        }
+
+        return $this->writeLocked($id, function () use ($id, $orderId, $amount, $reason, $note): ?array {
+            $owed   = round($this->getOrderRedemption($id, $orderId) - $this->getReturnedForOrder($id, $orderId, true), 5);
+            $credit = round(min($amount ?? $owed, $owed), 5);
+
+            return $credit > 0 ? ['credit', $credit, $reason, $note, $orderId] : null;
+        });
+    }
+
+    /**
+     * Take back what was credited for an order that counts against the voucher again, capped at the
+     * balance. shortfall is the part the balance could not cover.
+     *
+     * @return  array{amount: float, balance: float, shortfall: float}
+     */
+    public function reinstateForOrder(int $id, string $orderId, string $reason, ?string $note = null): array
+    {
+        $shortfall = 0.0;
+
+        $result = $this->writeLocked($id, function (float $balance) use ($id, $orderId, $reason, $note, &$shortfall): ?array {
+            $returned  = $this->getReturnedForOrder($id, $orderId, true);
+            $debit     = round(min($returned, max(0.0, $balance)), 5);
+            $shortfall = round(max(0.0, $returned - $debit), 5);
+
+            return $debit > 0 ? ['debit', -$debit, $reason, $note, $orderId] : null;
+        });
+
+        return $result + ['shortfall' => $shortfall];
+    }
+
+    /**
+     * A manual adjustment from the admin, the API or the MCP tools. A row naming an order must name a
+     * placed order that redeemed this voucher; a credit is then capped at what it is still owed
+     * (amount 0 credits all of it) and noted on the order.
+     *
+     * @return  array{amount: float, balance: float}
+     *
+     * @throws  \InvalidArgumentException  Invalid input, an order with no redemption of this voucher, or nothing owed.
+     * @throws  \RuntimeException          See adjustBalance().
+     */
+    public function adjustManually(int $id, string $type, float $amount, string $reason, ?string $note = null, ?string $orderId = null): array
+    {
+        $orderId = trim((string) $orderId);
+
+        if ($orderId === '') {
+            return ['amount' => abs($amount), 'balance' => $this->adjustBalance($id, $type, $amount, $reason, $note)];
+        }
+
+        // A New order's redemption never drew on the balance, so nothing can be owed back for it.
+        $order = RedemptionHelper::loadOrder($orderId);
+
+        if (!$order || OrderStatusHelper::getType((int) $order->order_state_id) === OrderStatusHelper::TYPE_NEW
+            || $this->getOrderRedemption($id, $orderId) <= 0
+        ) {
+            throw new \InvalidArgumentException(Text::_('COM_J2COMMERCE_ERR_VOUCHER_ORDER_NO_REDEMPTION'));
+        }
+
+        if ($type !== 'credit') {
+            return ['amount' => abs($amount), 'balance' => $this->adjustBalance($id, $type, $amount, $reason, $note, $orderId)];
+        }
+
+        if ($amount < 0) {
+            throw new \InvalidArgumentException(Text::_('COM_J2COMMERCE_ERR_ADJUSTMENT_AMOUNT_INVALID'));
+        }
+
+        $result = $this->creditForOrder($id, $orderId, $amount > 0 ? $amount : null, $reason, $note);
+
+        if ($result['amount'] <= 0) {
+            throw new \InvalidArgumentException(Text::_('COM_J2COMMERCE_ERR_VOUCHER_ORDER_NOTHING_OWED'));
+        }
+
+        RedemptionHelper::noteCredit($orderId, $id, $result['amount'], $result['balance']);
+
+        return $result;
+    }
+
+    /** What the order drew from the voucher, summed the way getAdminVoucherHistoryTotal() sums it. */
+    public function getOrderRedemption(int $id, string $orderId): float
+    {
+        $db     = $this->getDatabase();
+        $amount = J2CommerceHelper::config()->get('config_including_tax', 0)
+            ? $db->quoteName('discount_amount') . ' + ' . $db->quoteName('discount_tax')
+            : $db->quoteName('discount_amount');
+        $type  = 'voucher';
+        $query = $db->getQuery(true)
+            ->select('ROUND(SUM(' . $amount . '), 2)')
+            ->from($db->quoteName('#__j2commerce_orderdiscounts'))
+            ->where($db->quoteName('discount_entity_id') . ' = :id')
+            ->where($db->quoteName('discount_type') . ' = :type')
+            ->where($db->quoteName('order_id') . ' = :orderId')
+            ->bind(':id', $id, ParameterType::INTEGER)
+            ->bind(':type', $type)
+            ->bind(':orderId', $orderId);
+
+        return (float) $db->setQuery($query)->loadResult();
+    }
+
+    /**
+     * Value already handed back to the voucher for an order: credits naming it less debits naming it.
+     * $locking reads the latest committed rows, not a snapshot an outer transaction may hold.
+     */
+    public function getReturnedForOrder(int $id, string $orderId, bool $locking = false): float
+    {
+        $db     = $this->getDatabase();
+        $type   = $db->quoteName('adjustment_type');
+        $amount = $db->quoteName('amount');
+        $query  = $db->getQuery(true)
+            ->select('SUM(CASE ' . $type . " WHEN 'credit' THEN " . $amount . " WHEN 'debit' THEN -" . $amount . ' ELSE 0 END)')
+            ->from($db->quoteName('#__j2commerce_voucheradjustments'))
+            ->where($db->quoteName('j2commerce_voucher_id') . ' = :id')
+            ->where($db->quoteName('order_id') . ' = :orderId')
+            ->bind(':id', $id, ParameterType::INTEGER)
+            ->bind(':orderId', $orderId);
+
+        // The query builder has no locking-read clause; the suffix rides on the last WHERE term so
+        // the bound parameters stay on the query object. It ends the statement (no ORDER or LIMIT).
+        if ($locking && $db->getServerType() === 'mysql') {
+            $query->where('1 = 1 LOCK IN SHARE MODE');
+        }
+
+        return round((float) $db->setQuery($query)->loadResult(), 5);
+    }
+
+    /**
+     * Run $plan under the voucher's row lock and append the ledger row it returns. $plan gets the
+     * balance read under the lock and returns [type, signed delta, reason, note, orderId], or null
+     * for no write. Amounts a plan derives from the ledger must be read inside it, or two writers
+     * could both act on the same pre-lock figure.
+     *
+     * Savepoints, because callers such as payment plugins may already hold a transaction that a
+     * plain START TRANSACTION would commit.
+     *
+     * @return  array{amount: float, balance: float}
+     */
+    private function writeLocked(int $id, \Closure $plan): array
+    {
         $db = $this->getDatabase();
-        $db->transactionStart();
+        $db->transactionStart(true);
 
         try {
             // Serialize concurrent adjustments on the same voucher: without this lock the
@@ -682,8 +836,19 @@ class VoucherModel extends AdminModel
                 throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERR_ADJUSTMENT_SAVE_FAILED'));
             }
 
+            // A total memoised before the lock was taken may predate another writer's row.
+            $this->history = [];
             $balanceBefore = $this->getRemainingBalance($id);
-            $balanceAfter  = round($balanceBefore + $delta, 5);
+            $planned       = $plan($balanceBefore);
+
+            if ($planned === null) {
+                $db->transactionCommit(true);
+
+                return ['amount' => 0.0, 'balance' => $balanceBefore];
+            }
+
+            [$type, $delta, $reason, $note, $orderId] = $planned;
+            $balanceAfter                             = round($balanceBefore + $delta, 5);
 
             if ($balanceAfter < 0) {
                 throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERR_ADJUSTMENT_BALANCE_NEGATIVE'));
@@ -712,14 +877,14 @@ class VoucherModel extends AdminModel
                 throw new \RuntimeException(Text::_('COM_J2COMMERCE_ERR_ADJUSTMENT_SAVE_FAILED'));
             }
 
-            $db->transactionCommit();
+            $db->transactionCommit(true);
         } catch (\Throwable $e) {
-            $db->transactionRollback();
+            $db->transactionRollback(true);
 
             throw $e;
         }
 
-        return $balanceAfter;
+        return ['amount' => abs($delta), 'balance' => $balanceAfter];
     }
 
     /**
