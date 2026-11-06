@@ -370,6 +370,7 @@ class ProductsModel extends ListModel
     protected function getStoreId($id = ''): string
     {
         $id .= ':' . serialize($this->getState('filter.catids'));
+        $id .= ':' . $this->getState('filter.subcategory_levels');
         $id .= ':' . $this->getState('filter.search');
         $id .= ':' . $this->getState('filter.featured');
         $id .= ':' . $this->getState('filter.language');
@@ -574,6 +575,7 @@ class ProductsModel extends ListModel
 
         $productIds = $this->getState('filter.product_ids', []);
         if (!empty($productIds)) {
+            $productIds = \is_string($productIds) ? explode(',', $productIds) : (array) $productIds;
             $query->whereIn($db->quoteName('p.j2commerce_product_id'), array_map('intval', $productIds));
         }
 
