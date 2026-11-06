@@ -20,6 +20,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\TrackingHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
+use J2Commerce\Component\J2commerce\Site\View\CustomSubtemplateTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -34,6 +35,8 @@ use Joomla\Event\Event;
  */
 class HtmlView extends BaseHtmlView
 {
+    use CustomSubtemplateTrait;
+
     public $params = null;
     public $currency;
     public $storeProfile;
@@ -190,19 +193,38 @@ class HtmlView extends BaseHtmlView
 
         $this->_prepareDocument();
 
-        HTMLHelper::_('bootstrap.collapse', 'checkoutSidecartCollapse');
-        HTMLHelper::_('bootstrap.modal');
+        // Dispatch event to allow a plugin to render the whole checkout view itself
+        // (e.g. a custom YOOtheme-driven checkout flow), routed back through
+        // parent::display() rather than echoed directly, so core Joomla view events
+        // still fire for it.
+        $viewHtml = J2CommerceHelper::plugin()
+            ->eventWithHtml('ViewCheckoutHtml', [null, &$this, $this->order])
+            ->getArgument('html', '');
 
-        $this->registerFrameworkTemplatePaths($app);
+        if (!empty($viewHtml)) {
+            $this->displayPrebuilt($viewHtml);
+
+            return;
+        }
+
+        $framework = $this->registerFrameworkTemplatePaths($app);
+
+        // Bootstrap's own JS behaviors (sidecart collapse, modal) only belong on the
+        // bootstrap5 markup -- a uikit (or other) subtemplate renders its own widgets
+        // and never emits the data-bs-* attributes these behaviors look for.
+        if ($framework === 'bootstrap5') {
+            HTMLHelper::_('bootstrap.collapse', 'checkoutSidecartCollapse');
+            HTMLHelper::_('bootstrap.modal');
+        }
 
         parent::display($tpl);
     }
 
-    /** Register the bootstrap5/uikit subfolder; AJAX callers pass merged menu params as 2nd arg. */
+    /** Register the bootstrap5/uikit subfolder; AJAX callers pass merged menu params as 2nd arg. Returns the resolved framework folder name. */
     public function registerFrameworkTemplatePaths(
         \Joomla\CMS\Application\CMSApplicationInterface $app,
         ?\Joomla\Registry\Registry $params = null
-    ): void {
+    ): string {
         $params ??= $this->params;
         $framework = $params ? SubtemplateHelper::framework($params) : SubtemplateHelper::FALLBACK;
 
@@ -241,6 +263,8 @@ class HtmlView extends BaseHtmlView
         if ($candidate !== '' && is_dir($tplRoot . '/' . $candidate)) {
             $this->addTemplatePath($tplRoot . '/' . $candidate);
         }
+
+        return $candidate;
     }
 
     protected function _prepareDocument(): void
