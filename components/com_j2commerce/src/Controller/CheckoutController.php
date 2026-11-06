@@ -2150,18 +2150,19 @@ class CheckoutController extends BaseController
         // with, since that is the method that produced the stored total.
         // The gift card value a canceled or failed order held may already be back on the card and
         // spent elsewhere. A shopper starts a fresh checkout instead; a merchant's Take Payment link
-        // on a failed order goes ahead only while its coupons and gift cards still cover it.
+        // on a failed order goes ahead only while none of its gift card value has been returned.
         if (!$tokenlessGatewayReturn
             && !empty($orderId)
             && !empty($orderTable->j2commerce_order_id)
             && RedemptionHelper::releases((int) ($orderTable->order_state_id ?? 0))
-            && (!$wasContextActivated
-                || !$this->acquirePlacementLocks((string) $orderId)
-                || !$this->discountsStillRedeemable($orderTable))
         ) {
-            $this->refuseOutOfDateOrder();
+            $refusal = $wasContextActivated ? RedemptionHelper::blocksRepayment($orderTable) : '';
 
-            return;
+            if ($refusal !== null) {
+                $this->refuseOutOfDateOrder($refusal !== '' ? $refusal : null);
+
+                return;
+            }
         }
 
         if (!$tokenlessGatewayReturn
@@ -2799,6 +2800,14 @@ class CheckoutController extends BaseController
         }
 
         $input['order_id'] = $sessionOrderId;
+
+        // The wallet buttons do not pass through confirmPayment(); the same re-payment rule applies
+        // before the gateway is called. Capture is checked by the plugin, ahead of its own capture call.
+        $order = RedemptionHelper::loadOrder($sessionOrderId);
+
+        if ($order && ($refusal = RedemptionHelper::blocksRepayment($order)) !== null) {
+            $this->jsonResponse(['success' => false, 'error' => $refusal]);
+        }
 
         // Dispatch to payment plugin via event
         $event  = J2CommerceHelper::plugin()->event('PaymentCreateOrder', ['payment_paypal', $input]);

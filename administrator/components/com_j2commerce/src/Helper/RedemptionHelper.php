@@ -163,6 +163,38 @@ final class RedemptionHelper
     }
 
     /**
+     * Whether a canceled or failed order may be paid again. Not once gift card value it drew has been
+     * put back on the card, which may since have been spent: the order is then placed by a fresh
+     * checkout, or by the merchant moving it back to a counting status first, which re-checks and
+     * takes the value back under the locks. Nor while its coupons' use limits no longer cover it.
+     * Read-only, so it is safe before any gateway call. Returns the refusal message, or null when
+     * payment may go ahead.
+     */
+    public static function blocksRepayment(object $order): ?string
+    {
+        $orderId = (string) ($order->order_id ?? '');
+
+        if ($orderId === '' || !self::releases((int) ($order->order_state_id ?? 0))) {
+            return null;
+        }
+
+        $factory  = Factory::getApplication()->bootComponent('com_j2commerce')->getMVCFactory();
+        $vouchers = $factory->createModel('Voucher', 'Administrator', ['ignore_request' => true]);
+        $rows     = $factory->createModel('Order', 'Administrator', ['ignore_request' => true])->getOrderDiscounts($orderId, 'voucher');
+
+        Factory::getApplication()->getLanguage()->load('com_j2commerce', JPATH_ADMINISTRATOR);
+
+        foreach (array_unique(array_map(static fn ($row): int => (int) $row->discount_entity_id, $rows)) as $id) {
+            if ($vouchers->getReturnedForOrder($id, $orderId) > 0) {
+                return Text::_('COM_J2COMMERCE_ERR_ORDER_VOUCHER_RETURNED');
+            }
+        }
+
+        // Its coupons stopped counting when it was released, so their use limits are re-read too.
+        return self::findShortfall(self::loadOrder($orderId) ?? $order);
+    }
+
+    /**
      * The first of the order's coupon or voucher rows its limits no longer cover, as a message, or
      * null when every row is still redeemable. The order's own rows are excluded from the counts,
      * and value already credited back for it is not available to it. Needs order_id, user_id,

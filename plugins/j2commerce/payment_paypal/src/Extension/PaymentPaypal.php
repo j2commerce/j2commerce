@@ -20,6 +20,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderTransactionHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductTypeHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\RedemptionHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Base;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Payment;
@@ -1156,6 +1157,11 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
             ) {
                 $this->log('completeNvpExpressCheckoutForOrder: order not in a completable state - order_id: ' . $orderIdString . ', state: ' . $orderTable->order_state_id, Log::ERROR);
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
+            }
+
+            // Not a failed order whose gift card value has gone back on the card (core rule).
+            if (($refusal = RedemptionHelper::blocksRepayment($orderTable)) !== null) {
+                return ['success' => false, 'error' => $refusal];
             }
 
             $nvp = $this->getPayPalNvp();
@@ -2974,6 +2980,12 @@ final class PaymentPaypal extends CMSPlugin implements SubscriberInterface
 
                 $this->log('capturePayPalOrder: Order not in a capturable state - order_id: ' . $orderId . ', state: ' . $orderTable->order_state_id, Log::ERROR);
                 return ['success' => false, 'error' => Text::_('PLG_J2COMMERCE_PAYMENT_PAYPAL_INVALID_REQUEST')];
+            }
+
+            // Not a failed order whose gift card value has gone back on the card (core rule). Checked
+            // here rather than at the controller, so the approval webhook's capture is held to it too.
+            if (($refusal = RedemptionHelper::blocksRepayment($orderTable)) !== null) {
+                return ['success' => false, 'error' => $refusal];
             }
 
             $this->log('capturePayPalOrder: Sending capture request to PayPal API');
