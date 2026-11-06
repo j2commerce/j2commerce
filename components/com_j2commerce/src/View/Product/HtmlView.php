@@ -171,8 +171,13 @@ class HtmlView extends BaseHtmlView
             return;
         }
 
-        // If a custom subtemplate is selected, try template override directory first
+        // If a custom subtemplate is selected, try template override directory first.
+        // The single-product context looks for view.php in that folder (TemplatelistField's
+        // own convention -- default.php is what makes a folder valid for the listing views),
+        // and renderCustomSubtemplate()'s loadTemplate() call resolves that filename from the
+        // current layout, so it must be 'view' here.
         if (!empty($this->sublayout)) {
+            $this->setLayout('view');
             $customHtml = $this->renderCustomSubtemplate();
 
             if ($customHtml !== null) {
