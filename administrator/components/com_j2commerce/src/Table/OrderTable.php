@@ -74,9 +74,17 @@ class OrderTable extends Table
             $this->order_type = 'normal';
         }
 
-        // Set default status (5 = incomplete)
+        // Checkout reads "still unplaced" by type, so the default must be a status typed New.
         if (!isset($this->order_state_id) || $this->order_state_id === '') {
-            $this->order_state_id = 5;
+            $newStatusId = OrderStatusHelper::idOfType(OrderStatusHelper::TYPE_NEW, 'J2COMMERCE_NEW');
+
+            if (OrderStatusHelper::getType($newStatusId) !== OrderStatusHelper::TYPE_NEW) {
+                $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', Text::_('COM_J2COMMERCE_ORDERSTATUS')));
+
+                return false;
+            }
+
+            $this->order_state_id = $newStatusId;
         }
 
         if (!isset($this->stock_committed) || $this->stock_committed === '') {
