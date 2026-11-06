@@ -1264,7 +1264,8 @@ class OrderModel extends AdminModel
             // Reclaim any customer uploads a later, abandoned order for the same cart took —
             // see the matching call in OrderTable::store(). Runs on the winner of the
             // compare-and-swap above, before the status event, so listeners see them.
-            if ($oldStatusId === 5 && InventoryHelper::statusHoldsStock($newStatusId)) {
+            if (OrderStatusHelper::getType($oldStatusId) === OrderStatusHelper::TYPE_NEW
+                && InventoryHelper::statusHoldsStock($newStatusId)) {
                 OrderUploadHelper::attachUploadsToOrder($orderId, (string) $order->order_id);
             }
 

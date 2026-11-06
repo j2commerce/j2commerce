@@ -95,7 +95,17 @@ class StockCommittedSeedHelper
                 return true;
             }
 
-            [$seeded, $complete] = self::seedBatches($db);
+            // Seeding without the full exclusion would mark unplaced orders committed, and each
+            // would credit stock it never took on its next transition.
+            $nonHolding = InventoryHelper::nonHoldingStatusIds();
+
+            if (!$nonHolding) {
+                $log('STOCK SEED: new, failed and cancelled are not all assigned to a status — skipped');
+
+                return false;
+            }
+
+            [$seeded, $complete] = self::seedBatches($db, $nonHolding);
 
             if (!$complete) {
                 $log("STOCK SEED: {$seeded} order(s) seeded, work ceiling reached — resuming on the next request");
@@ -127,7 +137,7 @@ class StockCommittedSeedHelper
      *
      * @return  array{0: int, 1: bool}  Rows seeded, and whether nothing is left to seed.
      */
-    private static function seedBatches(DatabaseInterface $db): array
+    private static function seedBatches(DatabaseInterface $db, array $nonHolding): array
     {
         $seeded = 0;
 
@@ -136,7 +146,7 @@ class StockCommittedSeedHelper
                 ->select($db->quoteName('j2commerce_order_id'))
                 ->from($db->quoteName('#__j2commerce_orders'))
                 ->where($db->quoteName('stock_committed') . ' = 0')
-                ->whereNotIn($db->quoteName('order_state_id'), InventoryHelper::NON_HOLDING_STATUSES)
+                ->whereNotIn($db->quoteName('order_state_id'), $nonHolding)
                 ->setLimit(self::BATCH_SIZE);
             $db->setQuery($query);
 
