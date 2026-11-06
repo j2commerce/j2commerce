@@ -16,6 +16,7 @@ namespace J2Commerce\Plugin\Actionlog\J2commerce\Extension;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Mail\Exception\MailDisabledException;
@@ -102,10 +103,10 @@ final class J2commerce extends ActionLogPlugin implements SubscriberInterface
             'onJ2CommerceAfterOrderValidate'       => 'onAfterOrderValidate',
             'onJ2CommerceAfterPayment'             => 'onAfterPayment',
             // Order admin events
-            'onJ2CommerceAfterOrderStatusChange' => 'onAfterOrderStatusChange',
-            'onJ2CommerceAfterAdminOrderCreate'  => 'onAfterAdminOrderCreate',
-            'onJ2CommerceAfterAdminOrderEdit'    => 'onAfterAdminOrderEdit',
-            'onJ2CommerceAfterOrderExport'       => 'onAfterOrderExport',
+            'onJ2CommerceOrderStatusChange'     => 'onAfterOrderStatusChange',
+            'onJ2CommerceAfterAdminOrderCreate' => 'onAfterAdminOrderCreate',
+            'onJ2CommerceAfterAdminOrderEdit'   => 'onAfterAdminOrderEdit',
+            'onJ2CommerceAfterOrderExport'      => 'onAfterOrderExport',
             // Voucher balance events
             'onJ2CommerceVoucherBalanceAdjusted' => 'onVoucherBalanceAdjusted',
             // Admin content events (fired by Joomla's AdminModel)
@@ -305,18 +306,16 @@ final class J2commerce extends ActionLogPlugin implements SubscriberInterface
         $orderStateId = (int) ($orderTable->order_state_id ?? 0);
         $statusName   = $this->getOrderStatusName($orderStateId);
 
-        // Determine priority based on order state
-        $failedStates  = [3, 6]; // Failed, Cancelled
-        $warningStates = [5];   // New
-        $successStates = [1, 2, 7]; // Confirmed, Processed, Shipped
+        // Status ids are install-dependent, so the outcome is read from the status type.
+        $statusType = OrderStatusHelper::getType($orderStateId);
 
-        if (\in_array($orderStateId, $failedStates, true)) {
+        if ($this->isFailedStatus($orderStateId)) {
             $priority = self::PRIORITY_WARNING;
             $langKey  = 'PLG_ACTIONLOG_J2COMMERCE_ORDER_PAYMENT_FAILED';
-        } elseif (\in_array($orderStateId, $warningStates, true)) {
+        } elseif ($statusType === OrderStatusHelper::TYPE_NEW) {
             $priority = self::PRIORITY_WARNING;
             $langKey  = 'PLG_ACTIONLOG_J2COMMERCE_ORDER_PAYMENT_NEW';
-        } elseif (\in_array($orderStateId, $successStates, true)) {
+        } elseif (OrderStatusHelper::isFinalized($statusType)) {
             $priority = self::PRIORITY_SUCCESS;
             $langKey  = 'PLG_ACTIONLOG_J2COMMERCE_ORDER_PAYMENT_SUCCESS';
         } else {
@@ -340,16 +339,27 @@ final class J2commerce extends ActionLogPlugin implements SubscriberInterface
             return;
         }
 
-        $args       = $this->extractArgs($event, 3);
+        // OrderTable::store() passes (order_id, old, new); OrderModel::updateOrderStatus()
+        // passes (pk, order_id, old, new, notify). Only the first starts with the string id.
+        $args = $this->extractArgs($event, 4);
+
+        if (!\is_string($args[0])) {
+            array_shift($args);
+        }
+
+        // A new order row reports no previous status: it was just created, so there is no transition to log.
+        if ($args[1] === null) {
+            return;
+        }
+
         $orderId    = (string) ($args[0] ?? '');
-        $oldStateId = (int) ($args[1] ?? 0);
+        $oldStateId = (int) $args[1];
         $newStateId = (int) ($args[2] ?? 0);
 
         $oldStatusName = $this->getOrderStatusName($oldStateId);
         $newStatusName = $this->getOrderStatusName($newStateId);
 
-        $failedStates = [3, 6];
-        $priority     = \in_array($newStateId, $failedStates, true)
+        $priority = $this->isFailedStatus($newStateId)
             ? self::PRIORITY_WARNING
             : self::PRIORITY_ACTION;
 
@@ -703,6 +713,15 @@ final class J2commerce extends ActionLogPlugin implements SubscriberInterface
         }
 
         return 0;
+    }
+
+    private function isFailedStatus(int $orderStateId): bool
+    {
+        return \in_array(
+            OrderStatusHelper::getType($orderStateId),
+            [OrderStatusHelper::TYPE_FAILED, OrderStatusHelper::TYPE_CANCELLED],
+            true
+        );
     }
 
     private function getOrderStatusName(int $orderStateId): string
