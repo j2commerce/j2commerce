@@ -82,10 +82,11 @@ final class OrderUploadHelper
         // Both halves of the predicate carry weight. The mangled token arrives in the
         // request, so cart_id — read from the orders row, never from the upload row — is
         // what keeps the match inside the shopper's own carts.
-        $nonHolding   = implode(',', array_map('intval', InventoryHelper::NON_HOLDING_STATUSES));
+        $nonHolding   = implode(',', array_map('intval', InventoryHelper::nonHoldingStatusIds()));
+        $reclaim      = $cartId > 0 && $nonHolding !== '';
         $statusClause = $db->quoteName('u.status') . ' = ' . $db->quote('pending');
 
-        if ($cartId > 0) {
+        if ($reclaim) {
             $statusClause = '(' . $statusClause
                 . ' OR (' . $db->quoteName('u.status') . ' = ' . $db->quote('attached')
                 . ' AND ' . $db->quoteName('u.order_id') . ' <> :ownVarchar'
@@ -131,7 +132,7 @@ final class OrderUploadHelper
 
         $uploadQuery->where('(' . implode(' OR ', $ownership) . ')');
 
-        if ($cartId > 0) {
+        if ($reclaim) {
             $uploadQuery->bind(':ownVarchar', $orderVarchar)
                 ->bind(':cartId', $cartId, ParameterType::INTEGER);
         }

@@ -972,18 +972,34 @@ class InventoryHelper
     // ORDER STOCK REDUCTION & RESTORATION
     // =========================================================================
 
+    // New is not placed yet, Cancelled gave its units back, Failed is a dead end nothing sweeps.
+    // Refunded holds, as in RedemptionHelper: partial refunds share the type. Unclassified holds.
+    private const NON_HOLDING_TYPES = [
+        OrderStatusHelper::TYPE_NEW,
+        OrderStatusHelper::TYPE_FAILED,
+        OrderStatusHelper::TYPE_CANCELLED,
+    ];
+
     /**
-     * Order statuses that do NOT hold stock: New (5) has not been placed against inventory
-     * yet, Cancelled (6) has given its units back, and Failed (3) is a dead end that nothing
-     * sweeps — holding there would strand the units on every declined card.
+     * The ids StockCommittedSeedHelper and OrderUploadHelper query with, empty unless every
+     * non-holding type is assigned: a partial set would seed unplaced orders as committed.
      *
-     * Public because StockCommittedSeedHelper seeds against the same set: a second copy that
-     * drifted from this one would mark as committed the very orders the runtime treats as
-     * non-holding, and each would then credit stock on its next transition.
-     *
-     * @since   6.5.0
+     * @return int[]
      */
-    public const NON_HOLDING_STATUSES = [3, 5, 6];
+    public static function nonHoldingStatusIds(): array
+    {
+        $ids = [];
+
+        foreach (self::NON_HOLDING_TYPES as $type) {
+            if (!$typed = OrderStatusHelper::idsOfType($type)) {
+                return [];
+            }
+
+            $ids = [...$ids, ...$typed];
+        }
+
+        return $ids;
+    }
 
     /**
      * Does an order in this status hold reserved stock?
@@ -992,7 +1008,7 @@ class InventoryHelper
      */
     public static function statusHoldsStock(int $statusId): bool
     {
-        return !\in_array($statusId, self::NON_HOLDING_STATUSES, true);
+        return !\in_array(OrderStatusHelper::getType($statusId), self::NON_HOLDING_TYPES, true);
     }
 
     /** Does this order currently hold deducted stock? */

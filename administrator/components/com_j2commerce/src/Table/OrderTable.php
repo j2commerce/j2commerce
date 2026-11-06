@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderUploadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\RedemptionHelper;
 use Joomla\CMS\Factory;
@@ -249,7 +250,8 @@ class OrderTable extends Table
         // Only where the order starts holding: cancelling or failing one must not pull the
         // files off a sibling that is still live, which would strand them on a row that can
         // never give them back.
-        if (!$isNew && $oldStatusId === 5 && InventoryHelper::statusHoldsStock($newStatusId)) {
+        if (!$isNew && OrderStatusHelper::getType($oldStatusId) === OrderStatusHelper::TYPE_NEW
+            && InventoryHelper::statusHoldsStock($newStatusId)) {
             OrderUploadHelper::attachUploadsToOrder(
                 (int) $this->j2commerce_order_id,
                 (string) $this->order_id
