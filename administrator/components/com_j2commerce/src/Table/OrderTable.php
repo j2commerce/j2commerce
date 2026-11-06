@@ -19,6 +19,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderUploadHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\RedemptionHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Plugin\PluginHelper;
@@ -262,6 +263,13 @@ class OrderTable extends Table
 
         if ($committed !== null) {
             $this->stock_committed = $committed;
+        }
+
+        // Voucher value follows the transition, as in OrderModel::updateOrderStatus(). No refusal
+        // here: these writers report a payment already taken, or a free order checkout re-checked
+        // (and never from a canceled or failed order), so a shortfall is recorded instead.
+        if (!$isNew) {
+            RedemptionHelper::onStatusChange((string) $this->order_id, (int) $oldStatusId, $newStatusId);
         }
 
         // Trigger plugin event for status change
