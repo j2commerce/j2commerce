@@ -138,6 +138,21 @@ class OrderstatusTable extends Table
         $this->modified_on = $date;
         $this->modified_by = (int) $user->id;
 
-        return parent::store($updateNulls);
+        // Later reads in this request must see the type just written, even when the store throws
+        // after the row was committed.
+        try {
+            return parent::store($updateNulls);
+        } finally {
+            OrderStatusHelper::clearCache();
+        }
+    }
+
+    public function delete($pk = null): bool
+    {
+        try {
+            return parent::delete($pk);
+        } finally {
+            OrderStatusHelper::clearCache();
+        }
     }
 }
