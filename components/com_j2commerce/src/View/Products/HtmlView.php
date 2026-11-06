@@ -203,21 +203,20 @@ class HtmlView extends BaseHtmlView
         $this->columns   = (int) $this->params->get('list_no_of_columns', 3);
         $this->sublayout = $this->params->get('subtemplate', '');
 
+        // Document metadata (title, meta, canonical, breadcrumbs) is always prepared
+        // here, once, before the event dispatch below -- regardless of which branch
+        // ends up rendering the body.
+        $this->_prepareDocument();
+
         // Dispatch event to allow template plugins to render the view
         // The eventWithHtml() helper properly handles passing data to/from plugins
         // and collects the rendered HTML via the 'html' argument
-        $event = J2CommerceHelper::plugin()->eventWithHtml(
-            'ViewProductListHtml',
-            [null, &$this, $model]
-        );
-        $view_html = $event->getArgument('html', '');
+        $viewHtml = J2CommerceHelper::plugin()
+            ->eventWithHtml('ViewProductListHtml', [null, &$this, $model])
+            ->getArgument('html', '');
 
-        // If a plugin provided HTML output, still prepare document first
-        // This ensures breadcrumbs, page title, and meta tags are set even when
-        // a template plugin handles the actual HTML rendering
-        if (!empty($view_html)) {
-            $this->_prepareDocument();
-            $this->displayPrebuilt($view_html);
+        if (!empty($viewHtml)) {
+            $this->displayPrebuilt($viewHtml);
 
             return;
         }
@@ -227,7 +226,6 @@ class HtmlView extends BaseHtmlView
             $customHtml = $this->renderCustomSubtemplate();
 
             if ($customHtml !== null) {
-                $this->_prepareDocument();
                 $this->displayPrebuilt($customHtml);
 
                 return;
@@ -235,8 +233,6 @@ class HtmlView extends BaseHtmlView
         }
 
         // No plugin or custom override provided HTML, use default template rendering
-        $this->_prepareDocument();
-
         parent::display($tpl);
     }
 
