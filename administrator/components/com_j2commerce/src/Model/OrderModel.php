@@ -322,7 +322,6 @@ class OrderModel extends AdminModel
             'customer_note'     => (string) ($data['customer_note'] ?? ''),
             'customer_group'    => $customerGroup,
             'ip_address'        => '',
-            'order_state_id'    => 5,
             'created_by'        => (int) $user->id,
             'modified_by'       => (int) $user->id,
         ]);

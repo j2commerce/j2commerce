@@ -2169,7 +2169,7 @@ class CheckoutController extends BaseController
             && !$wasContextActivated
             && !empty($orderId)
             && !empty($orderTable->j2commerce_order_id)
-            && (int) ($orderTable->order_state_id ?? 0) === 5
+            && OrderStatusHelper::getType((int) ($orderTable->order_state_id ?? 0)) === OrderStatusHelper::TYPE_NEW
         ) {
             // Every check below reads limits that only a placed order consumes, so two
             // submissions racing each other would both pass them. Placement on the same
@@ -2185,7 +2185,7 @@ class CheckoutController extends BaseController
             // already placed by the one that held it.
             $orderTable->load(['order_id' => $orderId]);
 
-            if ((int) ($orderTable->order_state_id ?? 0) !== 5) {
+            if (OrderStatusHelper::getType((int) ($orderTable->order_state_id ?? 0)) !== OrderStatusHelper::TYPE_NEW) {
                 $this->refuseOutOfDateOrder();
 
                 return;
@@ -2668,7 +2668,7 @@ class CheckoutController extends BaseController
 
         $table = $this->getMvcFactory()->createTable('Order', 'Administrator');
 
-        if (!$table || !$table->load(['order_id' => $orderId]) || (int) $table->order_state_id !== 5) {
+        if (!$table || !$table->load(['order_id' => $orderId]) || OrderStatusHelper::getType((int) $table->order_state_id) !== OrderStatusHelper::TYPE_NEW) {
             return null;
         }
 
