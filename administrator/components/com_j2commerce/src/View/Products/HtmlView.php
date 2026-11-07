@@ -20,6 +20,7 @@ use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Helper\ContentHelper;
+use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\MVC\View\GenericDataException;
@@ -129,6 +130,13 @@ class HtmlView extends BaseHtmlView
         $this->state         = $model->getState();
         $this->filterForm    = $model->getFilterForm();
         $this->activeFilters = $model->getActiveFilters();
+
+        // Same idiom as com_content's own Articles list: the field and its active-filter
+        // chip only make sense once there is more than one content language to pick from.
+        if (!Multilanguage::isEnabled()) {
+            unset($this->activeFilters['language']);
+            $this->filterForm->removeField('language', 'filter');
+        }
 
         if ((!\is_array($this->items) || !\count($this->items)) && $this->isEmptyState = $model->getIsEmptyState()) {
             $this->setLayout('emptystate');
