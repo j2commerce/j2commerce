@@ -160,7 +160,7 @@ class HtmlView extends BaseHtmlView
             }
         }
 
-        parent::display($tpl);
+        $this->displayOrFallback($tpl);
     }
 
     protected function _prepareDocument(): void

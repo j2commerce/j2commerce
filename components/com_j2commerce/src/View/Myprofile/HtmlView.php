@@ -100,7 +100,7 @@ class HtmlView extends BaseHtmlView
                 return;
             }
 
-            parent::display($tpl);
+            $this->displayOrFallback($tpl);
 
             return;
         }
@@ -307,7 +307,7 @@ class HtmlView extends BaseHtmlView
 
         Text::script('COM_J2COMMERCE_LOADING');
 
-        parent::display($tpl);
+        $this->displayOrFallback($tpl);
     }
 
     /**

@@ -124,7 +124,7 @@ class HtmlView extends BaseHtmlView
 
             // Logged-in user with no orders → show token entry form
             $this->_prepareDocument();
-            parent::display('noorder');
+            $this->displayOrFallback('noorder');
 
             return;
         }
@@ -177,7 +177,7 @@ class HtmlView extends BaseHtmlView
             return;
         }
 
-        parent::display($tpl);
+        $this->displayOrFallback($tpl);
     }
 
     /**

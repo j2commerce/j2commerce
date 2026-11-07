@@ -69,7 +69,7 @@ class HtmlView extends BaseHtmlView
         }
 
         if ($this->context === null) {
-            parent::display($tpl);
+            $this->displayOrFallback($tpl);
             return;
         }
 
@@ -84,7 +84,7 @@ class HtmlView extends BaseHtmlView
         $this->paymentMethods = $this->loadEligiblePaymentMethods();
         $this->cardForms      = $this->loadCardForms($this->paymentMethods);
 
-        parent::display($tpl);
+        $this->displayOrFallback($tpl);
     }
 
     /**

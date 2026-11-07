@@ -62,6 +62,8 @@ class HtmlView extends BaseHtmlView
         $this->user         = $app->getIdentity();
         $this->logged       = ($this->user && $this->user->id > 0);
 
+        $framework = $this->registerFrameworkTemplatePaths($app);
+
         // Nonce-activation: the consumer app redirects here with &checkout_context=<nonce>.
         // A matching nonce marks the context ACTIVATED so it owns subsequent steps.
         //
@@ -207,8 +209,6 @@ class HtmlView extends BaseHtmlView
             return;
         }
 
-        $framework = $this->registerFrameworkTemplatePaths($app);
-
         // Bootstrap's own JS behaviors (sidecart collapse, modal) only belong on the
         // bootstrap5 markup -- a uikit (or other) subtemplate renders its own widgets
         // and never emits the data-bs-* attributes these behaviors look for.
@@ -217,7 +217,7 @@ class HtmlView extends BaseHtmlView
             HTMLHelper::_('bootstrap.modal');
         }
 
-        parent::display($tpl);
+        $this->displayOrFallback($tpl);
     }
 
     /** Register the bootstrap5/uikit subfolder; AJAX callers pass merged menu params as 2nd arg. Returns the resolved framework folder name. */

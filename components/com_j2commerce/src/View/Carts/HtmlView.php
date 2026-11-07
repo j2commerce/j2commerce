@@ -254,6 +254,8 @@ class HtmlView extends BaseHtmlView
         $this->currency = $model->getCurrency();
         $this->store    = $model->getStore();
 
+        $this->registerFrameworkTemplatePaths($app);
+
         // Get location state
         $this->country_id = (int) $model->getState('country_id');
         $this->zone_id    = (int) $model->getState('zone_id');
@@ -357,9 +359,7 @@ class HtmlView extends BaseHtmlView
             return;
         }
 
-        $this->registerFrameworkTemplatePaths($app);
-
-        parent::display($tpl);
+        $this->displayOrFallback($tpl);
     }
 
     /**
