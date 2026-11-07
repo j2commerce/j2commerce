@@ -20,6 +20,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CustomFieldHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\LoginCaptchaHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Factory;
@@ -31,6 +32,7 @@ use Joomla\CMS\Pagination\Pagination;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
+use Joomla\CMS\Uri\Uri;
 use Joomla\CMS\User\UserHelper;
 use Joomla\Database\ParameterType;
 use Joomla\Filesystem\Path;
@@ -192,6 +194,82 @@ class MyprofileController extends BaseController
         ]);
     }
 
+    private function loginCaptchaPassed(): bool
+    {
+        $captcha = LoginCaptchaHelper::forMyprofile();
+
+        if ($captcha === null) {
+            return true;
+        }
+
+        try {
+            return (bool) $captcha->checkAnswer($this->input->post->getString('captcha', ''));
+        } catch (\RuntimeException) {
+            // Providers throw on an empty or unverifiable answer; that is a failed check.
+            return false;
+        }
+    }
+
+    /**
+     * Follows com_users UserController::login() with the captcha checked first; failures and the
+     * default return go to My Profile, and a numeric return gets no multilanguage suffix.
+     */
+    public function login(): void
+    {
+        $this->checkToken('post');
+
+        $profileUrl = 'index.php?option=com_j2commerce&view=myprofile';
+
+        if (!$this->loginCaptchaPassed()) {
+            $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_MYPROFILE_CAPTCHA_FAILED'), 'error');
+            $this->app->redirect(Route::_($profileUrl, false));
+
+            return;
+        }
+
+        $input  = $this->input->getInputForRequestMethod();
+        $return = base64_decode($input->get('return', '', 'BASE64'));
+
+        if (is_numeric($return)) {
+            $return = 'index.php?Itemid=' . (int) $return;
+        } elseif (!Uri::isInternal($return)) {
+            $return = '';
+        }
+
+        $this->app->setUserState('users.login.form.return', $return ?: $profileUrl);
+
+        $options = [
+            'remember' => $this->input->getBool('remember', false),
+            'return'   => $this->app->getUserState('users.login.form.return'),
+        ];
+
+        $credentials = [
+            'username'  => $input->get('username', '', 'USERNAME'),
+            'password'  => $input->get('password', '', 'RAW'),
+            'secretkey' => $input->get('secretkey', '', 'RAW'),
+        ];
+
+        if ($this->app->login($credentials, $options) !== true) {
+            $this->app->setUserState('users.login.form.data', [
+                'return'    => $options['return'],
+                'remember'  => (int) $options['remember'],
+                'username'  => '',
+                'password'  => '',
+                'secretkey' => '',
+            ]);
+            $this->app->redirect(Route::_($profileUrl, false));
+
+            return;
+        }
+
+        if ($options['remember']) {
+            $this->app->setUserState('rememberLogin', true);
+        }
+
+        $this->app->setUserState('users.login.form.data', []);
+        $this->app->redirect(Route::_($this->app->getUserState('users.login.form.return'), false));
+    }
+
     public function guestEntry(): void
     {
         if (!Session::checkToken('post')) {
@@ -203,6 +281,15 @@ class MyprofileController extends BaseController
 
         $email      = trim($this->input->getString('email', ''));
         $orderToken = trim($this->input->getString('order_token', ''));
+
+        if (!$this->loginCaptchaPassed()) {
+            // Kept for one render so the shopper does not retype the form (WCAG 3.3.7).
+            $this->app->setUserState(LoginCaptchaHelper::GUEST_FORM_STATE, ['email' => $email, 'order_token' => $orderToken]);
+            $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_MYPROFILE_CAPTCHA_FAILED'), 'error');
+            $this->app->redirect(Route::_('index.php?option=com_j2commerce&view=myprofile', false));
+
+            return;
+        }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $this->app->enqueueMessage(Text::_('COM_J2COMMERCE_MYPROFILE_INVALID_EMAIL'), 'error');
