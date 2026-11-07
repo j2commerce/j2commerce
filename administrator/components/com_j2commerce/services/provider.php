@@ -15,7 +15,9 @@ declare(strict_types=1);
 use J2Commerce\Component\J2commerce\Administrator\Extension\J2commerceComponent;
 use J2Commerce\Component\J2commerce\Administrator\Service\EmailTypeRegistry;
 use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
+use J2Commerce\Component\J2commerce\Site\Helper\AssociationsHelper;
 use J2Commerce\Component\J2commerce\Site\Service\CheckoutPlacementService;
+use Joomla\CMS\Association\AssociationExtensionInterface;
 use Joomla\CMS\Component\Router\RouterFactoryInterface;
 use Joomla\CMS\Dispatcher\ComponentDispatcherFactoryInterface;
 use Joomla\CMS\Extension\ComponentInterface;
@@ -73,6 +75,15 @@ return new class () implements ServiceProviderInterface {
         $container->share(CheckoutPlacementService::class, $placement);
         Factory::getContainer()->share(CheckoutPlacementService::class, $placement);
 
+        // bootComponent() (used by mod_languages and anything else resolving a component by
+        // name) always loads THIS file — JPATH_ADMINISTRATOR/components/<name>/services/provider.php
+        // — for both the site and administrator apps; there is no site-specific lookup path in
+        // ExtensionManagerTrait::bootComponent(). The association extension therefore has to be
+        // wired here, even though AssociationsHelper itself lives in the Site namespace (the
+        // routes it builds are frontend-only) — the same split com_content uses for its own
+        // admin-side AssociationsHelper delegating to its Site AssociationHelper.
+        $container->set(AssociationExtensionInterface::class, new AssociationsHelper());
+
         $container->set(
             ComponentInterface::class,
             function (Container $container) {
@@ -82,6 +93,7 @@ return new class () implements ServiceProviderInterface {
 
                 $component->setMVCFactory($container->get(MVCFactoryInterface::class));
                 $component->setRouterFactory($container->get(RouterFactoryInterface::class));
+                $component->setAssociationExtension($container->get(AssociationExtensionInterface::class));
 
                 return $component;
             }

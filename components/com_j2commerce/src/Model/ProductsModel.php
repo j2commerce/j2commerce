@@ -536,11 +536,16 @@ class ProductsModel extends ListModel
             $query->where($db->quoteName('a.featured') . ' = 1');
         }
 
-        // Filter by language
+        // Filter by language. 'filter.language_tag' overrides the ambient app language — set by
+        // the AJAX filter() endpoint, where Joomla's language filter plugin ignores the request's
+        // actual language on every POST and the ambient tag silently falls back to the site
+        // default (see ProductsController::filter()).
         if ($this->getState('filter.language')) {
+            $languageTag = $this->getState('filter.language_tag') ?: Factory::getApplication()->getLanguage()->getTag();
+
             $query->whereIn(
                 $db->quoteName('a.language'),
-                [Factory::getApplication()->getLanguage()->getTag(), '*'],
+                [$languageTag, '*'],
                 ParameterType::STRING
             );
         }

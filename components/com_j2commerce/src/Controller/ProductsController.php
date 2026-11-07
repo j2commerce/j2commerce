@@ -160,6 +160,16 @@ class ProductsController extends AdminProductsController
                 $limitstart = $input->getInt('start', 0);
             }
 
+            // Joomla's language filter plugin explicitly ignores the URL/cookie language for any
+            // POST request (plg_system_languagefilter::parseRule(): "We are called via POST ...
+            // We don't care about the language") and falls back to the language cookie or the
+            // site default. Since this AJAX endpoint is always POSTed, Factory::getApplication()
+            // ->getLanguage()->getTag() is unreliable here — it silently resolves to the default
+            // site language instead of whichever language page the request actually came from.
+            // The posted Itemid still identifies the correct per-language menu item, so its own
+            // `language` is used below as the authoritative content language for this request.
+            $contentLanguage = null;
+
             $itemid = $input->getInt('Itemid', 0);
             if ($itemid > 0) {
                 $menu     = $app->getMenu();
@@ -167,6 +177,10 @@ class ProductsController extends AdminProductsController
                 if ($menuItem && $menuItem->component === 'com_j2commerce') {
                     $params = clone $app->getParams();
                     $params->merge($menuItem->getParams());
+
+                    if (!empty($menuItem->language) && $menuItem->language !== '*') {
+                        $contentLanguage = $menuItem->language;
+                    }
 
                     // Backstop for a layout that renders no filter_catid carrier (a template
                     // override predating the wrapper attribute): re-derive the category from
@@ -223,6 +237,10 @@ class ProductsController extends AdminProductsController
             $model->setState('filter.featured', (int) $params->get('show_feature_only', 0));
             $model->setState('filter.subcategory_levels', (int) $params->get('show_subcategory_content', 3));
             $model->setState('filter.language', Multilanguage::isEnabled());
+
+            if ($contentLanguage !== null) {
+                $model->setState('filter.language_tag', $contentLanguage);
+            }
 
             // Seed category filter directly. populateState() reads catid from
             // Input/active-menu, neither of which is reliably populated on this
