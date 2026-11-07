@@ -33,6 +33,7 @@ use Joomla\CMS\Event\Model\BeforeSaveEvent;
 use Joomla\CMS\Event\Model\PrepareFormEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
+use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\CMSPlugin;
@@ -2326,7 +2327,8 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
      * category) always resolves, with no J2 menu item required.
      *
      * Returns null when the product has no source article, so callers fall back
-     * to the normal J2Commerce product link.
+     * to the normal J2Commerce product link. Under the "Product page" surface the
+     * article redirects to the product, so the product route is returned instead.
      *
      * @since   6.6.5
      */
@@ -2334,6 +2336,17 @@ final class J2Commerce extends CMSPlugin implements SubscriberInterface
     {
         if (($product->product_source ?? '') !== 'com_content' || empty($product->product_source_id)) {
             return null;
+        }
+
+        $productId = (int) ($product->j2commerce_product_id ?? 0);
+
+        if ($productId > 0 && ComponentHelper::getParams('com_j2commerce')->get('product_surface_mode') === 'product') {
+            return Route::_(RouteHelper::getProductRoute(
+                $productId,
+                $product->alias ?? null,
+                (int) ($product->catid ?? 0) ?: null,
+                Multilanguage::isEnabled() ? $this->getArticle((int) $product->product_source_id)?->language : null
+            ), false);
         }
 
         $article = $this->getArticle((int) $product->product_source_id);
