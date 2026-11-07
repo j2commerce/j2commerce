@@ -21,6 +21,33 @@ trait CustomSubtemplateTrait
 {
     protected string $sublayout = '';
 
+    /**
+     * Calls parent::display($tpl), falling back to the same friendly "missing
+     * template" message renderCustomSubtemplate() shows on a missing custom
+     * subtemplate file -- routed through displayPrebuilt(), not left as an
+     * uncaught exception -- if the expected template file can't be found.
+     *
+     * renderCustomSubtemplate() already has its own copy of this safety net for
+     * the custom-subtemplate case; this is the same net for every view's last
+     * resort, whichever $tpl/layout it is.
+     *
+     * @param   ?string  $tpl  The template suffix to pass through to display().
+     *
+     * @return  void
+     *
+     * @since   6.6.6
+     */
+    protected function displayOrFallback(?string $tpl = null): void
+    {
+        try {
+            parent::display($tpl);
+        } catch (\Throwable $e) {
+            $filename = $this->getLayout() . ($tpl !== null && $tpl !== '' ? '_' . $tpl : '') . '.php';
+
+            $this->displayPrebuilt($this->renderMissingTemplateFallback($filename));
+        }
+    }
+
     protected function renderCustomSubtemplate(): ?string
     {
         // A subtemplate is a single folder name, the shape TemplatelistField lists.
