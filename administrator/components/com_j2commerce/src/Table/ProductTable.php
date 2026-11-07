@@ -14,6 +14,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
+use Joomla\CMS\Event\Finder\AfterDeleteEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
@@ -179,8 +181,21 @@ class ProductTable extends Table
             return false;
         }
 
+        $indexed = (object) [
+            'j2commerce_product_id' => (int) $pk,
+            'product_source'        => $this->product_source,
+            'product_source_id'     => $this->product_source_id,
+        ];
+
         // Delete the main product record
-        return parent::delete($pk);
+        if (!parent::delete($pk)) {
+            return false;
+        }
+
+        // Every delete path (list, Change Product Type, API, ProductService) passes through here.
+        ProductService::syncSearchIndex(new AfterDeleteEvent('onFinderAfterDelete', ['context' => 'com_j2commerce.product', 'subject' => $indexed]));
+
+        return true;
     }
 
     /**
