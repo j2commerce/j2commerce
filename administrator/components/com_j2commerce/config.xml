@@ -1185,6 +1185,19 @@
             </field>
 
             <field
+                name="myprofile_login_captcha"
+                type="plugins"
+                folder="captcha"
+                label="COM_J2COMMERCE_CONFIG_MYPROFILE_LOGIN_CAPTCHA"
+                description="COM_J2COMMERCE_CONFIG_MYPROFILE_LOGIN_CAPTCHA_DESC"
+                default=""
+                filter="cmd"
+            >
+                <option value="">JGLOBAL_USE_GLOBAL</option>
+                <option value="0">JOPTION_DO_NOT_USE</option>
+            </field>
+
+            <field
                 name="allow_registration"
                 type="radio"
                 label="COM_J2COMMERCE_CONFIG_ALLOW_REGISTRATION"

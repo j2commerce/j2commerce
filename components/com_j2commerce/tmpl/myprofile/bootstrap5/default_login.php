@@ -25,8 +25,9 @@ $params    = $this->params;
 $returnUrl = base64_encode(Uri::getInstance()->toString());
 
 $input         = Factory::getApplication()->getInput();
-$prefillToken  = trim($input->getString('order_token', ''));
-$prefillEmail  = trim($input->getString('order_email', ''));
+$prefillToken  = trim($input->getString('order_token', '')) ?: (string) ($this->guestFormData['order_token'] ?? '');
+$prefillEmail  = trim($input->getString('order_email', '')) ?: (string) ($this->guestFormData['email'] ?? '');
+$captcha       = $this->loginCaptcha;
 ?>
 
 <div class="j2commerce j2commerce-myprofile-login">
@@ -51,9 +52,20 @@ $prefillEmail  = trim($input->getString('order_email', ''));
                             <label class="form-check-label" for="j2c-remember"><?php echo Text::_('JGLOBAL_REMEMBER_ME'); ?></label>
                         </div>
                         <?php endif; ?>
+                        <?php if ($captcha): ?>
+                        <div class="mb-3" role="group" aria-labelledby="j2c-login-captcha-lbl">
+                            <div id="j2c-login-captcha-lbl" class="form-label"><?php echo Text::_('COM_J2COMMERCE_MYPROFILE_CAPTCHA_LABEL'); ?></div>
+                            <?php echo $captcha->display('captcha', 'j2c-login-captcha'); ?>
+                        </div>
+                        <?php endif; ?>
                         <button type="submit" class="btn btn-primary"><?php echo Text::_('JLOGIN'); ?></button>
+                        <?php if ($captcha): ?>
+                        <input type="hidden" name="option" value="com_j2commerce">
+                        <input type="hidden" name="task" value="myprofile.login">
+                        <?php else: ?>
                         <input type="hidden" name="option" value="com_users">
                         <input type="hidden" name="task" value="user.login">
+                        <?php endif; ?>
                         <input type="hidden" name="return" value="<?php echo $returnUrl; ?>">
                         <?php echo HTMLHelper::_('form.token'); ?>
                     </form>
@@ -86,6 +98,12 @@ $prefillEmail  = trim($input->getString('order_email', ''));
                             <input type="text" name="order_token" id="j2c-guest-token" class="form-control" value="<?php echo $this->escape($prefillToken); ?>" required>
                             <div class="form-text"><?php echo Text::_('COM_J2COMMERCE_ORDER_TOKEN_HINT'); ?></div>
                         </div>
+                        <?php if ($captcha): ?>
+                        <div class="mb-3" role="group" aria-labelledby="j2c-guest-captcha-lbl">
+                            <div id="j2c-guest-captcha-lbl" class="form-label"><?php echo Text::_('COM_J2COMMERCE_MYPROFILE_CAPTCHA_LABEL'); ?></div>
+                            <?php echo $captcha->display('captcha', 'j2c-guest-captcha'); ?>
+                        </div>
+                        <?php endif; ?>
                         <button type="submit" class="btn btn-primary"><?php echo Text::_('COM_J2COMMERCE_VIEW'); ?></button>
                         <?php echo HTMLHelper::_('form.token'); ?>
                     </form>

@@ -20,8 +20,10 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\PaymentMethodsHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\LoginCaptchaHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use J2Commerce\Component\J2commerce\Site\View\CustomSubtemplateTrait;
+use Joomla\CMS\Captcha\Captcha;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -61,6 +63,8 @@ class HtmlView extends BaseHtmlView
     public bool $useUnifiedPaymentTab        = false;
     public array $paymentMethodsGrouped      = [];
     public string $paymentMethodsAddCardHtml = '';
+    public ?Captcha $loginCaptcha            = null;
+    public array $guestFormData              = [];
 
     public function display($tpl = null): void
     {
@@ -85,6 +89,9 @@ class HtmlView extends BaseHtmlView
         // If not logged in and not guest, show login page
         if ((!$this->user || (int) $this->user->id === 0) && !$this->isGuest) {
             $this->setLayout('default_login');
+            $this->loginCaptcha  = LoginCaptchaHelper::forMyprofile();
+            $this->guestFormData = (array) $app->getUserState(LoginCaptchaHelper::GUEST_FORM_STATE, []);
+            $app->setUserState(LoginCaptchaHelper::GUEST_FORM_STATE, null);
             $this->_prepareDocument();
 
             // Dispatch event to allow a plugin to render the login screen itself,
