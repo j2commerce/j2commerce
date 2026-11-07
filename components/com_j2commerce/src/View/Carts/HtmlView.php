@@ -359,9 +359,6 @@ class HtmlView extends BaseHtmlView
             return;
         }
 
-        // Prepare document
-        $this->_prepareDocument();
-
         $this->displayOrFallback($tpl);
     }
 
