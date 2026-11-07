@@ -17,6 +17,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
 use Joomla\CMS\Event\Finder\AfterDeleteEvent;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
 use Joomla\Database\ParameterType;
@@ -80,8 +82,7 @@ class ProductTable extends Table
         try {
             parent::check();
         } catch (\Exception $e) {
-            $this->setError($e->getMessage());
-            return false;
+            return $this->fail($e);
         }
 
         // Set default visibility for new records (not using empty() — 0 is a valid value)
@@ -255,8 +256,7 @@ class ProductTable extends Table
                 $db->execute();
             }
         } catch (\Exception $e) {
-            $this->setError($e->getMessage());
-            return false;
+            return $this->fail($e);
         }
 
         // Child tables to cascade delete
@@ -280,11 +280,19 @@ class ProductTable extends Table
                 $db->setQuery($query);
                 $db->execute();
             } catch (\Exception $e) {
-                $this->setError($e->getMessage());
-                return false;
+                return $this->fail($e);
             }
         }
 
         return true;
+    }
+
+    /** Exception text can carry SQL and schema details: it goes to the log, and callers get a generic error. */
+    private function fail(\Exception $e): bool
+    {
+        Log::add('ProductTable: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+        $this->setError(Text::_('JERROR_AN_ERROR_HAS_OCCURRED'));
+
+        return false;
     }
 }
