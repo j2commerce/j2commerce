@@ -16,6 +16,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Extension;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\AclSeedHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\StockCommittedSeedHelper;
+use Joomla\CMS\Association\AssociationServiceInterface;
+use Joomla\CMS\Association\AssociationServiceTrait;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Component\Router\RouterServiceInterface;
 use Joomla\CMS\Component\Router\RouterServiceTrait;
@@ -36,11 +38,13 @@ use Psr\Container\ContainerInterface;
 class J2commerceComponent extends MVCComponent implements
     BootableExtensionInterface,
     RouterServiceInterface,
-    SchemaorgServiceInterface
+    SchemaorgServiceInterface,
+    AssociationServiceInterface
 {
     use HTMLRegistryAwareTrait;
     use RouterServiceTrait;
     use SchemaorgServiceTrait;
+    use AssociationServiceTrait;
 
     /**
      * Both plg_system_schemaorg and the schemaorg plugins gate every dispatch on the
