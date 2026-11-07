@@ -58,7 +58,7 @@ $uploadAjax  = Route::_('index.php?option=com_j2commerce&view=carts&task=carts.u
                     'description' => $option['option_description'] ?? '',
                     'id'          => 'option-desc-' . (int) $option['productoption_id'],
                 ]); ?>
-                <select<?php echo ProductLayoutService::optionDescribedBy($option); ?> name="product_option[<?php echo $optionId; ?>]" class="j2commerce-option-filter" data-product-id="<?php echo $productId; ?>" data-option-id="<?php echo $optionId; ?>">
+                <select<?php echo ProductLayoutService::optionDescribedBy($option); ?> name="product_option[<?php echo $optionId; ?>]" class="j2commerce-option-filter form-select" data-product-id="<?php echo $productId; ?>" data-option-id="<?php echo $optionId; ?>">
                     <option value=""><?php echo Text::_('COM_J2COMMERCE_CHOOSE'); ?></option>
                     <?php foreach ($option['optionvalue'] as $option_value) : ?>
                         <?php $checked = $option_value['product_optionvalue_default'] ? 'selected="selected"' : ''; ?>
