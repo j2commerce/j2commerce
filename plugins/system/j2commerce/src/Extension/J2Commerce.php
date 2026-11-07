@@ -2468,7 +2468,19 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
         $now    = Factory::getDate()->toSql();
 
         try {
-            $db   = $this->getDatabase();
+            $db = $this->getDatabase();
+
+            // A category under an unpublished or hidden ancestor is not visible either, wherever it sits in the
+            // tree, the requested category's own parents included. parent_id > 0 skips the system root.
+            $hiddenAncestor = $db->getQuery(true)
+                ->select('1')
+                ->from($db->quoteName('#__categories', 'm'))
+                ->where($db->quoteName('m.parent_id') . ' > 0')
+                ->where($db->quoteName('m.lft') . ' < ' . $db->quoteName('c.lft'))
+                ->where($db->quoteName('m.rgt') . ' > ' . $db->quoteName('c.rgt'))
+                ->where('(' . $db->quoteName('m.published') . ' <> 1 OR ' . $db->quoteName('m.access')
+                    . ' NOT IN (' . implode(',', array_map('intval', $levels)) . '))');
+
             $base = $db->getQuery(true)
                 ->from($db->quoteName('#__categories', 'root'))
                 ->join(
@@ -2495,6 +2507,7 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
                 ->whereIn($db->quoteName('root.access'), $levels)
                 ->whereIn($db->quoteName('c.access'), $levels)
                 ->whereIn($db->quoteName('a.access'), $levels)
+                ->where('NOT EXISTS (' . $hiddenAncestor . ')')
                 ->where('(' . $db->quoteName('a.publish_up') . ' IS NULL OR ' . $db->quoteName('a.publish_up') . ' <= :nowUp)')
                 ->where('(' . $db->quoteName('a.publish_down') . ' IS NULL OR ' . $db->quoteName('a.publish_down') . ' >= :nowDown)')
                 ->bind(':catid', $catid, ParameterType::INTEGER)
