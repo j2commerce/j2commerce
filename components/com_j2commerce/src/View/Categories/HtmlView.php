@@ -219,7 +219,7 @@ class HtmlView extends BaseHtmlView
             }
         }
 
-        parent::display($tpl);
+        $this->displayOrFallback($tpl);
     }
 
     /**

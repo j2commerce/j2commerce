@@ -83,7 +83,7 @@ class HtmlView extends BaseHtmlView
         if ((!$this->user || (int) $this->user->id === 0) && !$this->isGuest) {
             $this->setLayout('default_login');
             $this->_prepareDocument();
-            parent::display($tpl);
+            $this->displayOrFallback($tpl);
 
             return;
         }
@@ -255,7 +255,7 @@ class HtmlView extends BaseHtmlView
         Text::script('COM_J2COMMERCE_LOADING');
 
         $this->_prepareDocument();
-        parent::display($tpl);
+        $this->displayOrFallback($tpl);
     }
 
     /**

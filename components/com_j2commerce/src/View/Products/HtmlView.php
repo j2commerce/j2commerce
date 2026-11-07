@@ -237,7 +237,7 @@ class HtmlView extends BaseHtmlView
         // No plugin or custom override provided HTML, use default template rendering
         $this->_prepareDocument();
 
-        parent::display($tpl);
+        $this->displayOrFallback($tpl);
     }
 
     /**
