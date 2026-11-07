@@ -25,6 +25,7 @@ use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Rule\PasswordRule;
+use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\BaseController;
@@ -196,24 +197,30 @@ class MyprofileController extends BaseController
 
     private function loginCaptchaPassed(): bool
     {
-        $captcha = LoginCaptchaHelper::forMyprofile();
-
-        if ($captcha === null) {
-            return true;
-        }
-
+        // A captcha that cannot load, or a provider that throws on an empty or unverifiable answer, fails the check.
         try {
-            return (bool) $captcha->checkAnswer($this->input->post->getString('captcha', ''));
+            $captcha = LoginCaptchaHelper::forMyprofile();
+
+            return $captcha === null || (bool) $captcha->checkAnswer($this->input->post->getString('captcha', ''));
         } catch (\RuntimeException) {
-            // Providers throw on an empty or unverifiable answer; that is a failed check.
             return false;
         }
     }
 
-    /**
-     * Follows com_users UserController::login() with the captcha checked first; failures and the
-     * default return go to My Profile, and a numeric return gets no multilanguage suffix.
-     */
+    private function menuLanguage(int $itemId): string
+    {
+        $db    = Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('language'))
+            ->from($db->quoteName('#__menu'))
+            ->where($db->quoteName('client_id') . ' = 0')
+            ->where($db->quoteName('id') . ' = :id')
+            ->bind(':id', $itemId, ParameterType::INTEGER);
+
+        return (string) $db->setQuery($query)->loadResult();
+    }
+
+    /** Follows com_users UserController::login() with the captcha checked first; failures and the default return go to My Profile. */
     public function login(): void
     {
         $this->checkToken('post');
@@ -231,7 +238,16 @@ class MyprofileController extends BaseController
         $return = base64_decode($input->get('return', '', 'BASE64'));
 
         if (is_numeric($return)) {
-            $return = 'index.php?Itemid=' . (int) $return;
+            $itemId = (int) $return;
+            $return = 'index.php?Itemid=' . $itemId;
+
+            if (Multilanguage::isEnabled()) {
+                $language = $this->menuLanguage($itemId);
+
+                if ($language !== '' && $language !== '*') {
+                    $return .= '&lang=' . $language;
+                }
+            }
         } elseif (!Uri::isInternal($return)) {
             $return = '';
         }
