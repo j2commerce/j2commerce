@@ -159,28 +159,29 @@ class HtmlView extends BaseHtmlView
         $this->_prepareDocument();
 
         // Dispatch event to allow template plugins to render the view
-        // The eventWithHtml() helper properly handles passing data to/from plugins
-        // and collects the rendered HTML via the 'html' argument
-        $event = J2CommerceHelper::plugin()->eventWithHtml(
-            'ViewProductHtml',
-            [null, &$this, $model]
-        );
-        $view_html = $event->getArgument('html', '');
+        $viewHtml = J2CommerceHelper::plugin()
+            ->eventWithHtml('ViewProductHtml', [null, &$this, $model])
+            ->getArgument('html', '');
 
-        // If a plugin provided HTML output, display it and return
-        if (!empty($view_html)) {
-            echo $view_html;
+        // If a plugin provided HTML output, route it back through parent::display()
+        // instead of echoing it directly, so the core Joomla view events still fire for it.
+        if (!empty($viewHtml)) {
+            $this->displayPrebuilt($viewHtml);
 
             return;
         }
 
-        // If a custom subtemplate is selected, try template override directory first
+        // If a custom subtemplate is selected, try template override directory first.
+        // The single-product context looks for view.php in that folder (TemplatelistField's
+        // own convention -- default.php is what makes a folder valid for the listing views),
+        // and renderCustomSubtemplate()'s loadTemplate() call resolves that filename from the
+        // current layout, so it must be 'view' here.
         if (!empty($this->sublayout)) {
             $this->setLayout('view');
             $customHtml = $this->renderCustomSubtemplate();
 
             if ($customHtml !== null) {
-                echo $customHtml;
+                $this->displayPrebuilt($customHtml);
 
                 return;
             }

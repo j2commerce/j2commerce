@@ -19,6 +19,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use J2Commerce\Component\J2commerce\Site\Model\CartsModel;
+use J2Commerce\Component\J2commerce\Site\View\CustomSubtemplateTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\GenericDataException;
@@ -34,6 +35,8 @@ use Joomla\Registry\Registry;
  */
 class HtmlView extends BaseHtmlView
 {
+    use CustomSubtemplateTrait;
+
     /**
      * The cart items array
      *
@@ -338,22 +341,21 @@ class HtmlView extends BaseHtmlView
         $cartView = $this;
         J2CommerceHelper::plugin()->event('BeforeCartView', [&$cartView]);
 
-        // Trigger plugin event for custom HTML output
-        $viewHtml = null;
-        $app->triggerEvent('onJ2CommerceViewCartsHtml', [&$viewHtml, &$this, $model]);
+        // Document metadata (title, meta, canonical) is always prepared here, once,
+        // before the event dispatch below -- regardless of which branch ends up
+        // rendering the body.
+        $this->_prepareDocument();
 
-        // If a plugin provided HTML output, display it and return. The document is still
-        // prepared first so the title, meta and canonical do not depend on who renders
-        // the body -- this is what the product and listing views already do.
+        // Trigger plugin event for custom HTML output
+        $viewHtml = J2CommerceHelper::plugin()
+            ->eventWithHtml('ViewCartsHtml', [null, &$this, $model])
+            ->getArgument('html', '');
+
         if (!empty($viewHtml)) {
-            $this->_prepareDocument();
-            echo $viewHtml;
+            $this->displayPrebuilt($viewHtml);
 
             return;
         }
-
-        // Prepare document
-        $this->_prepareDocument();
 
         $this->registerFrameworkTemplatePaths($app);
 

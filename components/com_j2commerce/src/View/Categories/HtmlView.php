@@ -193,17 +193,20 @@ class HtmlView extends BaseHtmlView
             }
         }
 
+        // Document metadata (title, meta, canonical) is always prepared here, once,
+        // before the event dispatch below -- regardless of which branch ends up
+        // rendering the body.
+        $this->_prepareDocument();
+
         // Dispatch event to allow template plugins to render the view
-        $event = J2CommerceHelper::plugin()->eventWithHtml(
-            'ViewCategoryListHtml',
-            [null, &$this, $model]
-        );
-        $view_html = $event->getArgument('html', '');
+        $viewHtml = J2CommerceHelper::plugin()
+            ->eventWithHtml('ViewCategoryListHtml', [null, &$this, $model])
+            ->getArgument('html', '');
 
-        $this->prepareDocument();
-
-        if (!empty($view_html)) {
-            echo $view_html;
+        // If a plugin provided HTML output, route it back through parent::display()
+        // instead of echoing it directly, so the core Joomla view events still fire for it.
+        if (!empty($viewHtml)) {
+            $this->displayPrebuilt($viewHtml);
 
             return;
         }
@@ -213,7 +216,7 @@ class HtmlView extends BaseHtmlView
             $customHtml = $this->renderCustomSubtemplate();
 
             if ($customHtml !== null) {
-                echo $customHtml;
+                $this->displayPrebuilt($customHtml);
 
                 return;
             }
@@ -229,7 +232,7 @@ class HtmlView extends BaseHtmlView
      *
      * @since   6.0.0
      */
-    protected function prepareDocument(): void
+    protected function _prepareDocument(): void
     {
         $app = Factory::getApplication();
 

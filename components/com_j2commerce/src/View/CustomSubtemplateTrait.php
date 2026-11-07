@@ -21,6 +21,47 @@ trait CustomSubtemplateTrait
 {
     protected string $sublayout = '';
 
+    /**
+     * HTML already rendered by a template plugin or custom subtemplate,
+     * pending display via displayPrebuilt().
+     *
+     * @var    string
+     *
+     * @since  6.6.6
+     */
+    public string $renderedHtml = '';
+
+    /**
+     * Route HTML a template plugin or a custom subtemplate already rendered
+     * back through parent::display(), instead of echoing it directly.
+     *
+     * A view that overrides display() to short-circuit with `echo $html; return;`
+     * skips Joomla's own onBeforeDisplay/onAfterDisplay events and its
+     * template-override lookup for that request -- both of which third-party
+     * integrations (e.g. YOOtheme Pro) rely on. Calling this instead keeps that
+     * intact: it hands $html to the "prebuilt" layout and lets
+     * parent::display() run normally.
+     *
+     * The layout is reset to 'default' first because a plugin may have changed
+     * it (e.g. to 'view') while building $html, and loadTemplate() builds the
+     * filename it looks for from the view's current layout.
+     *
+     * Every view that calls this needs its own tmpl/<view>/default_prebuilt.php
+     * containing nothing but `echo $this->renderedHtml;`.
+     *
+     * @param   string  $html  The already-rendered HTML to output.
+     *
+     * @return  void
+     *
+     * @since   6.6.6
+     */
+    protected function displayPrebuilt(string $html): void
+    {
+        $this->renderedHtml = $html;
+        $this->setLayout('default');
+        parent::display('prebuilt');
+    }
+
     protected function renderCustomSubtemplate(): ?string
     {
         // A subtemplate is a single folder name, the shape TemplatelistField lists.
