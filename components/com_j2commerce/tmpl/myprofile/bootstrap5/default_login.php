@@ -27,7 +27,7 @@ $returnUrl = base64_encode(Uri::getInstance()->toString());
 $input         = Factory::getApplication()->getInput();
 $prefillToken  = trim($input->getString('order_token', '')) ?: (string) ($this->guestFormData['order_token'] ?? '');
 $prefillEmail  = trim($input->getString('order_email', '')) ?: (string) ($this->guestFormData['email'] ?? '');
-$captcha       = $this->loginCaptcha;
+$captchaHtml   = $this->loginCaptchaHtml;
 ?>
 
 <div class="j2commerce j2commerce-myprofile-login">
@@ -52,14 +52,14 @@ $captcha       = $this->loginCaptcha;
                             <label class="form-check-label" for="j2c-remember"><?php echo Text::_('JGLOBAL_REMEMBER_ME'); ?></label>
                         </div>
                         <?php endif; ?>
-                        <?php if ($captcha): ?>
+                        <?php if ($captchaHtml['login'] !== ''): ?>
                         <div class="mb-3" role="group" aria-labelledby="j2c-login-captcha-lbl">
                             <div id="j2c-login-captcha-lbl" class="form-label"><?php echo Text::_('COM_J2COMMERCE_MYPROFILE_CAPTCHA_LABEL'); ?></div>
-                            <?php echo $captcha->display('captcha', 'j2c-login-captcha'); ?>
+                            <?php echo $captchaHtml['login']; ?>
                         </div>
                         <?php endif; ?>
                         <button type="submit" class="btn btn-primary"><?php echo Text::_('JLOGIN'); ?></button>
-                        <?php if ($captcha): ?>
+                        <?php if ($this->loginCaptchaRequired): ?>
                         <input type="hidden" name="option" value="com_j2commerce">
                         <input type="hidden" name="task" value="myprofile.login">
                         <?php else: ?>
@@ -98,10 +98,10 @@ $captcha       = $this->loginCaptcha;
                             <input type="text" name="order_token" id="j2c-guest-token" class="form-control" value="<?php echo $this->escape($prefillToken); ?>" required>
                             <div class="form-text"><?php echo Text::_('COM_J2COMMERCE_ORDER_TOKEN_HINT'); ?></div>
                         </div>
-                        <?php if ($captcha): ?>
+                        <?php if ($captchaHtml['guest'] !== ''): ?>
                         <div class="mb-3" role="group" aria-labelledby="j2c-guest-captcha-lbl">
                             <div id="j2c-guest-captcha-lbl" class="form-label"><?php echo Text::_('COM_J2COMMERCE_MYPROFILE_CAPTCHA_LABEL'); ?></div>
-                            <?php echo $captcha->display('captcha', 'j2c-guest-captcha'); ?>
+                            <?php echo $captchaHtml['guest']; ?>
                         </div>
                         <?php endif; ?>
                         <button type="submit" class="btn btn-primary"><?php echo Text::_('COM_J2COMMERCE_VIEW'); ?></button>

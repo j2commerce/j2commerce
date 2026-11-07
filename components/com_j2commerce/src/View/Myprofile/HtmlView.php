@@ -23,7 +23,6 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\LoginCaptchaHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use J2Commerce\Component\J2commerce\Site\View\CustomSubtemplateTrait;
-use Joomla\CMS\Captcha\Captcha;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -63,7 +62,8 @@ class HtmlView extends BaseHtmlView
     public bool $useUnifiedPaymentTab        = false;
     public array $paymentMethodsGrouped      = [];
     public string $paymentMethodsAddCardHtml = '';
-    public ?Captcha $loginCaptcha            = null;
+    public array $loginCaptchaHtml           = ['login' => '', 'guest' => ''];
+    public bool $loginCaptchaRequired        = false;
     public array $guestFormData              = [];
 
     public function display($tpl = null): void
@@ -89,7 +89,29 @@ class HtmlView extends BaseHtmlView
         // If not logged in and not guest, show login page
         if ((!$this->user || (int) $this->user->id === 0) && !$this->isGuest) {
             $this->setLayout('default_login');
-            $this->loginCaptcha  = LoginCaptchaHelper::forMyprofile();
+
+            // Only the forms the layout renders get a captcha, so no widget initializes for a missing form.
+            $forms = $this->params->get('show_login_form', 1) ? ['login', 'guest'] : ['guest'];
+
+            try {
+                $captcha                    = LoginCaptchaHelper::forMyprofile();
+                $this->loginCaptchaRequired = $captcha !== null;
+
+                foreach ($captcha ? $forms : [] as $form) {
+                    $this->loginCaptchaHtml[$form] = (string) $captcha->display('captcha', 'j2c-' . $form . '-captcha');
+                }
+            } catch (\RuntimeException) {
+                $this->loginCaptchaRequired = true;
+            }
+
+            // A configured captcha that is missing or disabled renders nothing; say so, as core CaptchaField does.
+            // The forms stay on the captcha-checked tasks, which refuse until the captcha works.
+            $missing = array_filter($forms, fn (string $form): bool => $this->loginCaptchaHtml[$form] === '');
+
+            if ($this->loginCaptchaRequired && $missing) {
+                $app->enqueueMessage(Text::_('JLIB_CAPTCHA_ERROR_PLUGIN_NOT_FOUND'), 'error');
+            }
+
             $this->guestFormData = (array) $app->getUserState(LoginCaptchaHelper::GUEST_FORM_STATE, []);
             $app->setUserState(LoginCaptchaHelper::GUEST_FORM_STATE, null);
             $this->_prepareDocument();

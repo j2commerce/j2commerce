@@ -24,7 +24,14 @@ final class LoginCaptchaHelper
     /** User state holding the guest order form values after a failed captcha. */
     public const GUEST_FORM_STATE = 'com_j2commerce.myprofile.guest_form';
 
-    /** Null when no captcha applies. An empty setting follows the Global Configuration captcha. */
+    /**
+     * Null when no captcha applies. An empty setting follows the Global Configuration captcha.
+     *
+     * A missing plugin, or a disabled provider plugin, does not throw: it renders nothing and its answer never
+     * verifies, so callers still fail closed.
+     *
+     * @throws \RuntimeException only if the plugin's own boot throws; callers fail closed, as core CaptchaRule does.
+     */
     public static function forMyprofile(): ?Captcha
     {
         $plugin = (string) ComponentHelper::getParams('com_j2commerce')->get('myprofile_login_captcha', '');
@@ -40,10 +47,9 @@ final class LoginCaptchaHelper
         try {
             return Captcha::getInstance($plugin, ['namespace' => 'j2commerce_myprofile']);
         } catch (\RuntimeException $e) {
-            // Fails open like core CaptchaField, which skips a captcha it cannot load; logged, not shown to customers.
             Log::add('My Profile captcha "' . $plugin . '" could not be loaded: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
 
-            return null;
+            throw $e;
         }
     }
 }
