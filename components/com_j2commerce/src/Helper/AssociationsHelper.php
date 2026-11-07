@@ -45,25 +45,25 @@ use Joomla\Database\ParameterType;
  * to list and edit associations, none of which this class implements. Only the
  * frontend getAssociationsForItem() path (used by mod_languages) is needed.
  *
- * @since  6.0.1
+ * @since  6.6.6
  */
 class AssociationsHelper extends AssociationExtensionHelper
 {
     /**
      * @var     string
-     * @since   6.0.1
+     * @since   6.6.6
      */
     protected $extension = 'com_j2commerce';
 
     /**
      * @var     array
-     * @since   6.0.1
+     * @since   6.6.6
      */
     protected $itemTypes = [];
 
     /**
      * @var     boolean
-     * @since   6.0.1
+     * @since   6.6.6
      */
     protected $associationsSupport = true;
 
@@ -78,7 +78,7 @@ class AssociationsHelper extends AssociationExtensionHelper
      *
      * @return  array  Map of language tag => unrouted URL
      *
-     * @since   6.0.1
+     * @since   6.6.6
      */
     public function getAssociationsForItem($id = 0, $view = null)
     {
