@@ -17,6 +17,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Button\PublishedButton;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
@@ -97,6 +98,11 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                                 <th scope="col" class="w-5 text-center d-none d-lg-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_VISIBILITY', 'a.visibility', $listDirn, $listOrder); ?>
                                 </th>
+                                <?php if (Multilanguage::isEnabled()) : ?>
+                                    <th scope="col" class="w-10 d-none d-md-table-cell">
+                                        <?php echo HTMLHelper::_('searchtools.sort', 'JGRID_HEADING_LANGUAGE', 'language', $listDirn, $listOrder); ?>
+                                    </th>
+                                <?php endif; ?>
                                 <th scope="col" class="w-5 d-none d-md-table-cell text-center">
                                     <?php echo Text::_('COM_J2COMMERCE_HEADING_ARTICLE_ID'); ?>
                                 </th>
@@ -192,6 +198,11 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                                         <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-danger'); ?>"><?php echo Text::_('JNO'); ?></span>
                                     <?php endif; ?>
                                 </td>
+                                <?php if (Multilanguage::isEnabled()) : ?>
+                                    <td class="small d-none d-md-table-cell">
+                                        <?php echo LayoutHelper::render('joomla.content.language', $item); ?>
+                                    </td>
+                                <?php endif; ?>
                                 <td class="text-center d-none d-md-table-cell">
                                     <?php echo (int) $item->product_source_id; ?>
                                 </td>
