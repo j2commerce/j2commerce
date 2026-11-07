@@ -13,9 +13,11 @@ declare(strict_types=1);
 namespace J2Commerce\Plugin\Finder\J2commerce\Extension;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
+use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Event\Finder as FinderEvent;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Router\SiteRouter;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Component\Content\Site\Helper\RouteHelper as ContentRouteHelper;
@@ -23,6 +25,7 @@ use Joomla\Component\Finder\Administrator\Indexer\Adapter;
 use Joomla\Component\Finder\Administrator\Indexer\Helper;
 use Joomla\Component\Finder\Administrator\Indexer\Indexer;
 use Joomla\Component\Finder\Administrator\Indexer\Result;
+use Joomla\Component\Finder\Administrator\Indexer\Taxonomy;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
 use Joomla\Database\QueryInterface;
@@ -143,8 +146,8 @@ final class J2commerce extends Adapter implements SubscriberInterface
      */
     public function onFinderCategoryChangeState(FinderEvent\AfterCategoryChangeStateEvent $event): void
     {
-        // Handle com_j2commerce categories
-        if ($event->getExtension() === 'com_j2commerce') {
+        // Product articles live in com_content categories.
+        if (\in_array($event->getExtension(), ['com_content', 'com_j2commerce'], true)) {
             $this->categoryStateChange($event->getPks(), $event->getValue());
         }
     }
@@ -166,66 +169,261 @@ final class J2commerce extends Adapter implements SubscriberInterface
         foreach ($pks as $pk) {
             $pk = (int) $pk;
 
-            $query = clone $this->getStateQuery();
-            $query->where($db->quoteName('c.id') . ' = :pk')
+            $query = $db->getQuery(true)
+                ->select($db->quoteName(['a.id', 'a.state', 'p.j2commerce_product_id', 'p.enabled']))
+                ->from($db->quoteName('#__content', 'a'))
+                ->join(
+                    'INNER',
+                    $db->quoteName('#__j2commerce_products', 'p') . ' ON ' .
+                    $db->quoteName('p.product_source') . ' = ' . $db->quote('com_content') .
+                    ' AND ' . $db->quoteName('p.product_source_id') . ' = ' . $db->quoteName('a.id')
+                )
+                ->where($db->quoteName('a.catid') . ' = :pk')
                 ->bind(':pk', $pk, ParameterType::INTEGER);
 
-            $query->select($db->quoteName('p') . '.*');
-            $query->join(
-                'INNER',
-                $db->quoteName('#__j2commerce_products', 'p') . ' ON ' .
-                $db->quoteName('p.product_source') . ' = ' . $db->quote('com_content') .
-                ' AND ' . $db->quoteName('p.product_source_id') . ' = ' . $db->quoteName('c.id') .
-                ' AND ' . $db->quoteName('p.enabled') . ' = 1'
-            );
-
-            $db->setQuery($query);
-            $items = $db->loadObjectList();
-
-            foreach ($items as $item) {
-                $temp = $this->translateState($item->state, $value);
-                $this->change($item->j2commerce_product_id, 'state', $temp);
-                $this->reindex($item->j2commerce_product_id);
+            // A category state change moves only the link state, as in core; a disabled product keeps no entry.
+            foreach ($db->setQuery($query)->loadObjectList() as $row) {
+                if ((int) $row->enabled === 1) {
+                    $this->change((int) $row->id, 'state', $this->translateState((int) $row->state, (int) $value), (int) $row->j2commerce_product_id);
+                } else {
+                    $this->remove((int) $row->id, true, (int) $row->j2commerce_product_id);
+                }
             }
         }
     }
 
-    /**
-     * Method to change the value of a content item's property in the links
-     * table. This is used to synchronize published and access states.
-     *
-     * @param   string   $id        The ID of the item to change.
-     * @param   string   $property  The property that is being changed.
-     * @param   integer  $value     The new value of that property.
-     *
-     * @return  boolean  True on success.
-     *
-     * @since   6.0.0
-     * @throws  \Exception on database error.
-     */
-    protected function change($id, $property, $value): bool
+    // Item ids in this adapter are article ids (#__content.id), matching getItem() and the core state queries.
+    protected function change($id, $property, $value, ?int $productId = null): bool
     {
         if ($property !== 'state' && $property !== 'access') {
             return true;
         }
 
-        $db = $this->getDatabase();
+        $linkIds = array_keys($this->getLinks((int) $id, $productId));
 
-        // Use RouteHelper for consistent URL matching with indexed items
-        // This ensures we match the same URL format stored during index()
-        $url  = RouteHelper::getProductRoute((int) $id);
-        $item = $db->quote($url);
+        if ($linkIds === []) {
+            return true;
+        }
 
+        $db    = $this->getDatabase();
+        $value = (int) $value;
         $query = $db->getQuery(true)
             ->update($db->quoteName('#__finder_links'))
             ->set($db->quoteName($property) . ' = :value')
-            ->where($db->quoteName('url') . ' = ' . $item)
+            ->whereIn($db->quoteName('link_id'), $linkIds)
             ->bind(':value', $value, ParameterType::INTEGER);
 
-        $db->setQuery($query);
-        $db->execute();
+        $db->setQuery($query)->execute();
 
         return true;
+    }
+
+    protected function remove($id, $removeTaxonomies = true, ?int $productId = null)
+    {
+        $linkIds = array_keys($this->getLinks((int) $id, $productId));
+
+        if ($linkIds === []) {
+            // Same notification core Adapter::remove() sends when no link exists.
+            Factory::getApplication()->triggerEvent('onFinderIndexAfterDelete', [$id]);
+        }
+
+        foreach ($linkIds as $linkId) {
+            $this->indexer->remove($linkId, $removeTaxonomies);
+        }
+
+        return true;
+    }
+
+    /** Indexes an enabled product, drops the entry of a disabled or missing one, and keeps its article out. */
+    protected function reindex($id, ?int $productId = null)
+    {
+        $articleId = (int) $id;
+        $productId ??= $this->getProductIdForArticle($articleId);
+
+        $this->setup();
+
+        $item = $this->getItem($articleId);
+
+        if (empty($item->j2commerce_product_id)) {
+            $this->remove($articleId, true, $productId);
+        } else {
+            $this->index($item);
+
+            // index() upserts by url, so an alias or category change leaves the previous url behind.
+            foreach ($this->getLinks($articleId, $productId) as $linkId => $url) {
+                if ($url !== $item->url) {
+                    $this->indexer->remove($linkId, false);
+                }
+            }
+
+            Taxonomy::removeOrphanNodes();
+        }
+
+        if ($productId > 0 && $this->params->get('exclude_linked_articles', 1)) {
+            $this->removeArticleFromIndex($articleId);
+        }
+    }
+
+    public function onStartIndex()
+    {
+        parent::onStartIndex();
+
+        // A full run only adds and updates; entries of products that left the catalog are dropped here.
+        $this->removeOrphanedLinks(false);
+    }
+
+    public function onFinderGarbageCollection()
+    {
+        return $this->removeOrphanedLinks(true);
+    }
+
+    /** @return array<int, string>  link_id => url of this adapter's entries for the article or its product */
+    protected function getLinks(int $articleId, ?int $productId = null): array
+    {
+        $typeId = (int) $this->type_id;
+
+        if ($typeId < 1) {
+            return [];
+        }
+
+        $productId ??= $this->getProductIdForArticle($articleId);
+
+        $db         = $this->getDatabase();
+        $articleUrl = 'index.php?option=com_content&view=article&id=' . $articleId;
+        $query      = $db->getQuery(true)
+            ->select($db->quoteName(['link_id', 'url']))
+            ->from($db->quoteName('#__finder_links'))
+            ->where($db->quoteName('type_id') . ' = :typeId')
+            ->bind(':typeId', $typeId, ParameterType::INTEGER);
+
+        $match = [$db->quoteName('url') . ' = :articleUrl'];
+        $query->bind(':articleUrl', $articleUrl);
+
+        if ($productId > 0) {
+            // Stored urls carry the alias and catid (id=78:alias&catid=2), so match the id as a prefix.
+            $productUrl      = 'index.php?option=com_j2commerce&view=product&id=' . $productId;
+            // The prefix is matched literally: `_` and `%` in it are LIKE wildcards otherwise.
+            $likePrefix      = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $productUrl);
+            $productUrlAlias = $likePrefix . ':%';
+            $productUrlQuery = $likePrefix . '&%';
+
+            $match[] = $db->quoteName('url') . ' = :productUrl';
+            $match[] = $db->quoteName('url') . ' LIKE :productUrlAlias';
+            $match[] = $db->quoteName('url') . ' LIKE :productUrlQuery';
+            $query->bind(':productUrl', $productUrl)
+                ->bind(':productUrlAlias', $productUrlAlias)
+                ->bind(':productUrlQuery', $productUrlQuery);
+        }
+
+        $query->extendWhere('AND', $match, 'OR');
+
+        return array_map('strval', $db->setQuery($query)->loadAssocList('link_id', 'url'));
+    }
+
+    protected function getProductIdForArticle(int $articleId): int
+    {
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('j2commerce_product_id'))
+            ->from($db->quoteName('#__j2commerce_products'))
+            ->where($db->quoteName('product_source') . ' = ' . $db->quote('com_content'))
+            ->where($db->quoteName('product_source_id') . ' = :articleId')
+            ->bind(':articleId', $articleId, ParameterType::INTEGER)
+            ->setLimit(1);
+
+        return (int) $db->setQuery($query)->loadResult();
+    }
+
+    /** @return array{id: int, enabled: bool}|null */
+    protected function getProductState(int $articleId): ?array
+    {
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['j2commerce_product_id', 'enabled']))
+            ->from($db->quoteName('#__j2commerce_products'))
+            ->where($db->quoteName('product_source') . ' = ' . $db->quote('com_content'))
+            ->where($db->quoteName('product_source_id') . ' = :articleId')
+            ->bind(':articleId', $articleId, ParameterType::INTEGER)
+            ->setLimit(1);
+
+        $row = $db->setQuery($query)->loadObject();
+
+        return $row ? ['id' => (int) $row->j2commerce_product_id, 'enabled' => (int) $row->enabled === 1] : null;
+    }
+
+    protected function getArticleIdForProduct(object $row): int
+    {
+        if (isset($row->product_source_id) && ($row->product_source ?? 'com_content') === 'com_content') {
+            return (int) $row->product_source_id;
+        }
+
+        return $this->getArticleIdForProductId((int) ($row->j2commerce_product_id ?? 0));
+    }
+
+    protected function getArticleIdForProductId(int $productId): int
+    {
+        if ($productId < 1) {
+            return 0;
+        }
+
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('product_source_id'))
+            ->from($db->quoteName('#__j2commerce_products'))
+            ->where($db->quoteName('j2commerce_product_id') . ' = :productId')
+            ->where($db->quoteName('product_source') . ' = ' . $db->quote('com_content'))
+            ->bind(':productId', $productId, ParameterType::INTEGER);
+
+        return (int) $db->setQuery($query)->loadResult();
+    }
+
+    /** Removes this adapter's entries whose product is disabled or gone. */
+    protected function removeOrphanedLinks(bool $removeTaxonomies): int
+    {
+        $db     = $this->getDatabase();
+        $typeId = (int) $this->type_id;
+
+        if ($typeId < 1) {
+            return 0;
+        }
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['j2commerce_product_id', 'product_source_id']))
+            ->from($db->quoteName('#__j2commerce_products'))
+            ->where($db->quoteName('product_source') . ' = ' . $db->quote('com_content'))
+            ->where($db->quoteName('enabled') . ' = 1');
+
+        $enabled = $db->setQuery($query)->loadAssocList('j2commerce_product_id', 'product_source_id');
+        $sources = array_flip(array_map('intval', $enabled));
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['link_id', 'url']))
+            ->from($db->quoteName('#__finder_links'))
+            ->where($db->quoteName('type_id') . ' = :typeId')
+            ->bind(':typeId', $typeId, ParameterType::INTEGER);
+
+        $removed = 0;
+
+        foreach ($db->setQuery($query)->loadObjectList() as $link) {
+            if (preg_match('/option=com_j2commerce&view=product&id=(\d+)/', $link->url, $m)) {
+                $valid = isset($enabled[(int) $m[1]]);
+            } elseif (preg_match('/option=com_content&view=article&id=(\d+)/', $link->url, $m)) {
+                $valid = isset($sources[(int) $m[1]]);
+            } else {
+                $valid = false;
+            }
+
+            if (!$valid) {
+                $this->indexer->remove((int) $link->link_id, false);
+                $removed++;
+            }
+        }
+
+        if ($removeTaxonomies && $removed > 0) {
+            Taxonomy::removeOrphanNodes();
+        }
+
+        return $removed;
     }
 
     /**
@@ -243,16 +441,12 @@ final class J2commerce extends Adapter implements SubscriberInterface
         $context = $event->getContext();
         $table   = $event->getItem();
 
+        // com_finder.index deletes the link itself; its link_id is not an item id.
         if ($context === 'com_j2commerce.product') {
-            $id = $table->id ?? $table->j2commerce_product_id ?? null;
-        } elseif ($context === 'com_finder.index') {
-            $id = $table->link_id ?? null;
-        } else {
-            return;
-        }
-
-        if ($id !== null) {
-            $this->remove($id);
+            // The product row is gone by now, so the subject carries its ids.
+            $this->remove($this->getArticleIdForProduct($table), true, (int) ($table->j2commerce_product_id ?? 0));
+        } elseif ($context === 'com_content.article') {
+            $this->remove((int) ($table->id ?? 0));
         }
     }
 
@@ -276,34 +470,27 @@ final class J2commerce extends Adapter implements SubscriberInterface
         $row     = $event->getItem();
         $isNew   = $event->getIsNew();
 
-        // Handle J2Commerce products and articles
-        if ($context === 'com_j2commerce.article' || $context === 'com_j2commerce.product') {
-            // Check if the access levels are different
-            if (!$isNew && $this->old_access != $row->access) {
-                $this->itemAccessChange($row);
-            }
+        // Indexing truncates the token tables, which commits an open transaction; ProductService replays the event after commit.
+        if ($context === 'com_j2commerce.product' && ProductService::deferSearchEvent($event)) {
+            return;
+        }
 
-            $this->reindex($row->id ?? $row->j2commerce_product_id ?? 0);
+        // reindex() rewrites state and access from the article, so no separate access sync is needed.
+        $articleId = match ($context) {
+            'com_j2commerce.product'                                            => $this->getArticleIdForProduct($row),
+            'com_j2commerce.article', 'com_content.article', 'com_content.form' => (int) ($row->id ?? 0),
+            default                                                             => 0,
+        };
+        $productId = $articleId > 0 ? $this->getProductIdForArticle($articleId) : 0;
+
+        if ($productId > 0) {
+            $this->reindex($articleId, $productId);
         }
 
         // Check for access changes in the category
         if ($context === 'com_categories.category') {
             if (!$isNew && $this->old_cataccess != $row->access) {
                 $this->categoryAccessChange($row);
-            }
-        }
-
-        // Handle excluding com_content articles when they have a J2Commerce product
-        // This prevents duplicate search results (article AND product)
-        if ($context === 'com_content.article' || $context === 'com_content.form') {
-            $articleId = (int) ($row->id ?? 0);
-
-            if ($articleId > 0 && $this->params->get('exclude_linked_articles', 1)) {
-                // Check if this article has an associated J2Commerce product
-                if ($this->hasJ2CommerceProduct($articleId)) {
-                    // Remove the article from the finder index
-                    $this->removeArticleFromIndex($articleId);
-                }
             }
         }
     }
@@ -324,13 +511,6 @@ final class J2commerce extends Adapter implements SubscriberInterface
         $context = $event->getContext();
         $row     = $event->getItem();
         $isNew   = $event->getIsNew();
-
-        // Handle J2Commerce products and articles
-        if ($context === 'com_j2commerce.article' || $context === 'com_j2commerce.product') {
-            if (!$isNew) {
-                $this->checkItemAccess($row);
-            }
-        }
 
         // Check for access levels from the category
         if ($context === 'com_categories.category') {
@@ -356,9 +536,29 @@ final class J2commerce extends Adapter implements SubscriberInterface
         $pks     = $event->getPks();
         $value   = $event->getValue();
 
-        // Handle J2Commerce products and articles
-        if ($context === 'com_j2commerce.article' || $context === 'com_j2commerce.product') {
-            $this->itemStateChange($pks, $value);
+        if (\in_array($context, ['com_j2commerce.article', 'com_j2commerce.product', 'com_content.article'], true)) {
+            $stateOnly = [];
+
+            foreach ($pks as $pk) {
+                $articleId = $context === 'com_j2commerce.product' ? $this->getArticleIdForProductId((int) $pk) : (int) $pk;
+                $product   = $articleId > 0 ? $this->getProductState($articleId) : null;
+
+                if ($product === null) {
+                    continue;
+                }
+
+                // An article state change on an enabled product with an entry only moves the link state, as in core.
+                // A product context carries the enabled flag, not an article state, so it always reindexes.
+                if ($context !== 'com_j2commerce.product' && $product['enabled'] && $this->getLinks($articleId, $product['id']) !== []) {
+                    $stateOnly[] = $articleId;
+                } else {
+                    $this->reindex($articleId, $product['id']);
+                }
+            }
+
+            if ($stateOnly !== []) {
+                $this->itemStateChange($stateOnly, $value);
+            }
         }
 
         // Handle when the plugin is disabled
@@ -392,7 +592,7 @@ final class J2commerce extends Adapter implements SubscriberInterface
 
     /**
      * Remove all com_content article entries from the finder index
-     * when they have an associated enabled J2Commerce product.
+     * when they have an associated J2Commerce product, enabled or not.
      *
      * Uses a direct DELETE rather than Indexer::remove() to avoid
      * Taxonomy::removeOrphanNodes() which rebuilds the nested set
@@ -409,12 +609,11 @@ final class J2commerce extends Adapter implements SubscriberInterface
         try {
             $db = $this->getDatabase();
 
-            // Get all article IDs linked to enabled J2Commerce products
+            // Every product article stays out, the product enabled or not; only deleting the product releases it.
             $subQuery = $db->getQuery(true)
                 ->select($db->quoteName('product_source_id'))
                 ->from($db->quoteName('#__j2commerce_products'))
-                ->where($db->quoteName('product_source') . ' = ' . $db->quote('com_content'))
-                ->where($db->quoteName('enabled') . ' = 1');
+                ->where($db->quoteName('product_source') . ' = ' . $db->quote('com_content'));
 
             $db->setQuery($subQuery);
             $articleIds = $db->loadColumn();
@@ -430,10 +629,13 @@ final class J2commerce extends Adapter implements SubscriberInterface
                 $urls[] = 'index.php?option=com_content&view=article&id=' . (int) $id;
             }
 
-            // Delete these links from the finder index
-            $query = $db->getQuery(true)
+            // Never this adapter's own rows: with redirect_to=article a product is stored under its article url.
+            $typeId = (int) $this->type_id;
+            $query  = $db->getQuery(true)
                 ->delete($db->quoteName('#__finder_links'))
-                ->whereIn($db->quoteName('url'), $urls, ParameterType::STRING);
+                ->whereIn($db->quoteName('url'), $urls, ParameterType::STRING)
+                ->where($db->quoteName('type_id') . ' <> :typeId')
+                ->bind(':typeId', $typeId, ParameterType::INTEGER);
 
             $db->setQuery($query);
             $db->execute();
@@ -887,52 +1089,6 @@ final class J2commerce extends Adapter implements SubscriberInterface
     }
 
     /**
-     * Get the J2Commerce product URL using RouteHelper.
-     *
-     * This generates canonical product URLs similar to Joomla's article routing,
-     * with proper product ID, optional alias, and category context for SEF URLs.
-     *
-     * @param   int          $id     The product ID (j2commerce_product_id).
-     * @param   string|null  $alias  The product alias (optional, from content article).
-     * @param   int|null     $catid  The category ID (optional, for canonical category-based URLs).
-     *
-     * @return  string  The canonical product URL.
-     *
-     * @since   6.0.0
-     */
-    protected function getJ2CommerceProductUrl(int $id, ?string $alias = null, ?int $catid = null): string
-    {
-        return RouteHelper::getProductRoute($id, $alias, $catid);
-    }
-
-    /**
-     * Get the URL for an item.
-     *
-     * For J2Commerce products, uses RouteHelper for canonical URL generation.
-     * For other extensions (like com_content), returns standard format.
-     *
-     * @param   int          $id         The item ID.
-     * @param   string       $extension  The extension name.
-     * @param   string       $view       The view name.
-     * @param   string|null  $alias      The item alias (optional).
-     * @param   int|null     $catid      The category ID (optional).
-     *
-     * @return  string  The URL.
-     *
-     * @since   6.0.0
-     */
-    protected function getUrl($id, $extension, $view, ?string $alias = null, ?int $catid = null)
-    {
-        // For J2Commerce products, use RouteHelper for canonical URLs with category context
-        if ($extension === 'com_j2commerce' && $view === 'product') {
-            return RouteHelper::getProductRoute((int) $id, $alias, $catid);
-        }
-
-        // Standard format for other extensions (com_content, etc.)
-        return 'index.php?option=' . $extension . '&view=' . $view . '&id=' . $id;
-    }
-
-    /**
      * Remove an article from the Smart Search index.
      *
      * This is called when an article is saved and has an associated
@@ -950,41 +1106,17 @@ final class J2commerce extends Adapter implements SubscriberInterface
 
         // Build the URL that plg_finder_content would use for this article
         $articleUrl = 'index.php?option=com_content&view=article&id=' . $articleId;
+        $typeId     = (int) $this->type_id;
 
         // Delete directly — orphaned terms/maps are cleaned up by optimize()
         $query = $db->getQuery(true)
             ->delete($db->quoteName('#__finder_links'))
             ->where($db->quoteName('url') . ' = :url')
-            ->bind(':url', $articleUrl);
+            ->where($db->quoteName('type_id') . ' <> :typeId')
+            ->bind(':url', $articleUrl)
+            ->bind(':typeId', $typeId, ParameterType::INTEGER);
 
         $db->setQuery($query);
         $db->execute();
-    }
-
-    /**
-     * Check if an article has an associated J2Commerce product
-     *
-     * @param   int  $articleId  The article ID
-     *
-     * @return  bool
-     *
-     * @since   6.0.0
-     */
-    protected function hasJ2CommerceProduct(int $articleId): bool
-    {
-        $db = $this->getDatabase();
-
-        $query = $db->getQuery(true)
-            ->select('1')
-            ->from($db->quoteName('#__j2commerce_products'))
-            ->where($db->quoteName('product_source') . ' = ' . $db->quote('com_content'))
-            ->where($db->quoteName('product_source_id') . ' = :articleId')
-            ->where($db->quoteName('enabled') . ' = 1')
-            ->bind(':articleId', $articleId, ParameterType::INTEGER)
-            ->setLimit(1);
-
-        $db->setQuery($query);
-
-        return (bool) $db->loadResult();
     }
 }

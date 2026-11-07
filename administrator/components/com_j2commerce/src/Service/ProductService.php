@@ -26,8 +26,11 @@ use J2Commerce\Component\J2commerce\Administrator\Model\Behavior\Simple;
 use J2Commerce\Component\J2commerce\Administrator\Model\Behavior\Variable;
 use J2Commerce\Component\J2commerce\Administrator\Model\ProductsModel;
 use J2Commerce\Component\J2commerce\Administrator\Table\ProductTable;
+use Joomla\CMS\Event\Finder as FinderEvent;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Factory\MVCFactoryInterface;
+use Joomla\CMS\Plugin\PluginHelper;
 
 /**
  * Product Service Class
@@ -68,6 +71,11 @@ class ProductService
 
     /** @var list<string>|null */
     private ?array $creatableTypes = null;
+
+    private static int $searchDeferDepth = 0;
+
+    /** @var array<string, FinderEvent\AfterSaveEvent|FinderEvent\AfterDeleteEvent> */
+    private static array $searchDeferred = [];
 
     /**
      * Constructor
@@ -258,6 +266,8 @@ class ProductService
             $productTable->load($data['j2commerce_product_id']);
         }
 
+        $isNew = empty($productTable->j2commerce_product_id);
+
         // Bind data to table
         if (!$productTable->bind($data)) {
             throw new \Exception($productTable->getError());
@@ -326,6 +336,8 @@ class ProductService
 
         J2CommerceHelper::plugin()->event('AfterSaveProduct', [$productTable, $data]);
 
+        self::syncSearchIndex(new FinderEvent\AfterSaveEvent('onFinderAfterSave', ['context' => 'com_j2commerce.product', 'subject' => $productTable, 'isNew' => $isNew]));
+
         return (int) $productTable->j2commerce_product_id;
     }
 
@@ -377,6 +389,55 @@ class ProductService
         }
 
         return true;
+    }
+
+    /** Smart Search is secondary to the product write: a failure is logged, never thrown into the save. */
+    public static function syncSearchIndex(FinderEvent\AfterSaveEvent|FinderEvent\AfterDeleteEvent $event): void
+    {
+        if (self::deferSearchEvent($event)) {
+            return;
+        }
+
+        try {
+            PluginHelper::importPlugin('finder');
+            Factory::getApplication()->getDispatcher()->dispatch($event->getName(), $event);
+        } catch (\Throwable $e) {
+            Log::add('Smart Search sync failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
+        }
+    }
+
+    /** Queues the event while a deferral is open (the latest event per product wins); true when queued. */
+    public static function deferSearchEvent(FinderEvent\AfterSaveEvent|FinderEvent\AfterDeleteEvent $event): bool
+    {
+        if (self::$searchDeferDepth < 1) {
+            return false;
+        }
+
+        self::$searchDeferred[$event->getName() . ':' . (int) ($event->getItem()->j2commerce_product_id ?? 0)] = $event;
+
+        return true;
+    }
+
+    /** Smart Search indexing truncates its token tables, which commits an open transaction, so a transaction defers it. */
+    public static function beginSearchDeferral(): void
+    {
+        self::$searchDeferDepth++;
+    }
+
+    /** The outermost end replays the queued events after a commit, or drops them after a rollback. */
+    public static function endSearchDeferral(bool $committed): void
+    {
+        if (--self::$searchDeferDepth > 0) {
+            return;
+        }
+
+        self::$searchDeferDepth = 0;
+        $events                 = self::$searchDeferred;
+        self::$searchDeferred   = [];
+
+        if ($committed) {
+            array_walk($events, static fn ($event) => self::syncSearchIndex($event));
+        }
     }
 
     /**

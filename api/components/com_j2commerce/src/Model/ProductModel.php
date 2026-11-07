@@ -746,12 +746,15 @@ class ProductModel extends AdminProductModel
     /** One transaction around the write; a ProductApiException keeps its status, the rest is a logged server fault with a generic message. */
     private function inTransaction(callable $write, string $verb): mixed
     {
-        $db = $this->getDatabase();
+        $db        = $this->getDatabase();
+        $committed = false;
         $db->transactionStart();
+        ProductService::beginSearchDeferral();
 
         try {
             $result = $write();
             $db->transactionCommit();
+            $committed = true;
 
             return $result;
         } catch (ProductApiException $e) {
@@ -763,6 +766,9 @@ class ProductModel extends AdminProductModel
             Log::add('API product ' . $verb . ': ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
 
             throw ProductApiException::single(500, '/', 'The product could not be ' . $verb . '.');
+        } finally {
+            // Runs after the commit, so the index sees the options and variants the handler wrote.
+            ProductService::endSearchDeferral($committed);
         }
     }
 
