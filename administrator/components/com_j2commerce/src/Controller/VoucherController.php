@@ -106,9 +106,9 @@ class VoucherController extends FormController
         $model = $this->getModel();
 
         try {
-            $newBalance = $model->adjustBalance($id, $adjustmentType, $amount, $reason, $note, $orderId);
-            $this->logBalanceAdjustment($id, $adjustmentType, $amount, $reason, $newBalance);
-            $this->setRedirect($url, Text::sprintf('COM_J2COMMERCE_VOUCHER_BALANCE_ADJUSTED', CurrencyHelper::format($newBalance)));
+            $result = $model->adjustManually($id, $adjustmentType, $amount, $reason, $note, $orderId);
+            $this->logBalanceAdjustment($id, $adjustmentType, $adjustmentType === 'correction' ? $amount : $result['amount'], $reason, $result['balance']);
+            $this->setRedirect($url, Text::sprintf('COM_J2COMMERCE_VOUCHER_BALANCE_ADJUSTED', CurrencyHelper::format($result['balance'])));
         } catch (\InvalidArgumentException | \RuntimeException $e) {
             $this->setRedirect($url, $e->getMessage(), 'error');
         } catch (\Throwable $e) {

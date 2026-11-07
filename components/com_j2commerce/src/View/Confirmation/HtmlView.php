@@ -20,6 +20,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TrackingHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
+use J2Commerce\Component\J2commerce\Site\View\CustomSubtemplateTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
@@ -28,6 +29,8 @@ use Joomla\Registry\Registry;
 
 class HtmlView extends BaseHtmlView
 {
+    use CustomSubtemplateTrait;
+
     public ?object $order            = null;
     public string $plugin_html       = '';
     public string $order_link        = '';
@@ -160,6 +163,19 @@ class HtmlView extends BaseHtmlView
         $this->trackingScript = TrackingHelper::render($this->order, $this->orderItems, $this->params, 'confirmation');
 
         $this->_prepareDocument();
+
+        // Dispatch event to allow a plugin to render the whole confirmation view
+        // itself, routed back through parent::display() rather than echoed
+        // directly, so core Joomla view events still fire for it.
+        $viewHtml = J2CommerceHelper::plugin()
+            ->eventWithHtml('ViewConfirmationHtml', [null, &$this, $this->order])
+            ->getArgument('html', '');
+
+        if (!empty($viewHtml)) {
+            $this->displayPrebuilt($viewHtml);
+
+            return;
+        }
 
         $this->displayOrFallback($tpl);
     }

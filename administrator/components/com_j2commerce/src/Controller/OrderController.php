@@ -108,7 +108,7 @@ class OrderController extends FormController
             if ($newStatus > 0 && $newStatus !== (int) $order->order_state_id) {
                 // A status change writes its own history + fires the status event and
                 // (when notifying) sends its own notification, so don't also fire a plain one.
-                if (!$model->updateOrderStatus($orderId, $newStatus, $notify)) {
+                if (!$model->updateOrderStatus($orderId, $newStatus, $notify, '', true)) {
                     $this->app->enqueueMessage(
                         implode("\n", $model->getErrors()) ?: Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'),
                         'warning'
@@ -210,7 +210,7 @@ class OrderController extends FormController
 
             $model = $this->getModel();
 
-            if ($model->updateOrderStatus($orderId, $statusId, false, $comment)) {
+            if ($model->updateOrderStatus($orderId, $statusId, false, $comment, true)) {
                 if ($notify) {
                     $order        = $model->getItem($orderId);
                     $notifyResult = $order && !empty($order->order_id)
@@ -370,7 +370,7 @@ class OrderController extends FormController
 
             $model = $this->getModel();
 
-            if (!$model->updateOrderStatus($orderId, $statusId, false)) {
+            if (!$model->updateOrderStatus($orderId, $statusId, false, '', true)) {
                 $errors = $model->getErrors();
                 throw new \Exception(implode("\n", $errors));
             }
@@ -2000,7 +2000,7 @@ class OrderController extends FormController
             $model = $this->getModel();
 
             if ($discountId < 1 || !$model->removeOrderDiscount($order->order_id, $discountId)) {
-                throw new UserFacingException(Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
+                throw new UserFacingException($model->getError() ?: Text::_('COM_J2COMMERCE_ERROR_INVALID_REQUEST'));
             }
 
             // Removing a coupon widens the taxable base back out — recomputeOrderTax() re-derives

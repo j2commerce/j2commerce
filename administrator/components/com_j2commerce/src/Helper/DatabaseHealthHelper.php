@@ -1133,7 +1133,15 @@ final class DatabaseHealthHelper
             ->leftJoin($db->quoteName('#__j2commerce_optionvalues', 'ov') . ' ON ' . $db->quoteName('ov.j2commerce_optionvalue_id') . ' = ' . $db->quoteName('pov.optionvalue_id'))
             ->where(
                 '(' . $db->quoteName('po.j2commerce_productoption_id') . ' IS NULL'
-                . ' OR ' . $db->quoteName('ov.j2commerce_optionvalue_id') . ' IS NULL)'
+                // A non-list option (text, textarea, number, date, file, ...) carries one
+                // optionvalue_id-less row here purely to hold parent_optionvalue - see
+                // Configurable::saveNonListParentOptionvalue(). Only a row that CLAIMS an
+                // optionvalue_id but names a deleted one is a real orphan; a null
+                // optionvalue_id is only orphaned if it is not acting as that carrier either.
+                . ' OR (' . $db->quoteName('pov.optionvalue_id') . ' IS NOT NULL AND ' . $db->quoteName('ov.j2commerce_optionvalue_id') . ' IS NULL)'
+                . ' OR (' . $db->quoteName('pov.optionvalue_id') . ' IS NULL AND ('
+                . $db->quoteName('pov.parent_optionvalue') . ' IS NULL OR ' . $db->quoteName('pov.parent_optionvalue') . " = ''))"
+                . ')'
             );
     }
 

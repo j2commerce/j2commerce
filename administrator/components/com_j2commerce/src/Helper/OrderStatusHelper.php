@@ -242,14 +242,16 @@ final class OrderStatusHelper
 
         $db->setQuery($query);
 
-        self::$map = [];
+        // Cached only once the query succeeds: an empty map left behind by a failed read would
+        // classify every status as untyped for the rest of the request.
+        $map = [];
 
         foreach ($db->loadObjectList() ?: [] as $row) {
             $type = (string) ($row->orderstatus_type ?? '');
 
-            self::$map[(int) $row->j2commerce_orderstatus_id] = self::isValidType($type) ? $type : null;
+            $map[(int) $row->j2commerce_orderstatus_id] = self::isValidType($type) ? $type : null;
         }
 
-        return self::$map;
+        return self::$map = $map;
     }
 }

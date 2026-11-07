@@ -2238,10 +2238,9 @@ class CartOrder
             'customer_group'        => $userId > 0
                 ? implode(',', Access::getGroupsByUser($userId, false))
                 : (string) (int) ComponentHelper::getParams('com_users')->get('guest_usergroup', 1),
-            'ip_address'     => $app->input->server->getString('REMOTE_ADDR', ''),
-            'order_state_id' => 5, // Incomplete
-            'created_by'     => $userId,
-            'modified_by'    => $userId,
+            'ip_address'  => $app->input->server->getString('REMOTE_ADDR', ''),
+            'created_by'  => $userId,
+            'modified_by' => $userId,
         ];
 
         // Everything from the order row to the fee rows is one write. A rejection part-way
@@ -2288,7 +2287,7 @@ class CartOrder
         OrderHistoryHelper::add(
             orderId: $this->order_id,
             comment: Text::_('COM_J2COMMERCE_ORDER_HISTORY_NEW_ORDER_CREATED'),
-            orderStateId: (int) ($orderTable->order_state_id ?? 5),
+            orderStateId: (int) $orderTable->order_state_id,
             createdBy: $userId,
         );
 

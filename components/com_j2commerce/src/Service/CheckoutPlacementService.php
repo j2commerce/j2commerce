@@ -19,6 +19,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CartOrder;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutStepStateHelper;
 use Joomla\CMS\Application\CMSWebApplicationInterface;
@@ -144,7 +145,7 @@ final class CheckoutPlacementService
 
                 $isSameCart  = $currentCartId > 0 && (int) ($priorTable->cart_id ?? -1) === $currentCartId;
                 $isSameOwner = (int) ($priorTable->user_id ?? -1) === $currentUserId;
-                $isUnpaid    = (int) ($priorTable->order_state_id ?? 0) === 5;
+                $isUnpaid    = OrderStatusHelper::getType((int) ($priorTable->order_state_id ?? 0)) === OrderStatusHelper::TYPE_NEW;
                 $isSameOrder = $isSameCart
                     && $isSameOwner
                     && $isUnpaid

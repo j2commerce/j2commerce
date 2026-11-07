@@ -58,6 +58,7 @@ class ProductsController extends AdminController
             'searchSingleVariantProducts',
             'getBoxBuilderProducts',
             'getProductOptionValuesAjax',
+            'getParentOptionvalueModalAjax',
             'getVariantListAjax',
         ];
     }
@@ -114,6 +115,15 @@ class ProductsController extends AdminController
         return $user && !$user->guest && $user->authorise($action, 'com_j2commerce');
     }
 
+    /** Non-negative amount + `+`/`-` prefix, as the products API stores it; a negative amount flips the prefix. */
+    private static function modifier(mixed $amount, mixed $prefix): array
+    {
+        $amount = is_numeric($amount) && is_finite((float) $amount) ? (float) $amount : 0.0;
+        $prefix = $prefix === '-' ? '-' : '+';
+
+        return $amount < 0 ? [-$amount, $prefix === '+' ? '-' : '+'] : [$amount, $prefix];
+    }
+
     /** JSON exit for the AJAX tasks. close() is exit(), so the headers flush first. */
     private function sendJson(mixed $data): void
     {
@@ -130,17 +140,6 @@ class ProductsController extends AdminController
     private function denyJson(string $key = 'success'): void
     {
         $this->sendJson([$key => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
-    }
-
-    /**
-     * Deny a redirecting task, returning the caller to the product option values view.
-     */
-    private function denyRedirect(int $productId, int $productOptionId): void
-    {
-        $url = 'index.php?option=com_j2commerce&view=productoptionvalues&product_id=' . $productId
-            . '&productoption_id=' . $productOptionId . '&tmpl=component';
-
-        $this->setRedirect(Route::_($url, false), Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN'), 'error');
     }
 
     /**
@@ -252,7 +251,7 @@ class ProductsController extends AdminController
         $app = Factory::getApplication();
 
         // Called only by the admin product edit form, so it takes the same capability its write twins do.
-        if (!$this->canDo('core.edit')) {
+        if (!\Joomla\CMS\Session\Session::checkToken('request') || !$this->canDo('core.edit')) {
             $this->sendJson([]);
 
             return;
@@ -453,7 +452,7 @@ class ProductsController extends AdminController
 
         // Returns the product catalogue with SKUs. Reached only from the admin product
         // edit form and the product selector fields plugins add to it.
-        if (!$this->canDo('core.edit')) {
+        if (!\Joomla\CMS\Session\Session::checkToken('request') || !$this->canDo('core.edit')) {
             $this->sendJson(['products' => []]);
 
             return;
@@ -533,7 +532,7 @@ class ProductsController extends AdminController
     {
         $app = Factory::getApplication();
 
-        if (!$this->canDo('core.edit')) {
+        if (!\Joomla\CMS\Session\Session::checkToken('request') || !$this->canDo('core.edit')) {
             $this->sendJson(['products' => []]);
 
             return;
@@ -1302,369 +1301,6 @@ class ProductsController extends AdminController
     }
 
     /**
-     * Display the product option values modal.
-     *
-     * Shows a modal to manage option values (price/weight modifiers) for a product option.
-     *
-     * @return  void
-     *
-     * @since   6.0.3
-     */
-    public function setproductoptionvalues(): void
-    {
-        $app = Factory::getApplication();
-
-        // Renders the option-value grid (SKUs, price and weight modifiers) for a
-        // product. Read-only, but product data — same capability as its AJAX twin.
-        if (!$this->canDo('core.edit')) {
-            echo Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN');
-            $app->close();
-
-            return;
-        }
-
-        $db = Factory::getContainer()->get('DatabaseDriver');
-
-        $productId       = $app->getInput()->getInt('product_id', 0);
-        $productOptionId = $app->getInput()->getInt('productoption_id', 0);
-
-        // Get product
-        $productModel = $this->getModel('Product');
-        $product      = $productModel->getItem($productId);
-
-        if (!$product) {
-            echo Text::_('COM_J2COMMERCE_PRODUCT_NOT_FOUND');
-            return;
-        }
-
-        // Get product option details
-        $query = $db->getQuery(true);
-        $query->select([
-                $db->quoteName('po.j2commerce_productoption_id'),
-                $db->quoteName('po.option_id'),
-                $db->quoteName('po.parent_id'),
-                $db->quoteName('po.required'),
-                $db->quoteName('po.is_variant'),
-                $db->quoteName('po.product_id'),
-            ])
-            ->select([
-                $db->quoteName('o.option_name'),
-                $db->quoteName('o.option_unique_name'),
-                $db->quoteName('o.type'),
-            ])
-            ->from($db->quoteName('#__j2commerce_product_options', 'po'))
-            ->leftJoin(
-                $db->quoteName('#__j2commerce_options', 'o') .
-                ' ON ' . $db->quoteName('po.option_id') . ' = ' . $db->quoteName('o.j2commerce_option_id')
-            )
-            ->where($db->quoteName('po.j2commerce_productoption_id') . ' = :poId')
-            ->bind(':poId', $productOptionId, ParameterType::INTEGER);
-
-        $db->setQuery($query);
-        $productOption = $db->loadObject();
-
-        if (!$productOption) {
-            echo Text::_('COM_J2COMMERCE_PRODUCT_OPTION_NOT_FOUND');
-            return;
-        }
-
-        // Get all available option values for this option
-        // Note: bind() requires a variable reference, can't use object property directly
-        $optionId = (int) $productOption->option_id;
-        $query    = $db->getQuery(true);
-        $query->select([
-                $db->quoteName('j2commerce_optionvalue_id'),
-                $db->quoteName('optionvalue_name'),
-            ])
-            ->from($db->quoteName('#__j2commerce_optionvalues'))
-            ->where($db->quoteName('option_id') . ' = :optionId')
-            ->order($db->quoteName('ordering') . ' ASC')
-            ->bind(':optionId', $optionId, ParameterType::INTEGER);
-
-        $db->setQuery($query);
-        $optionValues = $db->loadObjectList() ?: [];
-
-        // Get existing product option values
-        $query = $db->getQuery(true);
-        $query->select([
-                $db->quoteName('pov.j2commerce_product_optionvalue_id'),
-                $db->quoteName('pov.productoption_id'),
-                $db->quoteName('pov.optionvalue_id'),
-                $db->quoteName('pov.parent_optionvalue'),
-                $db->quoteName('pov.product_optionvalue_price'),
-                $db->quoteName('pov.product_optionvalue_prefix'),
-                $db->quoteName('pov.product_optionvalue_weight'),
-                $db->quoteName('pov.product_optionvalue_weight_prefix'),
-                $db->quoteName('pov.product_optionvalue_sku'),
-                $db->quoteName('pov.product_optionvalue_default'),
-                $db->quoteName('pov.ordering'),
-                $db->quoteName('pov.product_optionvalue_attribs'),
-            ])
-            ->select($db->quoteName('ov.optionvalue_name'))
-            ->from($db->quoteName('#__j2commerce_product_optionvalues', 'pov'))
-            ->leftJoin(
-                $db->quoteName('#__j2commerce_optionvalues', 'ov') .
-                ' ON ' . $db->quoteName('pov.optionvalue_id') . ' = ' . $db->quoteName('ov.j2commerce_optionvalue_id')
-            )
-            ->where($db->quoteName('pov.productoption_id') . ' = :poId')
-            ->order($db->quoteName('pov.ordering') . ' ASC')
-            ->bind(':poId', $productOptionId, ParameterType::INTEGER);
-
-        $db->setQuery($query);
-        $productOptionValues = $db->loadObjectList() ?: [];
-
-        // Get parent option values if applicable
-        $parentOptionValues = $this->resolveParentOptionValues($productOption);
-
-        // Render the modal layout
-        $layout = new FileLayout('productoptionvalues', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product');
-        echo $layout->render([
-            'product'              => $product,
-            'product_option'       => $productOption,
-            'product_id'           => $productId,
-            'productoption_id'     => $productOptionId,
-            'option_values'        => $optionValues,
-            'product_optionvalues' => $productOptionValues,
-            'parent_optionvalues'  => $parentOptionValues,
-            'prefix'               => 'jform[poption_value]',
-        ]);
-
-        // Stop execution to prevent default display from rendering
-        $app->close();
-    }
-
-    /**
-     * Create a new product option value.
-     *
-     * @return  void
-     *
-     * @since   6.0.3
-     */
-    public function createproductoptionvalue(): void
-    {
-        $this->checkToken();
-
-        $app = Factory::getApplication();
-        $db  = Factory::getContainer()->get('DatabaseDriver');
-
-        $productId         = $app->getInput()->getInt('product_id', 0);
-        $productOptionId   = $app->getInput()->getInt('productoption_id', 0);
-
-        if (!$this->canDo('core.edit')) {
-            $this->denyRedirect($productId, $productOptionId);
-
-            return;
-        }
-
-        $optionValueId     = $app->getInput()->getInt('optionvalue_id', 0);
-        $price             = $app->getInput()->getFloat('product_optionvalue_price', 0.0);
-        $pricePrefix       = $app->getInput()->getString('product_optionvalue_prefix', '+');
-        $weight            = $app->getInput()->getFloat('product_optionvalue_weight', 0.0);
-        $weightPrefix      = $app->getInput()->getString('product_optionvalue_weight_prefix', '+');
-        $ordering          = $app->getInput()->getInt('ordering', 0);
-        $attribs           = $app->getInput()->getString('product_optionvalue_attribs', '');
-        $parentOptionValue = $app->getInput()->get('parent_optionvalue', [], 'array');
-
-        // Check if option is a variant option (no price modifier)
-        $query = $db->getQuery(true);
-        $query->select($db->quoteName('is_variant'))
-            ->from($db->quoteName('#__j2commerce_product_options'))
-            ->where($db->quoteName('j2commerce_productoption_id') . ' = :poId')
-            ->bind(':poId', $productOptionId, ParameterType::INTEGER);
-
-        $db->setQuery($query);
-        $isVariant = (int) $db->loadResult();
-
-        // Reset price for variant options
-        if ($isVariant) {
-            $price = 0.0;
-        }
-
-        // Insert the new product option value
-        $parentValue = !empty($parentOptionValue) ? implode(',', $parentOptionValue) : '';
-        $emptyString = '';
-        $zero        = 0;
-
-        $columns = [
-            'productoption_id',
-            'optionvalue_id',
-            'parent_optionvalue',
-            'product_optionvalue_price',
-            'product_optionvalue_prefix',
-            'product_optionvalue_weight',
-            'product_optionvalue_weight_prefix',
-            'product_optionvalue_sku',
-            'product_optionvalue_default',
-            'ordering',
-            'product_optionvalue_attribs',
-        ];
-
-        $query = $db->getQuery(true);
-        $query->insert($db->quoteName('#__j2commerce_product_optionvalues'))
-            ->columns($db->quoteName($columns))
-            ->values(':productoption_id, :optionvalue_id, :parent_optionvalue, :price, :price_prefix, :weight, :weight_prefix, :sku, :default, :ordering, :attribs')
-            ->bind(':productoption_id', $productOptionId, ParameterType::INTEGER)
-            ->bind(':optionvalue_id', $optionValueId, ParameterType::INTEGER)
-            ->bind(':parent_optionvalue', $parentValue)
-            ->bind(':price', $price)
-            ->bind(':price_prefix', $pricePrefix)
-            ->bind(':weight', $weight)
-            ->bind(':weight_prefix', $weightPrefix)
-            ->bind(':sku', $emptyString)
-            ->bind(':default', $zero, ParameterType::INTEGER)
-            ->bind(':ordering', $ordering, ParameterType::INTEGER)
-            ->bind(':attribs', $attribs);
-
-        $db->setQuery($query);
-
-        try {
-            $db->execute();
-            $msg     = Text::_('COM_J2COMMERCE_PRODUCT_OPTION_VALUE_CREATED');
-            $msgType = 'message';
-        } catch (\Exception $e) {
-            Log::add('products.createproductoptionvalue failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
-            $msg     = Text::_('COM_J2COMMERCE_ERR_GENERIC');
-            $msgType = 'error';
-        }
-
-        $url = 'index.php?option=com_j2commerce&view=productoptionvalues&product_id=' . $productId
-            . '&productoption_id=' . $productOptionId . '&tmpl=component';
-
-        $this->setRedirect(Route::_($url, false), $msg, $msgType);
-    }
-
-    /**
-     * Save product option values (bulk update).
-     *
-     * @return  void
-     *
-     * @since   6.0.3
-     */
-    public function saveproductoptionvalue(): void
-    {
-        $this->checkToken();
-
-        $app = Factory::getApplication();
-        $db  = Factory::getContainer()->get('DatabaseDriver');
-
-        $productId       = $app->getInput()->getInt('product_id', 0);
-        $productOptionId = $app->getInput()->getInt('productoption_id', 0);
-        $poptionValues   = $app->getInput()->get('jform', [], 'array');
-
-        // This rewrites product_optionvalue_price / _prefix / _weight for every row id
-        // supplied — a price write, so it takes the edit capability.
-        if (!$this->canDo('core.edit')) {
-            $this->denyRedirect($productId, $productOptionId);
-
-            return;
-        }
-
-        if (isset($poptionValues['poption_value']) && \is_array($poptionValues['poption_value'])) {
-            foreach ($poptionValues['poption_value'] as $povId => $data) {
-                $povId = (int) $povId;
-                if ($povId <= 0) {
-                    continue;
-                }
-
-                // Prepare data
-                $optionValueId = isset($data['optionvalue_id']) ? (int) $data['optionvalue_id'] : 0;
-                $price         = isset($data['product_optionvalue_price']) ? (float) $data['product_optionvalue_price'] : 0.0;
-                $pricePrefix   = isset($data['product_optionvalue_prefix']) ? $data['product_optionvalue_prefix'] : '+';
-                $weight        = isset($data['product_optionvalue_weight']) ? (float) $data['product_optionvalue_weight'] : 0.0;
-                $weightPrefix  = isset($data['product_optionvalue_weight_prefix']) ? $data['product_optionvalue_weight_prefix'] : '+';
-                $ordering      = isset($data['ordering']) ? (int) $data['ordering'] : 0;
-                $parentValue   = isset($data['parent_optionvalue']) && \is_array($data['parent_optionvalue'])
-                    ? implode(',', $data['parent_optionvalue'])
-                    : '';
-                $attribs = isset($data['product_optionvalue_attribs']) ? $data['product_optionvalue_attribs'] : '';
-
-                $query = $db->getQuery(true);
-                $query->update($db->quoteName('#__j2commerce_product_optionvalues'))
-                    ->set($db->quoteName('optionvalue_id') . ' = :optionvalue_id')
-                    ->set($db->quoteName('parent_optionvalue') . ' = :parent_optionvalue')
-                    ->set($db->quoteName('product_optionvalue_price') . ' = :price')
-                    ->set($db->quoteName('product_optionvalue_prefix') . ' = :price_prefix')
-                    ->set($db->quoteName('product_optionvalue_weight') . ' = :weight')
-                    ->set($db->quoteName('product_optionvalue_weight_prefix') . ' = :weight_prefix')
-                    ->set($db->quoteName('ordering') . ' = :ordering')
-                    ->set($db->quoteName('product_optionvalue_attribs') . ' = :attribs')
-                    ->where($db->quoteName('j2commerce_product_optionvalue_id') . ' = :povId')
-                    ->bind(':optionvalue_id', $optionValueId, ParameterType::INTEGER)
-                    ->bind(':parent_optionvalue', $parentValue)
-                    ->bind(':price', $price)
-                    ->bind(':price_prefix', $pricePrefix)
-                    ->bind(':weight', $weight)
-                    ->bind(':weight_prefix', $weightPrefix)
-                    ->bind(':ordering', $ordering, ParameterType::INTEGER)
-                    ->bind(':attribs', $attribs)
-                    ->bind(':povId', $povId, ParameterType::INTEGER);
-
-                $db->setQuery($query);
-                $db->execute();
-            }
-        }
-
-        $url = 'index.php?option=com_j2commerce&view=productoptionvalues&product_id=' . $productId
-            . '&productoption_id=' . $productOptionId . '&tmpl=component';
-
-        $this->setRedirect(Route::_($url, false), Text::_('COM_J2COMMERCE_PRODUCT_OPTION_VALUES_SAVED'), 'message');
-    }
-
-    /**
-     * Delete product option values.
-     *
-     * @return  void
-     *
-     * @since   6.0.3
-     */
-    public function deleteProductOptionvalues(): void
-    {
-        $this->checkToken('request');
-
-        $app = Factory::getApplication();
-        $db  = Factory::getContainer()->get('DatabaseDriver');
-
-        $productId       = $app->getInput()->getInt('product_id', 0);
-        $productOptionId = $app->getInput()->getInt('productoption_id', 0);
-        $cid             = $app->getInput()->get('cid', [], 'array');
-
-        if (!$this->canDo('core.delete')) {
-            $this->denyRedirect($productId, $productOptionId);
-
-            return;
-        }
-
-        $cid = ArrayHelper::toInteger($cid);
-        $cid = array_filter($cid);
-
-        if (!empty($cid)) {
-            $query = $db->getQuery(true);
-            $query->delete($db->quoteName('#__j2commerce_product_optionvalues'))
-                ->whereIn($db->quoteName('j2commerce_product_optionvalue_id'), $cid);
-
-            $db->setQuery($query);
-
-            try {
-                $db->execute();
-                $msg     = Text::plural('COM_J2COMMERCE_N_ITEMS_DELETED', \count($cid));
-                $msgType = 'message';
-            } catch (\Exception $e) {
-                Log::add('products.deleteProductOptionvalues failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
-                $msg     = Text::_('COM_J2COMMERCE_ERR_GENERIC');
-                $msgType = 'error';
-            }
-        } else {
-            $msg     = Text::_('COM_J2COMMERCE_NO_ITEM_SELECTED');
-            $msgType = 'warning';
-        }
-
-        $url = 'index.php?option=com_j2commerce&view=productoptionvalues&product_id=' . $productId
-            . '&productoption_id=' . $productOptionId . '&tmpl=component';
-
-        $this->setRedirect(Route::_($url, false), $msg, $msgType);
-    }
-
-    /**
      * Add all master option values to a product option.
      *
      * @return  void
@@ -1952,14 +1588,18 @@ class ProductsController extends AdminController
 
         $response = ['success' => false, 'message' => ''];
 
+        $input                   = $app->getInput();
+        [$price, $pricePrefix]   = self::modifier($input->getFloat('product_optionvalue_price', 0.0), $input->getString('product_optionvalue_prefix', '+'));
+        [$weight, $weightPrefix] = self::modifier($input->getFloat('product_optionvalue_weight', 0.0), $input->getString('product_optionvalue_weight_prefix', '+'));
+
         try {
             // The service zeroes the price when the option defines the variant matrix.
             (new ProductOptionService($this->factory))->addOptionValue($productOptionId, $optionValueId, [
                 'parent_optionvalue'                => !empty($parentOptionValue) ? implode(',', $parentOptionValue) : '',
-                'product_optionvalue_price'         => $app->getInput()->getFloat('product_optionvalue_price', 0.0),
-                'product_optionvalue_prefix'        => $app->getInput()->getString('product_optionvalue_prefix', '+'),
-                'product_optionvalue_weight'        => $app->getInput()->getFloat('product_optionvalue_weight', 0.0),
-                'product_optionvalue_weight_prefix' => $app->getInput()->getString('product_optionvalue_weight_prefix', '+'),
+                'product_optionvalue_price'         => $price,
+                'product_optionvalue_prefix'        => $pricePrefix,
+                'product_optionvalue_weight'        => $weight,
+                'product_optionvalue_weight_prefix' => $weightPrefix,
                 'ordering'                          => $app->getInput()->getInt('ordering', 0),
                 'product_optionvalue_attribs'       => $app->getInput()->getString('product_optionvalue_attribs', ''),
             ]);
@@ -2006,13 +1646,11 @@ class ProductsController extends AdminController
                     }
 
                     // Prepare data
-                    $optionValueId = isset($data['optionvalue_id']) ? (int) $data['optionvalue_id'] : 0;
-                    $price         = isset($data['product_optionvalue_price']) ? (float) $data['product_optionvalue_price'] : 0.0;
-                    $pricePrefix   = isset($data['product_optionvalue_prefix']) ? $data['product_optionvalue_prefix'] : '+';
-                    $weight        = isset($data['product_optionvalue_weight']) ? (float) $data['product_optionvalue_weight'] : 0.0;
-                    $weightPrefix  = isset($data['product_optionvalue_weight_prefix']) ? $data['product_optionvalue_weight_prefix'] : '+';
-                    $ordering      = isset($data['ordering']) ? (int) $data['ordering'] : 0;
-                    $parentValue   = isset($data['parent_optionvalue']) && \is_array($data['parent_optionvalue'])
+                    $optionValueId           = isset($data['optionvalue_id']) ? (int) $data['optionvalue_id'] : 0;
+                    [$price, $pricePrefix]   = self::modifier($data['product_optionvalue_price'] ?? 0, $data['product_optionvalue_prefix'] ?? '+');
+                    [$weight, $weightPrefix] = self::modifier($data['product_optionvalue_weight'] ?? 0, $data['product_optionvalue_weight_prefix'] ?? '+');
+                    $ordering                = isset($data['ordering']) ? (int) $data['ordering'] : 0;
+                    $parentValue             = isset($data['parent_optionvalue']) && \is_array($data['parent_optionvalue'])
                         ? implode(',', $data['parent_optionvalue'])
                         : '';
                     $attribs = isset($data['product_optionvalue_attribs']) ? $data['product_optionvalue_attribs'] : '';
@@ -3105,24 +2743,172 @@ class ProductsController extends AdminController
             return [];
         }
 
-        $parentOptionId  = (int) $productOption->parent_id;
-        $parentProductId = (int) $productOption->product_id;
-        $db              = Factory::getContainer()->get('DatabaseDriver');
-        $query           = $db->getQuery(true)
+        $parentProductOptionId = $this->resolveParentProductOptionId(
+            (int) $productOption->parent_id,
+            (int) $productOption->product_id
+        );
+
+        return $parentProductOptionId > 0 ? ProductHelper::getProductOptionValues($parentProductOptionId) : [];
+    }
+
+    /**
+     * Translates a parent's global option_id (as stored in product_options.parent_id) into
+     * that parent's own productoption_id for THIS product - the id product_optionvalues rows
+     * are actually keyed by.
+     */
+    private function resolveParentProductOptionId(int $parentOptionId, int $productId): int
+    {
+        if (!$parentOptionId || !$productId) {
+            return 0;
+        }
+
+        $db    = Factory::getContainer()->get('DatabaseDriver');
+        $query = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_productoption_id'))
             ->from($db->quoteName('#__j2commerce_product_options'))
             ->where($db->quoteName('option_id') . ' = :parentOptId')
             ->where($db->quoteName('product_id') . ' = :parentProdId')
             ->bind(':parentOptId', $parentOptionId, ParameterType::INTEGER)
-            ->bind(':parentProdId', $parentProductId, ParameterType::INTEGER);
+            ->bind(':parentProdId', $productId, ParameterType::INTEGER);
         $db->setQuery($query);
-        $parentProductOptionId = (int) $db->loadResult();
 
-        if ($parentProductOptionId > 0) {
-            return ProductHelper::getProductOptionValues($parentProductOptionId);
+        return (int) $db->loadResult();
+    }
+
+    /**
+     * AJAX: render the "Set Parent Value(s)" modal for a non-list option (text, textarea,
+     * number, date, file, ...) - the sibling of getProductOptionValuesAjax() for option types
+     * that have no values of their own. $parent_option_id (request) overrides the saved
+     * parent_id when present, so the modal reflects a Parent Option change the admin made
+     * client-side but has not saved yet.
+     */
+    public function getParentOptionvalueModalAjax(): void
+    {
+        $app      = Factory::getApplication();
+        $response = ['success' => false, 'html' => '', 'message' => ''];
+
+        if (!\Joomla\CMS\Session\Session::checkToken('request')) {
+            $response['message'] = Text::_('JINVALID_TOKEN');
+            $this->sendJson($response);
+
+            return;
         }
 
-        return [];
+        if (!$this->canDo('core.edit')) {
+            $response['message'] = Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN');
+            $this->sendJson($response);
+
+            return;
+        }
+
+        $db = Factory::getContainer()->get('DatabaseDriver');
+
+        $productId       = $app->getInput()->getInt('product_id', 0);
+        $productOptionId = $app->getInput()->getInt('productoption_id', 0);
+        $parentOptionId  = $app->getInput()->getInt('parent_option_id', 0);
+
+        if (!$productId || !$productOptionId) {
+            $response['message'] = Text::_('COM_J2COMMERCE_INVALID_PRODUCT_OR_OPTION');
+            $this->sendJson($response);
+
+            return;
+        }
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['po.j2commerce_productoption_id', 'po.parent_id', 'po.product_id', 'o.option_name']))
+            ->from($db->quoteName('#__j2commerce_product_options', 'po'))
+            ->leftJoin(
+                $db->quoteName('#__j2commerce_options', 'o') .
+                ' ON ' . $db->quoteName('po.option_id') . ' = ' . $db->quoteName('o.j2commerce_option_id')
+            )
+            ->where($db->quoteName('po.j2commerce_productoption_id') . ' = :poId')
+            ->where($db->quoteName('po.product_id') . ' = :productId')
+            ->bind(':poId', $productOptionId, ParameterType::INTEGER)
+            ->bind(':productId', $productId, ParameterType::INTEGER);
+        $db->setQuery($query);
+        $productOption = $db->loadObject();
+
+        if (!$productOption) {
+            $response['message'] = Text::_('COM_J2COMMERCE_PRODUCT_OPTION_NOT_FOUND');
+            $this->sendJson($response);
+
+            return;
+        }
+
+        $effectiveParentId = $parentOptionId > 0 ? $parentOptionId : (int) $productOption->parent_id;
+
+        // Labels are translated in the layout, same convention as form_ajax_optionvalues.php.
+        $parentValues = ProductHelper::getParentOptionValuesForProduct($effectiveParentId, $productId);
+
+        $layout = new FileLayout('form_ajax_parentoptionvalue', JPATH_ADMINISTRATOR . '/components/com_j2commerce/tmpl/product');
+        $html   = $layout->render([
+            'product_id'       => $productId,
+            'productoption_id' => $productOptionId,
+            'parent_values'    => $parentValues,
+            'selected_values'  => ProductHelper::getNonListParentOptionvalueIds($productOptionId),
+        ]);
+
+        $response['success']    = true;
+        $response['html']       = $html;
+        $response['optionName'] = J2htmlHelper::translateKey($productOption->option_name ?? '');
+
+        $this->sendJson($response);
+    }
+
+    /**
+     * AJAX: save which of the parent's values trigger a non-list option, from the
+     * "Set Parent Value(s)" modal. Independent of the main product save, matching how the
+     * list-type "Set Values" modal already persists immediately.
+     */
+    public function saveParentOptionvalueAjax(): void
+    {
+        $app      = Factory::getApplication();
+        $response = ['success' => false, 'message' => ''];
+
+        if (!\Joomla\CMS\Session\Session::checkToken('request')) {
+            $response['message'] = Text::_('JINVALID_TOKEN');
+            $this->sendJson($response);
+
+            return;
+        }
+
+        if (!$this->canDo('core.edit')) {
+            $response['message'] = Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN');
+            $this->sendJson($response);
+
+            return;
+        }
+
+        $db = Factory::getContainer()->get('DatabaseDriver');
+
+        $productId        = $app->getInput()->getInt('product_id', 0);
+        $productOptionId  = $app->getInput()->getInt('productoption_id', 0);
+        $parentValueIds   = $app->getInput()->get('parent_optionvalue', [], 'array');
+
+        // The option must actually belong to the named product - the client sends both,
+        // but only this combination is ever trusted to resolve which row gets written.
+        $query = $db->getQuery(true)
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__j2commerce_product_options'))
+            ->where($db->quoteName('j2commerce_productoption_id') . ' = :poId')
+            ->where($db->quoteName('product_id') . ' = :productId')
+            ->bind(':poId', $productOptionId, ParameterType::INTEGER)
+            ->bind(':productId', $productId, ParameterType::INTEGER);
+        $db->setQuery($query);
+
+        if (!$productOptionId || !$productId || !(int) $db->loadResult()) {
+            $response['message'] = Text::_('COM_J2COMMERCE_PRODUCT_OPTION_NOT_FOUND');
+            $this->sendJson($response);
+
+            return;
+        }
+
+        ProductHelper::saveNonListParentOptionvalue($productOptionId, $parentValueIds);
+
+        $response['success'] = true;
+        $response['message'] = Text::_('COM_J2COMMERCE_PRODUCT_OPTION_VALUES_SAVED');
+
+        $this->sendJson($response);
     }
 
     public function addProductOptionAjax(): void

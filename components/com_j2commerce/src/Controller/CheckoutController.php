@@ -26,6 +26,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPayGrantHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\RedemptionHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TableSaveHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
@@ -65,9 +66,6 @@ class CheckoutController extends BaseController
      * into #__session.data on every request for the life of that session.
      */
     private const CUSTOMER_NOTE_MAX_LENGTH = 2000;
-
-    /** Seconds a submission waits for another placement on the same stock or discount. */
-    private const PLACEMENT_LOCK_WAIT = 10;
 
     /** Named locks this request holds; MySQL drops them with the connection as a backstop. */
     private array $placementLocks = [];
@@ -2150,11 +2148,28 @@ class CheckoutController extends BaseController
         // cart order there means this row is out of date too.
         // The surcharge is resolved from the payment method the stored row was saved
         // with, since that is the method that produced the stored total.
+        // The gift card value a canceled or failed order held may already be back on the card and
+        // spent elsewhere. A shopper starts a fresh checkout instead; a merchant's Take Payment link
+        // on a failed order goes ahead only while none of its gift card value has been returned.
+        if (!$tokenlessGatewayReturn
+            && !empty($orderId)
+            && !empty($orderTable->j2commerce_order_id)
+            && RedemptionHelper::releases((int) ($orderTable->order_state_id ?? 0))
+        ) {
+            $refusal = $wasContextActivated ? RedemptionHelper::blocksRepayment($orderTable) : '';
+
+            if ($refusal !== null) {
+                $this->refuseOutOfDateOrder($refusal !== '' ? $refusal : null);
+
+                return;
+            }
+        }
+
         if (!$tokenlessGatewayReturn
             && !$wasContextActivated
             && !empty($orderId)
             && !empty($orderTable->j2commerce_order_id)
-            && (int) ($orderTable->order_state_id ?? 0) === 5
+            && OrderStatusHelper::getType((int) ($orderTable->order_state_id ?? 0)) === OrderStatusHelper::TYPE_NEW
         ) {
             // Every check below reads limits that only a placed order consumes, so two
             // submissions racing each other would both pass them. Placement on the same
@@ -2170,7 +2185,7 @@ class CheckoutController extends BaseController
             // already placed by the one that held it.
             $orderTable->load(['order_id' => $orderId]);
 
-            if ((int) ($orderTable->order_state_id ?? 0) !== 5) {
+            if (OrderStatusHelper::getType((int) ($orderTable->order_state_id ?? 0)) !== OrderStatusHelper::TYPE_NEW) {
                 $this->refuseOutOfDateOrder();
 
                 return;
@@ -2556,63 +2571,7 @@ class CheckoutController extends BaseController
     /** Coupon and voucher limits re-applied to an unplaced order's discounts, excluding its own rows. */
     private function discountsStillRedeemable(object $orderTable): bool
     {
-        $orderId = (string) $orderTable->order_id;
-        $factory = $this->getMvcFactory();
-        $rows    = $factory->createModel('Order', 'Administrator', ['ignore_request' => true])->getOrderDiscounts($orderId);
-
-        if (!$rows) {
-            return true;
-        }
-
-        $voucherModel = $factory->createModel('Voucher', 'Administrator', ['ignore_request' => true]);
-        $couponModel  = $factory->createModel('Coupon', 'Administrator', ['ignore_request' => true]);
-
-        foreach ($rows as $row) {
-            if ($row->discount_type === 'voucher') {
-                // Balances are drawn down by amount plus tax, the way getRemainingBalance() sums them.
-                $amount = round((float) $row->discount_amount + (float) $row->discount_tax, 2);
-
-                if ($voucherModel->getRemainingBalance((int) $row->discount_entity_id, $orderId) + 0.005 < $amount) {
-                    return false;
-                }
-
-                continue;
-            }
-
-            if ($row->discount_type !== 'coupon') {
-                continue;
-            }
-
-            $coupon = $couponModel->getCouponByCode((string) $row->discount_code);
-
-            if (!$coupon) {
-                return false;
-            }
-
-            $couponId = (int) $coupon->j2commerce_coupon_id;
-            $maxUses  = (int) $coupon->max_uses;
-
-            if ($maxUses > 0 && $couponModel->getCouponHistory($couponId, '', $orderId) >= $maxUses) {
-                return false;
-            }
-
-            $perCustomer = (int) $coupon->max_customer_uses;
-
-            if ($perCustomer < 1) {
-                continue;
-            }
-
-            $userId = (int) ($orderTable->user_id ?? 0);
-            $email  = strtolower(trim((string) ($orderTable->user_email ?? '')));
-
-            if (($userId > 0 && $couponModel->getCouponHistory($couponId, (string) $userId, $orderId) >= $perCustomer)
-                || ($email !== '' && $couponModel->getCouponHistoryByEmail($couponId, $email, $orderId) >= $perCustomer)
-            ) {
-                return false;
-            }
-        }
-
-        return true;
+        return RedemptionHelper::findShortfall($orderTable) === null;
     }
 
     // One named lock per stock-limited variant, use-limited coupon and voucher, in sorted order. Named
@@ -2637,79 +2596,32 @@ class CheckoutController extends BaseController
                 ->where($db->quoteName('v.allow_backorder') . ' = 0')
                 ->bind(':orderId', $orderId);
 
-            $keys = array_map(static fn ($id): string => 'v:' . (int) $id, $db->setQuery($query)->loadColumn() ?: []);
-
-            $factory   = $this->getMvcFactory();
-            $discounts = $factory->createModel('Order', 'Administrator', ['ignore_request' => true])->getOrderDiscounts($orderId);
-            $coupons   = $factory->createModel('Coupon', 'Administrator', ['ignore_request' => true]);
-
-            foreach ($discounts as $row) {
-                $keys[] = match ($row->discount_type) {
-                    'voucher' => 'g:' . (int) $row->discount_entity_id,
-                    'coupon'  => $this->couponIsUseLimited($coupons, (string) $row->discount_code)
-                        ? 'c:' . md5(strtolower(trim((string) $row->discount_code)))
-                        : '',
-                    default => '',
-                };
-            }
-
-            $keys = array_values(array_unique(array_filter($keys)));
-            sort($keys, SORT_STRING);
-
-            // Lock names are server-wide, so they carry the site's database and prefix.
-            $scope = substr(md5($this->app->get('db') . '.' . $db->getPrefix()), 0, 8);
-            $wait  = self::PLACEMENT_LOCK_WAIT;
-
-            foreach ($keys as $key) {
-                $name  = 'j2c' . $scope . ':' . $key;
-                $query = $db->getQuery(true)
-                    ->select('GET_LOCK(:name, :wait)')
-                    ->bind(':name', $name)
-                    ->bind(':wait', $wait, ParameterType::INTEGER);
-
-                if ((int) $db->setQuery($query)->loadResult() !== 1) {
-                    $this->releasePlacementLocks();
-
-                    return false;
-                }
-
-                $this->placementLocks[] = $name;
-            }
+            $keys = array_merge(
+                array_map(static fn ($id): string => 'v:' . (int) $id, $db->setQuery($query)->loadColumn() ?: []),
+                RedemptionHelper::lockKeys($orderId)
+            );
         } catch (\Throwable $e) {
             Log::add('checkout.confirmPayment placement lock failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
-            $this->releasePlacementLocks();
 
             return false;
         }
+
+        // One lock implementation for checkout and admin status changes, so they serialise.
+        $locks = RedemptionHelper::acquireLocks($keys);
+
+        if ($locks === null) {
+            return false;
+        }
+
+        $this->placementLocks = $locks;
 
         return true;
     }
 
     private function releasePlacementLocks(): void
     {
-        if (!$this->placementLocks) {
-            return;
-        }
-
-        $db = Factory::getContainer()->get(DatabaseInterface::class);
-
-        foreach ($this->placementLocks as $name) {
-            try {
-                $db->setQuery($db->getQuery(true)->select('RELEASE_LOCK(:name)')->bind(':name', $name))->loadResult();
-            } catch (\Throwable $e) {
-                Log::add('checkout.confirmPayment placement lock release failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
-            }
-        }
-
+        RedemptionHelper::releaseLocks($this->placementLocks);
         $this->placementLocks = [];
-    }
-
-    /** A coupon with no use limit cannot be over-redeemed, so it is not serialised; an unresolvable one is. */
-    private function couponIsUseLimited(object $couponModel, string $code): bool
-    {
-        $coupon = $couponModel->getCouponByCode($code);
-
-        return !$coupon || (int) $coupon->max_uses > 0 || (int) $coupon->max_customer_uses > 0;
     }
 
     /** Stock checked from the stored lines by the same rules the confirm step applies to the cart. */
@@ -2756,7 +2668,7 @@ class CheckoutController extends BaseController
 
         $table = $this->getMvcFactory()->createTable('Order', 'Administrator');
 
-        if (!$table || !$table->load(['order_id' => $orderId]) || (int) $table->order_state_id !== 5) {
+        if (!$table || !$table->load(['order_id' => $orderId]) || OrderStatusHelper::getType((int) $table->order_state_id) !== OrderStatusHelper::TYPE_NEW) {
             return null;
         }
 
@@ -2888,6 +2800,14 @@ class CheckoutController extends BaseController
         }
 
         $input['order_id'] = $sessionOrderId;
+
+        // The wallet buttons do not pass through confirmPayment(); the same re-payment rule applies
+        // before the gateway is called. Capture is checked by the plugin, ahead of its own capture call.
+        $order = RedemptionHelper::loadOrder($sessionOrderId);
+
+        if ($order && ($refusal = RedemptionHelper::blocksRepayment($order)) !== null) {
+            $this->jsonResponse(['success' => false, 'error' => $refusal]);
+        }
 
         // Dispatch to payment plugin via event
         $event  = J2CommerceHelper::plugin()->event('PaymentCreateOrder', ['payment_paypal', $input]);

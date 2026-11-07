@@ -18,6 +18,7 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Language;
 use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\FileLayout;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\Mail\Mail;
 use Joomla\CMS\Mail\MailerFactoryInterface;
@@ -3325,40 +3326,20 @@ class EmailHelper
         }
 
         $attributeRows = $this->loadOrderItemAttributeRows($items);
-
-        $html  = '<table style="width:100%; border-collapse:collapse;">';
-        $html .= '<thead>';
-        $html .= '<tr style="background:#f5f5f5;">';
-        $html .= '<th style="padding:8px; text-align:left; border:1px solid #ddd;">' . $language->_('COM_J2COMMERCE_EMAIL_PRODUCT') . '</th>';
-        $html .= '<th style="padding:8px; text-align:left; border:1px solid #ddd;">' . $language->_('COM_J2COMMERCE_EMAIL_SKU') . '</th>';
-        $html .= '<th style="padding:8px; text-align:center; border:1px solid #ddd;">' . $language->_('COM_J2COMMERCE_EMAIL_QUANTITY') . '</th>';
-        $html .= '<th style="padding:8px; text-align:center; border:1px solid #ddd;">' . $language->_('COM_J2COMMERCE_FIELD_WEIGHT') . '</th>';
-        $html .= '</tr>';
-        $html .= '</thead>';
-        $html .= '<tbody>';
+        $rows          = [];
 
         foreach ($items as $item) {
-            $html .= '<tr>';
-            $html .= '<td style="padding:8px; border:1px solid #ddd;">';
-            $html .= self::encodeTagDelimiters(htmlspecialchars($item->orderitem_name ?? ''));
-
-            $optionText = $this->decodeOrderItemAttributes($item, $attributeRows);
-
-            if (!empty($optionText)) {
-                $html .= '<br><small style="color:#666;">' . $optionText . '</small>';
-            }
-
-            $html .= '</td>';
-            $html .= '<td style="padding:8px; border:1px solid #ddd;">' . self::encodeTagDelimiters(htmlspecialchars($item->orderitem_sku ?? '')) . '</td>';
-            $html .= '<td style="padding:8px; text-align:center; border:1px solid #ddd;">' . (int) ($item->orderitem_quantity ?? 0) . '</td>';
-            $html .= '<td style="padding:8px; text-align:center; border:1px solid #ddd;">' . (float) ($item->orderitem_weight ?? 0) . '</td>';
-            $html .= '</tr>';
+            $rows[] = [
+                'item'     => $item,
+                'name'     => self::encodeTagDelimiters(htmlspecialchars($item->orderitem_name ?? '')),
+                'sku'      => self::encodeTagDelimiters(htmlspecialchars($item->orderitem_sku ?? '')),
+                'options'  => $this->decodeOrderItemAttributes($item, $attributeRows),
+                'quantity' => (int) ($item->orderitem_quantity ?? 0),
+                'weight'   => (float) ($item->orderitem_weight ?? 0),
+            ];
         }
 
-        $html .= '</tbody>';
-        $html .= '</table>';
-
-        return $html;
+        return $this->renderEmailLayout('email.packing_items', ['language' => $language, 'rows' => $rows]);
     }
 
     protected function loadItemsTemplate(object $order, string $receiverType = '*', ?Language $language = null): string
@@ -3387,55 +3368,83 @@ class EmailHelper
         $currencyCode   = $order->currency_code ?? '';
         $currencyValue  = (float) ($order->currency_value ?? 1);
         $showThumbnails = ConfigHelper::showEmailThumbnails();
-
-        $html = '<table style="width:100%; border-collapse:collapse;">';
-        $html .= '<thead>';
-        $html .= '<tr style="background:#f5f5f5;">';
-        $html .= '<th style="padding:8px; text-align:left; border:1px solid #ddd;">' . $language->_('COM_J2COMMERCE_EMAIL_PRODUCT') . '</th>';
-        $html .= '<th style="padding:8px; text-align:right; border:1px solid #ddd;">' . $language->_('COM_J2COMMERCE_EMAIL_QUANTITY') . '</th>';
-        $html .= '<th style="padding:8px; text-align:right; border:1px solid #ddd;">' . $language->_('COM_J2COMMERCE_EMAIL_PRICE') . '</th>';
-        $html .= '<th style="padding:8px; text-align:right; border:1px solid #ddd;">' . $language->_('COM_J2COMMERCE_EMAIL_TOTAL') . '</th>';
-        $html .= '</tr>';
-        $html .= '</thead>';
-        $html .= '<tbody>';
+        $rows           = [];
 
         foreach ($items as $item) {
             $imageUrl = $showThumbnails
                 ? $this->getProductImageForEmail((int) ($item->product_id ?? 0), $baseURL)
                 : '';
 
-            $html .= '<tr>';
-            $html .= '<td style="padding:8px; border:1px solid #ddd;">';
-
-            if (!empty($imageUrl)) {
-                $html .= '<img src="' . htmlspecialchars($imageUrl) . '" alt="' . self::encodeTagDelimiters(htmlspecialchars($item->orderitem_name ?? '')) . '" width="50" height="50" style="border-radius:4px; object-fit:cover; margin-right:8px; vertical-align:middle;" />';
-            }
-
-            $html .= self::encodeTagDelimiters(htmlspecialchars($item->orderitem_name ?? ''));
-
-            if (!empty($item->orderitem_sku)) {
-                $html .= '<br><small>' . $language->_('COM_J2COMMERCE_EMAIL_SKU') . ': ' . self::encodeTagDelimiters(htmlspecialchars($item->orderitem_sku)) . '</small>';
-            }
-
-            $optionText = $this->decodeOrderItemAttributes($item, $attributeRows);
-
-            if ($optionText !== '') {
-                $html .= '<br><small>' . $optionText . '</small>';
-            }
-
-            $html .= '</td>';
-            $html .= '<td style="padding:8px; text-align:right; border:1px solid #ddd;">' . (int) ($item->orderitem_quantity ?? 0) . '</td>';
-            $html .= '<td style="padding:8px; text-align:right; border:1px solid #ddd;">'
-                . CurrencyHelper::format((float) ($item->orderitem_price ?? 0), $currencyCode, $currencyValue) . '</td>';
-            $html .= '<td style="padding:8px; text-align:right; border:1px solid #ddd;">'
-                . CurrencyHelper::format((float) ($item->orderitem_finalprice ?? 0), $currencyCode, $currencyValue) . '</td>';
-            $html .= '</tr>';
+            $rows[] = [
+                'item'     => $item,
+                'imageUrl' => htmlspecialchars((string) $imageUrl),
+                'name'     => self::encodeTagDelimiters(htmlspecialchars($item->orderitem_name ?? '')),
+                'sku'      => self::encodeTagDelimiters(htmlspecialchars($item->orderitem_sku ?? '')),
+                'options'  => $this->decodeOrderItemAttributes($item, $attributeRows),
+                'quantity' => (int) ($item->orderitem_quantity ?? 0),
+                'price'    => CurrencyHelper::format((float) ($item->orderitem_price ?? 0), $currencyCode, $currencyValue),
+                'total'    => CurrencyHelper::format((float) ($item->orderitem_finalprice ?? 0), $currencyCode, $currencyValue),
+            ];
         }
 
-        $html .= '</tbody>';
-        $html .= '</table>';
+        return $this->renderEmailLayout('email.items', ['language' => $language, 'rows' => $rows]);
+    }
 
-        return $html;
+    /** Explicit search path: FileLayout's default depends on the request's client and component, and a basePath would outrank every override. */
+    private function renderEmailLayout(string $layoutId, array $displayData): string
+    {
+        $coreDir     = JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts';
+        $bufferLevel = ob_get_level();
+
+        foreach ([[...self::emailLayoutOverrideDirs(), $coreDir], [$coreDir]] as $paths) {
+            try {
+                $html = trim((new FileLayout($layoutId))->setIncludePaths($paths)->render($displayData));
+
+                if ($html !== '') {
+                    return $html;
+                }
+
+                $failure = 'rendered nothing';
+            } catch (\Throwable $e) {
+                // FileLayout leaves its output buffer open when the included file throws.
+                while (ob_get_level() > $bufferLevel) {
+                    ob_end_clean();
+                }
+
+                $failure = \sprintf('%s in %s:%d', $e->getMessage(), $e->getFile(), $e->getLine());
+            }
+
+            Log::add(\sprintf('Email layout %s failed: %s', $layoutId, $failure), Log::ERROR, 'com_j2commerce');
+        }
+
+        return '';
+    }
+
+    /** @return string[] Override folders of the default site template, then its parent. */
+    private static function emailLayoutOverrideDirs(): array
+    {
+        static $dirs = null;
+
+        if ($dirs !== null) {
+            return $dirs;
+        }
+
+        $db    = self::getDatabase();
+        $home  = '1';
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['template', 'parent']))
+            ->from($db->quoteName('#__template_styles'))
+            ->where($db->quoteName('client_id') . ' = 0')
+            ->where($db->quoteName('home') . ' = :home')
+            ->bind(':home', $home);
+        $style = $db->setQuery($query)->loadObject();
+        $dirs  = [];
+
+        foreach (array_filter([$style->template ?? '', $style->parent ?? '']) as $template) {
+            $dirs[] = JPATH_SITE . '/templates/' . $template . '/html/layouts/com_j2commerce';
+        }
+
+        return $dirs;
     }
 
     /**

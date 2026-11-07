@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Table;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
 
@@ -57,7 +58,8 @@ class OrderstatusTable extends Table
         try {
             parent::check();
         } catch (\Exception $e) {
-            $this->setError($e->getMessage());
+            Log::add('Order status check failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->setError(Text::_('JERROR_AN_ERROR_HAS_OCCURRED'));
             return false;
         }
 
@@ -138,6 +140,28 @@ class OrderstatusTable extends Table
         $this->modified_on = $date;
         $this->modified_by = (int) $user->id;
 
-        return parent::store($updateNulls);
+        // Later reads in this request must see the type just written, even when the store throws
+        // after the row was committed.
+        try {
+            return parent::store($updateNulls);
+        } finally {
+            OrderStatusHelper::clearCache();
+        }
+    }
+
+    public function delete($pk = null): bool
+    {
+        // The type seed and the installer backfill identify core statuses by these rows.
+        if ($this->load($pk) && (int) $this->orderstatus_core === 1) {
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_CANNOT_DELETE_CORE_ORDERSTATUS'));
+
+            return false;
+        }
+
+        try {
+            return parent::delete($pk);
+        } finally {
+            OrderStatusHelper::clearCache();
+        }
     }
 }

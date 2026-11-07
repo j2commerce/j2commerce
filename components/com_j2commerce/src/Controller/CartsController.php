@@ -841,29 +841,34 @@ class CartsController extends BaseController
         UtilitiesHelper::sendNoCacheHeaders();
         $this->startAjaxBuffer();
 
-        $db       = Factory::getContainer()->get('DatabaseDriver');
-        $language = $this->app->getLanguage()->getTag();
+        $db     = Factory::getContainer()->get('DatabaseDriver');
+        $levels = $this->app->getIdentity()->getAuthorisedViewLevels();
+        $now    = Factory::getDate()->toSql();
+        $tag    = $this->app->getLanguage()->getTag();
 
-        $query = $db->getQuery(true);
-        $query->select('*')
-            ->from($db->quoteName('#__modules'))
-            ->where($db->quoteName('module') . ' = ' . $db->quote('mod_j2commerce_cart'))
-            ->where($db->quoteName('published') . ' = 1')
-            ->where('(' . $db->quoteName('language') . ' = ' . $db->quote('*') . ' OR ' . $db->quoteName('language') . ' = ' . $db->quote($language) . ')');
-
-        $db->setQuery($query);
-        $modules = $db->loadObjectList();
-
-        if (\count($modules) < 1) {
-            $query = $db->getQuery(true);
-            $query->select('*')
+        // Access, language and publish-window filters as in ModuleHelper::getModuleList(). Menu assignment
+        // is skipped: the request carries no Itemid, and the page script only replaces modules it already shows.
+        $load = function (array $languages) use ($db, $levels, $now): array {
+            $query = $db->createQuery()
+                ->select($db->quoteName(['id', 'title', 'module', 'position', 'content', 'showtitle', 'params']))
                 ->from($db->quoteName('#__modules'))
                 ->where($db->quoteName('module') . ' = ' . $db->quote('mod_j2commerce_cart'))
                 ->where($db->quoteName('published') . ' = 1')
-                ->where('(' . $db->quoteName('language') . ' = ' . $db->quote('*') . ' OR ' . $db->quoteName('language') . ' = ' . $db->quote('en-GB') . ')');
+                ->where($db->quoteName('client_id') . ' = 0')
+                ->whereIn($db->quoteName('access'), $levels)
+                ->whereIn($db->quoteName('language'), $languages, ParameterType::STRING)
+                ->where('(' . $db->quoteName('publish_up') . ' IS NULL OR ' . $db->quoteName('publish_up') . ' <= :publishUp)')
+                ->where('(' . $db->quoteName('publish_down') . ' IS NULL OR ' . $db->quoteName('publish_down') . ' >= :publishDown)')
+                ->bind(':publishUp', $now)
+                ->bind(':publishDown', $now);
 
-            $db->setQuery($query);
-            $modules = $db->loadObjectList();
+            return $db->setQuery($query)->loadObjectList();
+        };
+
+        $modules = $load(['*', $tag]);
+
+        if (!$modules && $tag !== 'en-GB') {
+            $modules = $load(['*', 'en-GB']);
         }
 
         $json = [];

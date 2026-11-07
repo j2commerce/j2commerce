@@ -21,6 +21,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\PaymentMethodsHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
+use J2Commerce\Component\J2commerce\Site\View\CustomSubtemplateTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -31,6 +32,8 @@ use Joomla\CMS\Session\Session;
 
 class HtmlView extends BaseHtmlView
 {
+    use CustomSubtemplateTrait;
+
     public array $orders                     = [];
     public string $ordersSearch              = '';
     public ?Pagination $pagination           = null;
@@ -69,7 +72,7 @@ class HtmlView extends BaseHtmlView
         $this->currency = J2CommerceHelper::currency();
         $this->user     = $app->getIdentity();
 
-        $this->registerFrameworkTemplatePaths($app);
+        $framework = $this->registerFrameworkTemplatePaths($app);
 
         $layout  = $this->getLayout();
         $session = $app->getSession();
@@ -83,6 +86,20 @@ class HtmlView extends BaseHtmlView
         if ((!$this->user || (int) $this->user->id === 0) && !$this->isGuest) {
             $this->setLayout('default_login');
             $this->_prepareDocument();
+
+            // Dispatch event to allow a plugin to render the login screen itself,
+            // routed back through parent::display() rather than echoed directly,
+            // so core Joomla view events still fire for it.
+            $viewHtml = J2CommerceHelper::plugin()
+                ->eventWithHtml('ViewMyprofileLoginHtml', [null, &$this])
+                ->getArgument('html', '');
+
+            if (!empty($viewHtml)) {
+                $this->displayPrebuilt($viewHtml);
+
+                return;
+            }
+
             $this->displayOrFallback($tpl);
 
             return;
@@ -191,9 +208,45 @@ class HtmlView extends BaseHtmlView
             $this->afterDisplayOrder = J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayOrder', [$this->orders])->getArgument('html', '');
         }
 
-        // Initialize Bootstrap 5 tabs and modal via Joomla HTMLHelper
-        HTMLHelper::_('bootstrap.tab', 'j2commerceProfileTabs');
-        HTMLHelper::_('bootstrap.modal', 'j2commerceOrderModal');
+        // Document metadata is always prepared here, once, before the event
+        // dispatch below -- regardless of which layout, or whether a plugin
+        // overrides the body.
+        $this->_prepareDocument();
+
+        // Dispatch event to allow a plugin to render this layout's body itself,
+        // routed back through parent::display() rather than echoed directly, so
+        // core Joomla view events still fire for it. Each Myprofile layout gets
+        // its own event name and its own natural data context.
+        $overrideEvent = match ($layout) {
+            'order'       => 'ViewMyprofileOrderHtml',
+            'packingslip' => 'ViewMyprofilePackingslipHtml',
+            'address'     => 'ViewMyprofileAddressHtml',
+            default       => 'ViewMyprofileHtml',
+        };
+        $overrideContext = match ($layout) {
+            'order', 'packingslip' => $this->order,
+            'address'              => $this->address,
+            default                => $this->orders,
+        };
+
+        $viewHtml = J2CommerceHelper::plugin()
+            ->eventWithHtml($overrideEvent, [null, &$this, $overrideContext])
+            ->getArgument('html', '');
+
+        if (!empty($viewHtml)) {
+            $this->displayPrebuilt($viewHtml);
+
+            return;
+        }
+
+        // Initialize Bootstrap 5 tabs and modal via Joomla HTMLHelper -- only when
+        // bootstrap5 is the resolved framework; a uikit (or other) subtemplate
+        // renders its own tab/modal widgets and never emits the data-bs-* markup
+        // these behaviors look for.
+        if ($framework === 'bootstrap5') {
+            HTMLHelper::_('bootstrap.tab', 'j2commerceProfileTabs');
+            HTMLHelper::_('bootstrap.modal', 'j2commerceOrderModal');
+        }
 
         // Register JS
         $wa = $this->getDocument()->getWebAssetManager();
@@ -254,7 +307,6 @@ class HtmlView extends BaseHtmlView
 
         Text::script('COM_J2COMMERCE_LOADING');
 
-        $this->_prepareDocument();
         $this->displayOrFallback($tpl);
     }
 
@@ -301,9 +353,10 @@ class HtmlView extends BaseHtmlView
 
     /**
      * Resolve and register the per-menu-item framework folder so loadTemplate()
-     * and parent::display() pick up the correct framework subfolder.
+     * and parent::display() pick up the correct framework subfolder. Returns the
+     * resolved framework folder name.
      */
-    private function registerFrameworkTemplatePaths(\Joomla\CMS\Application\CMSApplicationInterface $app): void
+    private function registerFrameworkTemplatePaths(\Joomla\CMS\Application\CMSApplicationInterface $app): string
     {
         $framework = SubtemplateHelper::framework($this->params);
 
@@ -342,6 +395,8 @@ class HtmlView extends BaseHtmlView
         if ($candidate !== '' && is_dir($tplRoot . '/' . $candidate)) {
             $this->addTemplatePath($tplRoot . '/' . $candidate);
         }
+
+        return $candidate;
     }
 
     private function validateOrderAccess(object $order, int $userId, string $guestToken, string $guestEmail): bool

@@ -33,6 +33,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderUploadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductTypeHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\RedemptionHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TaxHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UserHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\Trait\CascadingDeleteTrait;
@@ -121,6 +122,35 @@ class OrderModel extends AdminModel
             if ($orderId) {
                 $orderIds[$pk] = (string) $orderId;
             }
+        }
+
+        // A placed order's voucher redemption is part of the card's balance; deleting its rows would
+        // hand that value back with no ledger line, or a second time after a cancellation credit.
+        $holding = [];
+
+        if ($orderIds !== []) {
+            $voucherType = 'voucher';
+            $rows        = $db->setQuery(
+                $db->getQuery(true)
+                    ->select('DISTINCT ' . $db->quoteName(['o.order_id', 'o.order_state_id']))
+                    ->from($db->quoteName('#__j2commerce_orders', 'o'))
+                    ->join('INNER', $db->quoteName('#__j2commerce_orderdiscounts', 'od'), $db->quoteName('od.order_id') . ' = ' . $db->quoteName('o.order_id'))
+                    ->whereIn($db->quoteName('o.order_id'), array_values($orderIds), ParameterType::STRING)
+                    ->where($db->quoteName('od.discount_type') . ' = :voucherType')
+                    ->bind(':voucherType', $voucherType)
+            )->loadObjectList();
+
+            foreach ($rows as $row) {
+                if (OrderStatusHelper::getType((int) $row->order_state_id) !== OrderStatusHelper::TYPE_NEW) {
+                    $holding[] = $row->order_id;
+                }
+            }
+        }
+
+        if ($holding !== []) {
+            $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_ORDER_DELETE_VOUCHER', implode(', ', $holding)));
+
+            return false;
         }
 
         $transactionCount = self::countTransactions($db, array_keys($orderIds));
@@ -292,7 +322,6 @@ class OrderModel extends AdminModel
             'customer_note'     => (string) ($data['customer_note'] ?? ''),
             'customer_group'    => $customerGroup,
             'ip_address'        => '',
-            'order_state_id'    => 5,
             'created_by'        => (int) $user->id,
             'modified_by'       => (int) $user->id,
         ]);
@@ -1125,21 +1154,28 @@ class OrderModel extends AdminModel
      * @param   int     $newStatusId  The new order_state_id.
      * @param   bool    $notify       Whether to notify the customer.
      * @param   string  $comment      Optional comment for history.
+     * @param   bool    $refuseShortfall  A merchant's own change: refuse a move that makes the order
+     *                                    count past a coupon or voucher limit, and return a paid
+     *                                    order's voucher value when it is canceled or failed.
      *
      * @return  bool  True on success.
      */
-    public function updateOrderStatus(int $orderId, int $newStatusId, bool $notify = false, string $comment = ''): bool
+    public function updateOrderStatus(int $orderId, int $newStatusId, bool $notify = false, string $comment = '', bool $refuseShortfall = false): bool
     {
         $db     = $this->getDatabase();
         $now    = Factory::getDate()->toSql();
         $user   = Factory::getApplication()->getIdentity();
         $userId = $user ? $user->id : 0;
 
-        // Get order's order_id (varchar)
+        // Get order's order_id (varchar); the rest is what the redemption re-check reads.
         $query = $db->getQuery(true)
             ->select([
                 $db->quoteName('order_id'),
                 $db->quoteName('order_state_id'),
+                $db->quoteName('user_id'),
+                $db->quoteName('user_email'),
+                $db->quoteName('currency_code'),
+                $db->quoteName('currency_value'),
             ])
             ->from($db->quoteName('#__j2commerce_orders'))
             ->where($db->quoteName('j2commerce_order_id') . ' = :orderId')
@@ -1167,50 +1203,82 @@ class OrderModel extends AdminModel
             return false;
         }
 
-        // Compare-and-swap on the status read above: the write only lands while the order
-        // still holds it. Without the predicate two writers handling the same order — a
-        // webhook redelivery alongside an admin save, or two passes of the hold_stock
-        // sweep — both pass the change check above and both run every side effect below,
-        // appending a second history row, firing the status event twice and re-granting
-        // downloads. Zero affected rows means someone else moved the order first, which is
-        // a completed transition rather than a failure, so it reports success and does no
-        // further work.
-        $updateQuery = $db->getQuery(true)
-            ->update($db->quoteName('#__j2commerce_orders'))
-            ->set($db->quoteName('order_state_id') . ' = :newStatusId')
-            ->set($db->quoteName('modified_on') . ' = :now')
-            ->set($db->quoteName('modified_by') . ' = :userId')
-            ->where($db->quoteName('j2commerce_order_id') . ' = :orderId')
-            ->where($db->quoteName('order_state_id') . ' = :oldStatusId')
-            ->bind(':newStatusId', $newStatusId, ParameterType::INTEGER)
-            ->bind(':now', $now)
-            ->bind(':userId', $userId, ParameterType::INTEGER)
-            ->bind(':orderId', $orderId, ParameterType::INTEGER)
-            ->bind(':oldStatusId', $oldStatusId, ParameterType::INTEGER);
+        // An order that starts counting again is checked against its coupon and voucher limits
+        // under their locks, held until its own redemption counts, so a second order cannot pass
+        // the same check in between. A caller that does not refuse waits only briefly, then moves
+        // the order anyway; RedemptionHelper::onStatusChange() writes any shortfall to its history.
+        $locks = [];
 
-        $db->setQuery($updateQuery);
+        try {
+            if (RedemptionHelper::entersCounting($oldStatusId, $newStatusId)) {
+                $taken = RedemptionHelper::acquireLocks(RedemptionHelper::lockKeys((string) $order->order_id), $refuseShortfall ? 10 : 2);
 
-        if (!$db->execute()) {
-            $this->setError(Text::_('COM_J2COMMERCE_ORDER_STATUS_UPDATE_FAILED'));
-            return false;
+                if ($taken === null && $refuseShortfall) {
+                    $this->setError(Text::_('COM_J2COMMERCE_ERR_REDEMPTION_BUSY'));
+
+                    return false;
+                }
+
+                $locks = $taken ?? [];
+
+                if ($refuseShortfall && ($shortfall = RedemptionHelper::findShortfall($order)) !== null) {
+                    $this->setError($shortfall);
+
+                    return false;
+                }
+            }
+
+            // Compare-and-swap on the status read above: the write only lands while the order
+            // still holds it. Without the predicate two writers handling the same order — a
+            // webhook redelivery alongside an admin save, or two passes of the hold_stock
+            // sweep — both pass the change check above and both run every side effect below,
+            // appending a second history row, firing the status event twice and re-granting
+            // downloads. Zero affected rows means someone else moved the order first, which is
+            // a completed transition rather than a failure, so it reports success and does no
+            // further work.
+            $updateQuery = $db->getQuery(true)
+                ->update($db->quoteName('#__j2commerce_orders'))
+                ->set($db->quoteName('order_state_id') . ' = :newStatusId')
+                ->set($db->quoteName('modified_on') . ' = :now')
+                ->set($db->quoteName('modified_by') . ' = :userId')
+                ->where($db->quoteName('j2commerce_order_id') . ' = :orderId')
+                ->where($db->quoteName('order_state_id') . ' = :oldStatusId')
+                ->bind(':newStatusId', $newStatusId, ParameterType::INTEGER)
+                ->bind(':now', $now)
+                ->bind(':userId', $userId, ParameterType::INTEGER)
+                ->bind(':orderId', $orderId, ParameterType::INTEGER)
+                ->bind(':oldStatusId', $oldStatusId, ParameterType::INTEGER);
+
+            $db->setQuery($updateQuery);
+
+            if (!$db->execute()) {
+                $this->setError(Text::_('COM_J2COMMERCE_ORDER_STATUS_UPDATE_FAILED'));
+                return false;
+            }
+
+            if ($db->getAffectedRows() !== 1) {
+                return true;
+            }
+
+            // Reclaim any customer uploads a later, abandoned order for the same cart took —
+            // see the matching call in OrderTable::store(). Runs on the winner of the
+            // compare-and-swap above, before the status event, so listeners see them.
+            if (OrderStatusHelper::getType($oldStatusId) === OrderStatusHelper::TYPE_NEW
+                && InventoryHelper::statusHoldsStock($newStatusId)) {
+                OrderUploadHelper::attachUploadsToOrder($orderId, (string) $order->order_id);
+            }
+
+            // Inventory. This model writes order_state_id directly rather than through
+            // OrderTable::store(), so without this call every status change made here —
+            // the admin dropdown, the bulk action, the hold_stock sweep and the shipping
+            // plugins — moved the order but left stock untouched in both directions.
+            InventoryHelper::applyStatusTransition($order->order_id, $newStatusId);
+
+            // Before the status event, so a listener reads settled voucher balances.
+            RedemptionHelper::onStatusChange((string) $order->order_id, $oldStatusId, $newStatusId, $refuseShortfall);
+        } finally {
+            RedemptionHelper::releaseLocks($locks);
         }
-
-        if ($db->getAffectedRows() !== 1) {
-            return true;
-        }
-
-        // Reclaim any customer uploads a later, abandoned order for the same cart took —
-        // see the matching call in OrderTable::store(). Runs on the winner of the
-        // compare-and-swap above, before the status event, so listeners see them.
-        if ($oldStatusId === 5 && InventoryHelper::statusHoldsStock($newStatusId)) {
-            OrderUploadHelper::attachUploadsToOrder($orderId, (string) $order->order_id);
-        }
-
-        // Inventory. This model writes order_state_id directly rather than through
-        // OrderTable::store(), so without this call every status change made here —
-        // the admin dropdown, the bulk action, the hold_stock sweep and the shipping
-        // plugins — moved the order but left stock untouched in both directions.
-        InventoryHelper::applyStatusTransition($order->order_id, $newStatusId);
 
         // Add history entry with status change comment if none provided
         $historyComment = $comment;
@@ -3917,6 +3985,10 @@ class OrderModel extends AdminModel
             return [false, Text::_('COM_J2COMMERCE_VOUCHER_DOES_NOT_EXIST')];
         }
 
+        if (RedemptionHelper::releases((int) (RedemptionHelper::loadOrder((string) $order->order_id)->order_state_id ?? 0))) {
+            return [false, Text::_('COM_J2COMMERCE_ERR_VOUCHER_ORDER_RELEASED')];
+        }
+
         // Assign directly instead of setVoucher() — admin edits must not touch the session cart.
         $voucherModel->voucher = $voucher;
 
@@ -3950,7 +4022,27 @@ class OrderModel extends AdminModel
     /** Delete one applied discount row and resync the order discount total. */
     public function removeOrderDiscount(string $orderId, int $discountId): bool
     {
-        $db    = $this->getDatabase();
+        $db = $this->getDatabase();
+
+        // A cancelled or failed order's voucher value has been credited back; removing the row
+        // would return it a second time.
+        $row = $db->setQuery(
+            $db->getQuery(true)
+                ->select($db->quoteName(['od.discount_type', 'o.order_state_id']))
+                ->from($db->quoteName('#__j2commerce_orderdiscounts', 'od'))
+                ->join('LEFT', $db->quoteName('#__j2commerce_orders', 'o'), $db->quoteName('o.order_id') . ' = ' . $db->quoteName('od.order_id'))
+                ->where($db->quoteName('od.j2commerce_orderdiscount_id') . ' = :discountId')
+                ->where($db->quoteName('od.order_id') . ' = :orderId')
+                ->bind(':discountId', $discountId, ParameterType::INTEGER)
+                ->bind(':orderId', $orderId)
+        )->loadObject();
+
+        if ($row && $row->discount_type === 'voucher' && RedemptionHelper::releases((int) $row->order_state_id)) {
+            $this->setError(Text::_('COM_J2COMMERCE_ERR_VOUCHER_ORDER_RELEASED'));
+
+            return false;
+        }
+
         $query = $db->getQuery(true)
             ->delete($db->quoteName('#__j2commerce_orderdiscounts'))
             ->where($db->quoteName('j2commerce_orderdiscount_id') . ' = :discountId')
@@ -4663,7 +4755,7 @@ class OrderModel extends AdminModel
                         $result['customer_sent']++;
                     }
                 } catch (\Throwable $e) {
-                    $errorMsg           = Text::sprintf('COM_J2COMMERCE_EMAIL_SEND_FAILED', $e->getMessage());
+                    $errorMsg           = Text::sprintf('COM_J2COMMERCE_EMAIL_SEND_FAILED', Text::_('JERROR_AN_ERROR_HAS_OCCURRED'));
                     $result['errors'][] = $errorMsg;
                     $this->addOrderHistory($orderId, (int) $order->order_state_id, false, $errorMsg);
                     $emailHelper->logEmailSend($orderId, 'customer', $template->mailer->Subject ?? '', [], false, $e->getMessage());
@@ -4704,7 +4796,7 @@ class OrderModel extends AdminModel
                         $result['admin_sent']++;
                     }
                 } catch (\Throwable $e) {
-                    $errorMsg           = Text::sprintf('COM_J2COMMERCE_EMAIL_SEND_FAILED', $e->getMessage());
+                    $errorMsg           = Text::sprintf('COM_J2COMMERCE_EMAIL_SEND_FAILED', Text::_('JERROR_AN_ERROR_HAS_OCCURRED'));
                     $result['errors'][] = $errorMsg;
                     $emailHelper->logEmailSend($orderId, 'admin', $template->mailer->Subject ?? '', [], false, $e->getMessage());
                     Log::add('Admin order email send failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');

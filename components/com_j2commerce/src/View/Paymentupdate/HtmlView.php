@@ -18,6 +18,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\PaymentupdateContextHelper;
+use J2Commerce\Component\J2commerce\Site\View\CustomSubtemplateTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
@@ -33,6 +34,8 @@ use Joomla\Event\Event;
  */
 class HtmlView extends BaseHtmlView
 {
+    use CustomSubtemplateTrait;
+
     public ?object $params       = null;
     public ?array $context       = null;
     public array $paymentMethods = [];
@@ -51,6 +54,19 @@ class HtmlView extends BaseHtmlView
 
         $this->registerFrameworkTemplatePaths($app);
         $this->_prepareDocument();
+
+        // Dispatch event to allow a plugin to render the whole payment-update view
+        // itself, routed back through parent::display() rather than echoed
+        // directly, so core Joomla view events still fire for it.
+        $viewHtml = J2CommerceHelper::plugin()
+            ->eventWithHtml('ViewPaymentupdateHtml', [null, &$this, $this->context])
+            ->getArgument('html', '');
+
+        if (!empty($viewHtml)) {
+            $this->displayPrebuilt($viewHtml);
+
+            return;
+        }
 
         if ($this->context === null) {
             $this->displayOrFallback($tpl);

@@ -30,6 +30,13 @@ $wa->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2
 $wa->registerAndUseScript('com_j2commerce.optionvalues-sortable', 'media/com_j2commerce/js/administrator/optionvalues-sortable.js', [], ['defer' => true]);
 $wa->registerAndUseStyle('com_j2commerce.optionvalues-sortable', 'media/com_j2commerce/css/administrator/optionvalues-sortable.css');
 
+// Same reason: the "Set Values" modal renders a joomla.form.field.list-fancy-select
+// parent-value picker, but only once adopted into THIS page - so the webcomponent and its
+// Choices.js preset need registering here, not there.
+Text::script('JGLOBAL_SELECT_NO_RESULTS_MATCH');
+Text::script('JGLOBAL_SELECT_PRESS_TO_SELECT');
+$wa->usePreset('choicesjs')->useScript('webcomponent.field-fancy-select');
+
 $item = $displayData['product'];
 $formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
 

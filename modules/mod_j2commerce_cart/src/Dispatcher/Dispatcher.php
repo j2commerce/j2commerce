@@ -132,6 +132,19 @@ class Dispatcher extends AbstractModuleDispatcher
 
         $isAjax = $app->getUserState('mod_j2commerce_mini_cart.isAjax', false);
 
+        // Every layout refreshes through this one script, so a page with several cart modules sends one request.
+        if ($ajaxUrl !== '' && !$isAjax) {
+            $document = $app->getDocument();
+            $document->addScriptOptions('com_j2commerce.minicart', ['refreshUrl' => $ajaxUrl]);
+            $document->getWebAssetManager()->registerAndUseScript(
+                'com_j2commerce.minicart.refresh',
+                'media/com_j2commerce/js/site/minicart-refresh.js',
+                [],
+                ['defer' => true],
+                ['core']
+            );
+        }
+
         $data['productCount']   = $productCount;
         $data['cartTotal']      = $total;
         $data['formattedTotal'] = $formattedTotal;

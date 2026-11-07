@@ -13,6 +13,7 @@
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductTypeHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 
 /**
@@ -20,7 +21,8 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
  *
  * Rendered into a JSON string, so nothing registered here reaches the page: the web asset
  * manager never runs and J2CommerceDom strips scripts on adopt. The drag behaviour and its
- * styling are registered by the views that fetch this fragment.
+ * styling, and the fancy-select webcomponent/preset the parent-value picker below needs, are
+ * all registered by the views that fetch this fragment - see their own asset registration.
  *
  * @var array $displayData
  */
@@ -45,6 +47,14 @@ foreach ($parentOptionValues as $parentOpvalue) {
     $parentOptionArray[$parentOpvalue->j2commerce_product_optionvalue_id] = J2htmlHelper::translateKey($parentOpvalue->optionvalue_name ?? '');
 }
 
+// Same shape fed to every joomla.form.field.list-fancy-select call below.
+$parentOptionChoices = [];
+foreach ($parentOptionArray as $povId => $povName) {
+    $parentOptionChoices[] = (object) ['value' => $povId, 'text' => $povName];
+}
+
+$fancySelectDefaults = ['multiple' => true, 'autofocus' => false, 'onchange' => '', 'dataAttribute' => '', 'readonly' => false, 'disabled' => false, 'hint' => '', 'required' => false];
+
 $isVariableType = ProductTypeHelper::has($product->product_type, ProductTypeHelper::VARIANT_OPTION_EDITOR);
 $hasPriceFields = ($productOption->is_variant ?? 0) != 1;
 $hasDefaultField = ProductTypeHelper::has($product->product_type, ProductTypeHelper::OPTION_VALUE_DEFAULT);
@@ -66,6 +76,15 @@ $currentSpan = $conSpan + 1 + (!$isVariableType && $hasPriceFields && $hasDefaul
             <h3 class="mb-0 fs-6"><?php echo Text::_('COM_J2COMMERCE_PAO_ADD_NEW_OPTION'); ?></h3>
         </div>
         <div class="card-body">
+            <?php /*
+             * table-responsive (overflow-x:auto) so narrow screens still get usable, naturally
+             * sized columns instead of everything crammed into table-layout:fixed. That axis
+             * being non-visible normally forces overflow-y to compute as auto too, which would
+             * clip the fancy-select's dropdown the moment it opened - avoided here by having
+             * the dropdown switch itself to position:fixed while open (see the showDropdown/
+             * hideDropdown handling in form_configoptions.php), which escapes this ancestor's
+             * clipping instead of needing it to stay unclipped.
+             */ ?>
             <div class="table-responsive">
                 <table class="table itemList align-middle">
                     <thead>
@@ -108,11 +127,12 @@ $currentSpan = $conSpan + 1 + (!$isVariableType && $hasPriceFields && $hasDefaul
                         <?php if (!$isVariableType): ?>
                             <?php if ($hasParentField): ?>
                                 <td>
-                                    <select name="parent_optionvalue[]" id="j2commerce_new_parent" class="form-select" multiple>
-                                        <?php foreach ($parentOptionArray as $povId => $povName): ?>
-                                            <option value="<?php echo $povId; ?>"><?php echo htmlspecialchars($povName, ENT_QUOTES, 'UTF-8'); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
+                                    <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', [
+                                        'name'    => 'parent_optionvalue[]',
+                                        'id'      => 'j2commerce_new_parent',
+                                        'value'   => [],
+                                        'options' => $parentOptionChoices,
+                                    ] + $fancySelectDefaults); ?>
                                 </td>
                             <?php endif; ?>
 
@@ -168,6 +188,7 @@ $currentSpan = $conSpan + 1 + (!$isVariableType && $hasPriceFields && $hasDefaul
             </button>
         </div>
         <div class="card-body">
+            <?php // Same reason as the table above: the scrollbox is fine now that the dropdown escapes it. ?>
             <div class="table-responsive">
                 <table class="table itemList align-middle" id="j2commerce-optionvalues-table">
                     <thead>
@@ -229,11 +250,12 @@ $currentSpan = $conSpan + 1 + (!$isVariableType && $hasPriceFields && $hasDefaul
                                             <?php
                                             $currentParentValues = !empty($poptionvalue->parent_optionvalue) ? explode(',', $poptionvalue->parent_optionvalue) : [];
                                             ?>
-                                            <select name="<?php echo $prefix . '[' . $poptionvalue->j2commerce_product_optionvalue_id . '][parent_optionvalue][]'; ?>" class="form-select" multiple>
-                                                <?php foreach ($parentOptionArray as $povId => $povName): ?>
-                                                    <option value="<?php echo $povId; ?>"<?php echo in_array($povId, $currentParentValues) ? ' selected' : ''; ?>><?php echo htmlspecialchars($povName, ENT_QUOTES, 'UTF-8'); ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
+                                            <?php echo LayoutHelper::render('joomla.form.field.list-fancy-select', [
+                                                'name'    => $prefix . '[' . $poptionvalue->j2commerce_product_optionvalue_id . '][parent_optionvalue][]',
+                                                'id'      => 'j2commerce_parent_' . $poptionvalue->j2commerce_product_optionvalue_id,
+                                                'value'   => $currentParentValues,
+                                                'options' => $parentOptionChoices,
+                                            ] + $fancySelectDefaults); ?>
                                         </td>
                                     <?php endif; ?>
 

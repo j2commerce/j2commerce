@@ -18,9 +18,12 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\ConfigHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\DownloadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderUploadHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\RedemptionHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
@@ -42,7 +45,8 @@ class OrderTable extends Table
         try {
             parent::check();
         } catch (\Exception $e) {
-            $this->setError($e->getMessage());
+            Log::add('Order check failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $this->setError(Text::_('JERROR_AN_ERROR_HAS_OCCURRED'));
             return false;
         }
 
@@ -70,9 +74,17 @@ class OrderTable extends Table
             $this->order_type = 'normal';
         }
 
-        // Set default status (5 = incomplete)
+        // Checkout reads "still unplaced" by type, so the default must be a status typed New.
         if (!isset($this->order_state_id) || $this->order_state_id === '') {
-            $this->order_state_id = 5;
+            $newStatusId = OrderStatusHelper::idOfType(OrderStatusHelper::TYPE_NEW, 'J2COMMERCE_NEW');
+
+            if (OrderStatusHelper::getType($newStatusId) !== OrderStatusHelper::TYPE_NEW) {
+                $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_FIELD_REQUIRED', Text::_('COM_J2COMMERCE_ORDERSTATUS')));
+
+                return false;
+            }
+
+            $this->order_state_id = $newStatusId;
         }
 
         if (!isset($this->stock_committed) || $this->stock_committed === '') {
@@ -248,7 +260,8 @@ class OrderTable extends Table
         // Only where the order starts holding: cancelling or failing one must not pull the
         // files off a sibling that is still live, which would strand them on a row that can
         // never give them back.
-        if (!$isNew && $oldStatusId === 5 && InventoryHelper::statusHoldsStock($newStatusId)) {
+        if (!$isNew && OrderStatusHelper::getType($oldStatusId) === OrderStatusHelper::TYPE_NEW
+            && InventoryHelper::statusHoldsStock($newStatusId)) {
             OrderUploadHelper::attachUploadsToOrder(
                 (int) $this->j2commerce_order_id,
                 (string) $this->order_id
@@ -262,6 +275,13 @@ class OrderTable extends Table
 
         if ($committed !== null) {
             $this->stock_committed = $committed;
+        }
+
+        // Voucher value follows the transition, as in OrderModel::updateOrderStatus(). No refusal
+        // here: these writers report a payment already taken, or a free order checkout re-checked
+        // (and never from a canceled or failed order), so a shortfall is recorded instead.
+        if (!$isNew) {
+            RedemptionHelper::onStatusChange((string) $this->order_id, (int) $oldStatusId, $newStatusId);
         }
 
         // Trigger plugin event for status change

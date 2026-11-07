@@ -20,11 +20,16 @@ use Joomla\CMS\Session\Session;
 
 // Adopts the option-values markup this view fetches. Deferred, so it has run before any fetch callback.
 // Drag-ordering is registered here too: the fragment is adopted as markup only, so its own asset
-// registrations and scripts never reach the page.
+// registrations and scripts never reach the page. Same reason for the fancy-select webcomponent/
+// preset the "Set Values" modal's parent-value picker needs.
+Text::script('JGLOBAL_SELECT_NO_RESULTS_MATCH');
+Text::script('JGLOBAL_SELECT_PRESS_TO_SELECT');
 Factory::getApplication()->getDocument()->getWebAssetManager()
     ->registerAndUseScript('com_j2commerce.dom', 'media/com_j2commerce/js/site/j2commerce-dom.js', [], ['defer' => true])
     ->registerAndUseScript('com_j2commerce.optionvalues-sortable', 'media/com_j2commerce/js/administrator/optionvalues-sortable.js', [], ['defer' => true])
-    ->registerAndUseStyle('com_j2commerce.optionvalues-sortable', 'media/com_j2commerce/css/administrator/optionvalues-sortable.css');
+    ->registerAndUseStyle('com_j2commerce.optionvalues-sortable', 'media/com_j2commerce/css/administrator/optionvalues-sortable.css')
+    ->usePreset('choicesjs')
+    ->useScript('webcomponent.field-fancy-select');
 
 $item        = $displayData['product'];
 $formPrefix = $displayData['form_prefix'] ?? 'jform[attribs][j2commerce]';
