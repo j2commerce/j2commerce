@@ -28,7 +28,16 @@ use Joomla\Database\QueryInterface;
 final class VariantMatrixService
 {
     /** Keys of a create-time or patch-time `variants` entry every matrix type accepts. */
-    public const ENTRY_KEYS = ['sku', 'upc', 'price', 'quantity', 'isdefault_variant', 'params'];
+    public const ENTRY_KEYS = ['sku', 'upc', 'price', 'quantity', 'isdefault_variant', 'params', 'advanced_prices'];
+
+    /** Keys of one `advanced_prices` row: price is required; any other key left out or null applies to every group, quantity or date, as in the admin Advanced Pricing form. */
+    public const ADVANCED_PRICE_KEYS = ['price', 'customer_group_id', 'quantity_from', 'quantity_to', 'date_from', 'date_to'];
+
+    /** Most advanced price rows one variant may carry through the API. */
+    public const MAX_ADVANCED_PRICES = 50;
+
+    /** @var array<int, true>|null */
+    private ?array $userGroupIds = null;
 
     private const VARIANT_TABLES = ['#__j2commerce_productquantities', '#__j2commerce_product_prices', '#__j2commerce_product_variant_optionvalues'];
 
@@ -451,6 +460,10 @@ final class VariantMatrixService
 
         if ($requested) {
             $this->writeQuantity($variantId, (int) ($entry['quantity'] ?? 0));
+
+            if (isset($entry['advanced_prices'])) {
+                $this->replaceAdvancedPrices($variantId, $entry['advanced_prices']);
+            }
         }
 
         return $variantId;
@@ -575,6 +588,10 @@ final class VariantMatrixService
         }
 
         $this->writeQuantity($variantId, (int) ($fields['quantity'] ?? 0));
+
+        if (isset($fields['advanced_prices'])) {
+            $this->replaceAdvancedPrices($variantId, $fields['advanced_prices']);
+        }
 
         if ($fields !== []) {
             if ($prices === null) {
@@ -926,8 +943,9 @@ final class VariantMatrixService
             return [];
         }
 
-        $values = $this->valueIndex($options ?? (new ProductOptionService($this->mvcFactory, $this->db))->productOptions($productId));
-        $out    = [];
+        $values   = $this->valueIndex($options ?? (new ProductOptionService($this->mvcFactory, $this->db))->productOptions($productId));
+        $advanced = $this->advancedPricesOf(array_map(static fn (object $r): int => (int) $r->j2commerce_variant_id, $rows));
+        $out      = [];
 
         foreach ($rows as $row) {
             $picked = [];
@@ -948,6 +966,7 @@ final class VariantMatrixService
                 'quantity'              => (int) ($row->quantity ?? 0),
                 'isdefault_variant'     => (int) $row->isdefault_variant,
                 'params'                => \is_object($params) ? $params : new \stdClass(),
+                'advanced_prices'       => $advanced[(int) $row->j2commerce_variant_id] ?? [],
                 'options'               => $picked,
             ];
         }
@@ -1028,6 +1047,7 @@ final class VariantMatrixService
             $out[]            = $entry;
         }
 
+        self::assertAdvancedTotal($out, $pointer);
         $this->applyDefaultRule($out, $pointer);
 
         return $out;
@@ -1109,6 +1129,7 @@ final class VariantMatrixService
             $out[]          = $entry;
         }
 
+        self::assertAdvancedTotal($out, $pointer);
         $this->applyDefaultRule($out, $pointer);
 
         return $out;
@@ -1178,6 +1199,8 @@ final class VariantMatrixService
         $add       = $this->validateAdds($productId, $add, $pointer, $mode, $extraKeys);
 
         $this->assertPatchSkus($productId, $skuUpdates, $add, $positions, $delete, $pointer);
+
+        self::assertAdvancedTotal(array_merge($update, $add), $pointer . '/upsert');
 
         $defaults = \count(array_filter(array_merge($update, $add), static fn (array $e): bool => ($e['isdefault_variant'] ?? 0) === 1));
 
@@ -1358,7 +1381,245 @@ final class VariantMatrixService
             $out['isdefault_variant'] = (int) $default;
         }
 
+        if (\array_key_exists('advanced_prices', $variant)) {
+            $out['advanced_prices'] = $this->normaliseAdvancedPrices($variant['advanced_prices'], $pointer . '/advanced_prices');
+        }
+
         return $out + $this->normaliseEntryText($variant, $pointer, $create) + $this->normaliseEntryParams($variant, $pointer, $create);
+    }
+
+    /**
+     * An `advanced_prices` list as the rows #__j2commerce_product_prices stores: price as the column-scale string, every other key
+     * null when left out (it then applies to every customer group, quantity or date, as the storefront reads it).
+     *
+     * @return list<array{price: string, customer_group_id: ?int, quantity_from: ?string, quantity_to: ?string, date_from: ?string, date_to: ?string}>
+     * @throws ProductApiException
+     */
+    private function normaliseAdvancedPrices(mixed $rows, string $pointer): array
+    {
+        if (!\is_array($rows) || !array_is_list($rows)) {
+            throw ProductApiException::single(400, $pointer, 'must be a list of {price, customer_group_id?, quantity_from?, quantity_to?, date_from?, date_to?}; [] removes them.');
+        }
+
+        if (\count($rows) > self::MAX_ADVANCED_PRICES) {
+            throw ProductApiException::single(400, $pointer, \sprintf('must not hold more than %d rows.', self::MAX_ADVANCED_PRICES));
+        }
+
+        $out = [];
+
+        foreach ($rows as $n => $row) {
+            $out[] = $this->normaliseAdvancedPrice($row, $pointer . '/' . $n);
+        }
+
+        return $out;
+    }
+
+    /** @return array{price: string, customer_group_id: ?int, quantity_from: ?string, quantity_to: ?string, date_from: ?string, date_to: ?string} */
+    private function normaliseAdvancedPrice(mixed $row, string $at): array
+    {
+        if (!\is_array($row) || array_diff_key($row, array_flip(self::ADVANCED_PRICE_KEYS)) !== []) {
+            throw ProductApiException::single(400, $at, 'accepts: ' . implode(', ', self::ADVANCED_PRICE_KEYS) . '.');
+        }
+
+        $price = ProductApiSchema::money($row['price'] ?? null)
+            ?? throw ProductApiException::single(400, $at . '/price', \sprintf('must be a number from 0 to %s.', number_format(ProductApiSchema::PRICE_MAX, ProductApiSchema::PRICE_SCALE, '.', '')));
+
+        $from     = $this->advancedQuantity($row['quantity_from'] ?? null, $at . '/quantity_from');
+        $to       = $this->advancedQuantity($row['quantity_to'] ?? null, $at . '/quantity_to');
+        $dateFrom = $this->advancedDate($row['date_from'] ?? null, $at . '/date_from', false);
+        $dateTo   = $this->advancedDate($row['date_to'] ?? null, $at . '/date_to', true);
+
+        self::assertRange($from === null ? null : (float) $from, $to === null ? null : (float) $to, $at . '/quantity_to', 'must not be below quantity_from.');
+        self::assertRange($dateFrom, $dateTo, $at . '/date_to', 'must not be before date_from.');
+
+        return [
+            'price'             => $price,
+            'customer_group_id' => $this->advancedGroup($row['customer_group_id'] ?? null, $at . '/customer_group_id'),
+            'quantity_from'     => $from,
+            'quantity_to'       => $to,
+            'date_from'         => $dateFrom,
+            'date_to'           => $dateTo,
+        ];
+    }
+
+    /** An existing user group id, or null for every group. */
+    private function advancedGroup(mixed $value, string $pointer): ?int
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (!ProductOptionService::uint($value) || !isset($this->userGroupIds()[(int) $value])) {
+            throw ProductApiException::single(400, $pointer, 'must be an existing user group id, or null for every group.');
+        }
+
+        return (int) $value;
+    }
+
+    private static function assertRange(float|string|null $from, float|string|null $to, string $pointer, string $message): void
+    {
+        if ($from !== null && $to !== null && $to < $from) {
+            throw ProductApiException::single(400, $pointer, $message);
+        }
+    }
+
+    /** A quantity bound as the decimal(15,5) string, or null for no bound (0 is stored as no bound, as the admin form does). */
+    private function advancedQuantity(mixed $value, string $pointer): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $quantity = ProductApiSchema::money($value)
+            ?? throw ProductApiException::single(400, $pointer, 'must be a number of 0 or more, or null for no bound.');
+
+        return (float) $quantity == 0.0 ? null : $quantity;
+    }
+
+    /**
+     * A UTC date as 'Y-m-d H:i:s' from 'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM:SS', or null for no bound. A date-only end bound covers
+     * the whole day (23:59:59), because the storefront applies a row while date_to is not yet passed.
+     */
+    private function advancedDate(mixed $value, string $pointer, bool $end): ?string
+    {
+        $text = \is_string($value) ? trim($value) : $value;
+
+        if ($text === null || $text === '') {
+            return null;
+        }
+
+        if (\is_string($text) && preg_match('/^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}:\d{2})?$/D', $text, $m) === 1) {
+            $date = \DateTimeImmutable::createFromFormat(isset($m[1]) ? '!Y-m-d H:i:s' : '!Y-m-d', $text, new \DateTimeZone('UTC'));
+
+            if ($date !== false && \DateTimeImmutable::getLastErrors() === false) {
+                return isset($m[1]) || !$end ? $date->format('Y-m-d H:i:s') : $date->format('Y-m-d') . ' 23:59:59';
+            }
+        }
+
+        throw ProductApiException::single(400, $pointer, 'must be a UTC date as YYYY-MM-DD or YYYY-MM-DD HH:MM:SS, or null for no bound.');
+    }
+
+    /**
+     * The request-wide cap on advanced price rows across every entry of one `variants` document.
+     *
+     * @param list<array<string, mixed>> $entries  normalised entries.
+     */
+    private static function assertAdvancedTotal(array $entries, string $pointer): void
+    {
+        $total = array_sum(array_map(static fn (array $e): int => \count($e['advanced_prices'] ?? []), $entries));
+
+        if ($total > ProductApiSchema::MAX_LIST) {
+            throw ProductApiException::single(400, $pointer, \sprintf('the advanced_prices of all entries must not add up to more than %d rows.', ProductApiSchema::MAX_LIST));
+        }
+    }
+
+    /**
+     * Replaces a child's advanced prices with the normalised rows; [] removes them all.
+     *
+     * @param list<array<string, mixed>> $rows  normaliseAdvancedPrices() output.
+     */
+    private function replaceAdvancedPrices(int $variantId, array $rows): void
+    {
+        $db      = $this->db;
+        $columns = ['variant_id', 'price', 'customer_group_id', 'quantity_from', 'quantity_to', 'date_from', 'date_to'];
+
+        $db->transactionStart(true);
+
+        try {
+            $delete = $db->getQuery(true)
+                ->delete($db->quoteName('#__j2commerce_product_prices'))
+                ->where($db->quoteName('variant_id') . ' = :vid')
+                ->bind(':vid', $variantId, ParameterType::INTEGER);
+            $db->setQuery($delete)->execute();
+
+            if ($rows !== []) {
+                $insert = $db->getQuery(true)->insert($db->quoteName('#__j2commerce_product_prices'))->columns($db->quoteName($columns));
+                $values = [];
+
+                foreach (array_keys($rows) as $n) {
+                    $rows[$n]['variant_id'] = $variantId;
+                    $marks                  = [];
+
+                    foreach ($columns as $column) {
+                        $mark    = ':p' . $n . '_' . $column;
+                        $marks[] = $mark;
+                        $insert->bind($mark, $rows[$n][$column], $rows[$n][$column] === null ? ParameterType::NULL : ($column === 'variant_id' || $column === 'customer_group_id' ? ParameterType::INTEGER : ParameterType::STRING));
+                    }
+
+                    $values[] = implode(',', $marks);
+                }
+
+                $db->setQuery($insert->values($values))->execute();
+            }
+
+            $db->transactionCommit(true);
+        } catch (\Throwable $e) {
+            $db->transactionRollback(true);
+
+            throw $e;
+        }
+    }
+
+    /** @return array<int, true>  #__usergroups ids, read once per service instance (one request). */
+    private function userGroupIds(): array
+    {
+        return $this->userGroupIds ??= array_fill_keys(array_map('intval', $this->db->setQuery(
+            $this->db->getQuery(true)->select($this->db->quoteName('id'))->from($this->db->quoteName('#__usergroups'))
+        )->loadColumn() ?: []), true);
+    }
+
+    /**
+     * The `advanced_prices` of patch update entries, written after the product save (which does not touch them). An entry
+     * without the key keeps its stored rows.
+     *
+     * @param list<array<string, mixed>> $updates  validateVariantsPatch()['update'].
+     */
+    public function applyAdvancedPrices(array $updates): void
+    {
+        foreach ($updates as $entry) {
+            if (\array_key_exists('advanced_prices', $entry)) {
+                $this->replaceAdvancedPrices((int) $entry['id'], $entry['advanced_prices']);
+            }
+        }
+    }
+
+    /**
+     * Each child's advanced prices as GET renders them.
+     *
+     * @param list<int> $variantIds
+     * @return array<int, list<array<string, mixed>>>  variant id => rows, in insertion order (the order a replace wrote them).
+     */
+    public function advancedPricesOf(array $variantIds): array
+    {
+        if ($variantIds === []) {
+            return [];
+        }
+
+        $db    = $this->db;
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['variant_id', 'price', 'customer_group_id', 'quantity_from', 'quantity_to', 'date_from', 'date_to']))
+            ->from($db->quoteName('#__j2commerce_product_prices'))
+            ->whereIn($db->quoteName('variant_id'), array_map('intval', $variantIds))
+            ->order($db->quoteName('variant_id') . ', ' . $db->quoteName('j2commerce_productprice_id'));
+        $out   = [];
+
+        foreach ($db->setQuery($query)->loadObjectList() as $row) {
+            $out[(int) $row->variant_id][] = [
+                'price'             => number_format((float) $row->price, ProductApiSchema::PRICE_SCALE, '.', ''),
+                'customer_group_id' => (int) $row->customer_group_id > 0 ? (int) $row->customer_group_id : null,
+                'quantity_from'     => $row->quantity_from === null || (float) $row->quantity_from == 0.0 ? null : number_format((float) $row->quantity_from, ProductApiSchema::PRICE_SCALE, '.', ''),
+                'quantity_to'       => $row->quantity_to === null || (float) $row->quantity_to == 0.0 ? null : number_format((float) $row->quantity_to, ProductApiSchema::PRICE_SCALE, '.', ''),
+                'date_from'         => self::storedDate($row->date_from),
+                'date_to'           => self::storedDate($row->date_to),
+            ];
+        }
+
+        return $out;
+    }
+
+    private static function storedDate(?string $value): ?string
+    {
+        return $value === null || $value === '' || str_starts_with($value, '0000-00-00') ? null : $value;
     }
 
     /** @return array<string, string>  sku and upc, trimmed; on patch only the ones sent. */
