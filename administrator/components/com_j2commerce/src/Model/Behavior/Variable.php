@@ -849,8 +849,11 @@ class Variable implements ProductApiHandlerInterface
                 . 'Patch: {attach: [...], detach: [productoption ids], values: {upsert: [{productoption_id, optionvalue_id}], delete: [product_optionvalue ids]}}; '
                 . 'a deleted value takes the variants built on it, unless one is on an order.'),
             'variants' => ProductApiSchema::key('list|object', true, 'both', 'Create: [{options: [one optionvalue id per option], sku?, upc?, price, quantity?, '
-                . 'isdefault_variant?, params?}]. Patch: {upsert: [{id, ...} | {options: [...], price, ...}], delete: [variant ids]}. '
-                . 'quantity sent turns stock management on for the child; shipping follows the master; the master quantity is refused.'),
+                . 'isdefault_variant?, params?, advanced_prices?}]. Patch: {upsert: [{id, ...} | {options: [...], price, ...}], delete: [variant ids]}. '
+                . 'quantity sent turns stock management on for the child; shipping follows the master; the master quantity is refused. '
+                . 'advanced_prices: [{price, customer_group_id?, quantity_from?, quantity_to?, date_from?, date_to?}] replaces the child\'s advanced prices '
+                . '([] removes them, leaving it out keeps them); a key left out or null applies to every group, quantity or date. Dates are UTC '
+                . 'YYYY-MM-DD or YYYY-MM-DD HH:MM:SS, a date-only date_to covering the whole day; at most 50 rows per entry and 500 per request.'),
         ]);
     }
 
@@ -913,6 +916,7 @@ class Variable implements ProductApiHandlerInterface
                 'quantity'                => $variant['quantity'] ?? null,
                 'isdefault_variant'       => $variant['isdefault_variant'],
                 'params'                  => $variant['params'],
+                'advanced_prices'         => $variant['advanced_prices'] ?? null,
                 'pointer'                 => $variant['pointer'] ?? null,
             ];
         }
@@ -950,6 +954,7 @@ class Variable implements ProductApiHandlerInterface
         $this->apiSaveProduct($payload, $variable);
 
         if ($document['variants'] !== null) {
+            $variants->applyAdvancedPrices($document['variants']['update']);
             $variants->assertPricesStored(array_column(array_filter($document['variants']['update'], static fn (array $e): bool => isset($e['price'])), 'price', 'id'));
             $variants->ensureDefault($productId);
         }

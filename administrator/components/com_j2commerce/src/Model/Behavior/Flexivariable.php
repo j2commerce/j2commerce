@@ -1140,8 +1140,9 @@ class Flexivariable implements ProductApiHandlerInterface
             'options' => ProductApiSchema::key('list|object', true, 'both', 'Create: [{option_id, values: [optionvalue ids the picks may use]}]. '
                 . 'Patch: {attach: [...], detach: [productoption ids]}; values are created per pick, not shared.'),
             'variants' => ProductApiSchema::key('list|object', true, 'both', 'Create: [{picks: {"<option_id>": optionvalue id | 0 for any}, sku?, upc?, price, '
-                . 'quantity?, isdefault_variant?, params?}]. Patch: {upsert: [{id, ...} | {picks, price, ...}], delete: [variant ids]}. '
-                . 'quantity sent turns stock management on for the child; shipping follows the master; the master quantity is refused.'),
+                . 'quantity?, isdefault_variant?, params?, advanced_prices?}]. Patch: {upsert: [{id, ...} | {picks, price, ...}], delete: [variant ids]}. '
+                . 'quantity sent turns stock management on for the child; shipping follows the master; the master quantity is refused. '
+                . 'advanced_prices: as on variable products.'),
         ]);
     }
 
@@ -1240,6 +1241,7 @@ class Flexivariable implements ProductApiHandlerInterface
         }
 
         if ($document['variants'] !== null) {
+            $variants->applyAdvancedPrices($document['variants']['update']);
             $variants->assertPricesStored(array_column(array_filter($document['variants']['update'], static fn (array $e): bool => isset($e['price'])), 'price', 'id'));
             $variants->ensureDefault($productId);
         }
@@ -1304,7 +1306,7 @@ class Flexivariable implements ProductApiHandlerInterface
                 $picks[$optionMap[$optionId]] = $valueId;
             }
 
-            $fields = array_intersect_key($variant, array_flip(['price', 'upc', 'quantity', 'isdefault_variant', 'params']));
+            $fields = array_intersect_key($variant, array_flip(['price', 'upc', 'quantity', 'isdefault_variant', 'params', 'advanced_prices']));
             $variants->addCombination($productId, $picks, $variant['sku'] !== '' ? $variant['sku'] : null, $fields, false, $master, $prices);
         }
 
