@@ -2394,8 +2394,15 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
-        $option  = $input->getCmd('option');
-        $view    = $input->getCmd('view');
+        $option = $input->getCmd('option');
+        $view   = $input->getCmd('view');
+
+        if ($mode === 'product' && $option === 'com_content' && $view === 'category') {
+            $this->redirectProductCategoryList($app, $id);
+
+            return;
+        }
+
         $surface = match (true) {
             $option === 'com_content' && $view === 'article'        => 'article',
             $option === self::COMPONENT_NAME && $view === 'product' => 'product',
@@ -2435,7 +2442,99 @@ class J2Commerce extends CMSPlugin implements SubscriberInterface
             return;
         }
 
+        // Who is redirected depends on the visitor, so the browser must not keep the 301.
+        $app->allowCache(false);
         $app->redirect($url, 301);
+    }
+
+    /** Redirects only when every published article in the category tree backs a product; otherwise ordinary articles would vanish. */
+    private function redirectProductCategoryList(SiteApplication $app, int $catid): void
+    {
+        $active = $app->getMenu()->getActive();
+
+        if ($active !== null && ($active->query['option'] ?? '') === 'com_content'
+            && ($active->query['view'] ?? '') === 'category' && (int) ($active->query['id'] ?? 0) === $catid) {
+            return;
+        }
+
+        $user = $app->getIdentity();
+
+        if ($user?->authorise('core.edit', 'com_content.category.' . $catid)) {
+            return;
+        }
+
+        // Only what this visitor can see counts: a hidden or scheduled article never keeps the article list.
+        $levels = $user?->getAuthorisedViewLevels() ?? [1];
+        $now    = Factory::getDate()->toSql();
+
+        try {
+            $db   = $this->getDatabase();
+            $base = $db->getQuery(true)
+                ->from($db->quoteName('#__categories', 'root'))
+                ->join(
+                    'INNER',
+                    $db->quoteName('#__categories', 'c'),
+                    $db->quoteName('c.lft') . ' BETWEEN ' . $db->quoteName('root.lft') . ' AND ' . $db->quoteName('root.rgt')
+                        . ' AND ' . $db->quoteName('c.extension') . ' = ' . $db->quote('com_content')
+                        . ' AND ' . $db->quoteName('c.published') . ' = 1'
+                )
+                ->join(
+                    'INNER',
+                    $db->quoteName('#__content', 'a'),
+                    $db->quoteName('a.catid') . ' = ' . $db->quoteName('c.id') . ' AND ' . $db->quoteName('a.state') . ' = 1'
+                )
+                ->join(
+                    'LEFT',
+                    $db->quoteName('#__j2commerce_products', 'p'),
+                    $db->quoteName('p.product_source') . ' = ' . $db->quote('com_content')
+                        . ' AND ' . $db->quoteName('p.product_source_id') . ' = ' . $db->quoteName('a.id')
+                )
+                ->where($db->quoteName('root.id') . ' = :catid')
+                ->where($db->quoteName('root.extension') . ' = ' . $db->quote('com_content'))
+                ->where($db->quoteName('root.published') . ' = 1')
+                ->whereIn($db->quoteName('root.access'), $levels)
+                ->whereIn($db->quoteName('c.access'), $levels)
+                ->whereIn($db->quoteName('a.access'), $levels)
+                ->where('(' . $db->quoteName('a.publish_up') . ' IS NULL OR ' . $db->quoteName('a.publish_up') . ' <= :nowUp)')
+                ->where('(' . $db->quoteName('a.publish_down') . ' IS NULL OR ' . $db->quoteName('a.publish_down') . ' >= :nowDown)')
+                ->bind(':catid', $catid, ParameterType::INTEGER)
+                ->bind(':nowUp', $now)
+                ->bind(':nowDown', $now);
+
+            // One ordinary article settles it: no need to count the tree.
+            $ordinary = (clone $base)
+                ->select($db->quoteName('a.id'))
+                ->where($db->quoteName('p.j2commerce_product_id') . ' IS NULL')
+                ->setLimit(1);
+
+            if ($db->setQuery($ordinary)->loadResult() !== null) {
+                return;
+            }
+
+            $language = $db->setQuery(
+                (clone $base)->select($db->quoteName('root.language'))->setLimit(1)
+            )->loadResult();
+        } catch (\Exception) {
+            return; // Fail open: the article list stays.
+        }
+
+        // null = the tree holds no published article at all.
+        if ($language === null) {
+            return;
+        }
+
+        $link = RouteHelper::getCategoryRoute($catid, null, $language);
+
+        // A J2Commerce categories menu item for this very category is its own listing.
+        foreach ($app->getMenu()->getItems('component', self::COMPONENT_NAME) as $item) {
+            if (($item->query['view'] ?? '') === 'categories' && (int) ($item->query['id'] ?? 0) === $catid) {
+                $link = RouteHelper::getCategoriesRoute($catid, $language);
+                break;
+            }
+        }
+
+        $app->allowCache(false);
+        $app->redirect(Route::_($link, false, Route::TLS_IGNORE, true), 301);
     }
 
     /**
