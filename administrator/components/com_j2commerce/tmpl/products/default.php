@@ -17,6 +17,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\Button\PublishedButton;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
+use Joomla\CMS\Language\Associations;
 use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -32,6 +33,7 @@ $wa->useScript('table.columns')
 
 $listOrder = $this->escape($this->state->get('list.ordering'));
 $listDirn  = $this->escape($this->state->get('list.direction'));
+$assoc     = Associations::isEnabled();
 
 // Helper function to extract clean image path from Joomla image string
 $getImagePath = function(?string $imagePath): string {
@@ -98,6 +100,11 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                                 <th scope="col" class="w-5 text-center d-none d-lg-table-cell">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_VISIBILITY', 'a.visibility', $listDirn, $listOrder); ?>
                                 </th>
+                                <?php if ($assoc) : ?>
+                                    <th scope="col" class="w-5 d-none d-md-table-cell">
+                                        <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTENT_HEADING_ASSOCIATION', 'association', $listDirn, $listOrder); ?>
+                                    </th>
+                                <?php endif; ?>
                                 <?php if (Multilanguage::isEnabled()) : ?>
                                     <th scope="col" class="w-10 d-none d-md-table-cell">
                                         <?php echo HTMLHelper::_('searchtools.sort', 'JGRID_HEADING_LANGUAGE', 'language', $listDirn, $listOrder); ?>
@@ -198,6 +205,34 @@ $canChangeState = $user->authorise('core.edit.state', 'com_content');
                                         <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-danger'); ?>"><?php echo Text::_('JNO'); ?></span>
                                     <?php endif; ?>
                                 </td>
+                                <?php if ($assoc) : ?>
+                                    <td class="d-none d-md-table-cell">
+                                        <?php if ($item->association) : ?>
+                                            <?php
+                                            $associationHtml = HTMLHelper::_('contentadministrator.association', $item->product_source_id);
+
+                                            // Core's own layout (layouts/joomla/content/associations.php) renders a bare
+                                            // <ul class="item-associations">, whose default bottom margin adds unwanted height to this row.
+                                            $associationHtml = str_replace(
+                                                'class="item-associations"',
+                                                'class="item-associations mb-0"',
+                                                $associationHtml
+                                            );
+
+                                            // Core's AdministratorService::association() builds each badge's link with no
+                                            // &return=, so saving or closing the associated article lands on com_content's
+                                            // own article list instead of back here. One link per associated language.
+                                            $associationHtml = preg_replace(
+                                                '/task=article\.edit&(?:amp;)?id=(\d+)/',
+                                                'task=article.edit&amp;id=$1&amp;return=' . $returnUrl,
+                                                $associationHtml
+                                            );
+
+                                            echo $associationHtml;
+                                            ?>
+                                        <?php endif; ?>
+                                    </td>
+                                <?php endif; ?>
                                 <?php if (Multilanguage::isEnabled()) : ?>
                                     <td class="small d-none d-md-table-cell">
                                         <?php echo LayoutHelper::render('joomla.content.language', $item); ?>
