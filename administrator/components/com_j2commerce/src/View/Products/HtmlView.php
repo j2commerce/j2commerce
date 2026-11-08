@@ -113,6 +113,15 @@ class HtmlView extends BaseHtmlView
             return;
         }
 
+        // The Association column reuses com_content's own HTMLHelper::_('contentadministrator.association', ...)
+        // renderer unchanged — a product's association IS its article's. That renderer is only
+        // registered with the shared HTML service registry once ContentComponent::boot() runs,
+        // which nothing on a com_j2commerce screen otherwise triggers. Its header also reuses
+        // com_content's own string rather than duplicating it across every shipped translation,
+        // and that language file is likewise not loaded by default here.
+        Factory::getApplication()->bootComponent('com_content');
+        Factory::getApplication()->getLanguage()->load('com_content', JPATH_ADMINISTRATOR);
+
         $this->loadAdminAssets();
         $app    = Factory::getApplication();
         $layout = $app->getInput()->getCmd('layout', 'default');
