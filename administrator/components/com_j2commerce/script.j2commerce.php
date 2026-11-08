@@ -872,6 +872,7 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
         $this->seedStockCommitted();
         $this->repairVariantAvailability();
         $this->repairUploadsClientIp();
+        $this->ensureCartReminderTemplate();
         $this->removeLegacyDebugLog();
         $this->splitLimitOrderstatuses();
         $this->seedDownloadOrderstatuses();
@@ -1052,6 +1053,52 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
         } catch (\Throwable $e) {
             $this->debugLog('AVAILABILITY: repair failed (see the j2commerce log)');
             Log::add('Variant availability repair failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
+        }
+    }
+
+    /**
+     * Seed the Cart Reminder email template when it is missing. Database -> Fix never replays an
+     * INSERT, so a site whose schema version moved past 6.6.5-2026-10-20-2 without running it has
+     * no template and CartReminderHelper::sendDue() sends nothing. Replays that delta's own
+     * guarded INSERT ... WHERE NOT EXISTS instead of carrying another copy of the template body;
+     * CoreTemplateSyncHelper is not used because it rewrites every core template row. Idempotent.
+     */
+    private function ensureCartReminderTemplate(): void
+    {
+        $db      = Factory::getContainer()->get(DatabaseInterface::class);
+        $coreKey = 'email.cartreminder.customer';
+
+        try {
+            $query = $db->getQuery(true)
+                ->select('COUNT(*)')
+                ->from($db->quoteName('#__j2commerce_emailtemplates'))
+                ->where($db->quoteName('core_key') . ' = :coreKey')
+                ->bind(':coreKey', $coreKey);
+
+            if ((int) $db->setQuery($query)->loadResult() > 0) {
+                return;
+            }
+
+            $delta = JPATH_ADMINISTRATOR . '/components/com_j2commerce/sql/updates/mysql/6.6.5-2026-10-20-2.sql';
+
+            if (!is_file($delta)) {
+                $this->debugLog('CART REMINDER: delta file missing, template not seeded');
+                return;
+            }
+
+            foreach (DatabaseDriver::splitSql((string) file_get_contents($delta)) as $statement) {
+                if (str_starts_with(ltrim($statement), 'INSERT INTO `#__j2commerce_emailtemplates`')) {
+                    $db->setQuery($statement)->execute();
+                    $this->debugLog('CART REMINDER: seeded missing template (' . $db->getAffectedRows() . ' row)');
+                    return;
+                }
+            }
+
+            $this->debugLog('CART REMINDER: template INSERT not found in delta, template not seeded');
+            Log::add('Cart reminder template seed skipped: INSERT not found in ' . basename($delta), Log::WARNING, 'com_j2commerce');
+        } catch (\Throwable $e) {
+            $this->debugLog('CART REMINDER: template seed failed (see the j2commerce log)');
+            Log::add('Cart reminder template seed failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
     }
 
