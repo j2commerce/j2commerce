@@ -28,6 +28,8 @@ class CustomFieldHelper
 {
     private static array $fieldCache = [];
 
+    private static ?array $knownTypes = null;
+
     private static ?string $resolvedFramework = null;
 
     /** Core checkout area column names (use SMALLINT columns, not JSON). */
@@ -38,10 +40,14 @@ class CustomFieldHelper
      *
      * Core areas (billing, register, shipping, guest, guest_shipping, payment) query the
      * dedicated SMALLINT columns. Plugin areas query the field_display JSON column.
+     *
+     * Fields whose type is neither a core type nor registered by an enabled plugin are dropped
+     * (fail closed) unless $includeUnregistered is set, which only read-only display of stored
+     * order values should do.
      */
-    public static function getFieldsByArea(string $area, string $type = 'address'): array
+    public static function getFieldsByArea(string $area, string $type = 'address', bool $includeUnregistered = false): array
     {
-        $cacheKey = $area . '.' . $type;
+        $cacheKey = $area . '.' . $type . ($includeUnregistered ? '.all' : '');
 
         if (isset(self::$fieldCache[$cacheKey])) {
             return self::$fieldCache[$cacheKey];
@@ -53,9 +59,41 @@ class CustomFieldHelper
             $fields = self::getPluginAreaFields($area);
         }
 
+        if (!$includeUnregistered) {
+            $known = self::getKnownFieldTypes();
+            $kept  = [];
+
+            foreach ($fields as $field) {
+                $fieldType = (string) ($field->field_type ?? 'text');
+
+                if (isset($known[$fieldType])) {
+                    $kept[] = $field;
+                    continue;
+                }
+
+                \Joomla\CMS\Log\Log::add('CustomFieldHelper: field ' . $field->field_namekey . ' skipped, no enabled plugin registers type ' . $fieldType, \Joomla\CMS\Log\Log::DEBUG, 'com_j2commerce');
+            }
+
+            $fields = $kept;
+        }
+
         self::$fieldCache[$cacheKey] = $fields;
 
         return $fields;
+    }
+
+    /** Core types plus types registered by enabled plugins via onJ2CommerceGetCustomFieldTypes, as type => true. */
+    private static function getKnownFieldTypes(): array
+    {
+        if (self::$knownTypes === null) {
+            $types = [];
+            J2CommerceHelper::plugin()->event('GetCustomFieldTypes', [&$types]);
+
+            self::$knownTypes = array_fill_keys(self::CORE_FIELD_TYPES, true)
+                + array_fill_keys(array_map('strval', array_keys($types)), true);
+        }
+
+        return self::$knownTypes;
     }
 
     /**
@@ -421,6 +459,11 @@ class CustomFieldHelper
 
             if (!empty($rendered)) {
                 return \is_array($rendered) ? implode('', $rendered) : (string) $rendered;
+            }
+
+            // Callers that bypass getFieldsByArea() (e.g. the admin customer form) must not get a bare text input.
+            if (!isset(self::getKnownFieldTypes()[$fieldType])) {
+                return '';
             }
         }
 
@@ -1017,13 +1060,13 @@ class CustomFieldHelper
         'payment'  => ['payment'],
     ];
 
-    /** Every custom field an order's billing/shipping/payment snapshot may carry, by namekey. */
-    public static function getOrderFields(string $snapshot): array
+    /** Every custom field an order snapshot may carry, by namekey; $includeUnregistered is for read-only display. */
+    public static function getOrderFields(string $snapshot, bool $includeUnregistered = false): array
     {
         $fields = [];
 
         foreach (self::ORDER_AREAS[$snapshot] ?? [] as $area) {
-            foreach (self::getFieldsByArea($area) as $field) {
+            foreach (self::getFieldsByArea($area, 'address', $includeUnregistered) as $field) {
                 $namekey = (string) $field->field_namekey;
 
                 if ($namekey !== '' && !isset($fields[$namekey])) {
@@ -1082,7 +1125,7 @@ class CustomFieldHelper
                 continue;
             }
 
-            foreach (self::getOrderFields($type) as $namekey => $field) {
+            foreach (self::getOrderFields($type, true) as $namekey => $field) {
                 if (
                     (int) $field->field_core === 1
                     || !(int) ($field->{$flag} ?? 0)

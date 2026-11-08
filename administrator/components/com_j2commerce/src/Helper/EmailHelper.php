@@ -2926,7 +2926,8 @@ class EmailHelper
     {
         $definitions = [];
 
-        foreach (CustomFieldHelper::getFieldsByArea($area) as $definition) {
+        // Labels for values already on the order, so a field whose type plugin is off still prints.
+        foreach (CustomFieldHelper::getFieldsByArea($area, 'address', true) as $definition) {
             $definitions[$definition->field_namekey] = $definition;
         }
 
