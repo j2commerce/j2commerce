@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 use J2Commerce\Component\J2commerce\Site\Helper\ProductFilterRequestHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Associations;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
@@ -58,6 +59,10 @@ class ProductsModel extends ListModel
                 'language', 'c.language',
                 'filter_ids',
             ];
+
+            if (Associations::isEnabled()) {
+                $config['filter_fields'][] = 'association';
+            }
         }
 
         parent::__construct($config);
@@ -276,6 +281,24 @@ class ProductsModel extends ListModel
             ])
             ->join('LEFT', $db->quoteName('#__languages', 'l') . ' ON ' .
                 $db->quoteName('l.lang_code') . ' = ' . $db->quoteName('c.language'));
+
+        // Same correlated subquery com_content's own ArticlesModel uses for its association
+        // column, keyed on the product's article (c.id) rather than the article table's own
+        // alias — a product has no association rows of its own; it inherits its article's.
+        if (Associations::isEnabled()) {
+            $assocSubQuery = $db->createQuery()
+                ->select('COUNT(' . $db->quoteName('asso1.id') . ') > 1')
+                ->from($db->quoteName('#__associations', 'asso1'))
+                ->join('INNER', $db->quoteName('#__associations', 'asso2'), $db->quoteName('asso1.key') . ' = ' . $db->quoteName('asso2.key'))
+                ->where(
+                    [
+                        $db->quoteName('asso1.id') . ' = ' . $db->quoteName('c.id'),
+                        $db->quoteName('asso1.context') . ' = ' . $db->quote('com_content.item'),
+                    ]
+                );
+
+            $query->select('(' . $assocSubQuery . ') AS ' . $db->quoteName('association'));
+        }
 
         // Join to categories table via content.catid for category name
         $query->select([
