@@ -218,6 +218,8 @@
             <option value="shipping_state DESC">COM_J2COMMERCE_HEADING_SHIPPING_DESC</option>
             <option value="a.visibility ASC">COM_J2COMMERCE_HEADING_VISIBILITY_ASC</option>
             <option value="a.visibility DESC">COM_J2COMMERCE_HEADING_VISIBILITY_DESC</option>
+            <option value="association ASC" requires="associations">JASSOCIATIONS_ASC</option>
+            <option value="association DESC" requires="associations">JASSOCIATIONS_DESC</option>
             <option value="language ASC" requires="multilanguage">JGRID_HEADING_LANGUAGE_ASC</option>
             <option value="language DESC" requires="multilanguage">JGRID_HEADING_LANGUAGE_DESC</option>
         </field>
