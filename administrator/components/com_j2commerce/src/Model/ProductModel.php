@@ -22,6 +22,7 @@ use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Model\AdminModel;
+use Joomla\CMS\Workflow\Workflow;
 use Joomla\Database\ParameterType;
 use Joomla\String\StringHelper;
 
@@ -259,8 +260,11 @@ class ProductModel extends AdminModel
             $product->created_by            = '';
 
             // A duplicate starts as a draft, and with none of the source product's traffic.
-            $product->enabled = 0;
-            $product->hits    = 0;
+            // enabled is the alias target of ProductTable's 'published' column alias, and static
+            // analysis flags direct writes to it as touching a protected member - bind() is
+            // Table's own public API for setting a field from outside the class.
+            $product->bind(['enabled' => 0]);
+            $product->hits = 0;
 
             // The draft was disabled by the system, so Content - J2Commerce's state mirror turns it on
             // when its article is first published, whatever the source product's history.
@@ -398,7 +402,52 @@ class ProductModel extends AdminModel
             throw new \RuntimeException($articleModel->getError());
         }
 
-        return (int) $articleModel->getState('article.id');
+        $newArticleId = (int) $articleModel->getState('article.id');
+
+        $this->ensureWorkflowAssociation($newArticleId, (int) $item->catid);
+
+        return $newArticleId;
+    }
+
+    /**
+     * ArticleModel::save() is supposed to create the new article's #__workflow_associations row
+     * itself (WorkflowBehaviorTrait::workflowAfterSave()), with a real stage id. Called from this
+     * programmatic save it instead writes the row with stage_id = 0 - present, but not a row any
+     * real stage/workflow matches. The admin article list inner-joins item_id -> stage_id ->
+     * workflow_id, so a duplicate stuck on stage 0 is a real article - editable by id, just never
+     * listed. Repair the row's stage here instead of leaving the duplicate invisible.
+     *
+     * @since   6.6.6
+     */
+    private function ensureWorkflowAssociation(int $articleId, int $catId): void
+    {
+        $db = $this->getDatabase();
+
+        $query = $db->getQuery(true)
+            ->select($db->quoteName('stage_id'))
+            ->from($db->quoteName('#__workflow_associations'))
+            ->where($db->quoteName('item_id') . ' = :articleId')
+            ->where($db->quoteName('extension') . ' = ' . $db->quote('com_content.article'))
+            ->bind(':articleId', $articleId, ParameterType::INTEGER);
+
+        $existing = $db->setQuery($query)->loadResult();
+
+        if ($existing !== null && (int) $existing > 0) {
+            return;
+        }
+
+        $workflow = new Workflow('com_content.article', Factory::getApplication(), $db);
+        $stageId  = (int) $workflow->getDefaultStageByCategory($catId);
+
+        if ($stageId <= 0) {
+            return;
+        }
+
+        if ($existing === null) {
+            $workflow->createAssociation($articleId, $stageId);
+        } else {
+            $workflow->updateAssociations([$articleId], $stageId);
+        }
     }
 
     /**
