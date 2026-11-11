@@ -2211,6 +2211,11 @@ class CartOrder
         $moneyScale = CurrencyHelper::getDecimalPlace(ConfigHelper::getDefaultCurrency());
         $money      = static fn (float $value): float => round($value, $moneyScale);
 
+        // Same derivation as OrderModel::recalculateOrderTotals(): inclusive prices carry the item
+        // tax inside order_subtotal, and order_tax holds item tax only (fee tax sits in
+        // order_surcharge).
+        $subtotalExTax = $isIncludingTax ? $this->order_subtotal - $this->order_tax : $this->order_subtotal;
+
         // order_discount is written from the coupon and voucher half alone; a plugin discount
         // lives in discount_cart and reaches the column through syncOrderDiscountTotal() below,
         // which sums the persisted rows.
@@ -2220,7 +2225,7 @@ class CartOrder
             'cart_id'               => $this->cart_id,
             'order_total'           => $money($this->order_total),
             'order_subtotal'        => $money($this->order_subtotal),
-            'order_subtotal_ex_tax' => $money($this->order_subtotal),
+            'order_subtotal_ex_tax' => $money($subtotalExTax),
             'order_tax'             => $money($this->order_tax),
             'order_shipping'        => $money($this->order_shipping),
             'order_shipping_tax'    => $money($this->order_shipping_tax),
