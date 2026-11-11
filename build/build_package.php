@@ -699,6 +699,7 @@ function createPackageManifest(string $version, array $plugins, array $adminModu
 
     $xml .= '    </languages>' . "\n";
     $xml .= "\n";
+    $xml .= '    <changelogurl>https://updates.j2commerce.com/changelogs/193.xml</changelogurl>' . "\n";
     $xml .= '    <updateservers>' . "\n";
     $xml .= '        <server type="extension" priority="1" name="J2Commerce Package Updates">' . "\n";
     $xml .= '            https://updates.j2commerce.com/pkg_j2commerce.xml' . "\n";
