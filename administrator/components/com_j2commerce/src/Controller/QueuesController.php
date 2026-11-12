@@ -222,6 +222,21 @@ class QueuesController extends AdminController
                 continue;
             }
 
+            // A handler that put the item back to 'pending' with a future next_attempt_at rescheduled it; keep that.
+            if ($currentItem->status === 'pending'
+                && (string) $currentItem->next_attempt_at > (new \DateTimeImmutable())->format('Y-m-d H:i:s')) {
+                $skipped++;
+                $details[] = [
+                    'id'          => $queueId,
+                    'status'      => 'skipped',
+                    'relation_id' => $item->relation_id ?? '',
+                    'item_type'   => $item->item_type ?? '',
+                    'error'       => 'Rescheduled by its handler',
+                    'note'        => 'Rescheduled by its handler until ' . $currentItem->next_attempt_at,
+                ];
+                continue;
+            }
+
             // Nobody handled it (the responsible plugin is disabled/absent). Release it back to
             // the queue untouched rather than failing it — failing would burn an attempt and
             // eventually mark it 'dead', silently destroying valid queued work.
