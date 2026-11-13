@@ -243,6 +243,6 @@ class HtmlView extends BaseHtmlView
         }
 
         $toolbar->divider();
-        $toolbar->help(Text::_('COM_J2COMMERCE_VOUCHER'), false, 'https://docs.j2commerce.com/v6/sales/vouchers/');
+        $toolbar->help(Text::_('COM_J2COMMERCE_VOUCHER'), false, 'https://docs.j2commerce.com/v6/sales/vouchers?tmpl=component');
     }
 }

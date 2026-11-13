@@ -141,7 +141,7 @@ final class ReportItemised extends CMSPlugin implements SubscriberInterface
                     ->icon('icon-download');
             }
 
-            $toolbar->help('', false, 'https://docs.j2commerce.com/v6/reports/report-itemised');
+            $toolbar->help('', false, 'https://docs.j2commerce.com/v6/reports/report-itemised?tmpl=component');
         }
 
         // Load plugin language so filter form labels resolve correctly

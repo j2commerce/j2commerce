@@ -139,7 +139,7 @@ final class ReportProducts extends CMSPlugin implements SubscriberInterface
                     ->icon('icon-download');
             }
 
-            $toolbar->help('', false, 'https://docs.j2commerce.com/v6/reports/report-products');
+            $toolbar->help('', false, 'https://docs.j2commerce.com/v6/reports/report-products?tmpl=component');
         }
 
         // Load plugin language so filter form labels resolve correctly

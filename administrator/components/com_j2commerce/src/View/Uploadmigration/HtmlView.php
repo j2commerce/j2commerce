@@ -76,6 +76,6 @@ class HtmlView extends BaseHtmlView
                 ->listCheck(false);
         }
 
-        $toolbar->help(Text::_('COM_J2COMMERCE_UPLOAD_MIGRATION'), true, 'https://docs.j2commerce.com/v6/setup/upload-migration/');
+        $toolbar->help(Text::_('COM_J2COMMERCE_UPLOAD_MIGRATION'), true, 'https://docs.j2commerce.com/v6/setup/upload-migration?tmpl=component');
     }
 }
