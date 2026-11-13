@@ -642,6 +642,8 @@ class StrapperHelper
         \Joomla\CMS\Language\Text::script('WARNING');
         \Joomla\CMS\Language\Text::script('SUCCESS');
         \Joomla\CMS\Language\Text::script('MESSAGE');
+        \Joomla\CMS\Language\Text::script('INFO');
+        \Joomla\CMS\Language\Text::script('NOTICE');
     }
 
     /**

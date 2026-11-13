@@ -305,6 +305,36 @@ class CartsController extends BaseController
                     'id'   => $this->input->getInt('product_id'),
                 ]);
 
+                // Messages queued during the add (e.g. by a plugin) are never rendered by a JSON reply.
+                // A caller that can show them sends return_messages=1: they are returned, or kept for the
+                // next page when it redirects. Other callers keep the queue untouched, as before.
+                // getMessageQueue() skips the session copy when the request already queued something,
+                // so merge it here: nothing waiting is dropped and nothing is shown twice.
+                $session = $this->app->getSession();
+                $queue   = [];
+
+                if ($this->input->getInt('return_messages', 0) === 1) {
+                    $queue = $this->app->getMessageQueue(true);
+
+                    foreach ((array) $session->get('application.queue', []) as $pending) {
+                        if (!\in_array($pending, $queue, false)) {
+                            $queue[] = $pending;
+                        }
+                    }
+                }
+
+                if ($queue !== []) {
+                    if (!empty($json['redirect'])) {
+                        $session->set('application.queue', $queue);
+                    } else {
+                        $session->set('application.queue', []);
+
+                        foreach ($queue as $message) {
+                            $json['messages'][$message['type'] ?? 'message'][] = (string) ($message['message'] ?? '');
+                        }
+                    }
+                }
+
                 $this->sendJsonResponse($json);
             } else {
                 $return = $this->input->getBase64('return');

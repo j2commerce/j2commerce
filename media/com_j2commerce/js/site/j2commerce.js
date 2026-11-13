@@ -84,6 +84,25 @@ const J2Commerce = {
     // CART FUNCTIONALITY
     // =========================================================================
 
+    // Messages a plugin queued during the add (json.messages = { type: [text] }) plus any extra ones,
+    // rendered in ONE call: Joomla.renderMessages clears earlier alerts, so a second call would drop them.
+    showQueuedMessages(json, extra = {}) {
+        const messages = { ...(json?.messages && typeof json.messages === 'object' ? json.messages : {}) };
+
+        Object.entries(extra).forEach(([type, list]) => {
+            messages[type] = [...(messages[type] || []), ...list];
+        });
+
+        if (!Object.keys(messages).length || typeof J2CommerceDom === 'undefined') {
+            return false;
+        }
+
+        J2CommerceDom.showMessages(messages);
+        document.getElementById('system-message-container')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+
+        return true;
+    },
+
     /**
      * Add item to cart via button click (simple products)
      * @param {HTMLElement} button - The add to cart button
@@ -100,6 +119,7 @@ const J2Commerce = {
         data.append('view', 'carts');
         data.append('task', 'addItem');
         data.append('ajax', '1');
+        data.append('return_messages', '1');
 
         // Copy all data attributes to form data
         Object.entries(button.dataset).forEach(([key, value]) => {
@@ -126,13 +146,14 @@ const J2Commerce = {
             if (json.error) {
                 const errorMsg = json.error.stock || json.error.general || json.error.product
                     || (typeof json.error === 'string' ? json.error : '');
-                if (errorMsg) {
-                    J2CommerceDom.showMessages({ error: [errorMsg] });
+                if (this.showQueuedMessages(json, errorMsg ? { error: [errorMsg] } : {}) && errorMsg) {
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
                 button.classList.remove('loading');
                 return;
             }
+
+            this.showQueuedMessages(json);
 
             if (json.success) {
                 button.classList.remove('loading');
@@ -184,6 +205,7 @@ const J2Commerce = {
 
         const formData = new FormData(form);
         formData.set('ajax', '1');
+        formData.set('return_messages', '1');
         const href = form.getAttribute('action') || 'index.php';
 
         this.dispatchEvent('addingToCart', { form, data: formData });
@@ -197,6 +219,8 @@ const J2Commerce = {
             const json = await response.json();
 
             if (submitBtn) submitBtn.removeAttribute('aria-disabled');
+
+            this.showQueuedMessages(json);
 
             // Remove previous notifications
             form.querySelectorAll('.j2success, .j2warning, .j2attention, .j2information, .j2error').forEach(el => el.remove());
