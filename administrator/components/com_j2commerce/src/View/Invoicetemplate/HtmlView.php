@@ -192,6 +192,6 @@ class HtmlView extends BaseHtmlView
                 . '</button>');
 
         $toolbar->divider();
-        $toolbar->help(Text::_('COM_J2COMMERCE_INVOICETEMPLATES'), true, 'https://docs.j2commerce.com/v6/design/invoice-templates/');
+        $toolbar->help(Text::_('COM_J2COMMERCE_INVOICETEMPLATES'), true, 'https://docs.j2commerce.com/v6/design/invoice-templates?tmpl=component');
     }
 }

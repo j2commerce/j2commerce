@@ -291,6 +291,6 @@ class HtmlView extends BaseHtmlView
 
 
         $toolbar->divider();
-        $toolbar->help(Text::_('COM_J2COMMERCE_EMAILTEMPLATE'), false, 'https://docs.j2commerce.com/v6/design/email-templates/');
+        $toolbar->help(Text::_('COM_J2COMMERCE_EMAILTEMPLATE'), false, 'https://docs.j2commerce.com/v6/design/email-templates?tmpl=component');
     }
 }

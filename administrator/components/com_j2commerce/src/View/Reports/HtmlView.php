@@ -193,7 +193,7 @@ class HtmlView extends BaseHtmlView
             $toolbar->preferences('com_j2commerce');
         }
 
-        $toolbar->help(Text::_('COM_J2COMMERCE_REPORTS'), true, 'https://docs.j2commerce.com/v6/reports/');
+        $toolbar->help(Text::_('COM_J2COMMERCE_REPORTS'), true, 'https://docs.j2commerce.com/v6/reports?tmpl=component');
     }
 
     protected function loadReportPluginLanguages(): void
