@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 
 use J2Commerce\Component\J2commerce\Site\Helper\ProductFilterRequestHelper;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Associations;
 use Joomla\CMS\MVC\Model\ListModel;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
@@ -55,8 +56,13 @@ class ProductsModel extends ListModel
                 'quantity', 'q.quantity',
                 'category_title', 'cat.title',
                 'catid', 'c.catid',
+                'language', 'c.language',
                 'filter_ids',
             ];
+
+            if (Associations::isEnabled()) {
+                $config['filter_fields'][] = 'association';
+            }
         }
 
         parent::__construct($config);
@@ -100,6 +106,9 @@ class ProductsModel extends ListModel
 
         $categoryId = $this->getUserStateFromRequest($this->context . '.filter.category_id', 'filter_category_id', '', 'int');
         $this->setState('filter.category_id', $categoryId);
+
+        $language = $this->getUserStateFromRequest($this->context . '.filter.language', 'filter_language', '');
+        $this->setState('filter.language', $language);
 
         $this->setState('filter.tag', $this->getUserStateFromRequest($this->context . '.filter.tag', 'filter_tag', ''));
 
@@ -183,6 +192,7 @@ class ProductsModel extends ListModel
         $id .= ':' . $this->getState('filter.visibility');
         $id .= ':' . $this->getState('filter.shipping_state');
         $id .= ':' . $this->getState('filter.category_id');
+        $id .= ':' . $this->getState('filter.language');
         $id .= ':' . serialize($this->getState('filter.tag'));
         $id .= ':' . $this->getState('filter.date_from');
         $id .= ':' . $this->getState('filter.date_to');
@@ -258,9 +268,37 @@ class ProductsModel extends ListModel
                 $db->quoteName('c.state', 'article_state'),
                 $db->quoteName('c.checked_out'),
                 $db->quoteName('c.checked_out_time'),
+                $db->quoteName('c.language'),
             ])
             ->join('LEFT', $db->quoteName('#__content', 'c') . ' ON ' .
                 $db->quoteName('c.id') . ' = ' . $db->quoteName('a.product_source_id'));
+
+        // Join to languages table for the language column's flag image and title,
+        // same as com_content's own Articles list.
+        $query->select([
+                $db->quoteName('l.title', 'language_title'),
+                $db->quoteName('l.image', 'language_image'),
+            ])
+            ->join('LEFT', $db->quoteName('#__languages', 'l') . ' ON ' .
+                $db->quoteName('l.lang_code') . ' = ' . $db->quoteName('c.language'));
+
+        // Same correlated subquery com_content's own ArticlesModel uses for its association
+        // column, keyed on the product's article (c.id) rather than the article table's own
+        // alias — a product has no association rows of its own; it inherits its article's.
+        if (Associations::isEnabled()) {
+            $assocSubQuery = $db->createQuery()
+                ->select('COUNT(' . $db->quoteName('asso1.id') . ') > 1')
+                ->from($db->quoteName('#__associations', 'asso1'))
+                ->join('INNER', $db->quoteName('#__associations', 'asso2'), $db->quoteName('asso1.key') . ' = ' . $db->quoteName('asso2.key'))
+                ->where(
+                    [
+                        $db->quoteName('asso1.id') . ' = ' . $db->quoteName('c.id'),
+                        $db->quoteName('asso1.context') . ' = ' . $db->quote('com_content.item'),
+                    ]
+                );
+
+            $query->select('(' . $assocSubQuery . ') AS ' . $db->quoteName('association'));
+        }
 
         // Join to categories table via content.catid for category name
         $query->select([
@@ -436,6 +474,12 @@ class ProductsModel extends ListModel
             $categoryIdInt = (int) $categoryId;
             $query->where($db->quoteName('c.catid') . ' = :categoryId')
                 ->bind(':categoryId', $categoryIdInt, ParameterType::INTEGER);
+        }
+
+        // Filter by language
+        if ($language = $this->getState('filter.language')) {
+            $query->where($db->quoteName('c.language') . ' = :language')
+                ->bind(':language', $language);
         }
 
         // Filter by visibility
