@@ -199,7 +199,7 @@ class MyprofileController extends BaseController
     {
         // A captcha that cannot load, or a provider that throws on an empty or unverifiable answer, fails the check.
         try {
-            $captcha = LoginCaptchaHelper::forMyprofile();
+            $captcha = LoginCaptchaHelper::forLogin();
 
             return $captcha === null || (bool) $captcha->checkAnswer($this->input->post->getString('captcha', ''));
         } catch (\RuntimeException) {
