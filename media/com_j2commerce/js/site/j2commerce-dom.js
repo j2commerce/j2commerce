@@ -98,6 +98,11 @@
      * child markup), so this must be called once, after adopt(), to actually run it.
      * createContextualFragment (unlike innerHTML) leaves parsed scripts runnable, which is
      * exactly why it is used only here and not in parse()/adopt().
+     *
+     * Callers only call this for the login step's fetch (the one task that can ever render
+     * this attribute) — see the `task === 'login'` guard in each default.php's fetchStep().
+     * It is still a no-op on any other content, since the attribute never appears there, but
+     * callers should not rely on that and invoke it unconditionally.
      */
     function renderCaptchaMarkup(root) {
         if (!root) {
