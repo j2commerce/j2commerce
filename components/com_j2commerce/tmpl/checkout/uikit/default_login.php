@@ -94,7 +94,7 @@ $showLogin = (int) $this->params->get('show_login_form', 1);
         <?php if (($this->loginCaptchaHtml ?? '') !== '') : ?>
         <div class="uk-margin-bottom" role="group" aria-labelledby="j2c-login-captcha-lbl">
             <div id="j2c-login-captcha-lbl" class="uk-form-label"><?php echo Text::_('COM_J2COMMERCE_MYPROFILE_CAPTCHA_LABEL'); ?></div>
-            <div data-j2c-trusted-html="<?php echo htmlspecialchars($this->loginCaptchaHtml, ENT_QUOTES, 'UTF-8'); ?>"></div>
+            <div data-j2c-captcha-html="<?php echo htmlspecialchars($this->loginCaptchaHtml, ENT_QUOTES, 'UTF-8'); ?>"></div>
         </div>
         <?php endif; ?>
 
