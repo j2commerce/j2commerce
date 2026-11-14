@@ -652,7 +652,10 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(function(html) {
             if (html !== undefined) {
                 J2CommerceDom.adopt(content, html);
-                J2CommerceDom.renderCaptchaMarkup(content);
+                // Only the login step can ever contain a captcha slot.
+                if (task === 'login') {
+                    J2CommerceDom.renderCaptchaMarkup(content);
+                }
                 content.setAttribute('aria-busy', 'false');
                 refreshSidecart();
                 // Core Joomla widgets (calendar picker, etc.) re-init injected markup on this event.
