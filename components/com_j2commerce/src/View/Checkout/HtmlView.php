@@ -19,11 +19,13 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\SubtemplateHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TrackingHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\LoginCaptchaHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use J2Commerce\Component\J2commerce\Site\View\CustomSubtemplateTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Router\Route;
 use Joomla\Event\Event;
@@ -301,5 +303,21 @@ class HtmlView extends BaseHtmlView
             Route::_(RouteHelper::getCheckoutRoute(), true, Route::TLS_IGNORE, true),
             'canonical'
         );
+
+        // Login's captcha widget is only ever rendered through the AJAX "login" step
+        // (even on first view), never through this document itself — so its plugin's
+        // boot assets (script tag, onload callback, etc.) must be queued here, on this
+        // real full-page request, or they never reach the browser at all.
+        //
+        // Context-mode checkout (activated nonce) skips the login step entirely, same
+        // as the init script in tmpl/checkout/*/default.php — no point booting a widget
+        // that step never reaches.
+        if (!$this->logged && $this->params->get('show_login_form', 1) && empty($this->checkoutContext['active'])) {
+            try {
+                LoginCaptchaHelper::forLogin()?->initialise(LoginCaptchaHelper::CHECKOUT_LOGIN_CAPTCHA_ID);
+            } catch (\RuntimeException $e) {
+                Log::add('Checkout login captcha failed to initialise: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
+            }
+        }
     }
 }
