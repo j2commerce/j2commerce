@@ -25,14 +25,27 @@ final class LoginCaptchaHelper
     public const GUEST_FORM_STATE = 'com_j2commerce.myprofile.guest_form';
 
     /**
+     * Widget id for checkout's "Returning Customer" login box.
+     *
+     * Shared between Checkout\HtmlView::_prepareDocument() (which calls initialise() with
+     * this id during the real full-page load, so the plugin's boot assets land in the
+     * document head) and CheckoutController::login() (which calls display() with the same
+     * id when the login step is fetched over AJAX moments later).
+     */
+    public const CHECKOUT_LOGIN_CAPTCHA_ID = 'j2c-checkout-login-captcha';
+
+    /**
      * Null when no captcha applies. An empty setting follows the Global Configuration captcha.
+     *
+     * Shared by every J2Commerce login/guest form — My Profile's login and guest order lookup,
+     * and checkout's "Returning Customer" login box — so they all honour one admin setting.
      *
      * A missing plugin, or a disabled provider plugin, does not throw: it renders nothing and its answer never
      * verifies, so callers still fail closed.
      *
      * @throws \RuntimeException only if the plugin's own boot throws; callers fail closed, as core CaptchaRule does.
      */
-    public static function forMyprofile(): ?Captcha
+    public static function forLogin(): ?Captcha
     {
         $plugin = (string) ComponentHelper::getParams('com_j2commerce')->get('myprofile_login_captcha', '');
 
@@ -45,9 +58,9 @@ final class LoginCaptchaHelper
         }
 
         try {
-            return Captcha::getInstance($plugin, ['namespace' => 'j2commerce_myprofile']);
+            return Captcha::getInstance($plugin, ['namespace' => 'j2commerce_login']);
         } catch (\RuntimeException $e) {
-            Log::add('My Profile captcha "' . $plugin . '" could not be loaded: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
+            Log::add('Login captcha "' . $plugin . '" could not be loaded: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
 
             throw $e;
         }
