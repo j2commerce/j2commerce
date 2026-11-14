@@ -83,26 +83,30 @@
     }
 
     /**
-     * Run the HTML a server-rendered step stashed in a trusted slot's data-j2c-trusted-html
+     * Run the markup a captcha plugin rendered into a login step's data-j2c-captcha-html
      * attribute — scripts and all.
      *
      * parse() strips every <script> from step markup on purpose (see its docblock); that
-     * stays true for everything else. This is a narrow, explicit exception for content the
-     * server has deliberately marked as safe to execute as-is — e.g. a captcha plugin's own
-     * widget markup, which needs its script to run to render at all, exactly as it would on
-     * a normal full-page load. The attribute carries the HTML past parse() untouched (it's
-     * an attribute value, not child markup), so this must be called once, after adopt(), to
-     * actually run it. createContextualFragment (unlike innerHTML) leaves parsed scripts
-     * runnable, which is exactly why it is used only here and not in parse()/adopt().
+     * stays true for everything else this function does not touch. This is a one-off,
+     * narrowly-scoped exception for exactly one thing: the admin-configured captcha plugin's
+     * own widget markup, which needs its script to run to render at all, exactly as it would
+     * on a normal full-page load (where My Profile's identical captcha already executes
+     * unconditionally). It is not a general "run arbitrary HTML" facility — it only ever
+     * looks at the one attribute the server-side captcha template writes.
+     *
+     * The attribute carries the HTML past parse() untouched (it's an attribute value, not
+     * child markup), so this must be called once, after adopt(), to actually run it.
+     * createContextualFragment (unlike innerHTML) leaves parsed scripts runnable, which is
+     * exactly why it is used only here and not in parse()/adopt().
      */
-    function activateTrustedHtml(root) {
+    function renderCaptchaMarkup(root) {
         if (!root) {
             return;
         }
 
-        root.querySelectorAll('[data-j2c-trusted-html]').forEach(function (el) {
-            var html = el.getAttribute('data-j2c-trusted-html');
-            el.removeAttribute('data-j2c-trusted-html');
+        root.querySelectorAll('[data-j2c-captcha-html]').forEach(function (el) {
+            var html = el.getAttribute('data-j2c-captcha-html');
+            el.removeAttribute('data-j2c-captcha-html');
             el.appendChild(document.createRange().createContextualFragment(html));
         });
     }
@@ -166,5 +170,5 @@
         }
     }
 
-    window.J2CommerceDom = { parse, adopt, activateTrustedHtml, el, showMessages };
+    window.J2CommerceDom = { parse, adopt, renderCaptchaMarkup, el, showMessages };
 })(window, document);
