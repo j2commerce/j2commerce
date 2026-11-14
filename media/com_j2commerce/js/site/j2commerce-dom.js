@@ -82,6 +82,31 @@
         return container;
     }
 
+    /**
+     * Run the HTML a server-rendered step stashed in a trusted slot's data-j2c-trusted-html
+     * attribute — scripts and all.
+     *
+     * parse() strips every <script> from step markup on purpose (see its docblock); that
+     * stays true for everything else. This is a narrow, explicit exception for content the
+     * server has deliberately marked as safe to execute as-is — e.g. a captcha plugin's own
+     * widget markup, which needs its script to run to render at all, exactly as it would on
+     * a normal full-page load. The attribute carries the HTML past parse() untouched (it's
+     * an attribute value, not child markup), so this must be called once, after adopt(), to
+     * actually run it. createContextualFragment (unlike innerHTML) leaves parsed scripts
+     * runnable, which is exactly why it is used only here and not in parse()/adopt().
+     */
+    function activateTrustedHtml(root) {
+        if (!root) {
+            return;
+        }
+
+        root.querySelectorAll('[data-j2c-trusted-html]').forEach(function (el) {
+            var html = el.getAttribute('data-j2c-trusted-html');
+            el.removeAttribute('data-j2c-trusted-html');
+            el.appendChild(document.createRange().createContextualFragment(html));
+        });
+    }
+
     /** Build an element in one call: J2CommerceDom.el('div', {class: 'x'}, 'text'). */
     function el(tag, attributes, text) {
         const node = document.createElement(tag);
@@ -141,5 +166,5 @@
         }
     }
 
-    window.J2CommerceDom = { parse, adopt, el, showMessages };
+    window.J2CommerceDom = { parse, adopt, activateTrustedHtml, el, showMessages };
 })(window, document);
