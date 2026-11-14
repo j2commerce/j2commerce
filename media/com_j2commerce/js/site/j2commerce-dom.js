@@ -82,6 +82,40 @@
         return container;
     }
 
+    /**
+     * Run the markup a captcha plugin rendered into a login step's data-j2c-captcha-html
+     * attribute — scripts and all.
+     *
+     * parse() strips every <script> from step markup on purpose (see its docblock); that
+     * stays true for everything else this function does not touch. This is a one-off,
+     * narrowly-scoped exception for exactly one thing: the admin-configured captcha plugin's
+     * own widget markup, which needs its script to run to render at all, exactly as it would
+     * on a normal full-page load (where My Profile's identical captcha already executes
+     * unconditionally). It is not a general "run arbitrary HTML" facility — it only ever
+     * looks at the one attribute the server-side captcha template writes.
+     *
+     * The attribute carries the HTML past parse() untouched (it's an attribute value, not
+     * child markup), so this must be called once, after adopt(), to actually run it.
+     * createContextualFragment (unlike innerHTML) leaves parsed scripts runnable, which is
+     * exactly why it is used only here and not in parse()/adopt().
+     *
+     * Callers only call this for the login step's fetch (the one task that can ever render
+     * this attribute) — see the `task === 'login'` guard in each default.php's fetchStep().
+     * It is still a no-op on any other content, since the attribute never appears there, but
+     * callers should not rely on that and invoke it unconditionally.
+     */
+    function renderCaptchaMarkup(root) {
+        if (!root) {
+            return;
+        }
+
+        root.querySelectorAll('[data-j2c-captcha-html]').forEach(function (el) {
+            var html = el.getAttribute('data-j2c-captcha-html');
+            el.removeAttribute('data-j2c-captcha-html');
+            el.appendChild(document.createRange().createContextualFragment(html));
+        });
+    }
+
     /** Build an element in one call: J2CommerceDom.el('div', {class: 'x'}, 'text'). */
     function el(tag, attributes, text) {
         const node = document.createElement(tag);
@@ -141,5 +175,5 @@
         }
     }
 
-    window.J2CommerceDom = { parse, adopt, el, showMessages };
+    window.J2CommerceDom = { parse, adopt, renderCaptchaMarkup, el, showMessages };
 })(window, document);

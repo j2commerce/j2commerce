@@ -635,6 +635,10 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(function(html) {
             if (html !== undefined) {
                 J2CommerceDom.adopt(content, html);
+                // Only the login step can ever contain a captcha slot.
+                if (task === 'login') {
+                    J2CommerceDom.renderCaptchaMarkup(content);
+                }
                 content.setAttribute('aria-busy', 'false');
                 refreshSidecart();
                 // Core Joomla widgets (calendar picker, etc.) re-init injected markup on this event.
@@ -830,16 +834,26 @@ document.addEventListener('DOMContentLoaded', function() {
         showLoading(btn);
 
         submitForm('loginValidate', '#checkout #login').then(function(json) {
-            hideLoading(btn);
-            clearErrors(getContent('checkout'));
-
             if (json.redirect) {
+                hideLoading(btn);
                 window.location.href = json.redirect;
-            } else if (json.error) {
-                if (json.error.warning) {
-                    showWarning(getContent('checkout'), json.error.warning, json._detail);
-                }
+                return;
             }
+
+            if (json.error) {
+                // Refresh the whole login box so a JS captcha gets a fresh, unused
+                // challenge — needed even when the only problem was a bad password,
+                // since most captcha tokens are single-use.
+                fetchStep('login', 'checkout').then(function() {
+                    if (json.error.warning) {
+                        showWarning(getContent('checkout'), json.error.warning, json._detail);
+                    }
+                });
+
+                return;
+            }
+
+            hideLoading(btn);
         });
     });
 

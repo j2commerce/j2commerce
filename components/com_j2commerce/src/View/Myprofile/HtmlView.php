@@ -94,7 +94,7 @@ class HtmlView extends BaseHtmlView
             $forms = $this->params->get('show_login_form', 1) ? ['login', 'guest'] : ['guest'];
 
             try {
-                $captcha                    = LoginCaptchaHelper::forMyprofile();
+                $captcha                    = LoginCaptchaHelper::forLogin();
                 $this->loginCaptchaRequired = $captcha !== null;
 
                 foreach ($captcha ? $forms : [] as $form) {
