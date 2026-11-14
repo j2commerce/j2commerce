@@ -87,6 +87,13 @@ $showLogin = (int) $this->params->get('show_login_form', 1);
         <input type="hidden" name="task" value="checkout.loginValidate">
         <input type="hidden" name="option" value="com_j2commerce">
 
+        <?php if (($this->loginCaptchaHtml ?? '') !== '') : ?>
+        <div class="mb-3" role="group" aria-labelledby="j2c-login-captcha-lbl">
+            <div id="j2c-login-captcha-lbl" class="form-label"><?php echo Text::_('COM_J2COMMERCE_MYPROFILE_CAPTCHA_LABEL'); ?></div>
+            <div data-j2c-trusted-html="<?php echo htmlspecialchars($this->loginCaptchaHtml, ENT_QUOTES, 'UTF-8'); ?>"></div>
+        </div>
+        <?php endif; ?>
+
         <div class="mt-3">
             <button type="button" id="button-login" class="btn btn-primary btn-lg w-100 btn-checkout-step">
                 <?php echo Text::_('COM_J2COMMERCE_CHECKOUT_LOGIN'); ?>
