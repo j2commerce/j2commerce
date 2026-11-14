@@ -32,6 +32,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutStepsHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutStepStateHelper;
+use J2Commerce\Component\J2commerce\Site\Helper\LoginCaptchaHelper;
 use J2Commerce\Component\J2commerce\Site\Helper\RouteHelper;
 use J2Commerce\Component\J2commerce\Site\Service\CheckoutPlacementService;
 use Joomla\CMS\Application\ApplicationHelper;
@@ -306,9 +307,27 @@ class CheckoutController extends BaseController
         $session = $this->app->getSession();
         $account = $session->get('account', 'register', 'j2commerce');
 
+        $captcha = LoginCaptchaHelper::forLogin();
+
         $this->renderStep('login', [
-            'account' => $account,
+            'account'              => $account,
+            'loginCaptchaHtml'     => $captcha !== null
+                ? (string) $captcha->display('captcha', LoginCaptchaHelper::CHECKOUT_LOGIN_CAPTCHA_ID)
+                : '',
+            'loginCaptchaRequired' => $captcha !== null,
         ]);
+    }
+
+    /** Mirrors MyprofileController::loginCaptchaPassed() — same setting, same fail-closed behaviour. */
+    private function loginCaptchaPassed(): bool
+    {
+        try {
+            $captcha = LoginCaptchaHelper::forLogin();
+
+            return $captcha === null || (bool) $captcha->checkAnswer($this->input->post->getString('captcha', ''));
+        } catch (\RuntimeException) {
+            return false;
+        }
     }
 
     public function loginValidate(): void
@@ -343,6 +362,13 @@ class CheckoutController extends BaseController
             if ($password === '') {
                 $json['error']['warning']  = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_PASSWORD_REQUIRED');
                 $json['error']['password'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_PASSWORD_REQUIRED');
+                $this->jsonResponse($json);
+
+                return;
+            }
+
+            if (!$this->loginCaptchaPassed()) {
+                $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_CAPTCHA');
                 $this->jsonResponse($json);
 
                 return;
