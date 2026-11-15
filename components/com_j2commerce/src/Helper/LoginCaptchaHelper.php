@@ -35,6 +35,15 @@ final class LoginCaptchaHelper
     public const CHECKOUT_LOGIN_CAPTCHA_ID = 'j2c-checkout-login-captcha';
 
     /**
+     * Widget id for checkout's "New Customer" registration form.
+     *
+     * Distinct from CHECKOUT_LOGIN_CAPTCHA_ID: the login box can still be sitting hidden in
+     * the DOM while the shopper is on the register step (switching the account radio does not
+     * remove it), so the two widgets must never share an id.
+     */
+    public const CHECKOUT_REGISTER_CAPTCHA_ID = 'j2c-checkout-register-captcha';
+
+    /**
      * Null when no captcha applies. An empty setting follows the Global Configuration captcha.
      *
      * Shared by every J2Commerce login/guest form — My Profile's login and guest order lookup,
