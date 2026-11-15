@@ -307,18 +307,24 @@ class CheckoutController extends BaseController
         $session = $this->app->getSession();
         $account = $session->get('account', 'register', 'j2commerce');
 
-        $captcha = LoginCaptchaHelper::forLogin();
-
         $this->renderStep('login', [
             'account'              => $account,
-            'loginCaptchaHtml'     => $captcha !== null
-                ? (string) $captcha->display('captcha', LoginCaptchaHelper::CHECKOUT_LOGIN_CAPTCHA_ID)
-                : '',
-            'loginCaptchaRequired' => $captcha !== null,
+            'loginCaptchaHtml'     => $this->captchaHtml(LoginCaptchaHelper::CHECKOUT_LOGIN_CAPTCHA_ID),
+            'loginCaptchaRequired' => LoginCaptchaHelper::forLogin() !== null,
         ]);
     }
 
-    /** Mirrors MyprofileController::loginCaptchaPassed() — same setting, same fail-closed behaviour. */
+    /** Empty when no captcha applies, or when the configured plugin fails to render. */
+    private function captchaHtml(string $id): string
+    {
+        try {
+            return (string) (LoginCaptchaHelper::forLogin()?->display('captcha', $id) ?? '');
+        } catch (\RuntimeException) {
+            return '';
+        }
+    }
+
+    /** Mirrors MyprofileController::loginCaptchaPassed() — same setting, same fail-closed behaviour, any widget id. */
     private function loginCaptchaPassed(): bool
     {
         try {
@@ -532,9 +538,10 @@ class CheckoutController extends BaseController
         $fields       = CustomFieldHelper::getFieldsByArea('register');
 
         $this->renderStep('register', [
-            'showShipping'     => $showShipping,
-            'fields'           => $fields,
-            'registrationForm' => $this->buildRegistrationForm(),
+            'showShipping'        => $showShipping,
+            'fields'              => $fields,
+            'registrationForm'    => $this->buildRegistrationForm(),
+            'registerCaptchaHtml' => $this->captchaHtml(LoginCaptchaHelper::CHECKOUT_REGISTER_CAPTCHA_ID),
         ]);
     }
 
@@ -620,6 +627,20 @@ class CheckoutController extends BaseController
             return;
         }
 
+        if (!$this->loginCaptchaPassed()) {
+            $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_CAPTCHA');
+            $json['captchaHtml']      = $this->captchaHtml(LoginCaptchaHelper::CHECKOUT_REGISTER_CAPTCHA_ID);
+            $this->jsonResponse($json);
+
+            return;
+        }
+
+        // checkAnswer() above already consumed this captcha's token, whatever happens from
+        // here on — every remaining error response in this method must hand back a fresh
+        // challenge, since the form itself is never fully re-rendered on failure (unlike the
+        // login step, this one holds too much typed data to discard just to reset a widget).
+        $json['captchaHtml'] = $this->captchaHtml(LoginCaptchaHelper::CHECKOUT_REGISTER_CAPTCHA_ID);
+
         // Create user
         $email     = trim($formData['email'] ?? '');
         $firstName = trim($formData['first_name'] ?? '');
@@ -635,7 +656,15 @@ class CheckoutController extends BaseController
         $guestSessionId = $session->getId();
 
         if ($existingUser && $existingUser->id > 0) {
-            $this->jsonResponse($this->resumeExistingRegistration($existingUser, $email, $password, $guestSessionId));
+            $resumeJson = $this->resumeExistingRegistration($existingUser, $email, $password, $guestSessionId);
+
+            // resumeExistingRegistration() builds its own response and knows nothing about
+            // the captcha check above having already consumed this attempt's token.
+            if (isset($resumeJson['error'])) {
+                $resumeJson['captchaHtml'] = $json['captchaHtml'] ?? '';
+            }
+
+            $this->jsonResponse($resumeJson);
 
             return;
         }
