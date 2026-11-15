@@ -304,20 +304,32 @@ class HtmlView extends BaseHtmlView
             'canonical'
         );
 
-        // Login's captcha widget is only ever rendered through the AJAX "login" step
-        // (even on first view), never through this document itself — so its plugin's
-        // boot assets (script tag, onload callback, etc.) must be queued here, on this
-        // real full-page request, or they never reach the browser at all.
+        // Both widgets below are only ever rendered through an AJAX step (even on first
+        // view), never through this document itself — so their plugin's boot assets
+        // (script tag, onload callback, etc.) must be queued here, on this real full-page
+        // request, or they never reach the browser at all.
         //
-        // Context-mode checkout (activated nonce) skips the login step entirely, same
-        // as the init script in tmpl/checkout/*/default.php — no point booting a widget
-        // that step never reaches.
-        if (!$this->logged && $this->params->get('show_login_form', 1) && empty($this->checkoutContext['active'])) {
-            try {
-                LoginCaptchaHelper::forLogin()?->initialise(LoginCaptchaHelper::CHECKOUT_LOGIN_CAPTCHA_ID);
-            } catch (\RuntimeException $e) {
-                Log::add('Checkout login captcha failed to initialise: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
+        // Context-mode checkout (activated nonce) skips both the login and register steps
+        // entirely, same as the init script in tmpl/checkout/*/default.php — no point
+        // booting a widget that step never reaches.
+        if (!$this->logged && empty($this->checkoutContext['active'])) {
+            if ($this->params->get('show_login_form', 1)) {
+                $this->initialiseCaptcha(LoginCaptchaHelper::CHECKOUT_LOGIN_CAPTCHA_ID);
             }
+
+            if ($this->params->get('allow_registration', 1)) {
+                $this->initialiseCaptcha(LoginCaptchaHelper::CHECKOUT_REGISTER_CAPTCHA_ID);
+            }
+        }
+    }
+
+    /** A boot failure must never break checkout page rendering — checkAnswer() still fails closed server-side. */
+    private function initialiseCaptcha(string $id): void
+    {
+        try {
+            LoginCaptchaHelper::forLogin()?->initialise($id);
+        } catch (\RuntimeException $e) {
+            Log::add('Checkout captcha "' . $id . '" failed to initialise: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
     }
 }
