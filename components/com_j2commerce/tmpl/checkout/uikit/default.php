@@ -652,8 +652,8 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(function(html) {
             if (html !== undefined) {
                 J2CommerceDom.adopt(content, html);
-                // Only the login step can ever contain a captcha slot.
-                if (task === 'login') {
+                // Only the login and register steps can ever contain a captcha slot.
+                if (task === 'login' || task === 'register') {
                     J2CommerceDom.renderCaptchaMarkup(content);
                 }
                 content.setAttribute('aria-busy', 'false');
@@ -901,6 +901,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (json.redirect) {
                 window.location.href = json.redirect;
             } else if (json.error) {
+                // Present only when the captcha check actually ran and consumed its token —
+                // swap just the widget, leaving every other typed field alone.
+                if (json.captchaHtml) {
+                    J2CommerceDom.resetCaptchaMarkup(document.getElementById('j2c-register-captcha-slot'), json.captchaHtml);
+                }
                 if (json.error.warning) {
                     showWarning(getContent('billing-address'), json.error.warning, json._detail);
                 }
