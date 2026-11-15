@@ -83,26 +83,31 @@
     }
 
     /**
-     * Run the markup a captcha plugin rendered into a login step's data-j2c-captcha-html
-     * attribute — scripts and all.
+     * Replace an element's children with HTML that is allowed to actually run its own
+     * <script> tags — unlike everything parse()/adopt() touch (see parse()'s docblock, a
+     * deliberate boundary this does not cross for anything else). createContextualFragment
+     * (unlike innerHTML) leaves parsed scripts runnable, which is exactly why it is used only
+     * here. Callers only ever pass it the one admin-configured captcha plugin's own widget
+     * markup, which needs its script to run to render at all, exactly as it would on a normal
+     * full-page load (where My Profile's identical captcha already executes unconditionally).
+     * This is not a general "run arbitrary HTML" facility.
+     */
+    function runCaptchaHtml(el, html) {
+        el.replaceChildren();
+        el.appendChild(document.createRange().createContextualFragment(html));
+    }
+
+    /**
+     * Run the markup a captcha plugin rendered into a step's data-j2c-captcha-html
+     * attribute. The attribute carries the HTML past parse() untouched (it's an attribute
+     * value, not child markup), so this must be called once, after adopt(), to actually
+     * run it — see runCaptchaHtml()'s docblock for why that is safe to do here.
      *
-     * parse() strips every <script> from step markup on purpose (see its docblock); that
-     * stays true for everything else this function does not touch. This is a one-off,
-     * narrowly-scoped exception for exactly one thing: the admin-configured captcha plugin's
-     * own widget markup, which needs its script to run to render at all, exactly as it would
-     * on a normal full-page load (where My Profile's identical captcha already executes
-     * unconditionally). It is not a general "run arbitrary HTML" facility — it only ever
-     * looks at the one attribute the server-side captcha template writes.
-     *
-     * The attribute carries the HTML past parse() untouched (it's an attribute value, not
-     * child markup), so this must be called once, after adopt(), to actually run it.
-     * createContextualFragment (unlike innerHTML) leaves parsed scripts runnable, which is
-     * exactly why it is used only here and not in parse()/adopt().
-     *
-     * Callers only call this for the login step's fetch (the one task that can ever render
-     * this attribute) — see the `task === 'login'` guard in each default.php's fetchStep().
-     * It is still a no-op on any other content, since the attribute never appears there, but
-     * callers should not rely on that and invoke it unconditionally.
+     * Callers only call this for the login and register steps' fetches (the only tasks that
+     * can ever render this attribute) — see the `task === 'login' || task === 'register'`
+     * guard in each default.php's fetchStep(). It is still a no-op on any other content,
+     * since the attribute never appears there, but callers should not rely on that and
+     * invoke it unconditionally.
      */
     function renderCaptchaMarkup(root) {
         if (!root) {
@@ -112,8 +117,23 @@
         root.querySelectorAll('[data-j2c-captcha-html]').forEach(function (el) {
             var html = el.getAttribute('data-j2c-captcha-html');
             el.removeAttribute('data-j2c-captcha-html');
-            el.appendChild(document.createRange().createContextualFragment(html));
+            runCaptchaHtml(el, html);
         });
+    }
+
+    /**
+     * Swap a single captcha slot for a fresh, unused challenge after a failed attempt —
+     * used where the surrounding form holds too much typed data to discard by re-fetching
+     * the whole step (registration), unlike the login step which just re-fetches itself.
+     * A no-op if either argument is missing, so callers can call it unconditionally on
+     * whatever the server happened to send back.
+     */
+    function resetCaptchaMarkup(el, html) {
+        if (!el || !html) {
+            return;
+        }
+
+        runCaptchaHtml(el, html);
     }
 
     /** Build an element in one call: J2CommerceDom.el('div', {class: 'x'}, 'text'). */
@@ -175,5 +195,5 @@
         }
     }
 
-    window.J2CommerceDom = { parse, adopt, renderCaptchaMarkup, el, showMessages };
+    window.J2CommerceDom = { parse, adopt, renderCaptchaMarkup, resetCaptchaMarkup, el, showMessages };
 })(window, document);
