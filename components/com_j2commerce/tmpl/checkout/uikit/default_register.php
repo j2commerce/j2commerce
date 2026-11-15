@@ -27,6 +27,7 @@ $showShipping        = $this->showShipping ?? false;
 $showShippingAddress = ConfigHelper::showShippingAddress();
 $fields              = $this->fields ?? [];
 $registrationForm    = $this->registrationForm ?? null;
+$registerCaptchaHtml = $this->registerCaptchaHtml ?? '';
 
 $config = J2CommerceHelper::config();
 $requiredIndicator = $config->get('checkout_required_indicator', 'asterisk');
@@ -54,6 +55,13 @@ $asterisk = ($requiredIndicator === 'asterisk') ? ' <span class="uk-text-danger"
                 <input type="password" name="confirm" id="j2c-register-confirm" class="uk-input" required autocomplete="new-password" />
             </div>
         </div>
+
+        <?php if ($registerCaptchaHtml !== '') : ?>
+        <div class="uk-margin-top" role="group" aria-labelledby="j2c-register-captcha-lbl">
+            <div id="j2c-register-captcha-lbl" class="uk-form-label"><?php echo Text::_('COM_J2COMMERCE_MYPROFILE_CAPTCHA_LABEL'); ?></div>
+            <div id="j2c-register-captcha-slot" data-j2c-captcha-html="<?php echo htmlspecialchars($registerCaptchaHtml, ENT_QUOTES, 'UTF-8'); ?>"></div>
+        </div>
+        <?php endif; ?>
     </div>
 
     <?php if ($showShipping && $showShippingAddress) : ?>
