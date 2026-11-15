@@ -383,8 +383,12 @@ class CheckoutController extends BaseController
             $guestSessionId = $session->getId();
             $credentials    = ['username' => $email, 'password' => $password];
 
+            // Same 'return' convention Joomla's own login form uses, so a captive
+            // MFA challenge sends the shopper back to checkout instead of their profile.
+            $options = ['return' => base64_encode($this->getCheckoutUrl())];
+
             try {
-                $result = $this->app->login($credentials);
+                $result = $this->app->login($credentials, $options);
 
                 if ($result !== true) {
                     $json['error']['warning'] = Text::_('COM_J2COMMERCE_CHECKOUT_ERROR_LOGIN');
