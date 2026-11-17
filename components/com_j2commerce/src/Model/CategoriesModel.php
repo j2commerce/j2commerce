@@ -362,18 +362,34 @@ class CategoriesModel extends BaseDatabaseModel
         $db       = $this->getDatabase();
         $query    = $db->getQuery(true);
         $isEditor = ProductVisibilityHelper::isEditor();
+        $levels   = array_map('intval', $this->getCurrentUser()->getAuthorisedViewLevels()) ?: [1];
+
+        // Same visibility as the listing and mod_j2commerce_categories: the viewer's access levels, the site
+        // language and, for non-editors, the publish window, so a category tile never counts products the listing
+        // will not show. Kept in the join, not WHERE, so categories with no matching product still return 0.
+        $articleJoin = $db->quoteName('a.catid') . ' = ' . $db->quoteName('c.id')
+            . ' AND ' . $db->quoteName('a.state') . ($isEditor ? ' IN (0, 1)' : ' = 1')
+            . ' AND ' . $db->quoteName('a.access') . ' IN (' . implode(',', $levels) . ')';
+
+        if (!$isEditor) {
+            $nowDate = Factory::getDate()->toSql();
+            $articleJoin .= ' AND (' . $db->quoteName('a.publish_up') . ' IS NULL OR ' . $db->quoteName('a.publish_up') . ' <= :publishUp)'
+                . ' AND (' . $db->quoteName('a.publish_down') . ' IS NULL OR ' . $db->quoteName('a.publish_down') . ' >= :publishDown)';
+            $query->bind(':publishUp', $nowDate)->bind(':publishDown', $nowDate);
+        }
+
+        if (Multilanguage::isEnabled()) {
+            $langTag      = Factory::getApplication()->getLanguage()->getTag();
+            $articleJoin .= ' AND ' . $db->quoteName('a.language') . ' IN (:countLang, ' . $db->quote('*') . ')';
+            $query->bind(':countLang', $langTag);
+        }
 
         $query->select([
                 $db->quoteName('c.id', 'catid'),
                 'COUNT(DISTINCT ' . $db->quoteName('p.j2commerce_product_id') . ') AS ' . $db->quoteName('product_count'),
             ])
             ->from($db->quoteName('#__categories', 'c'))
-            ->join(
-                'LEFT',
-                $db->quoteName('#__content', 'a'),
-                $db->quoteName('a.catid') . ' = ' . $db->quoteName('c.id')
-                    . ' AND ' . $db->quoteName('a.state') . ($isEditor ? ' IN (0, 1)' : ' = 1')
-            )
+            ->join('LEFT', $db->quoteName('#__content', 'a'), $articleJoin)
             ->join(
                 'LEFT',
                 $db->quoteName('#__j2commerce_products', 'p'),
