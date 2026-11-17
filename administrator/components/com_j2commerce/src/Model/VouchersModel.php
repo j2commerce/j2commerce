@@ -119,6 +119,14 @@ class VouchersModel extends ListModel
             ])
         );
 
+        // from_orderitem_id is not a core column: it is added by the optional Gift
+        // Certificate app plugin (ALTER TABLE in its install/update SQL) to record which
+        // order line a voucher was minted from. Selecting it unconditionally would break
+        // this query on any site that does not have that plugin installed.
+        if (isset($db->getTableColumns('#__j2commerce_vouchers')['from_orderitem_id'])) {
+            $query->select($db->quoteName('a.from_orderitem_id'));
+        }
+
         $query->select('COALESCE(red.redeemed_total, 0) AS ' . $db->quoteName('redeemed_total'));
         $query->select('COALESCE(red.uses_count, 0) AS ' . $db->quoteName('uses_count'));
         $query->select($remainingBalanceExpr . ' AS ' . $db->quoteName('remaining_balance'));
