@@ -18,7 +18,12 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Service\ProductService;
 use J2Commerce\Component\J2commerce\Site\Helper\ProductVisibilityHelper;
+use Joomla\CMS\Application\CMSApplicationInterface;
+use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Language;
+use Joomla\CMS\Language\LanguageHelper;
+use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\MVC\Controller\BaseController;
 
 class ProductController extends BaseController
@@ -29,6 +34,8 @@ class ProductController extends BaseController
         $productId = $app->getInput()->getInt('product_id', 0);
 
         header('Content-Type: application/json; charset=utf-8');
+
+        self::matchLanguageToReferer($app);
 
         // A product the visitor may not see reports as missing, never as forbidden.
         if (!$productId || !ProductVisibilityHelper::isViewable($productId)) {
@@ -61,5 +68,46 @@ class ProductController extends BaseController
 
         echo json_encode($result);
         $app->close();
+    }
+
+    /**
+     * This endpoint is called by plain index.php AJAX requests that carry no SEF
+     * language segment, so the language filter resolves them to the site's
+     * default language rather than the one the visitor is actually browsing in.
+     * The calling page's own URL — its "return" field, or the Referer header
+     * when that's absent — still carries that segment, so use it to switch the
+     * active language before any Text:: string is produced. This never touches
+     * the request's own URL, so it cannot trigger the SEF router's redirect logic.
+     */
+    private static function matchLanguageToReferer(CMSApplicationInterface $app): void
+    {
+        if (!$app instanceof SiteApplication || !Multilanguage::isEnabled()) {
+            return;
+        }
+
+        $return = (string) $app->getInput()->get('return', '', 'base64');
+        $url    = $return !== '' ? (string) base64_decode($return) : $app->getInput()->server->getString('HTTP_REFERER', '');
+
+        $path    = trim((string) parse_url($url, PHP_URL_PATH), '/');
+        $segment = strtolower(strtok($path, '/') ?: '');
+
+        if ($segment === '') {
+            return;
+        }
+
+        $languages = LanguageHelper::getLanguages('sef');
+
+        if (empty($languages[$segment])) {
+            return;
+        }
+
+        $tag = $languages[$segment]->lang_code;
+
+        if ($tag === $app->getLanguage()->getTag()) {
+            return;
+        }
+
+        $app->loadLanguage(Language::getInstance($tag));
+        $app->getLanguage()->load('com_j2commerce', JPATH_SITE);
     }
 }
