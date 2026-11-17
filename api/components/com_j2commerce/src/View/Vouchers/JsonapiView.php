@@ -23,6 +23,7 @@ class JsonapiView extends J2CommerceJsonapiView
     protected $fieldsToRenderItem = [
         'j2commerce_voucher_id',
         'order_id',
+        'from_orderitem_id',
         'email_to',
         'voucher_code',
         'voucher_type',
@@ -39,6 +40,7 @@ class JsonapiView extends J2CommerceJsonapiView
 
     protected $fieldsToRenderList = [
         'j2commerce_voucher_id',
+        'from_orderitem_id',
         'voucher_code',
         'voucher_type',
         'email_to',
@@ -69,6 +71,12 @@ class JsonapiView extends J2CommerceJsonapiView
         }
 
         $id = (int) $item->{$this->pkField};
+
+        // from_orderitem_id only exists on sites with the optional Gift Certificate app
+        // plugin installed (it adds the column via its own install/update SQL). On any
+        // other site the property is simply never set on $item, so it is normalised to
+        // null here rather than left to whatever the base view does with an undeclared field.
+        $item->from_orderitem_id = $item->from_orderitem_id ?? null;
 
         /** @var \J2Commerce\Component\J2commerce\Administrator\Model\VoucherModel $model */
         $model = $this->getModel();
