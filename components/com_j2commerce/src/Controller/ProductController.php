@@ -22,6 +22,7 @@ use Joomla\CMS\Application\CMSApplicationInterface;
 use Joomla\CMS\Application\SiteApplication;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Language;
+use Joomla\CMS\Language\LanguageFactoryInterface;
 use Joomla\CMS\Language\LanguageHelper;
 use Joomla\CMS\Language\Multilanguage;
 use Joomla\CMS\MVC\Controller\BaseController;
@@ -107,7 +108,7 @@ class ProductController extends BaseController
             return;
         }
 
-        $app->loadLanguage(Language::getInstance($tag));
+        $app->loadLanguage(Factory::getContainer()->get(LanguageFactoryInterface::class)->createLanguage($tag));
         $app->getLanguage()->load('com_j2commerce', JPATH_SITE);
     }
 }
