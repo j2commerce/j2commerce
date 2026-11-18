@@ -569,7 +569,9 @@ class CheckoutController extends BaseController
         } elseif (\strlen($password) < 4) {
             $errors['password'] = Text::_('COM_J2COMMERCE_CHECKOUT_PASSWORD_TOO_SHORT');
         } elseif ($password !== $confirm) {
-            $errors['confirm'] = Text::_('COM_J2COMMERCE_CHECKOUT_PASSWORDS_DONT_MATCH');
+            // Key must match the field's id (not its name="confirm"), since showFieldError()
+            // looks up '#' + key — and "confirm" is already the big checkout confirm <section>'s id.
+            $errors['j2c-register-confirm'] = Text::_('COM_J2COMMERCE_CHECKOUT_PASSWORDS_DONT_MATCH');
         }
 
         if ($errors) {
