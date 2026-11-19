@@ -1159,7 +1159,7 @@ class InventoryHelper
             $newStock = self::adjustVariantStock((int) $item->variant_id, -$qty);
             self::adjustSold((int) $item->variant_id, $qty);
 
-            $historyComment = Text::sprintf(
+            $historyComment = OrderHistoryHelper::text(
                 'COM_J2COMMERCE_ORDERITEM_STOCK_REDUCED',
                 $item->orderitem_name ?? '',
                 $oldStock,
@@ -1236,7 +1236,7 @@ class InventoryHelper
 
             OrderHistoryHelper::add(
                 orderId: $orderId,
-                comment: Text::sprintf(
+                comment: OrderHistoryHelper::text(
                     'COM_J2COMMERCE_ORDERITEM_STOCK_INCREASED',
                     $item->orderitem_name ?? '',
                     $oldStock,

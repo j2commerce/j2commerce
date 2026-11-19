@@ -343,9 +343,9 @@ class OrderTable extends Table
 
         // Add order history entry for status change
         if ($isNew) {
-            $statusComment = Text::_('COM_J2COMMERCE_ORDER_CREATED');
+            $statusComment = OrderHistoryHelper::text('COM_J2COMMERCE_ORDER_CREATED');
         } else {
-            $statusComment = Text::sprintf(
+            $statusComment = OrderHistoryHelper::text(
                 'COM_J2COMMERCE_STATUS_CHANGED',
                 $this->resolveStatusName($oldStatusId),
                 $this->resolveStatusName($newStatusId)
@@ -457,7 +457,7 @@ class OrderTable extends Table
         $db->setQuery($query);
         $name = (string) ($db->loadResult() ?? '');
 
-        return $name !== '' ? Text::_($name) : (string) $statusId;
+        return $name !== '' ? OrderHistoryHelper::text($name) : (string) $statusId;
     }
 
     /**
