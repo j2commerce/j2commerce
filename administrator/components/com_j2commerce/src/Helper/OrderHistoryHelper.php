@@ -15,6 +15,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\LanguageFactoryInterface;
+use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 
@@ -22,6 +24,23 @@ final class OrderHistoryHelper
 {
     /** Marks a history line as admin-only; MyprofileModel::getOrderHistory() filters on this shape. */
     public const ADMIN_NOTE_PARAMS = '{"type":"admin_note"}';
+
+    private static array $languages = [];
+
+    /** Own admin Language: a webhook has nothing loaded, and a site request keeps its own wording for shared keys. Keys it lacks fall back to the request language. */
+    public static function text(string $key, string|int|float ...$args): string
+    {
+        $tag = Factory::getApplication()->getLanguage()->getTag();
+
+        if (!isset(self::$languages[$tag])) {
+            self::$languages[$tag] = Factory::getContainer()->get(LanguageFactoryInterface::class)->createLanguage($tag);
+            self::$languages[$tag]->load('com_j2commerce', JPATH_ADMINISTRATOR);
+        }
+
+        $text = self::$languages[$tag]->hasKey($key) ? self::$languages[$tag]->_($key) : Text::_($key);
+
+        return $args ? \sprintf($text, ...$args) : $text;
+    }
 
     public static function add(
         string $orderId,
