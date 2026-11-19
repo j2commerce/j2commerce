@@ -10,7 +10,7 @@
 }
 
 .j2commerce .text-bg-success {
-    color: var(--success)!important;
+    color: var(--success-text)!important;
     background-color: var(--success-bg-subtle)!important;
 }
 
@@ -19,37 +19,37 @@
 }
 
 .j2commerce .alert-success {
-    color: var(--success)!important;
+    color: var(--success-text)!important;
     background-color: var(--success-bg-subtle)!important;
 }
 
 .j2commerce .text-bg-info {
-    color: var(--info)!important;
+    color: var(--info-text)!important;
     background-color: var(--info-bg-subtle)!important;
 }
 
 .j2commerce .alert-info {
-    color: var(--info)!important;
+    color: var(--info-text)!important;
     background-color: var(--info-bg-subtle)!important;
 }
 
 .j2commerce .text-bg-warning {
-    color: var(--warning)!important;
+    color: var(--warning-text)!important;
     background-color: var(--warning-bg-subtle)!important;
 }
 
 .j2commerce .alert-warning {
-    color: var(--warning)!important;
+    color: var(--warning-text)!important;
     background-color: var(--warning-bg-subtle)!important;
 }
 
 .j2commerce .text-bg-danger {
-    color: var(--danger)!important;
+    color: var(--danger-text)!important;
     background-color: var(--danger-bg-subtle)!important;
 }
 
 .j2commerce .alert-danger {
-    color: var(--danger)!important;
+    color: var(--danger-text)!important;
     background-color: var(--danger-bg-subtle)!important;
 }
 
