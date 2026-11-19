@@ -1285,8 +1285,8 @@ class OrderModel extends AdminModel
 
         if (empty($historyComment)) {
             $oldStatus      = $this->getOrderStatus($oldStatusId);
-            $oldName        = Text::_($oldStatus->orderstatus_name ?? '') ?: '#' . $oldStatusId;
-            $historyComment = Text::sprintf('COM_J2COMMERCE_ORDER_HISTORY_STATUS_CHANGED', $oldName, Text::_($status->orderstatus_name));
+            $oldName        = OrderHistoryHelper::text($oldStatus->orderstatus_name ?? '') ?: '#' . $oldStatusId;
+            $historyComment = OrderHistoryHelper::text('COM_J2COMMERCE_ORDER_HISTORY_STATUS_CHANGED', $oldName, OrderHistoryHelper::text($status->orderstatus_name));
         }
 
         $this->addOrderHistory($order->order_id, $newStatusId, $notify, $historyComment);
