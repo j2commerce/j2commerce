@@ -2291,7 +2291,7 @@ class CartOrder
         // Add order history entry
         OrderHistoryHelper::add(
             orderId: $this->order_id,
-            comment: Text::_('COM_J2COMMERCE_ORDER_HISTORY_NEW_ORDER_CREATED'),
+            comment: OrderHistoryHelper::text('COM_J2COMMERCE_ORDER_HISTORY_NEW_ORDER_CREATED'),
             orderStateId: (int) $orderTable->order_state_id,
             createdBy: $userId,
         );

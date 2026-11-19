@@ -28,7 +28,7 @@ final class OrderHistoryHelper
     private static array $languages = [];
 
     /** Own admin Language: a webhook has nothing loaded, and a site request keeps its own wording for shared keys. Keys it lacks fall back to the request language. */
-    public static function text(string $key, string ...$args): string
+    public static function text(string $key, string|int|float ...$args): string
     {
         $tag = Factory::getApplication()->getLanguage()->getTag();
 

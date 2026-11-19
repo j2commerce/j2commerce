@@ -788,7 +788,7 @@ class OrderModel extends AdminModel
 
         OrderHistoryHelper::add(
             orderId: $orderId,
-            comment: Text::sprintf('COM_J2COMMERCE_ORDERITEM_STOCK_ADJUSTED', $itemName, $oldStock, $newStock),
+            comment: OrderHistoryHelper::text('COM_J2COMMERCE_ORDERITEM_STOCK_ADJUSTED', $itemName, $oldStock, $newStock),
         );
 
         return $newStock;
@@ -4748,14 +4748,14 @@ class OrderModel extends AdminModel
                             $orderId,
                             (int) $order->order_state_id,
                             true,
-                            Text::sprintf('COM_J2COMMERCE_CUSTOMER_NOTIFIED', $template->mailer->Subject)
+                            OrderHistoryHelper::text('COM_J2COMMERCE_CUSTOMER_NOTIFIED', $template->mailer->Subject)
                         );
                         $emailHelper->logEmailSend($orderId, 'customer', $template->mailer->Subject, array_keys($recipients), true);
                         $result['sent']++;
                         $result['customer_sent']++;
                     }
                 } catch (\Throwable $e) {
-                    $errorMsg           = Text::sprintf('COM_J2COMMERCE_EMAIL_SEND_FAILED', Text::_('JERROR_AN_ERROR_HAS_OCCURRED'));
+                    $errorMsg           = OrderHistoryHelper::text('COM_J2COMMERCE_EMAIL_SEND_FAILED', Text::_('JERROR_AN_ERROR_HAS_OCCURRED'));
                     $result['errors'][] = $errorMsg;
                     $this->addOrderHistory($orderId, (int) $order->order_state_id, false, $errorMsg);
                     $emailHelper->logEmailSend($orderId, 'customer', $template->mailer->Subject ?? '', [], false, $e->getMessage());
@@ -4789,14 +4789,14 @@ class OrderModel extends AdminModel
                             $orderId,
                             (int) $order->order_state_id,
                             false,
-                            Text::sprintf('COM_J2COMMERCE_ADMIN_NOTIFIED', $template->mailer->Subject)
+                            OrderHistoryHelper::text('COM_J2COMMERCE_ADMIN_NOTIFIED', $template->mailer->Subject)
                         );
                         $emailHelper->logEmailSend($orderId, 'admin', $template->mailer->Subject, array_keys($recipients), true);
                         $result['sent']++;
                         $result['admin_sent']++;
                     }
                 } catch (\Throwable $e) {
-                    $errorMsg           = Text::sprintf('COM_J2COMMERCE_EMAIL_SEND_FAILED', Text::_('JERROR_AN_ERROR_HAS_OCCURRED'));
+                    $errorMsg           = OrderHistoryHelper::text('COM_J2COMMERCE_EMAIL_SEND_FAILED', Text::_('JERROR_AN_ERROR_HAS_OCCURRED'));
                     $result['errors'][] = $errorMsg;
                     $emailHelper->logEmailSend($orderId, 'admin', $template->mailer->Subject ?? '', [], false, $e->getMessage());
                     Log::add('Admin order email send failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');

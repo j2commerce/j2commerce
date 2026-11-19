@@ -18,7 +18,6 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
-use Joomla\CMS\Language\Text;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
@@ -177,7 +176,7 @@ final class DownloadHelper
 
         OrderHistoryHelper::add(
             orderId: $orderId,
-            comment: Text::_('COM_J2COMMERCE_ORDER_DOWNLOAD_PERMISSION_GRANTED'),
+            comment: OrderHistoryHelper::text('COM_J2COMMERCE_ORDER_DOWNLOAD_PERMISSION_GRANTED'),
         );
     }
 
@@ -205,7 +204,7 @@ final class DownloadHelper
 
         OrderHistoryHelper::add(
             orderId: $orderId,
-            comment: Text::_('COM_J2COMMERCE_ORDER_DOWNLOAD_LIMIT_RESET'),
+            comment: OrderHistoryHelper::text('COM_J2COMMERCE_ORDER_DOWNLOAD_LIMIT_RESET'),
         );
     }
 
