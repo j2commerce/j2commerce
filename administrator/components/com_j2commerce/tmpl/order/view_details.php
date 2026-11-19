@@ -104,12 +104,13 @@ if ($hasDetails) {
 
         <?php
         $ledgerOrderId = (int) ($item->j2commerce_order_id ?? 0);
-        if ($ledgerOrderId > 0 && OrderTransactionHelper::hasLedger($ledgerOrderId)) :
+        if ($ledgerOrderId > 0 && ($this->canRecord || OrderTransactionHelper::hasLedger($ledgerOrderId))) :
             echo LayoutHelper::render('order.payment_balance', [
-                'order_id'       => $ledgerOrderId,
-                'order_total'    => (float) ($item->order_total ?? 0),
-                'currency_code'  => (string) ($item->currency_code ?? 'USD'),
-                'currency_value' => (float) ($item->currency_value ?? 1.0),
+                'order_id'          => $ledgerOrderId,
+                'order_total'       => (float) ($item->order_total ?? 0),
+                'currency_code'     => (string) ($item->currency_code ?? 'USD'),
+                'currency_value'    => (float) ($item->currency_value ?? 1.0),
+                'recorded_payments' => $this->recordPayload['payments'] ?? [],
             ], JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts');
         endif;
         ?>

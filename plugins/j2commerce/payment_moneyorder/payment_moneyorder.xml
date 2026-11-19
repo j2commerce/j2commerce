@@ -121,8 +121,8 @@
                     name="payment_status"
                     type="Orderstatus"
                     label="PLG_J2COMMERCE_ORDER_STATUS"
-                    description="PLG_J2COMMERCE_ORDER_STATUS_DESC"
-                    default="1"
+                    description="PLG_J2COMMERCE_PAYMENT_MONEYORDER_ORDER_STATUS_DESC"
+                    default="4"
                     addfieldprefix="J2Commerce\Component\J2commerce\Administrator\Field"
                     layout="joomla.form.field.list-fancy-select"
                 />

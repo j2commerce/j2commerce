@@ -16,11 +16,13 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPayGrantHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPaymentHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Base;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\Payment;
 use J2Commerce\Component\J2commerce\Administrator\Library\Plugins\PluginLayoutTrait;
 use J2Commerce\Component\J2commerce\Site\Helper\CheckoutContextHelper;
+use Joomla\CMS\Event\Model\PrepareFormEvent;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Language;
 use Joomla\CMS\Language\Text;
@@ -32,6 +34,7 @@ use Joomla\Database\DatabaseInterface;
 use Joomla\Event\DispatcherInterface;
 use Joomla\Event\Event;
 use Joomla\Event\SubscriberInterface;
+use Joomla\Registry\Registry;
 
 // phpcs:disable PSR1.Files.SideEffects
 \defined('_JEXEC') or die;
@@ -72,6 +75,7 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
+            'onContentPrepareForm'                  => 'onContentPrepareForm',
             'onJ2CommerceAcceptSubscriptionPayment' => 'onAcceptSubscriptionPayment',
             'onJ2CommerceProcessRenewalPayment'     => 'onProcessRenewalPayment',
             'onJ2CommerceCalculateFees'             => 'onCalculateFees',
@@ -327,9 +331,12 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
             $order->order_params    = json_encode($array);
         }
 
-        // Set status and save everything in a single store() call
-        $orderStateId          = (int) $this->params->get('payment_status', 4);
-        $order->order_state_id = $orderStateId;
+        // Set status and save everything in a single store() call; 0 means no status resolved, so the order keeps its own.
+        $orderStateId = OrderStatusHelper::resolveConfigured($this->params, 'payment_status', OrderStatusHelper::TYPE_OPEN);
+
+        if ($orderStateId > 0) {
+            $order->order_state_id = $orderStateId;
+        }
 
         if (!$order->store()) {
             Log::add('Bank transfer order save failed: ' . $order->getError(), Log::ERROR, 'com_j2commerce');
@@ -338,16 +345,61 @@ final class PaymentBanktransfer extends CMSPlugin implements SubscriberInterface
             return $json;
         }
 
+        // The line follows the payment evidence, not the status: an offline order is awaiting payment however it was stored.
         OrderHistoryHelper::add(
             orderId: $order->order_id,
-            comment: Text::sprintf('COM_J2COMMERCE_ORDER_HISTORY_PAYMENT_RECEIVED', Text::_('PLG_J2COMMERCE_PAYMENT_BANKTRANSFER')),
-            orderStateId: $orderStateId,
+            comment: Text::sprintf(
+                OrderPaymentHelper::isPaid($order)
+                    ? 'COM_J2COMMERCE_ORDER_HISTORY_PAYMENT_RECEIVED'
+                    : 'PLG_J2COMMERCE_PAYMENT_BANKTRANSFER_HISTORY_AWAITING_PAYMENT',
+                Text::_('PLG_J2COMMERCE_PAYMENT_BANKTRANSFER')
+            ),
+            orderStateId: (int) $order->order_state_id,
         );
 
         $json['success']  = strip_tags(J2htmlHelper::translateKey($this->params->get('onafterpayment', '')));
         $json['redirect'] = $this->getPayment()->getReturnUrl();
 
         return $json;
+    }
+
+    /** Warns on this plugin's own settings form when the saved status marks orders paid at checkout. */
+    public function onContentPrepareForm(PrepareFormEvent $event): void
+    {
+        $form = $event->getForm();
+        $data = (array) $event->getData();
+
+        if (
+            $form->getName() !== 'com_plugins.plugin'
+            || ($data['folder'] ?? '') !== 'j2commerce'
+            || ($data['element'] ?? '') !== $this->_name
+        ) {
+            return;
+        }
+
+        $params = $data['params'] ?? [];
+        $params = $params instanceof Registry ? $params : new Registry($params);
+
+        if (!OrderStatusHelper::isFinalized(OrderStatusHelper::getType((int) $params->get('payment_status', 0)))) {
+            return;
+        }
+
+        $anchor = $form->getXml()->xpath('//field[@name="payment_status"]')[0] ?? null;
+
+        if ($anchor === null) {
+            return;
+        }
+
+        $anchorNode = dom_import_simplexml($anchor);
+        $note       = $anchorNode->ownerDocument->importNode(
+            dom_import_simplexml(new \SimpleXMLElement(
+                '<field name="payment_status_warning" type="note" class="alert alert-warning"'
+                . ' description="PLG_J2COMMERCE_PAYMENT_BANKTRANSFER_STATUS_WARNING"/>'
+            )),
+            true
+        );
+
+        $anchorNode->parentNode->insertBefore($note, $anchorNode->nextSibling);
     }
 
     private function ensureLanguageLoaded(): void

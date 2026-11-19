@@ -15,6 +15,8 @@ namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
+use Joomla\CMS\Log\Log;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 
@@ -81,6 +83,58 @@ final class OrderHistoryHelper
             return $db->execute();
         } catch (\Exception $e) {
             return false;
+        }
+    }
+
+    /** Admin-only "status left unchanged" line, once per order and $context; deduped on the params marker, not the translated text, so another site language cannot add a second. */
+    public static function noteStatusUnchanged(int $orderPk, string $context = ''): void
+    {
+        if ($orderPk <= 0) {
+            return;
+        }
+
+        try {
+            $db = Factory::getContainer()->get(DatabaseInterface::class);
+
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('order_id'))
+                ->from($db->quoteName('#__j2commerce_orders'))
+                ->where($db->quoteName('j2commerce_order_id') . ' = :pk')
+                ->bind(':pk', $orderPk, ParameterType::INTEGER);
+
+            $orderNumber = (string) $db->setQuery($query)->loadResult();
+
+            if ($orderNumber === '') {
+                return;
+            }
+
+            $pattern = '%"status_unchanged":1%';
+            $query   = $db->getQuery(true)
+                ->select($db->quoteName('params'))
+                ->from($db->quoteName('#__j2commerce_orderhistories'))
+                ->where($db->quoteName('order_id') . ' = :orderNumber')
+                ->where($db->quoteName('params') . ' LIKE :pattern')
+                ->bind(':orderNumber', $orderNumber)
+                ->bind(':pattern', $pattern);
+
+            foreach ($db->setQuery($query)->loadColumn() as $json) {
+                $marker = json_decode((string) $json, true);
+
+                if (\is_array($marker) && ($marker['context'] ?? '') === $context) {
+                    return;
+                }
+            }
+
+            // A site-side webhook has not loaded the admin file, and Text::_() would store the raw key.
+            Factory::getApplication()->getLanguage()->load('com_j2commerce', JPATH_ADMINISTRATOR);
+
+            self::add(
+                orderId: $orderNumber,
+                comment: Text::_('COM_J2COMMERCE_ORDER_STATUS_UNCHANGED_NOTE'),
+                params: ['type' => 'admin_note', 'status_unchanged' => 1, 'context' => $context],
+            );
+        } catch (\Throwable $e) {
+            Log::add('Status-unchanged note failed for order ' . $orderPk . ': ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
         }
     }
 

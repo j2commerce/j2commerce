@@ -19,11 +19,18 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPayGrantHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPaymentHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderRecordedPaymentHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderTransactionHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\PackingSlipHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\PaymentRuleHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
+use Joomla\CMS\Date\Date;
 use Joomla\CMS\Factory;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\CMS\MVC\Controller\FormController;
@@ -108,7 +115,7 @@ class OrderController extends FormController
             if ($newStatus > 0 && $newStatus !== (int) $order->order_state_id) {
                 // A status change writes its own history + fires the status event and
                 // (when notifying) sends its own notification, so don't also fire a plain one.
-                if (!$model->updateOrderStatus($orderId, $newStatus, $notify, '', true)) {
+                if (!$model->updateOrderStatus($orderId, $newStatus, $notify, '', true, true)) {
                     $this->app->enqueueMessage(
                         implode("\n", $model->getErrors()) ?: Text::_('COM_J2COMMERCE_ERROR_SAVE_FAILED'),
                         'warning'
@@ -210,7 +217,7 @@ class OrderController extends FormController
 
             $model = $this->getModel();
 
-            if ($model->updateOrderStatus($orderId, $statusId, false, $comment, true)) {
+            if ($model->updateOrderStatus($orderId, $statusId, false, $comment, true, true)) {
                 if ($notify) {
                     $order        = $model->getItem($orderId);
                     $notifyResult = $order && !empty($order->order_id)
@@ -370,9 +377,9 @@ class OrderController extends FormController
 
             $model = $this->getModel();
 
-            if (!$model->updateOrderStatus($orderId, $statusId, false, '', true)) {
+            if (!$model->updateOrderStatus($orderId, $statusId, false, '', true, true)) {
                 $errors = $model->getErrors();
-                throw new \Exception(implode("\n", $errors));
+                throw new UserFacingException(implode("\n", $errors));
             }
 
             $message     = Text::_('COM_J2COMMERCE_ORDER_STATUS_UPDATED');
@@ -2019,6 +2026,277 @@ class OrderController extends FormController
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
             $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERR_GENERIC')]);
         }
+    }
+
+    public function ajaxRecordPayment(): void
+    {
+        $this->recordLedgerEntry(false);
+    }
+
+    /** Never contacts a gateway and never moves the status. */
+    public function ajaxRecordRefund(): void
+    {
+        $this->recordLedgerEntry(true);
+    }
+
+    private function recordLedgerEntry(bool $refund): void
+    {
+        if (!$this->checkOrderEditAccess()) {
+            return;
+        }
+
+        if (!J2CommerceHelper::canAccess('j2commerce.recordpayment')) {
+            $this->sendJson(['success' => false, 'message' => Text::_('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN')]);
+
+            return;
+        }
+
+        try {
+            if (!($order = $this->loadOrderForAjax())) {
+                return;
+            }
+
+            $lock = OrderRecordedPaymentHelper::acquireLock((int) $order->j2commerce_order_id);
+
+            if ($lock === null) {
+                $this->sendJson(['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERR_RECORD_PAYMENT_BUSY')]);
+
+                return;
+            }
+
+            try {
+                $outcome = $this->writeLedgerEntry($order, $refund);
+            } finally {
+                OrderRecordedPaymentHelper::releaseLock($lock);
+            }
+
+            $result = $outcome['success'] ? $this->ledgerResponse($order, $refund, $outcome) : $outcome;
+        } catch (\Throwable $e) {
+            Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
+            $result = ['success' => false, 'message' => Text::_('COM_J2COMMERCE_ERR_GENERIC')];
+        }
+
+        $this->sendJson($result);
+    }
+
+    /**
+     * Validates and writes one manual ledger row plus its history line, inside the named lock.
+     *
+     * @return array{success: bool, message?: string, field?: string, ledger_id?: int, amount?: float}
+     */
+    private function writeLedgerEntry(object $order, bool $refund): array
+    {
+        $pk       = (int) $order->j2commerce_order_id;
+        $user     = $this->app->getIdentity();
+        $userId   = (int) $user->id;
+        $fig      = OrderRecordedPaymentHelper::figures($order);
+        $currency = $fig['currency'];
+        // Half the currency's smallest unit; it absorbs rounding so a balance of 10.00 accepts "10" and "10.00".
+        $epsilon = $fig['threshold'];
+        $fmt     = static fn (float $value): string => CurrencyHelper::format($value, $currency, 1.0);
+        $fail    = static fn (string $message, string $field = ''): array => ['success' => false, 'message' => $message, 'field' => $field];
+
+        $method = $this->input->post->getCmd('payment_method', '');
+
+        if (!isset(OrderRecordedPaymentHelper::methodOptions((string) ($order->orderpayment_type ?? ''))[$method])) {
+            return $fail(Text::_('COM_J2COMMERCE_ERR_RECORD_PAYMENT_METHOD'), 'payment_method');
+        }
+
+        $manual = OrderRecordedPaymentHelper::manualRows($pk);
+
+        if ($refund) {
+            $limit       = OrderRecordedPaymentHelper::manualRefundable($manual, $fig['decimals']);
+            $amountError = Text::sprintf('COM_J2COMMERCE_ERR_RECORD_REFUND_AMOUNT', $fmt($limit));
+        } else {
+            $statusType = OrderStatusHelper::getType((int) $order->order_state_id);
+
+            if (
+                \in_array($statusType, [OrderStatusHelper::TYPE_CANCELLED, OrderStatusHelper::TYPE_REFUNDED], true)
+                || $fig['total'] <= $epsilon
+                || $fig['balance'] <= $epsilon
+            ) {
+                return $fail(Text::_('COM_J2COMMERCE_ERR_RECORD_PAYMENT_NOT_ALLOWED'));
+            }
+
+            $limit       = $fig['balance'];
+            $amountError = Text::sprintf('COM_J2COMMERCE_ERR_RECORD_PAYMENT_AMOUNT', $fmt($limit));
+        }
+
+        $amount = $this->parseLedgerAmount($this->input->post->getString('amount', ''), $fig['decimals']);
+
+        if ($amount === null || $amount < $epsilon || $amount > $limit + $epsilon) {
+            return $fail($amountError, 'amount');
+        }
+
+        $dateField = $refund ? 'refunded_on' : 'received_on';
+        $date      = $this->parseLedgerDate($this->input->post->getString($dateField, ''), $order);
+
+        if ($date === null) {
+            return $fail(Text::_('COM_J2COMMERCE_ERR_RECORD_PAYMENT_DATE'), $dateField);
+        }
+
+        $reference = mb_substr(trim(strip_tags($this->input->post->getString('reference', ''))), 0, 255);
+        $note      = mb_substr(trim(strip_tags($this->input->post->getString('note', ''))), 0, 1000);
+
+        // Manual rows carry no idempotency key (OrderTransactionHelper::writeRow()), so a double
+        // submit (same user, direction, amount and reference within 120 seconds) is caught here,
+        // inside the lock, against the rows already stored.
+        $now = (new Date('now'))->toUnix();
+
+        foreach ($manual as $row) {
+            if (
+                (((string) $row->type === 'REVERSAL') === $refund)
+                && (int) $row->created_by === $userId
+                && abs((float) $row->amount - $amount) < $epsilon
+                && (string) ($row->reference ?? '') === $reference
+                && $now - (new Date((string) $row->created_at))->toUnix() < 120
+            ) {
+                return $fail(Text::_('COM_J2COMMERCE_ERR_RECORD_PAYMENT_DUPLICATE'));
+            }
+        }
+
+        if ($refund) {
+            $ledgerId = OrderTransactionHelper::addManualReversal($pk, $amount, $currency, $method, $reference, $note, $userId, $date . ' 00:00:00');
+        } else {
+            // Promotion is deferred until the payment line is in the history, so it reads before the status move.
+            $ledgerId = OrderTransactionHelper::addManualCharge($pk, $amount, $currency, $method, $reference, $note, $date . ' 00:00:00', $userId, false);
+        }
+
+        $after = OrderRecordedPaymentHelper::figures($order);
+
+        $transactionStatus = $refund
+            ? ($after['net'] <= $epsilon ? 'Refunded' : 'Partially Refunded')
+            : ($after['balance'] <= $epsilon ? 'Completed' : null);
+
+        if ($transactionStatus !== null) {
+            OrderTransactionHelper::setTransactionStatus($pk, $transactionStatus, $userId);
+        }
+
+        OrderHistoryHelper::add(
+            (string) $order->order_id,
+            Text::sprintf(
+                $refund ? 'COM_J2COMMERCE_HISTORY_REFUND_RECORDED' : 'COM_J2COMMERCE_HISTORY_PAYMENT_RECORDED',
+                $fmt($amount),
+                OrderRecordedPaymentHelper::methodLabel($method),
+                $reference !== '' ? $reference : '-',
+                (string) $user->name
+            ),
+            (int) $order->order_state_id,
+            false,
+            $userId,
+            ['ledger_id' => $ledgerId]
+        );
+
+        if (!$refund) {
+            // The Confirm checkbox decides whether a parked order is released by this payment.
+            if ($this->input->post->getInt('confirm', 0) === 1) {
+                try {
+                    PaymentRuleHelper::promoteIfSatisfied($pk);
+                } catch (\Throwable $e) {
+                    Log::add('Payment rule promotion failed for order ' . $pk . ': ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+                }
+            }
+
+            try {
+                J2CommerceHelper::plugin()->eventWithArray('AfterRecordPayment', [
+                    'order'     => $order,
+                    'ledger_id' => $ledgerId,
+                    'amount'    => $amount,
+                    'method'    => $method,
+                    'reference' => $reference,
+                    'user_id'   => $userId,
+                ]);
+            } catch (\Throwable $e) {
+                Log::add('AfterRecordPayment listener failed: ' . $e->getMessage(), Log::WARNING, 'com_j2commerce');
+            }
+        }
+
+        return ['success' => true, 'ledger_id' => $ledgerId, 'amount' => $amount];
+    }
+
+    /** Optional Confirmed move, after the lock is released (it has its own compare-and-swap and redemption locks), and the envelope the order view updates itself from. */
+    private function ledgerResponse(object $order, bool $refund, array $outcome): array
+    {
+        $pk       = (int) $order->j2commerce_order_id;
+        $fig      = OrderRecordedPaymentHelper::figures($order);
+        $currency = $fig['currency'];
+        $amount   = CurrencyHelper::format((float) $outcome['amount'], $currency, 1.0);
+        $statusId = OrderPaymentHelper::currentStatusId($pk);
+        $message  = Text::sprintf($refund ? 'COM_J2COMMERCE_MSG_REFUND_RECORDED' : 'COM_J2COMMERCE_MSG_PAYMENT_RECORDED', $amount);
+
+        if (!$refund && $this->input->post->getInt('confirm', 0) === 1 && OrderPaymentHelper::state($pk) === 'paid') {
+            $confirmedId = OrderStatusHelper::idOfType(OrderStatusHelper::TYPE_COMPLETE, 'J2COMMERCE_CONFIRMED');
+
+            if (
+                $confirmedId > 0
+                && \in_array(OrderStatusHelper::getType($statusId), [OrderStatusHelper::TYPE_NEW, OrderStatusHelper::TYPE_OPEN, OrderStatusHelper::TYPE_FAILED], true)
+            ) {
+                $model  = $this->getModel();
+                $reason = '';
+
+                try {
+                    if (!$model->updateOrderStatus($pk, $confirmedId, false, '', true, true)) {
+                        $reason = trim(strip_tags(implode(' ', array_filter(array_map(
+                            static fn ($error): string => \is_string($error) ? $error : '',
+                            $model->getErrors()
+                        )))));
+                    }
+                } catch (\Throwable $e) {
+                    Log::add('Confirmed move after Record Payment failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+                    $reason = Text::_('COM_J2COMMERCE_ERR_GENERIC');
+                }
+
+                $statusId = OrderPaymentHelper::currentStatusId($pk);
+
+                if ($statusId === $confirmedId) {
+                    $message = Text::sprintf('COM_J2COMMERCE_MSG_PAYMENT_RECORDED_CONFIRMED', $amount, Text::_((string) ($this->getStatusInfo($statusId)->orderstatus_name ?? '')));
+                } else {
+                    $message = Text::sprintf('COM_J2COMMERCE_MSG_PAYMENT_RECORDED_STATUS_KEPT', $amount, $reason !== '' ? $reason : Text::_('COM_J2COMMERCE_ERR_GENERIC'));
+                }
+            }
+        }
+
+        $order->order_state_id = $statusId;
+        $info                  = $this->getStatusInfo($statusId);
+
+        return [
+            'success' => true,
+            'message' => $message,
+            'state'   => OrderRecordedPaymentHelper::indicator($order, OrderPaymentHelper::summary($pk)),
+            'status'  => [
+                'id'       => $statusId,
+                'name'     => Text::_((string) ($info->orderstatus_name ?? '')),
+                'cssclass' => J2htmlHelper::badgeClass((string) ($info->orderstatus_cssclass ?? 'badge text-bg-secondary')),
+            ],
+            'figures' => OrderRecordedPaymentHelper::payload($order),
+        ];
+    }
+
+    /** Accepts "10", "10.50" and "10,50" (one comma, 1-2 decimals), rounded to the currency's scale; "1,000" is ambiguous, so it and anything else yield null. */
+    private function parseLedgerAmount(string $raw, int $decimals): ?float
+    {
+        $raw = str_replace([' ', "\u{00A0}"], '', trim($raw));
+
+        if (preg_match('/^\d{1,12},\d{1,2}$/', $raw) === 1) {
+            $raw = str_replace(',', '.', $raw);
+        }
+
+        return preg_match('/^\d{1,12}(\.\d{1,6})?$/', $raw) === 1 ? round((float) $raw, $decimals) : null;
+    }
+
+    /** Y-m-d, not in the future and not before the order was placed (both in the user's timezone). */
+    private function parseLedgerDate(string $raw, object $order): ?string
+    {
+        $today = (string) HTMLHelper::_('date', 'now', 'Y-m-d');
+        $raw   = trim($raw) === '' ? $today : trim($raw);
+
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $raw, $m) !== 1 || !checkdate((int) $m[2], (int) $m[3], (int) $m[1])) {
+            return null;
+        }
+
+        $placed = (string) HTMLHelper::_('date', (string) ($order->created_on ?? 'now'), 'Y-m-d');
+
+        return $raw > $today || $raw < $placed ? null : $raw;
     }
 
     protected function validateAjaxToken(): bool

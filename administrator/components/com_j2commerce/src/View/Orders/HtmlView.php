@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Orders;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\MenuHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPaymentHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
@@ -50,6 +51,9 @@ class HtmlView extends BaseHtmlView
     public int $exportCount             = 0;
     public bool $hasPackingSlipTemplate = false;
     public bool $canDelete              = false;
+
+    /** @var array<int, array<string, mixed>> OrderPaymentHelper::summary() per order id, from one ledger query for the page. */
+    public array $paymentSummaries      = [];
     protected bool $canBatch            = false;
 
     public function display($tpl = null): void
@@ -71,6 +75,9 @@ class HtmlView extends BaseHtmlView
         $this->filterForm             = $model->getFilterForm();
         $this->activeFilters          = $model->getActiveFilters();
         $this->orderStatuses          = $this->loadOrderStatuses();
+        $this->paymentSummaries       = $this->items
+            ? OrderPaymentHelper::summaryForMany(array_map(static fn (object $item): int => (int) $item->j2commerce_order_id, $this->items))
+            : [];
         $this->pluginColumns          = $model->getPluginColumns();
         $this->exportForm             = $this->buildExportForm();
         $this->exportCount            = (int) $model->getOrdersTotal();
@@ -118,7 +125,7 @@ class HtmlView extends BaseHtmlView
             'com_j2commerce.admin-order',
             'media/com_j2commerce/css/administrator/admin-order.css',
             [],
-            ['version' => '6.0.8']
+            ['version' => '6.0.9']
         );
 
         // Read by the [data-j2c-confirm] handler in admin-order-list.js.

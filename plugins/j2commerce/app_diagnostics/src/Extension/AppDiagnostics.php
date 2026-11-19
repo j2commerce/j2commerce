@@ -12,6 +12,8 @@ namespace J2Commerce\Plugin\J2Commerce\AppDiagnostics\Extension;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CartHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\PaymentRuleHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
@@ -182,6 +184,255 @@ final class AppDiagnostics extends CMSPlugin implements SubscriberInterface
             'with_f'    => $withF,
             'verdict'   => Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_MAIL_TEST_VERDICT_' . strtoupper($verdict)),
             'sent_to'   => $to,
+        ];
+    }
+
+    /**
+     * History notes written by the Require Payment for Confirmed setting over the last 30 days,
+     * grouped by the order's payment method. Markers live in orderhistories.params as
+     * "payment_rule":"would_park" | "parked" | "override".
+     */
+    public function getPaymentRuleInfo(): array
+    {
+        $db        = $this->getDatabase();
+        $since     = Factory::getDate('now -30 days')->toSql();
+        $wouldPark = '%"payment_rule":"would_park"%';
+        $parked    = '%"payment_rule":"parked"%';
+        $override  = '%"payment_rule":"override"%';
+        $anyMarker = '%"payment_rule"%';
+
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('o.orderpayment_type', 'method'),
+                'SUM(' . $db->quoteName('h.params') . ' LIKE :wouldPark) AS ' . $db->quoteName('would_park'),
+                'SUM(' . $db->quoteName('h.params') . ' LIKE :parked) AS ' . $db->quoteName('parked'),
+                'SUM(' . $db->quoteName('h.params') . ' LIKE :override) AS ' . $db->quoteName('override'),
+            ])
+            ->from($db->quoteName('#__j2commerce_orderhistories', 'h'))
+            ->join('INNER', $db->quoteName('#__j2commerce_orders', 'o') . ' ON ' . $db->quoteName('o.order_id') . ' = ' . $db->quoteName('h.order_id'))
+            ->where($db->quoteName('h.created_on') . ' >= :since')
+            ->where($db->quoteName('h.params') . ' LIKE :anyMarker')
+            ->group($db->quoteName('o.orderpayment_type'))
+            ->order($db->quoteName('o.orderpayment_type'))
+            ->bind(':wouldPark', $wouldPark)
+            ->bind(':parked', $parked)
+            ->bind(':override', $override)
+            ->bind(':since', $since)
+            ->bind(':anyMarker', $anyMarker);
+
+        $rows = [];
+
+        foreach ($db->setQuery($query)->loadObjectList() ?: [] as $row) {
+            $rows[] = [
+                'method'     => (string) $row->method,
+                'would_park' => (int) $row->would_park,
+                'parked'     => (int) $row->parked,
+                'override'   => (int) $row->override,
+            ];
+        }
+
+        return ['mode' => PaymentRuleHelper::mode(), 'rows' => $rows];
+    }
+
+    /**
+     * Order types a payment setting should point at, inferred from the words in its name;
+     * null when the name carries none of them. Order matters: "refund_order_status" is a
+     * refund setting even though a status is what it holds.
+     */
+    public static function expectedStatusTypes(string $param): ?array
+    {
+        $tokens = explode('_', strtolower($param));
+        $has    = static fn (string ...$words): bool => array_intersect($tokens, $words) !== [];
+
+        return match (true) {
+            $has('refund', 'refunds', 'refunded')                     => ['refunded'],
+            $has('cancel', 'cancelled', 'canceled', 'void', 'voided') => ['cancelled'],
+            $has('failed', 'fail', 'declined', 'decline')             => ['failed'],
+            $has('pending')                                           => ['open', 'new'],
+            $has('authorized', 'authorised')                          => ['open', 'approved'],
+            $param === 'payment_status' || $has('paid', 'confirmed')  => ['complete'],
+            default                                                   => null,
+        };
+    }
+
+    /**
+     * Every saved order-status value on every installed payment plugin, enabled or not. Primary
+     * source is the manifest's Orderstatus fields; saved params ending "_status" that the
+     * manifest does not declare are the fallback. Read-only.
+     */
+    public function collectPaymentStatusSettings(): array
+    {
+        $db     = $this->getDatabase();
+        $type   = 'plugin';
+        $folder = 'j2commerce';
+        $like   = 'payment\\_%';
+        $query  = $db->getQuery(true)
+            ->select($db->quoteName(['name', 'element', 'enabled', 'params']))
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('type') . ' = :type')
+            ->where($db->quoteName('folder') . ' = :folder')
+            ->where($db->quoteName('element') . ' LIKE :like')
+            ->order($db->quoteName('element'))
+            ->bind(':type', $type)
+            ->bind(':folder', $folder)
+            ->bind(':like', $like);
+
+        $settings = [];
+
+        foreach ($db->setQuery($query)->loadObjectList() ?: [] as $plugin) {
+            $saved    = json_decode((string) $plugin->params, true);
+            $saved    = \is_array($saved) ? $saved : [];
+            $declared = [];
+
+            foreach ($this->readManifestFields((string) $plugin->element) as $field) {
+                $declared[$field['key']] = true;
+
+                if ($field['type'] === 'orderstatus') {
+                    $this->pushStatusValues($settings, $plugin, $field['key'], $field['label'], $saved);
+                }
+            }
+
+            foreach (array_keys($saved) as $key) {
+                $key = (string) $key;
+
+                // *change_status is a Yes/No switch (e.g. refund_change_status), not a status id.
+                if (isset($declared[$key]) || !str_ends_with($key, '_status') || str_ends_with($key, 'change_status')) {
+                    continue;
+                }
+
+                $this->pushStatusValues($settings, $plugin, $key, '', $saved);
+            }
+        }
+
+        return $settings;
+    }
+
+    private function readManifestFields(string $element): array
+    {
+        $file = JPATH_PLUGINS . '/j2commerce/' . $element . '/' . $element . '.xml';
+
+        if (!is_file($file)) {
+            return [];
+        }
+
+        $previous = libxml_use_internal_errors(true);
+        $xml      = simplexml_load_file($file);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        if ($xml === false) {
+            return [];
+        }
+
+        $fields = [];
+
+        foreach ($xml->xpath('//field[@name]') ?: [] as $node) {
+            $path = [];
+
+            foreach ($node->xpath('ancestor::fields[@name]') ?: [] as $group) {
+                if ((string) $group['name'] !== 'params') {
+                    $path[] = (string) $group['name'];
+                }
+            }
+
+            $path[]   = (string) $node['name'];
+            $fields[] = [
+                'key'   => implode('.', $path),
+                'type'  => strtolower((string) $node['type']),
+                'label' => (string) $node['label'],
+            ];
+        }
+
+        return $fields;
+    }
+
+    private function pushStatusValues(array &$settings, object $plugin, string $key, string $label, array $saved): void
+    {
+        $value = $saved;
+
+        foreach (explode('.', $key) as $part) {
+            if (!\is_array($value) || !\array_key_exists($part, $value)) {
+                return;
+            }
+
+            $value = $value[$part];
+        }
+
+        foreach ((array) $value as $candidate) {
+            if (!\is_int($candidate) && !(\is_string($candidate) && ctype_digit($candidate))) {
+                continue;
+            }
+
+            if ((int) $candidate > 0) {
+                $settings[] = [
+                    'plugin'  => (string) $plugin->name,
+                    'element' => (string) $plugin->element,
+                    'enabled' => (bool) $plugin->enabled,
+                    'param'   => $key,
+                    'label'   => $label,
+                    'value'   => (int) $candidate,
+                ];
+            }
+        }
+    }
+
+    /**
+     * Pure check of collected settings against the order status table, so it can be fed a
+     * planted params set. $typeOf resolves a status id to its type; default is the core helper.
+     * $statuses is keyed by status id.
+     */
+    public function evaluatePaymentStatusSettings(array $settings, array $statuses, ?callable $typeOf = null): array
+    {
+        $typeOf ??= OrderStatusHelper::getType(...);
+        $found    = [];
+
+        foreach ($settings as $setting) {
+            $id       = (int) $setting['value'];
+            $expected = self::expectedStatusTypes((string) $setting['param']);
+            $base     = $setting + ['status_name' => '', 'actual_type' => null, 'expected' => $expected ?? []];
+
+            if (!isset($statuses[$id])) {
+                $found[] = ['severity' => 'warning', 'problem' => 'missing'] + $base;
+
+                continue;
+            }
+
+            $base['status_name'] = (string) $statuses[$id]['name'];
+            $base['actual_type'] = $typeOf($id);
+
+            if ((int) $statuses[$id]['enabled'] !== 1) {
+                $found[] = ['severity' => 'notice', 'problem' => 'disabled'] + $base;
+            }
+
+            if ($expected === null) {
+                $found[] = ['severity' => 'info', 'problem' => 'unclassified'] + $base;
+            } elseif (!\in_array($base['actual_type'], $expected, true)) {
+                $found[] = ['severity' => 'warning', 'problem' => 'wrong_type'] + $base;
+            }
+        }
+
+        return $found;
+    }
+
+    public function getPaymentStatusInfo(): array
+    {
+        $db    = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select($db->quoteName(['j2commerce_orderstatus_id', 'orderstatus_name', 'enabled']))
+            ->from($db->quoteName('#__j2commerce_orderstatuses'));
+
+        $statuses = [];
+
+        foreach ($db->setQuery($query)->loadObjectList() ?: [] as $row) {
+            $statuses[(int) $row->j2commerce_orderstatus_id] = ['name' => (string) $row->orderstatus_name, 'enabled' => (int) $row->enabled];
+        }
+
+        $settings = $this->collectPaymentStatusSettings();
+
+        return [
+            'settings' => \count($settings),
+            'plugins'  => \count(array_unique(array_column($settings, 'element'))),
+            'findings' => $this->evaluatePaymentStatusSettings($settings, $statuses),
         ];
     }
 

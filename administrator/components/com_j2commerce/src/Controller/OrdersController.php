@@ -108,7 +108,7 @@ class OrdersController extends AdminController
             $missingTemplateIds = [];
 
             foreach ($pks as $pk) {
-                if (!$model->updateOrderStatus($pk, $statusId, false, $comment, true)) {
+                if (!$model->updateOrderStatus($pk, $statusId, false, $comment, true, true)) {
                     // Each refusal is named, so a bulk change never skips an order silently.
                     $this->app->enqueueMessage(Text::sprintf(
                         'COM_J2COMMERCE_ORDER_STATUS_NOT_CHANGED',
@@ -419,7 +419,7 @@ class OrdersController extends AdminController
 
             $model = $this->getModel();
 
-            if (!$model->updateOrderStatus($orderId, $newStatus, false, '', true)) {
+            if (!$model->updateOrderStatus($orderId, $newStatus, false, '', true, true)) {
                 $errors = $model->getErrors();
                 throw new UserFacingException(implode("\n", $errors));
             }

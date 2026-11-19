@@ -20,6 +20,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\InventoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderUploadHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\PaymentRuleHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\RedemptionHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -27,6 +28,7 @@ use Joomla\CMS\Log\Log;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Table\Table;
 use Joomla\Database\DatabaseDriver;
+use Joomla\Event\Event;
 
 /**
  * Order table class.
@@ -156,6 +158,32 @@ class OrderTable extends Table
         return true;
     }
 
+    /** Fires onJ2CommerceBeforeOrderStatusChange (named args order_id, order_pk, old_status, new_status, source, allow, reason); a subscriber vetoes with setArgument('allow', false). Null when allowed, else the reason; a throwing subscriber counts as no veto. store() does not dispatch it. */
+    public static function statusChangeVeto(string $orderId, int $orderPk, int $oldStatus, int $newStatus, string $source): ?string
+    {
+        PluginHelper::importPlugin('j2commerce');
+
+        $event = new Event('onJ2CommerceBeforeOrderStatusChange', [
+            'order_id'   => $orderId,
+            'order_pk'   => $orderPk,
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+            'source'     => $source,
+            'allow'      => true,
+            'reason'     => '',
+        ]);
+
+        try {
+            Factory::getApplication()->getDispatcher()->dispatch($event->getName(), $event);
+        } catch (\Throwable $e) {
+            Log::add('onJ2CommerceBeforeOrderStatusChange subscriber failed: ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            return null;
+        }
+
+        return $event->getArgument('allow', true) ? null : trim((string) $event->getArgument('reason', ''));
+    }
+
     /**
      * Store the order and trigger side effects when status changes.
      *
@@ -181,6 +209,12 @@ class OrderTable extends Table
         $newStatusId   = (int) $this->order_state_id;
         $statusClaimed = true;
         $oldOrderId    = '';
+        $ruleDecision  = ['action' => 'allow'];
+
+        if ($isNew) {
+            $ruleDecision = $this->applyPaymentRule(0, $newStatusId);
+            $newStatusId  = (int) $this->order_state_id;
+        }
 
         if (!$isNew) {
             $db    = $this->getDatabase();
@@ -193,6 +227,12 @@ class OrderTable extends Table
             $row         = $db->loadObject();
             $oldStatusId = (int) ($row->order_state_id ?? 0);
             $oldOrderId  = (string) ($row->order_id ?? '');
+
+            // Rewrites the target before the claim below, which writes order_state_id itself.
+            if ($oldStatusId !== $newStatusId) {
+                $ruleDecision = $this->applyPaymentRule($oldStatusId, $newStatusId);
+                $newStatusId  = (int) $this->order_state_id;
+            }
 
             // Claim the transition against the status just read, so only one writer runs
             // the side effects below. Two writers on the same order otherwise both see the
@@ -245,9 +285,13 @@ class OrderTable extends Table
             $this->repointOrderHistories($oldOrderId, (string) $this->order_id);
         }
 
+        PaymentRuleHelper::recordDecision((string) $this->order_id, $ruleDecision, $newStatusId, (int) ($user?->id ?? 0));
+
         // Skip if status didn't change (and not a new record), or if another writer owns
         // this transition
         if (!$isNew && ($oldStatusId === $newStatusId || !$statusClaimed)) {
+            $this->promoteIfParked();
+
             return true;
         }
 
@@ -314,7 +358,43 @@ class OrderTable extends Table
             comment: $statusComment,
         );
 
+        $this->promoteIfParked();
+
         return true;
+    }
+
+    /** Gateway-style rule check on the in-memory row, never a refusal; a park rewrites the status and sets the marker in order_params so one store() persists status, evidence and marker together. */
+    private function applyPaymentRule(int $oldStatusId, int $newStatusId): array
+    {
+        $decision = PaymentRuleHelper::decide($this, $oldStatusId, $newStatusId, PaymentRuleHelper::SOURCE_GATEWAY);
+
+        if ($decision['action'] === 'park') {
+            $this->order_state_id = $decision['target'];
+            $this->order_params   = PaymentRuleHelper::withMarker($this->order_params ?? null, $decision['intended'], $decision['target']);
+        }
+
+        return $decision;
+    }
+
+    /** Evidence written by a later store() on a parked order releases it; the in-memory row follows the move. */
+    private function promoteIfParked(): void
+    {
+        if (empty($this->j2commerce_order_id) || PaymentRuleHelper::readMarker($this->order_params ?? null) === null) {
+            return;
+        }
+
+        try {
+            $moved = PaymentRuleHelper::promote((int) $this->j2commerce_order_id);
+        } catch (\Throwable $e) {
+            Log::add('Payment rule promotion failed for order ' . $this->order_id . ': ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+
+            return;
+        }
+
+        if ($moved !== null) {
+            $this->order_state_id = $moved;
+            $this->order_params   = PaymentRuleHelper::withoutMarker($this->order_params);
+        }
     }
 
     /**

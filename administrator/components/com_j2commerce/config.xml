@@ -1428,6 +1428,20 @@
         />
 
         <field
+            name="order_payment_rule"
+            type="list"
+            label="COM_J2COMMERCE_CONFIG_ORDER_PAYMENT_RULE"
+            description="COM_J2COMMERCE_CONFIG_ORDER_PAYMENT_RULE_DESC"
+            default="1"
+            filter="integer"
+            class="form-select"
+        >
+            <option value="0">COM_J2COMMERCE_CONFIG_ORDER_PAYMENT_RULE_OFF</option>
+            <option value="1">COM_J2COMMERCE_CONFIG_ORDER_PAYMENT_RULE_LOG</option>
+            <option value="2">COM_J2COMMERCE_CONFIG_ORDER_PAYMENT_RULE_ENFORCE</option>
+        </field>
+
+        <field
             name="show_postpayment_orderlink"
             type="radio"
             label="COM_J2COMMERCE_CONFIG_SHOW_ORDER_LINK"

@@ -15,6 +15,8 @@ namespace J2Commerce\Plugin\J2Commerce\AppDiagnostics\Field;
 // phpcs:enable PSR1.Files.SideEffects
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use J2Commerce\Plugin\J2Commerce\AppDiagnostics\Extension\AppDiagnostics;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\FormField;
@@ -119,6 +121,8 @@ class DiagnosticField extends FormField
         $html[] = '</div>';
 
         $html[] = $maySeeDetail ? $this->renderMailSection() : '';
+        $html[] = $maySeeDetail ? $this->renderPaymentRuleSection() : '';
+        $html[] = $maySeeDetail ? $this->renderPaymentStatusSection() : '';
         $html[] = <<<'HTML'
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -220,6 +224,162 @@ HTML;
         if ($mail['built_mailer'] === 'mail') {
             $html[] = $this->renderMailTestControl();
         }
+
+        return implode("\n", $html);
+    }
+
+    /** Counts of orders the Require Payment for Confirmed setting held, would have held, or confirmed by override, per payment method. */
+    private function renderPaymentRuleSection(): string
+    {
+        $plugin = $this->getDiagnosticsPlugin();
+
+        if ($plugin === null) {
+            return '';
+        }
+
+        $info = $plugin->getPaymentRuleInfo();
+        $esc  = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+        $mode = match ($info['mode']) {
+            1       => 'PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_RULE_MODE_LOG',
+            2       => 'PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_RULE_MODE_ENFORCE',
+            default => 'PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_RULE_MODE_OFF',
+        };
+
+        $html   = [];
+        $html[] = '<h3 class="mt-4">' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_RULE_HEADING') . '</h3>';
+        $html[] = '<p class="text-body-secondary">' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_RULE_INTRO') . '</p>';
+        $html[] = '<p>' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_RULE_MODE') . ': <strong>' . Text::_($mode) . '</strong></p>';
+
+        if ($info['mode'] === 0) {
+            $html[] = '<div class="alert alert-info">' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_RULE_RECOMMEND') . '</div>';
+        }
+
+        if (!$info['rows']) {
+            $html[] = '<p>' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_RULE_NONE') . '</p>';
+
+            return implode("\n", $html);
+        }
+
+        $html[] = '<div class="table-responsive">';
+        $html[] = '<table class="table">';
+        $html[] = '<caption class="visually-hidden">' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_RULE_HEADING') . '</caption>';
+        $html[] = '<thead><tr>';
+        $html[] = '<th scope="col">' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_RULE_COL_METHOD') . '</th>';
+        $html[] = '<th scope="col" class="text-end">' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_RULE_COL_WOULD_HOLD') . '</th>';
+        $html[] = '<th scope="col" class="text-end">' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_RULE_COL_HELD') . '</th>';
+        $html[] = '<th scope="col" class="text-end">' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_RULE_COL_OVERRIDE') . '</th>';
+        $html[] = '</tr></thead>';
+        $html[] = '<tbody>';
+
+        foreach ($info['rows'] as $row) {
+            $html[] = '<tr><th scope="row">' . $esc($row['method'] !== '' ? $row['method'] : Text::_('JNONE')) . '</th>'
+                . '<td class="text-end">' . (int) $row['would_park'] . '</td>'
+                . '<td class="text-end">' . (int) $row['parked'] . '</td>'
+                . '<td class="text-end">' . (int) $row['override'] . '</td></tr>';
+        }
+
+        $html[] = '</tbody></table></div>';
+
+        return implode("\n", $html);
+    }
+
+    /** Order-status settings saved on payment plugins that point at a missing, disabled or wrongly typed status; every row carries an icon and a word, never colour alone. */
+    private function renderPaymentStatusSection(): string
+    {
+        $plugin = $this->getDiagnosticsPlugin();
+
+        if ($plugin === null) {
+            return '';
+        }
+
+        $info = $plugin->getPaymentStatusInfo();
+        $esc  = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+        $lang = Factory::getApplication()->getLanguage();
+        $lang->load('com_j2commerce', JPATH_ADMINISTRATOR);
+
+        $rank     = ['warning' => 0, 'notice' => 1, 'info' => 2];
+        $findings = $info['findings'];
+        usort($findings, static fn (array $a, array $b): int => $rank[$a['severity']] <=> $rank[$b['severity']]);
+
+        $badge = static function (string $severity): string {
+            [$class, $icon] = match ($severity) {
+                'warning' => ['text-bg-warning', 'fa-triangle-exclamation'],
+                'notice'  => ['text-bg-info', 'fa-flag'],
+                'info'    => ['text-bg-secondary', 'fa-circle-info'],
+                default   => ['text-bg-success', 'fa-circle-check'],
+            };
+
+            return '<span class="badge ' . J2htmlHelper::badgeClass($class) . '"><span class="fa-solid ' . $icon . '" aria-hidden="true"></span> '
+                . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_STATUS_SEVERITY_' . strtoupper($severity)) . '</span>';
+        };
+
+        $translate = static function (string $key, string $fallback): string {
+            $text = $key !== '' ? Text::_($key) : '';
+
+            return $text !== '' && $text !== $key ? $text : $fallback;
+        };
+
+        $html   = [];
+        $html[] = '<h3 class="mt-4">' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_STATUS_HEADING') . '</h3>';
+        $html[] = '<p class="text-body-secondary">' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_STATUS_INTRO') . '</p>';
+        $html[] = '<p>' . Text::sprintf('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_STATUS_SUMMARY', (int) $info['settings'], (int) $info['plugins']) . '</p>';
+        $html[] = '<div class="table-responsive">';
+        $html[] = '<table class="table" id="j2c-diag-payment-status">';
+        $html[] = '<caption class="visually-hidden">' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_STATUS_HEADING') . '</caption>';
+        $html[] = '<thead><tr>';
+
+        foreach (['SEVERITY', 'PLUGIN', 'SETTING', 'STATUS', 'PROBLEM', 'EXPECTED'] as $col) {
+            $html[] = '<th scope="col">' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_STATUS_COL_' . $col) . '</th>';
+        }
+
+        $html[] = '</tr></thead>';
+        $html[] = '<tbody>';
+
+        if (!array_filter($findings, static fn (array $f): bool => $f['severity'] !== 'info')) {
+            $html[] = '<tr><td colspan="6">' . $badge('ok') . ' ' . Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_STATUS_OK') . '</td></tr>';
+        }
+
+        $seen = [];
+
+        foreach ($findings as $f) {
+            $element = (string) $f['element'];
+
+            if (!isset($seen[$element])) {
+                $seen[$element] = true;
+
+                foreach (['', '.sys'] as $suffix) {
+                    $lang->load('plg_j2commerce_' . $element . $suffix, JPATH_ADMINISTRATOR)
+                        || $lang->load('plg_j2commerce_' . $element . $suffix, JPATH_PLUGINS . '/j2commerce/' . $element);
+                }
+            }
+
+            $problem = match ($f['problem']) {
+                'missing'    => Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_STATUS_PROBLEM_MISSING'),
+                'disabled'   => Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_STATUS_PROBLEM_DISABLED'),
+                'wrong_type' => Text::sprintf('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_STATUS_PROBLEM_WRONG_TYPE', OrderStatusHelper::getTypeLabel($f['actual_type'])),
+                default      => Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_STATUS_PROBLEM_UNCLASSIFIED'),
+            };
+
+            $statusCell = $f['problem'] === 'missing'
+                ? Text::sprintf('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_STATUS_MISSING_ID', (int) $f['value'])
+                : Text::_((string) $f['status_name']) . ' (#' . (int) $f['value'] . ')';
+
+            $expected = $f['expected']
+                ? implode(' / ', array_map(OrderStatusHelper::getTypeLabel(...), $f['expected']))
+                : Text::_('PLG_J2COMMERCE_APP_DIAGNOSTICS_PAYMENT_STATUS_EXPECTED_NONE');
+
+            $html[] = '<tr>'
+                . '<td>' . $badge($f['severity']) . '</td>'
+                . '<th scope="row">' . $esc($translate((string) $f['plugin'], $element))
+                . ($f['enabled'] ? '' : ' <span class="fw-normal">(' . $esc(Text::_('JDISABLED')) . ')</span>') . '</th>'
+                . '<td>' . $esc($translate((string) $f['label'], (string) $f['param'])) . '<br><code>' . $esc($f['param']) . '</code></td>'
+                . '<td>' . $esc($statusCell) . '</td>'
+                . '<td>' . $esc($problem) . '</td>'
+                . '<td>' . $esc($expected) . '</td>'
+                . '</tr>';
+        }
+
+        $html[] = '</tbody></table></div>';
 
         return implode("\n", $html);
     }

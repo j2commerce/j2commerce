@@ -39,15 +39,13 @@ final class OrderPayGrantHelper
         return $expires > time() && $sig !== '' && hash_equals(self::hmac($orderPk, $expires), $sig);
     }
 
-    /**
-     * Whether payment may still be taken. Status 1 = Confirmed (already paid) and
-     * 6 = Cancelled are excluded, as is an existing Completed/Authorized transaction
-     * (Authorized = capture pending — charging again would double-pay).
-     */
+    /** Payable only while not cancelled or refunded and wholly unpaid: Take Payment charges the full amount due now, so a partly paid or authorized order would be charged twice. */
     public static function isPayable(object $order): bool
     {
-        return !\in_array((int) ($order->order_state_id ?? 0), [1, 6], true)
-            && !\in_array((string) ($order->transaction_status ?? ''), ['Completed', 'Authorized'], true);
+        $type = OrderStatusHelper::getType((int) ($order->order_state_id ?? 0));
+
+        return !\in_array($type, [OrderStatusHelper::TYPE_CANCELLED, OrderStatusHelper::TYPE_REFUNDED], true)
+            && OrderPaymentHelper::state($order) === OrderPaymentHelper::STATE_UNPAID;
     }
 
     /** Site entry URL for the Take Payment button (Uri::root() is the site root, even in admin). */

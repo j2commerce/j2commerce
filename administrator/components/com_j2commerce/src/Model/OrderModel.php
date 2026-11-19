@@ -29,14 +29,17 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\OrderCascadeHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderItemAttributeHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPaymentHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderUploadHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\PaymentRuleHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ProductTypeHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\RedemptionHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TaxHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UserHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\Trait\CascadingDeleteTrait;
+use J2Commerce\Component\J2commerce\Administrator\Table\OrderTable;
 use Joomla\CMS\Access\Access;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
@@ -1157,10 +1160,11 @@ class OrderModel extends AdminModel
      * @param   bool    $refuseShortfall  A merchant's own change: refuse a move that makes the order
      *                                    count past a coupon or voucher limit, and return a paid
      *                                    order's voucher value when it is canceled or failed.
+     * @param   bool    $requirePaymentRecord  A merchant's own change: refuse a move into a Confirmed-type status with no recorded payment. Callers that report a payment leave it false and the order is held instead.
      *
      * @return  bool  True on success.
      */
-    public function updateOrderStatus(int $orderId, int $newStatusId, bool $notify = false, string $comment = '', bool $refuseShortfall = false): bool
+    public function updateOrderStatus(int $orderId, int $newStatusId, bool $notify = false, string $comment = '', bool $refuseShortfall = false, bool $requirePaymentRecord = false): bool
     {
         $db     = $this->getDatabase();
         $now    = Factory::getDate()->toSql();
@@ -1170,12 +1174,17 @@ class OrderModel extends AdminModel
         // Get order's order_id (varchar); the rest is what the redemption re-check reads.
         $query = $db->getQuery(true)
             ->select([
+                $db->quoteName('j2commerce_order_id'),
                 $db->quoteName('order_id'),
                 $db->quoteName('order_state_id'),
                 $db->quoteName('user_id'),
                 $db->quoteName('user_email'),
                 $db->quoteName('currency_code'),
                 $db->quoteName('currency_value'),
+                $db->quoteName('order_total'),
+                $db->quoteName('order_params'),
+                $db->quoteName('transaction_status'),
+                $db->quoteName('order_refund'),
             ])
             ->from($db->quoteName('#__j2commerce_orders'))
             ->where($db->quoteName('j2commerce_order_id') . ' = :orderId')
@@ -1200,6 +1209,54 @@ class OrderModel extends AdminModel
         $status = $this->getOrderStatus($newStatusId);
         if (!$status) {
             $this->setError(Text::_('COM_J2COMMERCE_ORDER_STATUS_NOT_FOUND'));
+            return false;
+        }
+
+        // The payment rule runs before the veto, so subscribers only see a move the rule allowed or the held target.
+        $decision = PaymentRuleHelper::decide(
+            $order,
+            $oldStatusId,
+            $newStatusId,
+            $requirePaymentRecord ? PaymentRuleHelper::SOURCE_MERCHANT : PaymentRuleHelper::SOURCE_GATEWAY
+        );
+
+        if ($decision['action'] === 'refuse') {
+            $paymentSummary = OrderPaymentHelper::summary($order);
+
+            // Already HTML-safe: model errors render as HTML in the admin messages.
+            $this->setError(PaymentRuleHelper::refusalMessage(
+                $order,
+                $paymentSummary,
+                $newStatusId,
+                J2CommerceHelper::canAccess('j2commerce.recordpayment')
+            ));
+
+            return false;
+        }
+
+        if ($decision['action'] === 'park') {
+            if ($decision['target'] === $oldStatusId) {
+                // Already on the held status: nothing moves, so this returns true after only the marker and its history line.
+                PaymentRuleHelper::holdInPlace($orderId, (string) $order->order_id, $decision, $oldStatusId, $notify, (int) $userId);
+
+                return true;
+            }
+
+            $newStatusId = $decision['target'];
+            $status      = $this->getOrderStatus($newStatusId);
+
+            if (!$status) {
+                $this->setError(Text::_('COM_J2COMMERCE_ORDER_STATUS_NOT_FOUND'));
+                return false;
+            }
+        }
+
+        // Vetoable by onJ2CommerceBeforeOrderStatusChange; the reason renders as HTML in the admin messages.
+        if (($vetoReason = OrderTable::statusChangeVeto((string) $order->order_id, $orderId, $oldStatusId, $newStatusId, 'model')) !== null) {
+            $this->setError($vetoReason !== ''
+                ? htmlspecialchars($vetoReason, ENT_QUOTES, 'UTF-8')
+                : Text::_('COM_J2COMMERCE_ORDER_STATUS_UPDATE_FAILED'));
+
             return false;
         }
 
@@ -1291,6 +1348,19 @@ class OrderModel extends AdminModel
 
         $this->addOrderHistory($order->order_id, $newStatusId, $notify, $historyComment);
 
+        // A parked marker survives only while the order still sits on its parked status; any move off it discards the marker, and a new park writes one for the status just stored.
+        $marker = PaymentRuleHelper::readMarker($order->order_params);
+
+        if ($marker !== null && $marker['parked'] === $oldStatusId) {
+            PaymentRuleHelper::clearMarker($orderId);
+        }
+
+        if ($decision['action'] === 'park') {
+            PaymentRuleHelper::writeMarker($orderId, $decision['intended'], $newStatusId, $notify);
+        }
+
+        PaymentRuleHelper::recordDecision((string) $order->order_id, $decision, $newStatusId, (int) $userId);
+
         // Grant download access when status changes to an allowed download status
         if (\in_array($newStatusId, ConfigHelper::getDownloadAllowedStatuses(), true)) {
             DownloadHelper::grantDownloads($order->order_id);
@@ -1309,6 +1379,11 @@ class OrderModel extends AdminModel
         // Send notification emails when requested
         if ($notify) {
             $this->sendOrderNotification($order->order_id, true, true);
+        }
+
+        // Evidence that landed between the decision and the marker write would otherwise leave the order parked until the next ledger write.
+        if ($decision['action'] === 'park') {
+            PaymentRuleHelper::promote($orderId);
         }
 
         return true;

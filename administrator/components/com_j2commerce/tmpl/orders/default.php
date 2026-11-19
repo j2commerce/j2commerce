@@ -15,6 +15,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderRecordedPaymentHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
@@ -87,7 +88,7 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                 <th scope="col" class="text-end">
                                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_J2COMMERCE_HEADING_TOTAL', 'a.order_total', $listDirn, $listOrder); ?>
                                 </th>
-                                <th scope="col" class="d-none d-md-table-cell">
+                                <th scope="col">
                                     <?php echo Text::_('COM_J2COMMERCE_HEADING_PAYMENT'); ?>
                                 </th>
                                 <th scope="col" class="text-center d-none d-md-table-cell">
@@ -195,8 +196,14 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                 <td class="text-end">
                                     <strong class="small"><?php echo CurrencyHelper::format((float) $item->order_total, $item->currency_code ?? '', (float) ($item->currency_value ?? 1)); ?></strong>
                                 </td>
-                                <td class="d-none d-md-table-cell">
+                                <td>
                                     <small><?php echo $this->escape(strip_tags($paymentDisplay)); ?></small>
+                                    <div>
+                                        <?php echo LayoutHelper::render('order.payment_state', [
+                                            'indicator'       => OrderRecordedPaymentHelper::indicator($item, $this->paymentSummaries[(int) $item->j2commerce_order_id] ?? null),
+                                            'compactConflict' => true,
+                                        ], JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts'); ?>
+                                    </div>
                                 </td>
                                 <td class="text-center d-none d-md-table-cell">
                                     <?php if ($orderLanguage !== '') : ?>
