@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!statusSelect) return;
 
             headerSaveBtn.classList.add('j2c-saving');
+            statusSelect.dataset.currentStatus ??= [...statusSelect.options].find((option) => option.defaultSelected)?.value ?? statusSelect.value;
 
             try {
                 const result = await postAjax('ajaxUpdateStatus', {
@@ -83,9 +84,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         badge.textContent = result.data.statusName || '';
                     }
 
+                    statusSelect.dataset.currentStatus = statusSelect.value;
                     await reloadHistory();
                     flashSuccess(headerSaveBtn);
                 } else {
+                    // A refused change (e.g. no payment recorded) leaves the stored status in place.
+                    statusSelect.value = statusSelect.dataset.currentStatus;
                     showMessage('error', result.message || 'Error updating status');
                 }
             } catch (err) {
@@ -95,6 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Record Payment / Record Refund (order-record-payment.js) write a history line server-side.
+    document.addEventListener('j2commerce:order-history-refresh', () => { reloadHistory().catch(() => {}); });
 
     // === Tracking Number Inline Edit ===
     const editTrackingBtn = document.getElementById('editTrackingBtn');

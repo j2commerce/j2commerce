@@ -19,6 +19,7 @@ use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Log\Log;
 use Joomla\Database\DatabaseInterface;
+use Joomla\Registry\Registry;
 
 /**
  * Reads the merchant-mapped lifecycle classification on an order status row.
@@ -80,11 +81,30 @@ final class OrderStatusHelper
      */
     public const PLACED_TYPES = [...self::FINALIZED_TYPES, self::TYPE_OPEN];
 
+    /** Type => name of the core row that stands in when no row is unambiguously classified as the type. */
+    private const CORE_NAMES = [
+        self::TYPE_COMPLETE  => 'J2COMMERCE_CONFIRMED',
+        self::TYPE_OPEN      => 'J2COMMERCE_PENDING',
+        self::TYPE_NEW       => 'J2COMMERCE_NEW',
+        self::TYPE_FAILED    => 'J2COMMERCE_FAILED',
+        self::TYPE_CANCELLED => 'J2COMMERCE_CANCELLED',
+        self::TYPE_REFUNDED  => 'J2COMMERCE_REFUNDED',
+        self::TYPE_APPROVED  => 'J2COMMERCE_PROCESSED',
+        self::TYPE_SHIPPED   => 'J2COMMERCE_SHIPPED',
+        self::TYPE_DELIVERED => 'J2COMMERCE_DELIVERED',
+    ];
+
     /** @var array<int, string|null>|null Status id => type, for the whole table. */
     private static ?array $map = null;
 
+    /** @var int[]|null Ids of the enabled statuses, loaded with $map. */
+    private static ?array $enabled = null;
+
     /** @var array<string, string>|null Type value => language key, core + plugin-contributed. */
     private static ?array $types = null;
+
+    /** @var array<string, int> Core-name fallback ids keyed `type|coreName`. */
+    private static array $coreIds = [];
 
     /**
      * Fires onJ2CommerceGetOrderStatusTypes(['types' => self::TYPES]); handlers
@@ -174,6 +194,12 @@ final class OrderStatusHelper
             return 0;
         }
 
+        $key = $type . '|' . $coreName;
+
+        if (isset(self::$coreIds[$key])) {
+            return self::$coreIds[$key];
+        }
+
         $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_orderstatus_id'))
@@ -182,7 +208,32 @@ final class OrderStatusHelper
             ->where($db->quoteName('orderstatus_name') . ' = :name')
             ->bind(':name', $coreName);
 
-        return (int) $db->setQuery($query)->loadResult();
+        return self::$coreIds[$key] = (int) $db->setQuery($query)->loadResult();
+    }
+
+    /** Status id a plugin writes for setting $key: the saved id while that status is enabled, else the one classified as $type; never a paid type unless $type is one. 0 leaves the order alone. */
+    public static function resolveConfigured(Registry $params, string $key, string $type): int
+    {
+        $saved = (int) $params->get($key, 0);
+
+        if ($saved > 0 && self::isEnabledStatus($saved)) {
+            return $saved;
+        }
+
+        $id = self::idOfType($type, self::CORE_NAMES[$type] ?? '');
+
+        if ($id === 0 || !self::isEnabledStatus($id)) {
+            return 0;
+        }
+
+        return self::isFinalized(self::getType($id)) && !self::isFinalized($type) ? 0 : $id;
+    }
+
+    private static function isEnabledStatus(int $id): bool
+    {
+        self::getMap();
+
+        return \in_array($id, self::$enabled ?? [], true);
     }
 
     public static function isFinalized(?string $type): bool
@@ -224,8 +275,10 @@ final class OrderStatusHelper
     /** Drops the static cache. For callers that write the column in the same request. */
     public static function clearCache(): void
     {
-        self::$map   = null;
-        self::$types = null;
+        self::$map     = null;
+        self::$enabled = null;
+        self::$types   = null;
+        self::$coreIds = [];
     }
 
     /** @return array<int, string|null> */
@@ -237,20 +290,28 @@ final class OrderStatusHelper
 
         $db    = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true)
-            ->select($db->quoteName(['j2commerce_orderstatus_id', 'orderstatus_type']))
+            ->select($db->quoteName(['j2commerce_orderstatus_id', 'orderstatus_type', 'enabled']))
             ->from($db->quoteName('#__j2commerce_orderstatuses'));
 
         $db->setQuery($query);
 
         // Cached only once the query succeeds: an empty map left behind by a failed read would
         // classify every status as untyped for the rest of the request.
-        $map = [];
+        $map     = [];
+        $enabled = [];
 
         foreach ($db->loadObjectList() ?: [] as $row) {
             $type = (string) ($row->orderstatus_type ?? '');
+            $id   = (int) $row->j2commerce_orderstatus_id;
 
-            $map[(int) $row->j2commerce_orderstatus_id] = self::isValidType($type) ? $type : null;
+            $map[$id] = self::isValidType($type) ? $type : null;
+
+            if ((int) $row->enabled === 1) {
+                $enabled[] = $id;
+            }
         }
+
+        self::$enabled = $enabled;
 
         return self::$map = $map;
     }

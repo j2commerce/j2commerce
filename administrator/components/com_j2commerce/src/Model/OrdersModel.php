@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\Model;
 use J2Commerce\Component\J2commerce\Administrator\Helper\InvoiceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderStatusHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\PaymentRuleHelper;
 use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
@@ -932,15 +933,25 @@ class OrdersModel extends ListModel
         $db         = $this->getDatabase();
         $cutoffTime = Factory::getDate('-' . $heldDuration . ' minutes')->toSql();
 
+        // Orders the payment rule parked and offline orders (paid later, on delivery or by transfer) wait
+        // on Pending by design; the hold-expiry sweep only applies to a checkout that was abandoned.
+        $orderType      = 'normal';
+        $parkedMarker   = '%"' . PaymentRuleHelper::MARKER . '"%';
+        $offlinePayment = ['payment_cash', 'payment_banktransfer', 'payment_moneyorder'];
+
         // Select the integer PK — updateOrderStatus() keys on j2commerce_order_id,
         // not the varchar order_id.
         $query = $db->getQuery(true)
             ->select($db->quoteName('j2commerce_order_id'))
             ->from($db->quoteName('#__j2commerce_orders'))
             ->where($db->quoteName('modified_on') . ' < :cutoff')
-            ->where($db->quoteName('order_type') . ' = ' . $db->quote('normal'))
+            ->where($db->quoteName('order_type') . ' = :normal')
             ->whereIn($db->quoteName('order_state_id'), $unpaidStates)
-            ->bind(':cutoff', $cutoffTime);
+            ->where('(' . $db->quoteName('order_params') . ' IS NULL OR ' . $db->quoteName('order_params') . ' NOT LIKE :parked)')
+            ->whereNotIn($db->quoteName('orderpayment_type'), $offlinePayment, ParameterType::STRING)
+            ->bind(':cutoff', $cutoffTime)
+            ->bind(':normal', $orderType)
+            ->bind(':parked', $parkedMarker);
 
         $db->setQuery($query);
         $unpaidOrders = $db->loadColumn();

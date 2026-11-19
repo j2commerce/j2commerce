@@ -12,7 +12,9 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Administrator\Helper;
 
+use Joomla\CMS\Date\Date;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Log\Log;
 use Joomla\Database\DatabaseInterface;
 use Joomla\Database\ParameterType;
 
@@ -60,15 +62,17 @@ final class OrderTransactionHelper
     // WRITE METHODS
     // =========================================================================
 
+    /** `$promote` false lets a caller that moves the order itself keep the ledger write from releasing a parked order first. */
     public static function addCharge(
         int $orderId,
         string $pluginEl,
         string $gatewayTxnId,
         float $amount,
         string $currencyCode,
-        int $createdBy = 0
+        int $createdBy = 0,
+        bool $promote = true
     ): int {
-        return self::writeRow($orderId, $pluginEl, 'DEBIT', $gatewayTxnId, '', $amount, $currencyCode, $createdBy);
+        return self::writeRow($orderId, $pluginEl, 'DEBIT', $gatewayTxnId, '', $amount, $currencyCode, $createdBy, promote: $promote);
     }
 
     /** Also re-syncs `orders.order_refund` (base currency) from the ledger. */
@@ -130,6 +134,72 @@ final class OrderTransactionHelper
         $gatewayTxnId = $gatewayTxnId !== '' ? $gatewayTxnId : $parentTxnId;
 
         return self::writeRow($orderId, $pluginEl, 'VOID', $gatewayTxnId, $parentTxnId, 0.0, $currencyCode, $createdBy);
+    }
+
+    /**
+     * Money received outside a gateway: `gateway_txn_id` stays NULL, so it is never machine-refundable. Always inserts, so callers guard double submits; `$promote` false leaves a parked order parked until the caller has written its history line and calls PaymentRuleHelper::promoteIfSatisfied().
+     *
+     * @throws \InvalidArgumentException  When the amount is not positive.
+     */
+    public static function addManualCharge(
+        int $orderId,
+        float $amount,
+        string $currencyCode,
+        string $method,
+        string $reference,
+        ?string $note,
+        ?string $receivedAt,
+        int $createdBy,
+        bool $promote = true
+    ): int {
+        if ($amount <= 0.0) {
+            throw new \InvalidArgumentException('A manual charge needs a positive amount.');
+        }
+
+        return self::writeRow($orderId, 'manual', 'DEBIT', '', '', $amount, $currencyCode, $createdBy, $method, $reference, (string) $note, $receivedAt, $promote);
+    }
+
+    /** Money returned outside a gateway, against the order's manual captures; re-syncs `orders.order_refund` like addReversal(). */
+    public static function addManualReversal(
+        int $orderId,
+        float $amount,
+        string $currencyCode,
+        string $method,
+        string $reference,
+        ?string $note,
+        int $createdBy,
+        ?string $receivedAt = null
+    ): int {
+        if ($amount <= 0.0) {
+            throw new \InvalidArgumentException('A manual reversal needs a positive amount.');
+        }
+
+        self::assertReversalParent($orderId, '');
+
+        $id = self::writeRow($orderId, 'manual', 'REVERSAL', '', '', $amount, $currencyCode, $createdBy, $method, $reference, (string) $note, $receivedAt);
+
+        self::syncOrderRefund($orderId, $createdBy);
+
+        return $id;
+    }
+
+    /** Direct write: OrderTable::store() would also run promoteIfParked() and persist the whole row. */
+    public static function setTransactionStatus(int $orderId, string $transactionStatus, int $userId): void
+    {
+        $db       = self::getDatabase();
+        $modified = (new Date('now'))->toSql();
+        $query    = $db->getQuery(true)
+            ->update($db->quoteName('#__j2commerce_orders'))
+            ->set($db->quoteName('transaction_status') . ' = :status')
+            ->set($db->quoteName('modified_on') . ' = :modified')
+            ->set($db->quoteName('modified_by') . ' = :user')
+            ->where($db->quoteName('j2commerce_order_id') . ' = :pk')
+            ->bind(':status', $transactionStatus)
+            ->bind(':modified', $modified)
+            ->bind(':user', $userId, ParameterType::INTEGER)
+            ->bind(':pk', $orderId, ParameterType::INTEGER);
+
+        $db->setQuery($query)->execute();
     }
 
     // =========================================================================
@@ -245,9 +315,9 @@ final class OrderTransactionHelper
         $db    = self::getDatabase();
         $query = $db->getQuery(true)
             ->select($db->quoteName([
-                'j2commerce_ordertransaction_id', 'order_id', 'plugin', 'type',
-                'gateway_txn_id', 'parent_txn_id', 'amount', 'currency_code',
-                'state', 'created_at', 'created_by',
+                'j2commerce_ordertransaction_id', 'order_id', 'plugin', 'method', 'type',
+                'gateway_txn_id', 'parent_txn_id', 'reference', 'note', 'received_at',
+                'amount', 'currency_code', 'state', 'created_at', 'created_by',
             ]))
             ->from($db->quoteName(self::TABLE))
             ->where($db->quoteName('order_id') . ' = :orderId')
@@ -377,7 +447,12 @@ final class OrderTransactionHelper
         string $parentTxnId,
         float $amount,
         string $currencyCode,
-        int $createdBy
+        int $createdBy,
+        string $method = '',
+        string $reference = '',
+        string $note = '',
+        ?string $receivedAt = null,
+        bool $promote = true
     ): int {
         $gatewayTxnId = $gatewayTxnId !== '' ? $gatewayTxnId : null;
 
@@ -403,17 +478,23 @@ final class OrderTransactionHelper
         $query = $db->getQuery(true)
             ->insert($db->quoteName(self::TABLE))
             ->columns($db->quoteName([
-                'order_id', 'plugin', 'type', 'gateway_txn_id', 'parent_txn_id',
+                'order_id', 'plugin', 'method', 'type', 'gateway_txn_id', 'parent_txn_id',
+                'reference', 'note', 'received_at',
                 'amount', 'currency_code', 'state', 'created_at', 'created_by',
             ]))
             ->values(
-                ':orderId, :plugin, :type, :gatewayTxnId, :parentTxnId, :amount, :currencyCode, :state, :createdAt, :createdBy'
+                ':orderId, :plugin, :method, :type, :gatewayTxnId, :parentTxnId, :reference, :note, :receivedAt, '
+                . ':amount, :currencyCode, :state, :createdAt, :createdBy'
             )
             ->bind(':orderId', $orderId, ParameterType::INTEGER)
             ->bind(':plugin', $pluginEl)
+            ->bind(':method', $method)
             ->bind(':type', $type)
             ->bind(':gatewayTxnId', $gatewayTxnId, $gatewayTxnId === null ? ParameterType::NULL : ParameterType::STRING)
             ->bind(':parentTxnId', $parentTxnId)
+            ->bind(':reference', $reference)
+            ->bind(':note', $note)
+            ->bind(':receivedAt', $receivedAt, $receivedAt === null ? ParameterType::NULL : ParameterType::STRING)
             ->bind(':amount', $amount, ParameterType::STRING)
             ->bind(':currencyCode', $currencyCode)
             ->bind(':state', $state)
@@ -440,7 +521,23 @@ final class OrderTransactionHelper
         // for the next explicit hasLedger() call to re-query (H7).
         self::$ledgerMemo[$orderId] = true;
 
-        return (int) $db->insertid();
+        $id = (int) $db->insertid();
+
+        if ($promote && ($type === 'DEBIT' || $type === 'CAPTURE')) {
+            self::promoteParkedOrder($orderId);
+        }
+
+        return $id;
+    }
+
+    /** New payment evidence may satisfy an order the payment rule parked; a ledger write must never fail on it. */
+    private static function promoteParkedOrder(int $orderId): void
+    {
+        try {
+            PaymentRuleHelper::promoteIfSatisfied($orderId);
+        } catch (\Throwable $e) {
+            Log::add('Payment rule promotion failed for order ' . $orderId . ': ' . $e->getMessage(), Log::ERROR, 'com_j2commerce');
+        }
     }
 
     private static function findExisting(int $orderId, string $gatewayTxnId, string $type): ?int
@@ -778,16 +875,7 @@ final class OrderTransactionHelper
     {
         $order = self::fetchOrderRow($orderId);
 
-        if ($order === null) {
-            return 0.0;
-        }
-
-        $base = match ((string) $order->transaction_status) {
-            'Completed', 'Refunded', 'Partially Refunded' => CurrencyHelper::baseChargeAmount($order),
-            default                                       => 0.0,
-        };
-
-        return CurrencyHelper::convertForOrder($base, $order);
+        return $order === null ? 0.0 : OrderPaymentHelper::legacyFigures($order)[0];
     }
 
     /** @return float Display-currency amount — order_refund is stored in the base currency. */
@@ -795,10 +883,6 @@ final class OrderTransactionHelper
     {
         $order = self::fetchOrderRow($orderId);
 
-        if ($order === null) {
-            return 0.0;
-        }
-
-        return CurrencyHelper::convertForOrder((float) ($order->order_refund ?? 0), $order);
+        return $order === null ? 0.0 : OrderPaymentHelper::legacyFigures($order)[1];
     }
 }

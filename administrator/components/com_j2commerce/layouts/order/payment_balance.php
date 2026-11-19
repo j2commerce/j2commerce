@@ -52,29 +52,63 @@ $balanceLabel = $balanceDue > $threshold ? $fmt($balanceDue) : Text::_('COM_J2CO
         <?php echo Text::_('COM_J2COMMERCE_PAYMENT_BALANCE'); ?>
     </h6>
     <table class="table table-sm table-borderless mb-0 small">
+        <caption class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_BALANCE'); ?></caption>
         <tbody>
             <tr>
-                <td class="text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_FIELD_ORDER_TOTAL'); ?></td>
-                <td class="text-end"><?php echo $fmt($orderTotalDisplay); ?></td>
+                <th scope="row" class="fw-normal text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_FIELD_ORDER_TOTAL'); ?></th>
+                <td class="text-end" data-j2c-balance="total"><?php echo $fmt($orderTotalDisplay); ?></td>
             </tr>
             <tr>
-                <td class="text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_AMOUNT_PAID'); ?></td>
-                <td class="text-end"><?php echo $fmt($captured); ?></td>
+                <th scope="row" class="fw-normal text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_AMOUNT_PAID'); ?></th>
+                <td class="text-end" data-j2c-balance="paid"><?php echo $fmt($captured); ?></td>
             </tr>
-            <?php if ($refunded > $threshold) : ?>
-                <tr>
-                    <td class="text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_REFUNDED'); ?></td>
-                    <td class="text-end text-danger">-<?php echo $fmt($refunded); ?></td>
-                </tr>
-            <?php endif; ?>
+            <tr data-j2c-balance-row="refunded"<?php echo $refunded > $threshold ? '' : ' hidden'; ?>>
+                <th scope="row" class="fw-normal text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_REFUNDED'); ?></th>
+                <td class="text-end text-danger" data-j2c-balance="refunded">-<?php echo $fmt($refunded); ?></td>
+            </tr>
             <tr class="border-top">
-                <td class="text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_NET_PAID'); ?></td>
-                <td class="text-end fw-bold"><?php echo $fmt($netPaid); ?></td>
+                <th scope="row" class="fw-normal text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_NET_PAID'); ?></th>
+                <td class="text-end fw-bold" data-j2c-balance="net"><?php echo $fmt($netPaid); ?></td>
             </tr>
             <tr>
-                <td class="text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_BALANCE_DUE'); ?></td>
-                <td class="text-end <?php echo $balanceClass; ?>"><?php echo $balanceLabel; ?></td>
+                <th scope="row" class="fw-normal text-body-secondary"><?php echo Text::_('COM_J2COMMERCE_BALANCE_DUE'); ?></th>
+                <td class="text-end <?php echo $balanceClass; ?>" data-j2c-balance="due"><?php echo $balanceLabel; ?></td>
             </tr>
         </tbody>
     </table>
+    <?php if (\array_key_exists('recorded_payments', $displayData)) : ?>
+        <?php $recorded = (array) $displayData['recorded_payments']; ?>
+        <div class="mt-3" id="j2cRecordedPayments"<?php echo $recorded ? '' : ' hidden'; ?>>
+            <h6 class="small fw-semibold mb-1"><?php echo Text::_('COM_J2COMMERCE_RECORDED_PAYMENTS'); ?></h6>
+            <table class="table table-sm small mb-0">
+                <caption class="visually-hidden"><?php echo Text::_('COM_J2COMMERCE_RECORDED_PAYMENTS'); ?></caption>
+                <thead>
+                    <tr>
+                        <th scope="col"><?php echo Text::_('COM_J2COMMERCE_HEADING_DATE'); ?></th>
+                        <th scope="col"><?php echo Text::_('COM_J2COMMERCE_FIELD_PAYMENT_METHOD'); ?></th>
+                        <th scope="col"><?php echo Text::_('COM_J2COMMERCE_FIELD_REFERENCE'); ?></th>
+                        <th scope="col" class="text-end"><?php echo Text::_('COM_J2COMMERCE_AMOUNT'); ?></th>
+                    </tr>
+                </thead>
+                <tbody data-j2c-recorded-rows>
+                    <?php foreach ($recorded as $row) : ?>
+                        <tr>
+                            <td><?php echo htmlspecialchars($row['date'], ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td>
+                                <?php echo htmlspecialchars($row['method'], ENT_QUOTES, 'UTF-8'); ?>
+                                <?php if ($row['kind'] === 'refund') : ?>
+                                    <span class="<?php echo htmlspecialchars($row['badgeClass'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo Text::_('COM_J2COMMERCE_REFUND'); ?></span>
+                                <?php endif; ?>
+                                <?php if ($row['by'] !== '') : ?>
+                                    <div class="text-body-secondary"><?php echo htmlspecialchars(Text::sprintf('COM_J2COMMERCE_RECORDED_BY', $row['by']), ENT_QUOTES, 'UTF-8'); ?></div>
+                                <?php endif; ?>
+                            </td>
+                            <td><?php echo htmlspecialchars($row['reference'], ENT_QUOTES, 'UTF-8'); ?></td>
+                            <td class="text-end"><?php echo htmlspecialchars($row['amount'], ENT_QUOTES, 'UTF-8'); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
 </div>

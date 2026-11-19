@@ -38,6 +38,7 @@ use Joomla\Registry\Registry;
  */
 class AclSeedHelper
 {
+    // j2commerce.confirmwithoutpayment is deliberately not seeded: it stays denied until an administrator grants it (Super Users always pass).
     /** The custom actions declared in access.xml. */
     public const CUSTOM_ACL_ACTIONS = [
         'j2commerce.vieworders',
@@ -48,6 +49,7 @@ class AclSeedHelper
         'j2commerce.viewreports',
         'j2commerce.viewsetup',
         'j2commerce.editsetup',
+        'j2commerce.recordpayment',
     ];
 
     /** Extension-params key marking the seed as done; canAccess() reads it too. */
@@ -64,17 +66,24 @@ class AclSeedHelper
      *
      * 2 — 6.5.0 added j2commerce.editproducts and j2commerce.editsetup.
      * 3 — 6.5.0 added j2commerce.exportorders.
+     * 4 — 6.7.0 added j2commerce.recordpayment, seeded from j2commerce.editorders.
      */
-    public const SEED_VERSION = 3;
+    public const SEED_VERSION = 4;
 
     /** Extension-params key holding the version of CUSTOM_ACL_ACTIONS last seeded. */
     public const SEED_VERSION_FLAG = 'acl_seed_version';
 
     /** Seed version each action first shipped in. Anything not listed shipped at version 1. */
     private const ACTION_SEED_VERSION = [
-        'j2commerce.editproducts' => 2,
-        'j2commerce.editsetup'    => 2,
-        'j2commerce.exportorders' => 3,
+        'j2commerce.editproducts'  => 2,
+        'j2commerce.editsetup'     => 2,
+        'j2commerce.exportorders'  => 3,
+        'j2commerce.recordpayment' => 4,
+    ];
+
+    /** Action a group must already be allowed, on top of core.manage, to receive the seeded action; keeps Managers from gaining recordpayment where editorders is withheld. */
+    private const ACTION_SEED_SOURCE = [
+        'j2commerce.recordpayment' => 'j2commerce.editorders',
     ];
 
     /**
@@ -168,6 +177,12 @@ class AclSeedHelper
                 // null = nothing set anywhere in the group's path. false = an explicit
                 // deny an administrator entered; honour it rather than overwrite it.
                 if (Access::checkGroup($groupId, $action, 'com_j2commerce') !== null) {
+                    continue;
+                }
+
+                $source = self::ACTION_SEED_SOURCE[$action] ?? null;
+
+                if ($source !== null && Access::checkGroup($groupId, $source, 'com_j2commerce') !== true) {
                     continue;
                 }
 

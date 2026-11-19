@@ -16,6 +16,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\Session\Session;
 
@@ -54,8 +55,23 @@ if (empty($customerName)) {
                             <span class="fw-normal fs-6 me-1"><?php echo Text::_('COM_J2COMMERCE_HEADING_ORDER'); ?></span>
                             #<?php echo $this->escape($item->order_id); ?>
                         </h2>
-                        <div class="<?php echo $this->escape(J2htmlHelper::badgeClass($item->orderstatus_cssclass ?? 'badge text-bg-secondary')); ?> ms-2" id="orderStatusBadge">
+                        <div class="<?php echo $this->escape(J2htmlHelper::badgeClass($item->orderstatus_cssclass ?? 'badge text-bg-secondary')); ?> ms-2" id="orderStatusBadge" tabindex="-1">
                             <?php echo $this->escape(Text::_($item->orderstatus_name ?? 'Unknown')); ?>
+                        </div>
+                        <?php echo LayoutHelper::render('order.payment_state', ['indicator' => $this->paymentIndicator, 'id' => 'j2cPaymentState'], JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts'); ?>
+                    </div>
+                    <?php // Finalized status with nothing paid: one warning line instead of a second badge. Wrapper stays undecorated so [hidden] wins; the order-record-payment script shows and hides it. ?>
+                    <div class="mb-1" id="j2cPaymentConflict" data-j2c-conflict-notice<?php echo $this->paymentIndicator['conflict'] ? '' : ' hidden'; ?>>
+                        <div class="alert alert-warning py-2 px-3 mb-0">
+                            <div class="d-flex flex-wrap align-items-center gap-2">
+                                <?php // Atum's .alert-warning text color measures 2.09:1 in light mode, and its dark-mode yellow cannot take text-body (1.32:1); text-dark holds 14.24:1 light and 11.08:1 dark. ?>
+                                <span class="fa-solid fa-triangle-exclamation text-dark" aria-hidden="true"></span>
+                                <span class="visually-hidden"><?php echo Text::_('WARNING'); ?>:</span>
+                                <span class="text-dark" data-j2c-conflict-text><?php echo $this->escape($this->paymentIndicator['conflictText']); ?></span>
+                                <?php if ($this->canRecord) : ?>
+                                    <span class="text-dark"><?php echo Text::_('COM_J2COMMERCE_PAYMENT_CONFLICT_HINT'); ?></span>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
                     <div class="j2-title-invoice mb-1">
@@ -139,6 +155,18 @@ if (empty($customerName)) {
         </div>
     </div>
 </div>
+
+<div class="visually-hidden" role="status" aria-live="polite" id="j2cPaymentLive"></div>
+
+<?php if ($this->canRecord) : ?>
+    <?php echo LayoutHelper::render('order.record_payment_modal', [
+        'payload'  => $this->recordPayload,
+        'methods'  => $this->recordMethods,
+        'currency' => (string) ($item->currency_code ?? ''),
+        'today'    => (string) HTMLHelper::_('date', 'now', 'Y-m-d'),
+        'placed'   => (string) HTMLHelper::_('date', (string) ($item->created_on ?? 'now'), 'Y-m-d'),
+    ], JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts'); ?>
+<?php endif; ?>
 
 <?php // Hidden form for toolbar actions (Close button) ?>
 <form action="<?php echo Route::_('index.php?option=com_j2commerce&view=order&layout=view&id=' . (int) $item->j2commerce_order_id); ?>"

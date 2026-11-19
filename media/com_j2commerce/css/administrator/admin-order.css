@@ -395,3 +395,11 @@ a.j2c-history-row-icon:hover { opacity: 0.75; }
 .j2c-detail-card-shipping-buttons a[target="_blank"]:before, .j2c-sidebar a[target="_blank"]:before {
     display:none;
 }
+
+/* Record Payment: forward action, right chevron (decorative, empty alt text) */
+#toolbar-recordpayment .btn::after {
+    margin-inline-start: .5rem;
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    content: "\f054" / "";
+}

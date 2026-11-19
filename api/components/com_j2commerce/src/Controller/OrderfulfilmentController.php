@@ -16,6 +16,7 @@ namespace J2Commerce\Component\J2commerce\Api\Controller;
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPaymentHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\OrderModel;
 use Joomla\CMS\Access\Exception\NotAllowed;
 use Joomla\CMS\Language\Text;
@@ -103,13 +104,17 @@ class OrderfulfilmentController extends J2CommerceApiController
             throw new InvalidParameterException('JLIB_FORM_VALIDATE_FIELD_INVALID', 400, null, 'status_id');
         }
 
-        $ok = $this->getModel('Order')->updateOrderStatus($pk, $statusId, $notify, $comment);
+        $model = $this->getModel('Order');
+        // A merchant's own change, so the payment rule refuses an unpaid move into a Confirmed-type status.
+        $ok = $model->updateOrderStatus($pk, $statusId, $notify, $comment, false, true);
 
+        // Model errors are language strings escaped for the admin messages; this body is JSON, not HTML, so they are decoded.
         return $this->emit((object) [
             'id'             => $pk,
-            'order_state_id' => $statusId,
+            'order_state_id' => OrderPaymentHelper::currentStatusId($pk),
             'notify'         => $notify,
             'success'        => $ok,
+            'message'        => $ok ? '' : html_entity_decode(implode(' ', $model->getErrors()), ENT_QUOTES, 'UTF-8'),
         ]);
     }
 

@@ -17,6 +17,7 @@ namespace J2Commerce\Component\J2commerce\Administrator\View\Order;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPayGrantHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderRecordedPaymentHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderTransactionHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\TaxHelper;
 use J2Commerce\Component\J2commerce\Administrator\View\AdminAssetsTrait;
@@ -29,8 +30,10 @@ use Joomla\CMS\MVC\View\GenericDataException;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Plugin\PluginHelper;
 use Joomla\CMS\Session\Session;
+use Joomla\CMS\Toolbar\Toolbar;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use Joomla\CMS\Uri\Uri;
+use Joomla\CMS\WebAsset\WebAssetManager;
 use Joomla\Registry\Registry;
 
 class HtmlView extends BaseHtmlView
@@ -62,6 +65,10 @@ class HtmlView extends BaseHtmlView
     protected float $refundableAmount     = 0.0;
     protected float $balanceDueAmount     = 0.0;
     protected array $refundOptions        = [];
+    protected bool $canRecord             = false;
+    protected array $paymentIndicator     = [];
+    protected array $recordPayload        = [];
+    protected array $recordMethods        = [];
 
     /** Set by the billing/shipping tab templates before loading the shared address form. */
     protected string $addressFormType = 'billing';
@@ -138,7 +145,7 @@ class HtmlView extends BaseHtmlView
             'com_j2commerce.admin-order',
             'media/com_j2commerce/css/administrator/admin-order.css',
             [],
-            ['version' => '6.0.8']
+            ['version' => '6.0.9']
         );
 
         $layout = Factory::getApplication()->getInput()->getString('layout', 'view');
@@ -281,6 +288,10 @@ class HtmlView extends BaseHtmlView
             );
             Text::script('JACTION_DELETE');
             Text::script('COM_J2COMMERCE_ORDER_HISTORY_ROW_ICONS_LABEL');
+
+            if (!$this->isNew) {
+                $this->prepareRecordPayment($wa);
+            }
         }
 
         $this->addToolbar($layout);
@@ -335,6 +346,11 @@ class HtmlView extends BaseHtmlView
 
             $toolbar->cancel('order.cancel', 'JTOOLBAR_CLOSE');
 
+            if ($this->canRecord) {
+                $this->addRecordButton($toolbar, 'recordpayment', 'COM_J2COMMERCE_RECORD_PAYMENT', 'fa-solid fa-hand-holding-dollar', 'payment', 'btn btn-primary', (bool) ($this->recordPayload['canRecordPayment'] ?? false));
+                $this->addRecordButton($toolbar, 'recordrefund', 'COM_J2COMMERCE_RECORD_REFUND', 'fa-solid fa-rotate-left', 'refund', 'btn btn-outline-danger', (bool) ($this->recordPayload['canRecordRefund'] ?? false));
+            }
+
             if ($canEditOrders && $canDo->get('core.edit')) {
                 $toolbar->linkButton('edit')
                     ->text('COM_J2COMMERCE_EDIT_ORDER')
@@ -359,6 +375,71 @@ class HtmlView extends BaseHtmlView
 
         $toolbar->divider();
         ToolbarHelper::help(Text::_('COM_J2COMMERCE_ORDERS'), true, 'https://docs.j2commerce.com/v6/sales/orders');
+    }
+
+    private function prepareRecordPayment(WebAssetManager $wa): void
+    {
+        $this->paymentIndicator = OrderRecordedPaymentHelper::indicator($this->item);
+        $this->canRecord        = ContentHelper::getActions('com_j2commerce')->get('core.edit')
+            && J2CommerceHelper::canAccess('j2commerce.editorders')
+            && J2CommerceHelper::canAccess('j2commerce.recordpayment');
+
+        // The balance card and Recorded Payments table also render for editors on orders that
+        // have no ledger yet, so the first recorded payment has somewhere to appear.
+        $this->recordPayload = OrderRecordedPaymentHelper::payload($this->item);
+
+        if (!$this->canRecord) {
+            return;
+        }
+
+        $this->recordMethods = OrderRecordedPaymentHelper::methodOptions((string) ($this->item->orderpayment_type ?? ''));
+
+        $base = Uri::base(true) . '/index.php?option=com_j2commerce&task=order.';
+        $this->getDocument()->addScriptOptions('com_j2commerce.recordpayment', [
+            'orderId'    => (int) $this->item->j2commerce_order_id,
+            'token'      => Session::getFormToken(),
+            'paymentUrl' => $base . 'ajaxRecordPayment',
+            'refundUrl'  => $base . 'ajaxRecordRefund',
+        ]);
+
+        foreach ([
+            'COM_J2COMMERCE_ERR_GENERIC',
+            'COM_J2COMMERCE_ERROR_NETWORK',
+            'COM_J2COMMERCE_ERR_FIX_HIGHLIGHTED',
+            'COM_J2COMMERCE_PAYMENT_STATE_ANNOUNCE',
+            'COM_J2COMMERCE_RECORDED_BY',
+            'COM_J2COMMERCE_REFUND',
+        ] as $key) {
+            Text::script($key);
+        }
+
+        $wa->registerAndUseScript(
+            'com_j2commerce.order-record-payment',
+            'media/com_j2commerce/js/administrator/order-record-payment.js',
+            [],
+            ['defer' => true]
+        );
+    }
+
+    /** Opens a dialog through Bootstrap's data API; the button is rendered hidden when it does not apply yet. */
+    private function addRecordButton(Toolbar $toolbar, string $name, string $text, string $icon, string $kind, string $class, bool $visible): void
+    {
+        $attributes = [
+            'data-bs-toggle'       => 'modal',
+            'data-bs-target'       => $kind === 'payment' ? '#j2cRecordPaymentModal' : '#j2cRecordRefundModal',
+            'data-j2c-record-open' => $kind,
+        ];
+
+        if (!$visible) {
+            $attributes['hidden'] = 'hidden';
+        }
+
+        $toolbar->standardButton($name)
+            ->text($text)
+            ->icon($icon)
+            ->buttonClass($class)
+            ->onclick('')
+            ->attributes($attributes);
     }
 
     protected function getOrderStatuses(): array
