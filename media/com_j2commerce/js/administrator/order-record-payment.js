@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const text = (key) => Joomla.Text._(key);
     const live = document.getElementById('j2cPaymentLive');
-    const urls = { payment: options.paymentUrl, refund: options.refundUrl };
+    const urls = { refund: options.refundUrl };
     let opener = null;
 
     const announce = (message) => {
@@ -174,18 +174,8 @@ document.addEventListener('DOMContentLoaded', () => {
             button.hidden = !(button.dataset.j2cRecordOpen === 'payment' ? figures.canRecordPayment : figures.canRecordRefund);
         });
 
-        const amount = document.getElementById('j2cRpAmount');
-        const hint = document.getElementById('j2cRpAmountHint');
         const refundAmount = document.getElementById('j2cRrAmount');
         const refundInfo = document.querySelector('[data-j2c-refund-info]');
-
-        if (amount) {
-            amount.value = figures.amountDefault;
-        }
-
-        if (hint) {
-            hint.textContent = figures.balanceHint;
-        }
 
         if (refundAmount) {
             refundAmount.value = figures.refundDefault;

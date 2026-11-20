@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace J2Commerce\Component\J2commerce\Site\Helper;
 
+use J2Commerce\Component\J2commerce\Site\Context\StoredOrderDisplay;
 use J2Commerce\Component\J2commerce\Site\Event\CheckoutContextEvent;
 use J2Commerce\Component\J2commerce\Site\Event\CheckoutContextInterface;
 use Joomla\CMS\Factory;
@@ -275,6 +276,34 @@ class CheckoutContextHelper
         $app = Factory::getApplication();
         $app->setUserState('j2commerce.order_id', $order->order_id ?? null);
         $app->setUserState('j2commerce.orderpayment_id', $order->j2commerce_order_id ?? null);
+    }
+
+    /**
+     * Point a checkout view at the context order's items, taxes and totals.
+     *
+     * A context resolves to a persisted order row, which carries none of the cart-order
+     * methods the checkout summary reads, so the summary rendered empty. Display only:
+     * payment and finalisation keep using the row from resolveContext()->getOrder().
+     * The view also gets a formatter bound to the order's currency, so every figure the
+     * templates print is in the currency the order was placed in.
+     *
+     * @param bool|null $owning  Ownership the caller already established; null reads the
+     *                           resolve cache that the earlier isOwningRequest() filled,
+     *                           without re-running validate() (which can clear the context).
+     */
+    public static function applyDisplayOrder(object $view, ?bool $owning = null): void
+    {
+        $order = $view->order ?? null;
+
+        if (!\is_object($order) || method_exists($order, 'getItems') || !($owning ?? self::$resolvedCache !== null)) {
+            return;
+        }
+
+        $display        = new StoredOrderDisplay($order);
+        $view->order    = $display;
+        $view->items    = $display->getItems();
+        $view->taxes    = $display->getOrderTaxrates();
+        $view->currency = $display->currency();
     }
 
     /** Persist the activated flag inside the session payload. */

@@ -15,6 +15,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\OrderModel;
+use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 
 $item           = $this->item;
@@ -117,6 +118,15 @@ $labelStyle = 'font-size:12px;letter-spacing:.5px;';
         <?php
         $paymentMethods = $this->paymentMethods ?? [];
         $noneChecked    = $paymentType === 'none';
+        $canMarkPaid    = !empty($this->canMarkPaid);
+        $offlineKeys    = $canMarkPaid ? array_keys($this->markPaidMethods ?? []) : [];
+        $checkedElement = $noneChecked ? 'none' : $paymentType;
+
+        if (\count($paymentMethods) === 1 && !$noneChecked) {
+            $checkedElement = (string) ($paymentMethods[array_key_first($paymentMethods)]['element'] ?? $checkedElement);
+        }
+
+        $offlineChecked = $canMarkPaid && \in_array($checkedElement, $offlineKeys, true);
         ?>
         <?php if (!empty($this->originalMethodMissing)) : ?>
             <div class="alert alert-warning j2c-original-method-missing">
@@ -138,7 +148,7 @@ $labelStyle = 'font-size:12px;letter-spacing:.5px;';
                 ?>
                 <label class="j2c-select-row j2c-payment-option <?php echo $checked ? 'selected' : ''; ?>" for="j2c-pay-<?php echo (int) $i; ?>">
                     <input type="radio" class="form-check-input j2c-payment-radio flex-shrink-0" name="jform[orderpayment_type]"
-                           value="<?php echo $this->escape($element); ?>" id="j2c-pay-<?php echo (int) $i; ?>" <?php echo $checked ? 'checked' : ''; ?>>
+                           value="<?php echo $this->escape($element); ?>" id="j2c-pay-<?php echo (int) $i; ?>"<?php echo \in_array($element, $offlineKeys, true) ? ' data-j2c-offline="1"' : ''; ?> <?php echo $checked ? 'checked' : ''; ?>>
                     <span class="j2c-icon-tile bg-body-secondary text-body-secondary"><span class="fa-solid fa-credit-card" aria-hidden="true"></span></span>
                     <div class="flex-grow-1" style="min-width:0;line-height:1.4;">
                         <div class="fw-bold" style="font-size:14px;color:#1f2b38;">
@@ -169,15 +179,71 @@ $labelStyle = 'font-size:12px;letter-spacing:.5px;';
         <?php if ($hasTakePayment || !empty($this->isNew)) : ?>
             <?php // Rendered (hidden) for a brand-new order too: the create-on-first-Next
                   // response supplies the signed URL and the JS reveals the button. ?>
-            <div id="j2c-take-payment-wrap" class="<?php echo ($hasTakePayment && !$noneChecked) ? '' : 'd-none'; ?>">
+            <div id="j2c-take-payment-wrap" class="<?php echo ($hasTakePayment && !$noneChecked && !$offlineChecked) ? '' : 'd-none'; ?>">
                 <a class="btn btn-primary w-100 mt-3 j2c-take-payment" href="<?php echo $this->escape($this->takePaymentUrl); ?>" target="_blank" rel="noopener">
                     <span class="fa-solid fa-credit-card me-2" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_TAKE_PAYMENT'); ?>
                 </a>
                 <div class="form-text mt-2 j2c-take-payment-note"><?php echo Text::_('COM_J2COMMERCE_TAKE_PAYMENT_NOTE'); ?></div>
             </div>
         <?php endif; ?>
-        <?php if (!$hasTakePayment && \in_array((string) ($item->transaction_status ?? ''), ['Completed', 'Authorized'], true)) : ?>
-            <div class="mt-3 j2c-payment-taken">
+        <?php if ($canMarkPaid) : ?>
+            <?php
+            $mp     = $this->recordPayload;
+            $today  = (string) HTMLHelper::_('date', 'now', 'Y-m-d');
+            $placed = (string) HTMLHelper::_('date', (string) ($item->created_on ?? 'now'), 'Y-m-d');
+            $noForm = 'j2c-mp-detached';
+            ?>
+            <?php // Not a form and no field is named: the inputs belong to no form, so Enter and Save cannot submit them, and jform never binds them. ?>
+            <div id="j2c-mark-paid" class="mt-3 j2c-mark-paid<?php echo $offlineChecked ? '' : ' d-none'; ?>" data-saved-method="<?php echo $this->escape($paymentType); ?>">
+                <fieldset class="options-form j2c-mark-paid-fields">
+                    <legend><?php echo Text::_('COM_J2COMMERCE_MARK_PAYMENT_RECEIVED'); ?></legend>
+                    <div class="form-grid">
+                        <div class="control-group">
+                            <div class="control-label"><label for="j2c-mp-amount"><?php echo Text::_('COM_J2COMMERCE_AMOUNT'); ?></label></div>
+                            <div class="controls">
+                                <input type="text" inputmode="decimal" autocomplete="off" form="<?php echo $noForm; ?>" id="j2c-mp-amount" class="form-control j2c-mp-input"
+                                       aria-required="true" data-field="amount" value="<?php echo $this->escape((string) $mp['amountDefault']); ?>" aria-describedby="j2c-mp-balance-hint j2c-mp-error">
+                                <div id="j2c-mp-balance-hint" class="form-text j2c-mp-balance-hint"><?php echo $this->escape((string) $mp['balanceHint']); ?></div>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label"><label for="j2c-mp-reference"><?php echo Text::_('COM_J2COMMERCE_FIELD_REFERENCE_OPTIONAL'); ?></label></div>
+                            <div class="controls">
+                                <input type="text" maxlength="255" autocomplete="off" form="<?php echo $noForm; ?>" id="j2c-mp-reference" class="form-control j2c-mp-input"
+                                       data-field="reference" aria-describedby="j2c-mp-error">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="control-label"><label for="j2c-mp-date"><?php echo Text::_('COM_J2COMMERCE_FIELD_DATE_RECEIVED'); ?></label></div>
+                            <div class="controls">
+                                <input type="date" form="<?php echo $noForm; ?>" id="j2c-mp-date" class="form-control j2c-mp-input" data-field="received_on"
+                                       value="<?php echo $this->escape($today); ?>" min="<?php echo $this->escape($placed); ?>" max="<?php echo $this->escape($today); ?>" aria-describedby="j2c-mp-error">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <div class="form-check">
+                                    <input type="checkbox" form="<?php echo $noForm; ?>" id="j2c-mp-confirm" class="form-check-input j2c-mp-input" data-field="confirm" value="1">
+                                    <label class="form-check-label" for="j2c-mp-confirm"><?php echo Text::_('COM_J2COMMERCE_FIELD_CONFIRM_WHEN_PAID'); ?></label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="j2c-mp-error" class="alert alert-danger py-2 mb-2 j2c-mp-error" role="alert" hidden></div>
+                    <button type="button" id="j2c-mp-submit" class="btn btn-primary w-100 j2c-mp-submit">
+                        <?php echo Text::_('COM_J2COMMERCE_MARK_PAYMENT_RECEIVED'); ?><span class="fa-solid fa-chevron-right ms-2" aria-hidden="true"></span><span class="spinner-border spinner-border-sm ms-2 j2c-mp-spinner" aria-hidden="true" hidden></span>
+                    </button>
+                    <div class="form-text mt-2"><?php echo Text::_('COM_J2COMMERCE_MARK_PAYMENT_RECEIVED_NOTE'); ?></div>
+                </fieldset>
+            </div>
+        <?php endif; ?>
+        <?php // Not a form field: it reports a recorded payment and takes focus once the panel above has nothing left to take. ?>
+        <?php if ($canMarkPaid) : ?>
+            <div id="j2c-mp-status" class="mt-3 j2c-mp-status" role="status" aria-live="polite" tabindex="-1"></div>
+        <?php endif; ?>
+        <?php $paymentTaken = !$hasTakePayment && \in_array((string) ($item->transaction_status ?? ''), ['Completed', 'Authorized'], true); ?>
+        <?php if ($paymentTaken || $canMarkPaid) : ?>
+            <div id="j2c-payment-taken" class="mt-3 j2c-payment-taken"<?php echo $paymentTaken ? '' : ' hidden'; ?>>
                 <span class="<?php echo J2htmlHelper::badgeClass('badge text-bg-success'); ?>"><span class="fa-solid fa-circle-check me-1" aria-hidden="true"></span><?php echo Text::_('COM_J2COMMERCE_ORDER_PAYMENT_TAKEN'); ?></span>
             </div>
         <?php endif; ?>
