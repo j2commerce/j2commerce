@@ -15,8 +15,7 @@ declare(strict_types=1);
 
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
-use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
-use Joomla\CMS\Component\ComponentHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
 use Joomla\CMS\Language\Text;
 
 $item = $this->item;
@@ -24,12 +23,41 @@ $currencyCode = $item->currency_code ?? '';
 
 $fmt = static fn(float $amount): string => CurrencyHelper::format($amount, $currencyCode);
 
-$checkoutPriceDisplay = (int) ComponentHelper::getParams('com_j2commerce')->get('checkout_price_display_options', 0);
-
 $taxes     = $item->ordertaxes ?? [];
 $discounts = $item->orderdiscounts ?? [];
 $shipping  = $item->ordershipping ?? null;
 $fees      = $item->orderfees ?? [];
+
+// The same rows the confirmation page prints, so every figure foots to order_total.
+$totalRows = array_filter(
+    OrderHelper::getFormattedOrderTotals($item, [
+        'shippings' => $shipping ? [$shipping] : [],
+        'taxes'     => $taxes,
+        'fees'      => $fees,
+        'discounts' => $discounts,
+    ]),
+    static fn (array $totalRow): bool => $totalRow['type'] !== 'grandtotal'
+);
+
+foreach ($totalRows as &$totalRow) {
+    // COM_J2COMMERCE_ORDER_SHIPPING_TAX lives in the site language file only.
+    if ($totalRow['key'] === 'shipping_tax') {
+        $totalRow['label'] = Text::_('COM_J2COMMERCE_FIELD_SHIPPING_TAX');
+    }
+
+    if (str_starts_with($totalRow['key'], 'discount_') && isset($discounts[(int) substr($totalRow['key'], 9)])) {
+        $disc  = $discounts[(int) substr($totalRow['key'], 9)];
+        $title = $disc->discount_title ?: $disc->discount_code;
+
+        $totalRow['label'] = match ($disc->discount_type) {
+            'coupon'  => Text::sprintf('COM_J2COMMERCE_COUPON_TITLE', $title),
+            'voucher' => Text::sprintf('COM_J2COMMERCE_VOUCHER_TITLE', $title),
+            default   => Text::sprintf('COM_J2COMMERCE_DISCOUNT_TITLE', $title ?: Text::_('COM_J2COMMERCE_CART_DISCOUNT')),
+        };
+    }
+}
+
+unset($totalRow);
 
 ?>
 <div class="card mb-4 order-card order-summary-card">
@@ -56,96 +84,12 @@ $fees      = $item->orderfees ?? [];
                             </tr>
                         <?php endif; ?>
                     <?php endforeach; ?>
-                    <tr>
-                        <th scope="row"><?php echo Text::_('COM_J2COMMERCE_SUBTOTAL'); ?></th>
-                        <td class="text-end"><?php echo $fmt((float) $item->order_subtotal); ?></td>
-                    </tr>
-
-                    <?php // Shipping - show actual method name ?>
-                    <?php if ((float) $item->order_shipping > 0) : ?>
-                        <?php
-                        $shippingLabel = Text::_('COM_J2COMMERCE_SHIPPING');
-                        if ($shipping && !empty($shipping->ordershipping_name)) {
-                            $shippingLabel = J2htmlHelper::translateKey(stripslashes($shipping->ordershipping_name));
-                        }
-                        ?>
+                    <?php foreach ($totalRows as $totalRow) : ?>
                         <tr>
-                            <th scope="row"><?php echo $this->escape($shippingLabel); ?></th>
-                            <td class="text-end"><?php echo $fmt((float) $item->order_shipping); ?></td>
+                            <th scope="row"><?php echo $this->escape($totalRow['label']); ?></th>
+                            <td class="text-end<?php echo $totalRow['type'] === 'discount' ? ' text-danger' : ''; ?>"><?php echo $totalRow['type'] === 'discount' ? '-' : ''; ?><?php echo $fmt($totalRow['amount']); ?></td>
                         </tr>
-                    <?php endif; ?>
-
-                    <?php // Fees/Surcharges — show each with its actual name ?>
-                    <?php if (!empty($fees)) : ?>
-                        <?php foreach ($fees as $fee) : ?>
-                            <?php $feeAmount = (float) ($fee->amount ?? 0); ?>
-                            <?php if ($feeAmount > 0) : ?>
-                                <tr>
-                                    <th scope="row"><?php echo $this->escape($fee->name ?: Text::_('COM_J2COMMERCE_SURCHARGE')); ?></th>
-                                    <td class="text-end"><?php echo $fmt($feeAmount); ?></td>
-                                </tr>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    <?php elseif ((float) ($item->order_surcharge ?? 0) > 0) : ?>
-                        <tr>
-                            <th scope="row"><?php echo Text::_('COM_J2COMMERCE_SURCHARGE'); ?></th>
-                            <td class="text-end"><?php echo $fmt((float) $item->order_surcharge); ?></td>
-                        </tr>
-                    <?php endif; ?>
-
-                    <?php // Discounts - each on its own line ?>
-                    <?php if (!empty($discounts)) : ?>
-                        <?php foreach ($discounts as $disc) : ?>
-                            <?php $discountAmount = (float) ($disc->discount_amount ?? 0); ?>
-                            <?php if ($discountAmount > 0) : ?>
-                                <?php
-                                if ($disc->discount_type === 'coupon') {
-                                    $discountLabel = Text::sprintf('COM_J2COMMERCE_COUPON_TITLE', $disc->discount_title ?: $disc->discount_code);
-                                } elseif ($disc->discount_type === 'voucher') {
-                                    $discountLabel = Text::sprintf('COM_J2COMMERCE_VOUCHER_TITLE', $disc->discount_title ?: $disc->discount_code);
-                                } else {
-                                    $discountLabel = Text::sprintf('COM_J2COMMERCE_DISCOUNT_TITLE', $disc->discount_title ?: $disc->discount_code ?: Text::_('COM_J2COMMERCE_CART_DISCOUNT'));
-                                }
-                                ?>
-                                <tr>
-                                    <th scope="row"><?php echo $this->escape($discountLabel); ?></th>
-                                    <td class="text-end text-danger">-<?php echo $fmt($discountAmount); ?></td>
-                                </tr>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    <?php elseif ((float) $item->order_discount > 0) : ?>
-                        <tr>
-                            <th scope="row"><?php echo Text::_('COM_J2COMMERCE_DISCOUNT'); ?></th>
-                            <td class="text-end text-danger">-<?php echo $fmt((float) $item->order_discount); ?></td>
-                        </tr>
-                    <?php endif; ?>
-
-                    <?php // Tax lines - each tax profile on its own line ?>
-                    <?php if (!empty($taxes)) : ?>
-                        <?php foreach ($taxes as $tax) : ?>
-                            <?php
-                            $taxTitle   = $tax->ordertax_title ?? Text::_('COM_J2COMMERCE_CART_TAX');
-                            $taxPercent = (float) ($tax->ordertax_percent ?? 0);
-
-                            if ($taxPercent > 0) {
-                                $taxLabel = $checkoutPriceDisplay
-                                    ? Text::sprintf('COM_J2COMMERCE_CART_TAX_INCLUDED_TITLE', J2htmlHelper::translateKey($taxTitle), $taxPercent . '%')
-                                    : Text::sprintf('COM_J2COMMERCE_CART_TAX_EXCLUDED_TITLE', J2htmlHelper::translateKey($taxTitle), $taxPercent . '%');
-                            } else {
-                                $taxLabel = J2htmlHelper::translateKey($taxTitle);
-                            }
-                            ?>
-                            <tr>
-                                <th scope="row"><?php echo $this->escape($taxLabel); ?></th>
-                                <td class="text-end"><?php echo $fmt((float) $tax->ordertax_amount); ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php elseif ((float) $item->order_tax > 0) : ?>
-                        <tr>
-                            <th scope="row"><?php echo Text::_('COM_J2COMMERCE_TAX'); ?></th>
-                            <td class="text-end"><?php echo $fmt((float) $item->order_tax); ?></td>
-                        </tr>
-                    <?php endif; ?>
+                    <?php endforeach; ?>
                     <tr class="total-row">
                         <th scope="row"><strong><?php echo Text::_('COM_J2COMMERCE_TOTAL'); ?></strong></th>
                         <td class="text-end"><strong><?php echo $fmt((float) $item->order_total); ?></strong></td>
