@@ -14,9 +14,11 @@ namespace J2Commerce\Component\J2commerce\Api\Controller;
 
 \defined('_JEXEC') or die;
 
+use J2Commerce\Component\J2commerce\Administrator\Exception\UserFacingException;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use Joomla\CMS\Access\Exception\NotAllowed;
 use Joomla\CMS\MVC\Controller\ApiController;
+use Joomla\CMS\MVC\Controller\Exception\Save;
 
 /**
  * Base API controller for J2Commerce.
@@ -112,7 +114,12 @@ abstract class J2CommerceApiController extends ApiController
         $this->assertAllowed($this->writeAction, 'core.delete');
         $this->pinResource();
 
-        return parent::delete($id);
+        // A model's refusal would otherwise reach the fallback handler: a bare 500 without its message.
+        try {
+            return parent::delete($id);
+        } catch (UserFacingException $e) {
+            throw new Save($e->getMessage(), 409, $e);
+        }
     }
 
     /**
