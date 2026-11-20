@@ -110,6 +110,7 @@ class HtmlView extends BaseHtmlView
             $this->items = $items;
             $this->taxes = ($order && method_exists($order, 'getOrderTaxrates')) ? $order->getOrderTaxrates() : [];
 
+            CheckoutContextHelper::applyDisplayOrder($this, true);
             CheckoutContextHelper::primeUserState($order);
 
             $this->showShipping = $resolved->getShowShipping();

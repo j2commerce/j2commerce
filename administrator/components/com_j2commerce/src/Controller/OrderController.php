@@ -2098,7 +2098,10 @@ class OrderController extends FormController
 
         $method = $this->input->post->getCmd('payment_method', '');
 
-        if (!isset(OrderRecordedPaymentHelper::methodOptions((string) ($order->orderpayment_type ?? ''))[$method])) {
+        // Payments are accepted only for the enabled core offline methods; refunds keep any enabled method.
+        $allowed = $refund ? OrderRecordedPaymentHelper::methodOptions() : OrderRecordedPaymentHelper::offlineMethodOptions();
+
+        if (!isset($allowed[$method])) {
             return $fail(Text::_('COM_J2COMMERCE_ERR_RECORD_PAYMENT_METHOD'), 'payment_method');
         }
 

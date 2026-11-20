@@ -69,6 +69,8 @@ class HtmlView extends BaseHtmlView
     protected array $paymentIndicator     = [];
     protected array $recordPayload        = [];
     protected array $recordMethods        = [];
+    protected bool $canMarkPaid           = false;
+    protected array $markPaidMethods      = [];
 
     /** Set by the billing/shipping tab templates before loading the shared address form. */
     protected string $addressFormType = 'billing';
@@ -245,6 +247,11 @@ class HtmlView extends BaseHtmlView
                 ]);
             }
 
+            // "Mark Payment Received" replaces Take Payment for the core offline methods.
+            if (!$this->isNew) {
+                $this->prepareMarkPaid();
+            }
+
             // Refund / charge-balance actions on the Summary totals rail. All figures
             // are ledger (display-currency) values, matching the payment_balance layout.
             $orderPk = (int) ($this->item->j2commerce_order_id ?? 0);
@@ -347,8 +354,22 @@ class HtmlView extends BaseHtmlView
             $toolbar->cancel('order.cancel', 'JTOOLBAR_CLOSE');
 
             if ($this->canRecord) {
-                $this->addRecordButton($toolbar, 'recordpayment', 'COM_J2COMMERCE_RECORD_PAYMENT', 'fa-solid fa-hand-holding-dollar', 'payment', 'btn btn-primary', (bool) ($this->recordPayload['canRecordPayment'] ?? false));
-                $this->addRecordButton($toolbar, 'recordrefund', 'COM_J2COMMERCE_RECORD_REFUND', 'fa-solid fa-rotate-left', 'refund', 'btn btn-outline-danger', (bool) ($this->recordPayload['canRecordRefund'] ?? false));
+                $paymentLink = $toolbar->linkButton('recordpayment')
+                    ->text('COM_J2COMMERCE_RECORD_PAYMENT')
+                    ->url('index.php?option=com_j2commerce&view=order&layout=edit&id=' . (int) $this->item->j2commerce_order_id . '#payment_shipping')
+                    ->icon('fa-solid fa-hand-holding-dollar')
+                    ->buttonClass('btn btn-primary');
+
+                // Toggled by order-record-payment.js once a refund changes what is payable.
+                $paymentAttributes = ['data-j2c-record-open' => 'payment'];
+
+                if (!($this->recordPayload['canRecordPayment'] ?? false)) {
+                    $paymentAttributes['hidden'] = 'hidden';
+                }
+
+                $paymentLink->attributes($paymentAttributes);
+
+                $this->addRefundButton($toolbar, (bool) ($this->recordPayload['canRecordRefund'] ?? false));
             }
 
             if ($canEditOrders && $canDo->get('core.edit')) {
@@ -377,29 +398,66 @@ class HtmlView extends BaseHtmlView
         ToolbarHelper::help(Text::_('COM_J2COMMERCE_ORDERS'), true, 'https://docs.j2commerce.com/v6/sales/orders');
     }
 
-    private function prepareRecordPayment(WebAssetManager $wa): void
+    /** Who may record a payment or refund: edit rights on orders and the dedicated recordpayment action. */
+    private function canRecordPayments(): bool
     {
-        $this->paymentIndicator = OrderRecordedPaymentHelper::indicator($this->item);
-        $this->canRecord        = ContentHelper::getActions('com_j2commerce')->get('core.edit')
+        return (bool) ContentHelper::getActions('com_j2commerce')->get('core.edit')
             && J2CommerceHelper::canAccess('j2commerce.editorders')
             && J2CommerceHelper::canAccess('j2commerce.recordpayment');
+    }
 
-        // The balance card and Recorded Payments table also render for editors on orders that
-        // have no ledger yet, so the first recorded payment has somewhere to appear.
-        $this->recordPayload = OrderRecordedPaymentHelper::payload($this->item);
+    private function loadRecordPayload(): array
+    {
+        return $this->recordPayload ?: $this->recordPayload = OrderRecordedPaymentHelper::payload($this->item);
+    }
+
+    private function prepareMarkPaid(): void
+    {
+        $this->canRecord = $this->canRecordPayments();
 
         if (!$this->canRecord) {
             return;
         }
 
-        $this->recordMethods = OrderRecordedPaymentHelper::methodOptions((string) ($this->item->orderpayment_type ?? ''));
+        $this->markPaidMethods = OrderRecordedPaymentHelper::offlineMethodOptions();
+        $this->canMarkPaid     = (bool) ($this->loadRecordPayload()['canRecordPayment'] ?? false) && $this->markPaidMethods !== [];
+
+        if (!$this->canMarkPaid) {
+            return;
+        }
+
+        $this->getDocument()->addScriptOptions('com_j2commerce.markpaid', [
+            'url'     => Uri::base(true) . '/index.php?option=com_j2commerce&task=order.ajaxRecordPayment',
+            'token'   => Session::getFormToken(),
+            'orderId' => (int) $this->item->j2commerce_order_id,
+            'methods' => array_keys($this->markPaidMethods),
+        ]);
+
+        foreach (['COM_J2COMMERCE_ERR_GENERIC', 'COM_J2COMMERCE_ERROR_NETWORK'] as $key) {
+            Text::script($key);
+        }
+    }
+
+    private function prepareRecordPayment(WebAssetManager $wa): void
+    {
+        $this->paymentIndicator = OrderRecordedPaymentHelper::indicator($this->item);
+        $this->canRecord        = $this->canRecordPayments();
+
+        // The balance card and Recorded Payments table also render for editors on orders that
+        // have no ledger yet, so the first recorded payment has somewhere to appear.
+        $this->loadRecordPayload();
+
+        if (!$this->canRecord) {
+            return;
+        }
+
+        $this->recordMethods = OrderRecordedPaymentHelper::methodOptions();
 
         $base = Uri::base(true) . '/index.php?option=com_j2commerce&task=order.';
         $this->getDocument()->addScriptOptions('com_j2commerce.recordpayment', [
-            'orderId'    => (int) $this->item->j2commerce_order_id,
-            'token'      => Session::getFormToken(),
-            'paymentUrl' => $base . 'ajaxRecordPayment',
-            'refundUrl'  => $base . 'ajaxRecordRefund',
+            'orderId'   => (int) $this->item->j2commerce_order_id,
+            'token'     => Session::getFormToken(),
+            'refundUrl' => $base . 'ajaxRecordRefund',
         ]);
 
         foreach ([
@@ -421,23 +479,23 @@ class HtmlView extends BaseHtmlView
         );
     }
 
-    /** Opens a dialog through Bootstrap's data API; the button is rendered hidden when it does not apply yet. */
-    private function addRecordButton(Toolbar $toolbar, string $name, string $text, string $icon, string $kind, string $class, bool $visible): void
+    /** Opens the refund dialog through Bootstrap's data API; rendered hidden when there is nothing to refund yet. */
+    private function addRefundButton(Toolbar $toolbar, bool $visible): void
     {
         $attributes = [
             'data-bs-toggle'       => 'modal',
-            'data-bs-target'       => $kind === 'payment' ? '#j2cRecordPaymentModal' : '#j2cRecordRefundModal',
-            'data-j2c-record-open' => $kind,
+            'data-bs-target'       => '#j2cRecordRefundModal',
+            'data-j2c-record-open' => 'refund',
         ];
 
         if (!$visible) {
             $attributes['hidden'] = 'hidden';
         }
 
-        $toolbar->standardButton($name)
-            ->text($text)
-            ->icon($icon)
-            ->buttonClass($class)
+        $toolbar->standardButton('recordrefund')
+            ->text('COM_J2COMMERCE_RECORD_REFUND')
+            ->icon('fa-solid fa-rotate-left')
+            ->buttonClass('btn btn-outline-danger')
             ->onclick('')
             ->attributes($attributes);
     }

@@ -25,8 +25,11 @@ use Joomla\Database\ParameterType;
 /** Presentation and guards for Record Payment / Record Refund and the paid indicator; arithmetic lives in OrderPaymentHelper. */
 final class OrderRecordedPaymentHelper
 {
-    /** @var array<string, string> value stored in ordertransactions.method => language key */
-    private const PRESET_METHODS = [
+    /** Core payment plugins that never contact a gateway, so "Mark Payment Received" is the only way to record their money. */
+    public const OFFLINE_METHODS = ['payment_cash', 'payment_banktransfer', 'payment_moneyorder'];
+
+    /** @var array<string, string> values older ledger rows stored in ordertransactions.method => language key; labels only, never offered. */
+    private const LEGACY_METHODS = [
         'cash'          => 'COM_J2COMMERCE_PAYMENT_METHOD_CASH',
         'bank_transfer' => 'COM_J2COMMERCE_PAYMENT_METHOD_BANK_TRANSFER',
         'check'         => 'COM_J2COMMERCE_PAYMENT_METHOD_CHECK',
@@ -50,39 +53,56 @@ final class OrderRecordedPaymentHelper
     /** @var array<string, string> */
     private static array $pluginLabels = [];
 
-    /** @return array<string, string> value => translated label */
-    public static function methodOptions(string $orderPaymentType = ''): array
+    /** @return array<string, string> enabled j2commerce payment plugin element => translated label */
+    public static function methodOptions(): array
     {
+        static $options = null;
+
+        if ($options !== null) {
+            return $options;
+        }
+
+        $db      = Factory::getContainer()->get(DatabaseInterface::class);
+        $type    = 'plugin';
+        $folder  = 'j2commerce';
+        $pattern = 'payment\_%';
+        $enabled = 1;
+        $query   = $db->getQuery(true)
+            ->select($db->quoteName('element'))
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('type') . ' = :type')
+            ->where($db->quoteName('folder') . ' = :folder')
+            ->where($db->quoteName('element') . ' LIKE :pattern')
+            ->where($db->quoteName('enabled') . ' = :enabled')
+            ->bind(':type', $type)
+            ->bind(':folder', $folder)
+            ->bind(':pattern', $pattern)
+            ->bind(':enabled', $enabled, ParameterType::INTEGER);
+
         $options = [];
 
-        foreach (self::PRESET_METHODS as $value => $key) {
-            $options[$value] = Text::_($key);
+        foreach ($db->setQuery($query)->loadColumn() ?: [] as $element) {
+            $options[(string) $element] = self::pluginLabel((string) $element);
         }
 
-        $own = self::ownMethod($orderPaymentType);
-
-        if ($own !== '' && !\in_array(strtolower(self::pluginLabel($own)), array_map('strtolower', $options), true)) {
-            $options[$own] = self::pluginLabel($own);
-        }
+        asort($options, SORT_NATURAL | SORT_FLAG_CASE);
 
         return $options;
     }
 
+    /** @return array<string, string> the enabled core offline methods (money received outside a gateway) => translated label */
+    public static function offlineMethodOptions(): array
+    {
+        return array_intersect_key(self::methodOptions(), array_flip(self::OFFLINE_METHODS));
+    }
+
     public static function methodLabel(string $value): string
     {
-        if (isset(self::PRESET_METHODS[$value])) {
-            return Text::_(self::PRESET_METHODS[$value]);
+        if (isset(self::LEGACY_METHODS[$value])) {
+            return Text::_(self::LEGACY_METHODS[$value]);
         }
 
         return $value === '' ? '' : self::pluginLabel($value);
-    }
-
-    /** The order's own gateway element, usable as a method value; '' when none applies. */
-    public static function ownMethod(string $orderPaymentType): string
-    {
-        return preg_match('/^[a-z0-9_]{1,100}$/', $orderPaymentType) === 1 && $orderPaymentType !== 'none'
-            ? $orderPaymentType
-            : '';
     }
 
     private static function pluginLabel(string $element): string

@@ -97,6 +97,8 @@ class CheckoutController extends BaseController
             $view->$key = $value;
         }
 
+        CheckoutContextHelper::applyDisplayOrder($view);
+
         $view->setLayout('default');
 
         // AJAX bypasses display(); register framework subfolder so loadTemplate() finds it.
@@ -3105,6 +3107,8 @@ class CheckoutController extends BaseController
             $view->order = $order;
             $view->items = $items;
             $view->taxes = ($order && method_exists($order, 'getOrderTaxrates')) ? $order->getOrderTaxrates() : [];
+
+            CheckoutContextHelper::applyDisplayOrder($view);
 
             ob_start();
             $view->setLayout('default');

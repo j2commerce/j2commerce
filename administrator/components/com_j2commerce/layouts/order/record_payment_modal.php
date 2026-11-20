@@ -14,7 +14,7 @@ defined('_JEXEC') or die;
 use Joomla\CMS\HTML\HTMLHelper;
 use Joomla\CMS\Language\Text;
 
-/** @var array{payload: array<string, mixed>, methods: array<string, string>, currency: string, today: string, placed: string} $displayData Record Payment and Record Refund dialogs. */
+/** @var array{payload: array<string, mixed>, methods: array<string, string>, currency: string, today: string, placed: string} $displayData Record Refund dialog. */
 $payload  = $displayData['payload'];
 $methods  = $displayData['methods'];
 $currency = (string) $displayData['currency'];
@@ -46,48 +46,6 @@ $footer = static fn (string $formId, string $submitLabel): string =>
     . '<button type="submit" class="btn btn-primary" form="' . $formId . '" data-j2c-record-submit>'
     . '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true" hidden data-j2c-record-spinner></span>'
     . '<span data-j2c-record-submit-label>' . $esc($submitLabel) . '</span> <span class="fa-solid fa-chevron-right" aria-hidden="true"></span></button>';
-
-ob_start();
-?>
-<div class="p-3">
-    <form id="j2cRecordPaymentForm" class="j2c-record-form" data-j2c-record-kind="payment" novalidate>
-        <div class="alert alert-danger py-2" role="alert" hidden data-j2c-record-error></div>
-        <fieldset class="options-form">
-            <legend><?php echo Text::_('COM_J2COMMERCE_RECORD_PAYMENT_DETAILS'); ?></legend>
-            <div class="form-grid">
-                <div class="control-group">
-                    <label class="form-label" for="j2cRpMethod"><?php echo Text::_('COM_J2COMMERCE_FIELD_PAYMENT_METHOD'); ?></label>
-                    <?php echo $methodSelect('j2cRpMethod'); ?>
-                </div>
-                <div class="control-group">
-                    <label class="form-label" for="j2cRpAmount"><?php echo $esc($amountLb); ?></label>
-                    <input class="form-control" type="text" inputmode="decimal" autocomplete="off" id="j2cRpAmount" name="amount"
-                           value="<?php echo $esc((string) $payload['amountDefault']); ?>" aria-describedby="j2cRpAmountHint" required>
-                    <div class="form-text" id="j2cRpAmountHint" data-j2c-record-hint><?php echo $esc((string) $payload['balanceHint']); ?></div>
-                </div>
-                <div class="control-group">
-                    <label class="form-label" for="j2cRpReference"><?php echo Text::_('COM_J2COMMERCE_FIELD_REFERENCE'); ?></label>
-                    <input class="form-control" type="text" id="j2cRpReference" name="reference" maxlength="255" autocomplete="off">
-                </div>
-                <div class="control-group">
-                    <label class="form-label" for="j2cRpDate"><?php echo Text::_('COM_J2COMMERCE_FIELD_DATE_RECEIVED'); ?></label>
-                    <input class="form-control" type="date" id="j2cRpDate" name="received_on" value="<?php echo $esc($today); ?>"
-                           min="<?php echo $esc($placed); ?>" max="<?php echo $esc($today); ?>">
-                </div>
-                <div class="control-group">
-                    <label class="form-label" for="j2cRpNote"><?php echo Text::_('COM_J2COMMERCE_NOTE'); ?></label>
-                    <textarea class="form-control" id="j2cRpNote" name="note" rows="2" maxlength="1000"></textarea>
-                </div>
-                <div class="control-group form-check">
-                    <input class="form-check-input" type="checkbox" id="j2cRpConfirm" name="confirm" value="1" checked>
-                    <label class="form-check-label" for="j2cRpConfirm"><?php echo Text::_('COM_J2COMMERCE_FIELD_CONFIRM_WHEN_PAID'); ?></label>
-                </div>
-            </div>
-        </fieldset>
-    </form>
-</div>
-<?php
-$paymentBody = (string) ob_get_clean();
 
 ob_start();
 ?>
@@ -126,13 +84,6 @@ ob_start();
 </div>
 <?php
 $refundBody = (string) ob_get_clean();
-
-echo $named(HTMLHelper::_('bootstrap.renderModal', 'j2cRecordPaymentModal', [
-    'title'     => $esc(Text::_('COM_J2COMMERCE_RECORD_PAYMENT')),
-    'footer'    => $footer('j2cRecordPaymentForm', Text::_('COM_J2COMMERCE_RECORD_PAYMENT')),
-    'backdrop'  => 'static',
-    'modalCss'  => 'modal-dialog-centered modal-dialog-scrollable',
-], $paymentBody), 'j2cRecordPaymentModal');
 
 echo $named(HTMLHelper::_('bootstrap.renderModal', 'j2cRecordRefundModal', [
     'title'     => $esc(Text::_('COM_J2COMMERCE_RECORD_REFUND')),

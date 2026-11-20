@@ -196,11 +196,12 @@ $dateFormat = ComponentHelper::getParams('com_j2commerce')->get('date_format', '
                                 <td class="text-end">
                                     <strong class="small"><?php echo CurrencyHelper::format((float) $item->order_total, $item->currency_code ?? '', (float) ($item->currency_value ?? 1)); ?></strong>
                                 </td>
-                                <td>
+                                <?php $paymentIndicator = OrderRecordedPaymentHelper::indicator($item, $this->paymentSummaries[(int) $item->j2commerce_order_id] ?? null); ?>
+                                <td<?php echo $paymentIndicator['conflict'] ? ' class="text-nowrap"' : ''; ?>>
                                     <small><?php echo $this->escape(strip_tags($paymentDisplay)); ?></small>
-                                    <div>
+                                    <div<?php echo $paymentIndicator['conflict'] ? ' class="d-inline"' : ''; ?>>
                                         <?php echo LayoutHelper::render('order.payment_state', [
-                                            'indicator'       => OrderRecordedPaymentHelper::indicator($item, $this->paymentSummaries[(int) $item->j2commerce_order_id] ?? null),
+                                            'indicator'       => $paymentIndicator,
                                             'compactConflict' => true,
                                         ], JPATH_ADMINISTRATOR . '/components/com_j2commerce/layouts'); ?>
                                     </div>

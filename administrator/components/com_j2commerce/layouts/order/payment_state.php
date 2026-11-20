@@ -26,8 +26,9 @@ $show      = (bool) $indicator['show'];
     </span>
     <small class="text-body-secondary ms-1" data-j2c-payment-secondary<?php echo $show && $indicator['secondary'] !== '' ? '' : ' hidden'; ?>><?php echo htmlspecialchars($indicator['secondary'], ENT_QUOTES, 'UTF-8'); ?></small>
     <?php if (!empty($displayData['compactConflict']) && $indicator['conflict']) : ?>
-        <small class="text-warning-emphasis fw-semibold" data-j2c-payment-conflict-compact>
-            <span class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></span><span class="visually-hidden"><?php echo htmlspecialchars(Text::_('WARNING'), ENT_QUOTES, 'UTF-8'); ?>: </span><?php echo htmlspecialchars(Text::_('COM_J2COMMERCE_PAYMENT_STATE_NO_PAYMENT_RECORDED'), ENT_QUOTES, 'UTF-8'); ?>
-        </small>
+        <?php $noPayment = htmlspecialchars(Text::_('COM_J2COMMERCE_PAYMENT_STATE_NO_PAYMENT_RECORDED'), ENT_QUOTES, 'UTF-8'); ?>
+        <button type="button" class="clickTooltip btn btn-link p-0 border-0 align-baseline text-warning-emphasis ms-1" data-bs-toggle="tooltip" data-bs-trigger="click" data-bs-placement="top" title="<?php echo $noPayment; ?>" data-j2c-payment-conflict-compact>
+            <span class="fa-solid fa-triangle-exclamation" aria-hidden="true"></span><span class="visually-hidden"><?php echo htmlspecialchars(Text::_('WARNING'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo $noPayment; ?></span>
+        </button>
     <?php endif; ?>
 </span>
