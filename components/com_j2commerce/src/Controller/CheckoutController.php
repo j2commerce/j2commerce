@@ -70,6 +70,24 @@ class CheckoutController extends BaseController
     /** Named locks this request holds; MySQL drops them with the connection as a backstop. */
     private array $placementLocks = [];
 
+    public function execute($task)
+    {
+        $this->placement()->resetOnCurrencyChange();
+
+        return parent::execute($task);
+    }
+
+    /**
+     * Ends the session without saving it, for a task that changes none of it. The session handler
+     * writes back the whole session each request loaded at its start, so a slow request that only
+     * reads would otherwise overwrite a selection another request saved while it ran. Whatever the
+     * rest of the request reads still comes from the copy already in memory.
+     */
+    private function releaseSession(): void
+    {
+        $this->app->getSession()->abort();
+    }
+
     public function display($cachable = false, $urlparams = []): static
     {
         UtilitiesHelper::sendNoCacheHeaders();
@@ -1345,8 +1363,9 @@ class CheckoutController extends BaseController
         $showShipping        = $this->determineShowShipping($order);
         $showShippingMethods = $this->determineShowShippingMethods($order);
 
-        $shippingRates  = [];
-        $shippingValues = $session->get('shipping_values', [], 'j2commerce');
+        $shippingRates    = [];
+        $shippingValues   = $session->get('shipping_values', [], 'j2commerce');
+        $selectionWritten = false;
 
         if ($showShippingMethods && $order) {
             $shippingResults = J2CommerceHelper::plugin()->eventWithArray('GetShippingRates', [$order, 'checkout']);
@@ -1387,18 +1406,34 @@ class CheckoutController extends BaseController
                     }
                 }
 
-                // Refresh session with current rate data (tax amounts may have changed)
+                // A selection that is still on offer is written back only when the quote moved its
+                // charge (a cart change can do that without clearing it). An unchanged one is left
+                // alone: re-writing it would put back whatever this request loaded at its start, over
+                // a choice made while the carrier was being quoted.
                 if ($selectionStillAvailable && $matchedRate !== null) {
-                    $shippingValues['shipping_tax']          = (string) ((float) ($matchedRate['tax'] ?? 0));
-                    $shippingValues['shipping_tax_class_id'] = (int) ($matchedRate['tax_class_id'] ?? 0);
-                    $shippingValues['shipping_price']        = (string) ((float) ($matchedRate['price'] ?? 0));
-                    $shippingValues['shipping_tax_resolved'] = CartOrder::rateTaxIsResolved($matchedRate);
-                    $session->set('shipping_values', $shippingValues, 'j2commerce');
+                    $fresh = [
+                        'shipping_price'        => (string) ((float) ($matchedRate['price'] ?? 0)),
+                        'shipping_tax'          => (string) ((float) ($matchedRate['tax'] ?? 0)),
+                        'shipping_tax_class_id' => (int) ($matchedRate['tax_class_id'] ?? 0),
+                        'shipping_tax_resolved' => CartOrder::rateTaxIsResolved($matchedRate),
+                    ];
+
+                    $moved = (float) ($shippingValues['shipping_price'] ?? 0) !== (float) $fresh['shipping_price']
+                        || (float) ($shippingValues['shipping_tax'] ?? 0) !== (float) $fresh['shipping_tax']
+                        || (int) ($shippingValues['shipping_tax_class_id'] ?? 0) !== $fresh['shipping_tax_class_id']
+                        || !empty($shippingValues['shipping_tax_resolved']) !== $fresh['shipping_tax_resolved'];
+
+                    if ($moved) {
+                        $selectionWritten = true;
+                        $shippingValues   = $fresh + $shippingValues;
+                        $session->set('shipping_values', $shippingValues, 'j2commerce');
+                    }
                 }
 
                 if (!$selectionStillAvailable) {
-                    $defaultRate    = $shippingRates[0];
-                    $shippingValues = [
+                    $selectionWritten = true;
+                    $defaultRate      = $shippingRates[0];
+                    $shippingValues   = [
                         'shipping_plugin'       => $defaultRate['element'] ?? '',
                         'shipping_name'         => $defaultRate['name'] ?? '',
                         'shipping_price'        => (string) ((float) ($defaultRate['price'] ?? 0)),
@@ -1439,6 +1474,10 @@ class CheckoutController extends BaseController
             J2CommerceHelper::plugin()->event('ChangeShowPaymentOnTotalZero', [$order, &$showPayment]);
         }
 
+        if (!$selectionWritten) {
+            $this->releaseSession();
+        }
+
         $this->renderStep('shipping_payment', [
             'order'               => $order,
             'showShipping'        => $showShipping,
@@ -1466,6 +1505,8 @@ class CheckoutController extends BaseController
     public function paymentMethodsOnly(): void
     {
         $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
+
+        $this->releaseSession();
 
         $session = $this->app->getSession();
         $order   = $this->getCartOrder();
@@ -1632,6 +1673,8 @@ class CheckoutController extends BaseController
     {
         $this->validateAjaxToken() or $this->jsonResponse(['error' => ['warning' => Text::_('JINVALID_TOKEN')]]);
 
+        $this->releaseSession();
+
         $position = $this->input->getString('position', 'after_billing');
         $order    = $this->getCartOrder();
         $items    = ($order && method_exists($order, 'getItems')) ? $order->getItems() : [];
@@ -1791,6 +1834,25 @@ class CheckoutController extends BaseController
 
         $placement = $this->placement();
         $order     = null;
+
+        // The page names the rate it shows as chosen. When the session no longer holds that rate, a
+        // save made after this page last rendered was overwritten, and the order would be placed on
+        // a rate the shopper did not pick.
+        $shownPlugin = $this->input->getString('shipping_plugin', '');
+
+        if ($shownPlugin !== '') {
+            $stored    = (array) $session->get('shipping_values', [], 'j2commerce');
+            $shownCode = $this->input->getString('shipping_code', '');
+            $heldCode  = (string) ($stored['shipping_code'] ?? '');
+
+            $sameRate = (string) ($stored['shipping_plugin'] ?? '') === $shownPlugin
+                && $heldCode === $shownCode
+                && ($heldCode !== '' || (string) ($stored['shipping_name'] ?? '') === $this->input->getString('shipping_name', ''));
+
+            if (!$sameRate) {
+                $errors[] = Text::_('COM_J2COMMERCE_CHECKOUT_SELECT_A_SHIPPING_METHOD');
+            }
+        }
 
         try {
             $order = $this->buildCartOrder();
@@ -3095,6 +3157,8 @@ class CheckoutController extends BaseController
 
             return;
         }
+
+        $this->releaseSession();
 
         try {
             $view = $this->getCheckoutView();
