@@ -1961,7 +1961,7 @@ class EmailHelper
         $footed = CurrencyHelper::footConverted(
             array_column([...$lines, ...$taxLines], 1),
             $grandTotal,
-            $currencyValue > 0 ? $currencyValue : (CurrencyHelper::getValue($currencyCode) ?: 1.0),
+            CurrencyHelper::effectiveRate($currencyValue, $currencyCode),
             $decimals
         );
         $rows = '';

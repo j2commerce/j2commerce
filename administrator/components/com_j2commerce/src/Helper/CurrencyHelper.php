@@ -604,7 +604,7 @@ class CurrencyHelper
         $toRate   = self::has($to) ? self::getValue($to) : 0.0;
 
         // Avoid division by zero
-        if ($fromRate <= 0) {
+        if ($fromRate <= 0 || $toRate <= 0) {
             return 0.0;
         }
 
@@ -623,13 +623,35 @@ class CurrencyHelper
      */
     public static function convertForOrder(float $number, object $order): float
     {
-        $rate = (float) ($order->currency_value ?? 1.0);
+        return $number * self::orderRate($order);
+    }
 
-        if ($rate <= 0) {
-            $rate = 1.0;
+    /** Rate to convert with: the stored one when positive, else the currency table's, else 1.0 (same fallback as format()). */
+    public static function effectiveRate(float $stored, string $currencyCode = ''): float
+    {
+        if ($stored > 0) {
+            return $stored;
         }
 
-        return $number * $rate;
+        // A code no longer in the table cannot borrow another currency's rate.
+        if ($currencyCode !== '' && !self::has($currencyCode)) {
+            return 1.0;
+        }
+
+        $table = self::getValue($currencyCode);
+
+        return $table > 0 ? $table : 1.0;
+    }
+
+    public static function orderRate(object $order): float
+    {
+        return self::effectiveRate((float) ($order->currency_value ?? 1.0), (string) ($order->currency_code ?? ''));
+    }
+
+    /** Format a base-currency amount in the order's own currency at the order's stored rate. */
+    public static function formatForOrder(float $number, object $order): string
+    {
+        return self::format($number, (string) ($order->currency_code ?? ''), self::orderRate($order));
     }
 
     /**

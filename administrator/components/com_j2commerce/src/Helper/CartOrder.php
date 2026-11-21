@@ -2186,7 +2186,7 @@ class CartOrder
         $currency      = J2CommerceHelper::currency();
         $currencyCode  = $currency->getCode();
         $currencyId    = (int) $currency->getId();
-        $currencyValue = (float) $currency->getValue();
+        $currencyValue = CurrencyHelper::effectiveRate((float) $currency->getValue(), $currencyCode);
 
         // Config
         $params         = J2CommerceHelper::config();
@@ -3197,7 +3197,7 @@ class CartOrder
         $footed = CurrencyHelper::footConverted(
             array_column($rows, 0),
             (float) $this->order_total,
-            CurrencyHelper::getValue() ?: 1.0,
+            CurrencyHelper::effectiveRate(0.0),
             CurrencyHelper::getDecimalPlace()
         );
 

@@ -298,8 +298,7 @@ class OrderHelper
 
         // 'amount' stays in the base currency; 'display' is the order-currency figure, footed so
         // the printed rows add up to the printed Total.
-        $rate     = (float) ($order->currency_value ?? 0);
-        $rate     = $rate > 0 ? $rate : (CurrencyHelper::getValue((string) ($order->currency_code ?? '')) ?: 1.0);
+        $rate     = CurrencyHelper::effectiveRate((float) ($order->currency_value ?? 0), (string) ($order->currency_code ?? ''));
         $declared = (float) ($order->order_total ?? 0);
         $bodyKeys = [];
 
@@ -326,6 +325,46 @@ class OrderHelper
         unset($row);
 
         return $rows;
+    }
+
+    /**
+     * Edit-screen summary figures in the order currency at the order's stored rate, footed so the
+     * printed rows add up to the printed Total (same footing as getFormattedOrderTotals()).
+     *
+     * @param   array<string, float>  $totals  Base-currency figures: subtotal, shipping, shipping_tax, surcharge, fees, fee_tax, discount, tax, total.
+     *
+     * @return  array{subtotal: float, shipping: float, surcharge: float, discount: float, tax: float, fees: float, total: float}
+     */
+    public static function getFootedSummary(array $totals, object $order): array
+    {
+        $value     = static fn (string $key): float => (float) ($totals[$key] ?? 0);
+        $rate      = CurrencyHelper::orderRate($order);
+        $scale     = CurrencyHelper::getDecimalPlace((string) ($order->currency_code ?? ''));
+        $inclusive = (int) ($order->is_including_tax ?? 0) === 1;
+        // 'tax' is the panel's combined figure (item + shipping + fee tax, as OrderModel's
+        // recalculation overlay returns it); only the item part is its own footing atom.
+        $itemTax   = $value('tax') - $value('shipping_tax') - $value('fee_tax');
+        $atoms     = [
+            'subtotal'     => $value('subtotal'),
+            'shipping'     => $value('shipping'),
+            'shipping_tax' => $value('shipping_tax'),
+            'fees'         => $value('fees'),
+            'surcharge'    => $value('surcharge'),
+            'discount'     => -($value('discount') + (float) ($order->order_credit ?? 0)),
+            'tax'          => $inclusive ? 0.0 : $itemTax,
+            'fee_tax'      => $value('fee_tax'),
+        ];
+        $footed = array_combine(array_keys($atoms), CurrencyHelper::footConverted(array_values($atoms), $value('total'), $rate, $scale));
+
+        return [
+            'subtotal'  => $footed['subtotal'],
+            'shipping'  => $footed['shipping'],
+            'surcharge' => $footed['surcharge'],
+            'discount'  => abs($footed['discount']),
+            'tax'       => ($inclusive ? round($itemTax * $rate, $scale) : $footed['tax']) + $footed['shipping_tax'] + $footed['fee_tax'],
+            'fees'      => $footed['fees'],
+            'total'     => round($value('total') * $rate, $scale),
+        ];
     }
 
     /**
