@@ -70,6 +70,13 @@ class CheckoutController extends BaseController
     /** Named locks this request holds; MySQL drops them with the connection as a backstop. */
     private array $placementLocks = [];
 
+    public function execute($task)
+    {
+        $this->placement()->resetOnCurrencyChange();
+
+        return parent::execute($task);
+    }
+
     public function display($cachable = false, $urlparams = []): static
     {
         UtilitiesHelper::sendNoCacheHeaders();
