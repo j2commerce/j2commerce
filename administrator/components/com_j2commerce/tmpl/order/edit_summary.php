@@ -14,6 +14,7 @@ defined('_JEXEC') or die;
 use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\ImageHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderTransactionHelper;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
@@ -25,7 +26,7 @@ $orderItems     = $item->orderitems ?? [];
 $orderDiscounts = $item->orderdiscounts ?? [];
 $orderFees      = $item->orderfees ?? [];
 $currency       = $item->currency_code ?? 'USD';
-$fmt            = static fn (float $amount): string => CurrencyHelper::format($amount, $currency);
+$fmt            = static fn (float $amount): string => CurrencyHelper::formatForOrder($amount, $item);
 $unitCount      = array_sum(array_map(static fn ($line): int => (int) $line->orderitem_quantity, $orderItems));
 
 $feeBareTotal = array_sum(array_map(static fn ($f): float => max(0.0, (float) ($f->amount ?? 0)), $orderFees));
@@ -41,6 +42,20 @@ $displayFees      = empty($orderFees) ? (float) ($item->order_fees ?? 0) : $feeB
 // panel's Tax row reads the same combined figure the order view/confirmation page shows,
 // rather than only ever naming the product-tax component.
 $displayTax = (float) ($item->order_tax ?? 0) + (float) ($item->order_shipping_tax ?? 0) + $feeTaxTotal;
+
+// Order-currency rows at the order's stored rate, footed so they add up to the Total (same footing as the order view).
+$footed    = OrderHelper::getFootedSummary([
+    'subtotal'     => (float) $item->order_subtotal,
+    'shipping'     => (float) $item->order_shipping,
+    'shipping_tax' => (float) ($item->order_shipping_tax ?? 0),
+    'surcharge'    => $displaySurcharge,
+    'fees'         => $displayFees,
+    'fee_tax'      => $feeTaxTotal,
+    'discount'     => (float) $item->order_discount,
+    'tax'          => $displayTax,
+    'total'        => (float) $item->order_total,
+], $item);
+$fmtFooted = static fn (float $amount): string => CurrencyHelper::format($amount, $currency, 1.0);
 
 // Currency affix for the money-modal amount fields (position follows the currency config).
 $currencySymbol = CurrencyHelper::getSymbol($currency) ?: $currency;
@@ -159,31 +174,31 @@ $symbolPre      = CurrencyHelper::getSymbolPosition($currency) !== 'post';
         <div class="p-3 flex-grow-1">
             <div class="d-flex justify-content-between py-1 text-body-secondary" style="font-size:13px;">
                 <span><?php echo Text::_('COM_J2COMMERCE_SUBTOTAL'); ?></span>
-                <span id="summarySubtotal" class="j2c-tabnum"><?php echo $fmt((float) $item->order_subtotal); ?></span>
+                <span id="summarySubtotal" class="j2c-tabnum"><?php echo $fmtFooted($footed['subtotal']); ?></span>
             </div>
             <div id="summaryShippingRow" class="d-flex justify-content-between py-1 text-body-secondary <?php echo (float) $item->order_shipping > 0 ? '' : 'd-none'; ?>" style="font-size:13px;">
                 <span><?php echo Text::_('COM_J2COMMERCE_SHIPPING'); ?></span>
-                <span id="summaryShipping" class="j2c-tabnum"><?php echo $fmt((float) $item->order_shipping); ?></span>
+                <span id="summaryShipping" class="j2c-tabnum"><?php echo $fmtFooted($footed['shipping']); ?></span>
             </div>
             <div id="summarySurchargeRow" class="d-flex justify-content-between py-1 text-body-secondary <?php echo $displaySurcharge > 0 ? '' : 'd-none'; ?>" style="font-size:13px;">
                 <span><?php echo Text::_('COM_J2COMMERCE_SURCHARGE'); ?></span>
-                <span id="summarySurcharge" class="j2c-tabnum"><?php echo $fmt($displaySurcharge); ?></span>
+                <span id="summarySurcharge" class="j2c-tabnum"><?php echo $fmtFooted($footed['surcharge']); ?></span>
             </div>
-            <div id="summaryDiscountRow" class="d-flex justify-content-between py-1 text-body-secondary <?php echo (float) $item->order_discount > 0 ? '' : 'd-none'; ?>" style="font-size:13px;">
+            <div id="summaryDiscountRow" class="d-flex justify-content-between py-1 text-body-secondary <?php echo $footed['discount'] > 0 ? '' : 'd-none'; ?>" style="font-size:13px;">
                 <span><?php echo Text::_('COM_J2COMMERCE_DISCOUNT'); ?></span>
-                <span id="summaryDiscount" class="text-danger j2c-tabnum">-<?php echo $fmt((float) $item->order_discount); ?></span>
+                <span id="summaryDiscount" class="text-danger j2c-tabnum">-<?php echo $fmtFooted($footed['discount']); ?></span>
             </div>
             <div id="summaryTaxRow" class="d-flex justify-content-between py-1 text-body-secondary <?php echo $displayTax > 0 ? '' : 'd-none'; ?>" style="font-size:13px;">
                 <span><?php echo Text::_('COM_J2COMMERCE_TAX'); ?></span>
-                <span id="summaryTax" class="j2c-tabnum"><?php echo $fmt($displayTax); ?></span>
+                <span id="summaryTax" class="j2c-tabnum"><?php echo $fmtFooted($footed['tax']); ?></span>
             </div>
             <div id="summaryFeesRow" class="d-flex justify-content-between py-1 text-body-secondary <?php echo $displayFees > 0 ? '' : 'd-none'; ?>" style="font-size:13px;">
                 <span><?php echo Text::_('COM_J2COMMERCE_FEES'); ?></span>
-                <span id="summaryFees" class="j2c-tabnum"><?php echo $fmt($displayFees); ?></span>
+                <span id="summaryFees" class="j2c-tabnum"><?php echo $fmtFooted($footed['fees']); ?></span>
             </div>
             <div class="d-flex justify-content-between pt-2 mt-1 border-top fw-bold" style="font-size:18px;color:#1f2b38;">
                 <span><?php echo Text::_('COM_J2COMMERCE_TOTAL'); ?></span>
-                <span id="summaryTotal" class="j2c-tabnum"><strong><?php echo $fmt((float) $item->order_total); ?></strong></span>
+                <span id="summaryTotal" class="j2c-tabnum"><strong><?php echo $fmtFooted($footed['total']); ?></strong></span>
             </div>
 
             <?php

@@ -103,7 +103,7 @@ foreach ([
                     $oid        = (int) $orderItem->j2commerce_orderitem_id;
                     $qty        = (int) $orderItem->orderitem_quantity;
                     $priceVal   = number_format((float) $orderItem->orderitem_price, 2, '.', '');
-                    $priceFmt   = CurrencyHelper::format((float) $orderItem->orderitem_price, $currency);
+                    $priceFmt   = CurrencyHelper::formatForOrder((float) $orderItem->orderitem_price, $item);
                     $sku        = (string) ($orderItem->orderitem_sku ?? '');
                     $imageUrl   = (string) ($orderItem->image_url ?? '');
                     $manages    = !empty($orderItem->manages_stock);
@@ -175,7 +175,7 @@ foreach ([
                             <button type="button" class="btn btn-light border j2c-qty-inc" data-item-id="<?php echo $oid; ?>" aria-label="+"><span class="fa-solid fa-plus" aria-hidden="true"></span></button>
                             <input type="hidden" class="j2c-qty-input" name="orderitem_qty[<?php echo $oid; ?>]" value="<?php echo $qty; ?>">
                         </div>
-                        <div class="j2c-line-total fw-bold text-end j2c-tabnum" style="width:90px;flex:0 0 auto;"><?php echo CurrencyHelper::format((float) $orderItem->orderitem_finalprice, $currency); ?></div>
+                        <div class="j2c-line-total fw-bold text-end j2c-tabnum" style="width:90px;flex:0 0 auto;"><?php echo CurrencyHelper::formatForOrder((float) $orderItem->orderitem_finalprice, $item); ?></div>
                         <button type="button" class="btn btn-sm j2c-line-remove" data-item-id="<?php echo $oid; ?>"
                                 title="<?php echo $this->escape(Text::_('JACTION_DELETE')); ?>" aria-label="<?php echo $this->escape(Text::_('JACTION_DELETE')); ?>">
                             <span class="fa-solid fa-trash text-danger" aria-hidden="true"></span>

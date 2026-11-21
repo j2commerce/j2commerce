@@ -17,8 +17,7 @@ use Joomla\CMS\Language\Text;
 
 $orderId       = (int) ($displayData['order_id'] ?? 0);
 $currencyCode  = (string) ($displayData['currency_code'] ?? 'USD');
-$currencyValue = (float) ($displayData['currency_value'] ?? 1.0);
-$currencyValue = $currencyValue > 0 ? $currencyValue : 1.0;
+$currencyValue = CurrencyHelper::effectiveRate((float) ($displayData['currency_value'] ?? 1.0), $currencyCode);
 
 // order_total is stored in the store base currency; convert to the order's display
 // currency to match the ledger-derived figures below (which are already display currency),

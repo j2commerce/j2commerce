@@ -842,8 +842,7 @@ final class OrderTransactionHelper
         }
 
         $displayRefunded = self::sumByTypes($orderId, ['REVERSAL']);
-        $rate            = (float) $order->currency_value;
-        $rate            = $rate > 0 ? $rate : 1.0;
+        $rate            = CurrencyHelper::orderRate($order);
         $decimals        = CurrencyHelper::getDecimalPlace(ConfigHelper::getDefaultCurrency());
         $baseRefunded    = round($displayRefunded / $rate, $decimals);
         $now             = Factory::getDate()->toSql();
