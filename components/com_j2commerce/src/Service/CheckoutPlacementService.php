@@ -566,6 +566,14 @@ final class CheckoutPlacementService
      */
     public function orderMatchesCart(object $priorOrder, CartOrder $cartOrder): bool
     {
+        // The row is priced and charged in the currency it was saved in; equal base totals do not
+        // make a row saved in another one the order for what the shopper is shown now.
+        $storedCurrency = (string) ($priorOrder->currency_code ?? '');
+
+        if ($storedCurrency !== '' && $storedCurrency !== CurrencyHelper::getCode()) {
+            return false;
+        }
+
         $scale  = CurrencyHelper::getDecimalPlace(ConfigHelper::getDefaultCurrency());
         $factor = 10 ** $scale;
 
@@ -663,6 +671,57 @@ final class CheckoutPlacementService
         $session->clear('shipping_method', 'j2commerce');
         $session->clear('shipping_methods', 'j2commerce');
         $session->clear('shipping_values', 'j2commerce');
+    }
+
+    /**
+     * Drop what an earlier request priced in another display currency: the fees, the shipping
+     * quotes and the step flags that vouched for them. The primed order id stays: a stored order
+     * in another currency already fails orderMatchesCart(), so confirm primes a fresh one, and an
+     * order already handed to a hosted gateway still needs its id when the shopper returns.
+     */
+    public function clearCurrencyPricedState(): void
+    {
+        if (CheckoutContextHelper::isActivated()) {
+            return;
+        }
+
+        $session = $this->app->getSession();
+        $this->clearShippingSelection();
+        $session->clear('order_fees', 'j2commerce');
+        $session->set('priced_currency', CurrencyHelper::getCode(), 'j2commerce');
+
+        CheckoutStepStateHelper::clear();
+    }
+
+    /**
+     * Runs at the start of every checkout request, so it catches a switch made through any entry
+     * point (the currency task, a ?currency= link, a module). The currency the session was last
+     * seen checking out in is what the stored state was priced in.
+     */
+    public function resetOnCurrencyChange(): void
+    {
+        // isActivated(), not isOwningRequest(): the latter can clear the context, and confirmPayment()
+        // must still find it. A ?currency= request is left to the next request, which sees the
+        // persisted code and clears then.
+        if (CheckoutContextHelper::isActivated() || $this->app->getInput()->getString('currency', '') !== '') {
+            return;
+        }
+
+        $session = $this->app->getSession();
+        $code    = CurrencyHelper::getCode();
+        $seen    = (string) $session->get('priced_currency', '', 'j2commerce');
+
+        if ($seen === $code) {
+            return;
+        }
+
+        if ($seen === '') {
+            $session->set('priced_currency', $code, 'j2commerce');
+
+            return;
+        }
+
+        $this->clearCurrencyPricedState();
     }
 
     /** The order for the current cart, or the context order when a checkout context owns the request. */
