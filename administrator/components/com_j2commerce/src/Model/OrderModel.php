@@ -2088,6 +2088,8 @@ class OrderModel extends AdminModel
                 $db->quoteName('oi.orderitem_price'),
                 $db->quoteName('oi.orderitem_option_price'),
                 $db->quoteName('oi.orderitem_per_item_tax'),
+                $db->quoteName('oi.orderitem_tax'),
+                $db->quoteName('oi.orderitem_finalprice'),
                 $db->quoteName('oi.orderitem_discount'),
                 $db->quoteName('oi.orderitem_weight'),
                 $db->quoteName('oi.orderitem_name'),
@@ -2107,6 +2109,14 @@ class OrderModel extends AdminModel
         $items   = $db->loadObjectList('j2commerce_orderitem_id') ?: [];
         $updated = 0;
 
+        $including = (int) $db->setQuery(
+            $db->getQuery(true)
+                ->select($db->quoteName('is_including_tax'))
+                ->from($db->quoteName('#__j2commerce_orders'))
+                ->where($db->quoteName('order_id') . ' = :orderId')
+                ->bind(':orderId', $orderId)
+        )->loadResult() === 1;
+
         foreach ($items as $itemId => $row) {
             $qty   = isset($quantities[$itemId]) ? max(1, (int) $quantities[$itemId]) : (int) $row->orderitem_quantity;
             $price = isset($prices[$itemId]) ? max(0.0, (float) $prices[$itemId]) : (float) $row->orderitem_price;
@@ -2119,13 +2129,17 @@ class OrderModel extends AdminModel
             $perItemTax  = (float) $row->orderitem_per_item_tax;
             $discount    = (float) $row->orderitem_discount;
             $finalPrice  = $this->recomputeOrderItemFinalPrice($orderId, $row, $price, $optionPrice, $qty, $discount);
-            $lineTax     = $perItemTax * $qty;
+            $oldFinal    = (float) $row->orderitem_finalprice;
+            // The line keeps the tax it was sold at, scaled with its value, like the sibling editors.
+            $lineTax     = $oldFinal > 0.0 ? (float) $row->orderitem_tax * ($finalPrice / $oldFinal) : $perItemTax * $qty;
 
             $qtyStr         = (string) $qty;
             $priceStr       = number_format($price, 5, '.', '');
             $finalStr       = number_format($finalPrice, 5, '.', '');
             $taxStr         = number_format($lineTax, 5, '.', '');
-            $withTaxStr     = number_format($finalPrice + $lineTax, 5, '.', '');
+            $perItemTaxStr  = number_format($lineTax / $qty, 5, '.', '');
+            $withTaxStr     = number_format($including ? $finalPrice : $finalPrice + $lineTax, 5, '.', '');
+            $withoutTaxStr  = number_format($including ? $finalPrice - $lineTax : $finalPrice, 5, '.', '');
             $weightTotalStr = (string) ((float) $row->orderitem_weight * $qty);
             $rowId          = (int) $itemId;
 
@@ -2135,6 +2149,7 @@ class OrderModel extends AdminModel
                 ->set($db->quoteName('orderitem_price') . ' = :price')
                 ->set($db->quoteName('orderitem_finalprice') . ' = :finalPrice')
                 ->set($db->quoteName('orderitem_tax') . ' = :lineTax')
+                ->set($db->quoteName('orderitem_per_item_tax') . ' = :perItemTax')
                 ->set($db->quoteName('orderitem_finalprice_without_tax') . ' = :finalNoTax')
                 ->set($db->quoteName('orderitem_finalprice_with_tax') . ' = :finalWithTax')
                 ->set($db->quoteName('orderitem_weight_total') . ' = :weightTotal')
@@ -2143,7 +2158,8 @@ class OrderModel extends AdminModel
                 ->bind(':price', $priceStr)
                 ->bind(':finalPrice', $finalStr)
                 ->bind(':lineTax', $taxStr)
-                ->bind(':finalNoTax', $finalStr)
+                ->bind(':perItemTax', $perItemTaxStr)
+                ->bind(':finalNoTax', $withoutTaxStr)
                 ->bind(':finalWithTax', $withTaxStr)
                 ->bind(':weightTotal', $weightTotalStr)
                 ->bind(':itemId', $rowId, ParameterType::INTEGER);
@@ -4238,6 +4254,12 @@ class OrderModel extends AdminModel
      * checkout — shipping only when `combine_tax_calculations` is on (it has its own
      * order_shipping_tax column/line for split mode), the surcharge always (it has none).
      * Without this, every "Recalculate" wiped both back out of the rebuilt rows.
+     *
+     * onJ2CommerceBeforeRecomputeOrderTax (args: orderId, order, items, address) lets a tax engine
+     * claim profiles: each subscriber addResult()s ['taxprofile_id' => int, 'rows' => int[]]
+     * after re-quoting that profile's lines itself. Claimed lines are left untouched here, and
+     * exactly the ordertaxes ids in a claim's `rows` are kept; a claim also means the engine
+     * quotes the order's shipping tax, so it is not merged here.
      */
     public function recomputeOrderTax(string $orderId): array
     {
@@ -4249,12 +4271,47 @@ class OrderModel extends AdminModel
             : [];
 
         $query = $db->getQuery(true)
-            ->select($db->quoteName('is_including_tax'))
+            ->select($db->quoteName([
+                'j2commerce_order_id',
+                'order_id',
+                'user_id',
+                'currency_code',
+                'currency_value',
+                'is_including_tax',
+            ]))
             ->from($db->quoteName('#__j2commerce_orders'))
             ->where($db->quoteName('order_id') . ' = :orderId')
             ->bind(':orderId', $orderId);
         $db->setQuery($query);
-        $isIncludingTax = (int) $db->loadResult() === 1;
+        $order          = $db->loadObject();
+        $isIncludingTax = (int) ($order->is_including_tax ?? 0) === 1;
+
+        $orderItems      = $this->getOrderItems($orderId);
+        $claimedProfiles = [];
+        $claimedRows     = [];
+
+        if ($order) {
+            $claimEvent = J2CommerceHelper::plugin()->event('BeforeRecomputeOrderTax', [
+                'orderId' => $orderId,
+                'order'   => $order,
+                'items'   => $orderItems,
+                'address' => $address,
+            ]);
+
+            foreach ((array) $claimEvent->getArgument('result', []) as $claim) {
+                if (!\is_array($claim) || (int) ($claim['taxprofile_id'] ?? 0) <= 0) {
+                    continue;
+                }
+
+                $claimedProfiles[(int) $claim['taxprofile_id']] = true;
+
+                foreach ((array) ($claim['rows'] ?? []) as $rowId) {
+                    $claimedRows[(int) $rowId] = (int) $rowId;
+                }
+            }
+        }
+
+        $hasUnclaimedTaxedLine = false;
 
         // A coupon (or any plugin cart discount persisted as a non-voucher row) reduces the
         // price, so it shrinks the taxable base the same way CartOrder::
@@ -4288,11 +4345,17 @@ class OrderModel extends AdminModel
 
         $taxRates = [];
 
-        foreach ($this->getOrderItems($orderId) as $item) {
+        foreach ($orderItems as $item) {
             $taxprofileId = (int) ($item->orderitem_taxprofile_id ?? 0);
-            $qty          = max(1, (int) $item->orderitem_quantity);
-            $lineAmount   = (float) $item->orderitem_finalprice;
-            $lineTax      = 0.0;
+
+            if ($taxprofileId > 0 && isset($claimedProfiles[$taxprofileId])) {
+                continue;
+            }
+
+            $hasUnclaimedTaxedLine = $hasUnclaimedTaxedLine || $taxprofileId > 0;
+            $qty                   = max(1, (int) $item->orderitem_quantity);
+            $lineAmount            = (float) $item->orderitem_finalprice;
+            $lineTax               = 0.0;
 
             if ($taxprofileId > 0 && !empty($geozones) && $lineAmount > 0) {
                 $ratesets = TaxHelper::getTaxRatesForProfile(
@@ -4354,37 +4417,45 @@ class OrderModel extends AdminModel
             $db->execute();
         }
 
-        $combineTax = (int) J2CommerceHelper::config()->get('combine_tax_calculations', 1);
+        // With every taxed line on a claimed profile the claiming engine owns the whole tax
+        // display, shipping and fee tax included, exactly as on a freshly placed order.
+        $engineOwnsDisplay = $claimedProfiles !== [] && !$hasUnclaimedTaxedLine;
+        $combineTax        = (int) J2CommerceHelper::config()->get('combine_tax_calculations', 1);
 
-        if ($combineTax) {
+        if ($combineTax && $claimedProfiles === []) {
             $shipping    = $this->getOrderShipping($orderId);
             $shippingTax = (float) ($shipping->ordershipping_tax ?? 0);
 
             if ($shippingTax > 0) {
                 $shippingTaxClassId = $this->resolveShippingTaxClassId($shipping);
 
-                if ($shippingTaxClassId > 0) {
+                if ($shippingTaxClassId > 0 && !isset($claimedProfiles[$shippingTaxClassId])) {
                     $this->mergeRecomputedTaxAmount($taxRates, $shippingTaxClassId, $shippingTax, $geozones);
                 }
             }
         }
 
-        foreach ($this->getOrderFees($orderId) as $fee) {
+        foreach ($engineOwnsDisplay ? [] : $this->getOrderFees($orderId) as $fee) {
             $feeTax        = (float) ($fee->tax ?? 0);
             $feeTaxClassId = (int) ($fee->tax_class_id ?? 0);
 
-            if ($feeTax > 0 && $feeTaxClassId > 0) {
+            if ($feeTax > 0 && $feeTaxClassId > 0 && !isset($claimedProfiles[$feeTaxClassId])) {
                 $this->mergeRecomputedTaxAmount($taxRates, $feeTaxClassId, $feeTax, $geozones);
             }
         }
 
-        // Rebuild the per-rate tax summary rows
-        $db->setQuery(
-            $db->getQuery(true)
-                ->delete($db->quoteName('#__j2commerce_ordertaxes'))
-                ->where($db->quoteName('order_id') . ' = :orderId')
-                ->bind(':orderId', $orderId)
-        );
+        // Rebuild the per-rate tax summary rows, keeping the ones a claiming engine owns.
+        $deleteTaxRows = $db->getQuery(true)
+            ->delete($db->quoteName('#__j2commerce_ordertaxes'))
+            ->where($db->quoteName('order_id') . ' = :orderId')
+            ->bind(':orderId', $orderId);
+
+        if ($claimedRows !== []) {
+            $keepRows = array_values($claimedRows);
+            $deleteTaxRows->whereNotIn($db->quoteName('j2commerce_ordertax_id'), $keepRows, ParameterType::INTEGER);
+        }
+
+        $db->setQuery($deleteTaxRows);
         $db->execute();
 
         foreach ($taxRates as $rate) {
