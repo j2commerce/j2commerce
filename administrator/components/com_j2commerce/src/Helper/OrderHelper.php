@@ -132,7 +132,7 @@ class OrderHelper
      * @param   object  $order  Row from #__j2commerce_orders.
      * @param   array   $parts  Related rows: shippings, taxes, fees, discounts.
      *
-     * @return  array<int, array{key: string, type: string, label: string, amount: float}>
+     * @return  array<int, array{key: string, type: string, label: string, amount: float, display: float}>  `display` is `amount` converted to the order currency, rows footed to the Total.
      *
      * @since   6.1.0
      */
@@ -294,7 +294,38 @@ class OrderHelper
             'amount' => (float) ($order->order_total ?? 0),
         ];
 
-        return self::reconcileTotalRows($rows, $scale);
+        $rows = self::reconcileTotalRows($rows, $scale);
+
+        // 'amount' stays in the base currency; 'display' is the order-currency figure, footed so
+        // the printed rows add up to the printed Total.
+        $rate     = (float) ($order->currency_value ?? 0);
+        $rate     = $rate > 0 ? $rate : (CurrencyHelper::getValue((string) ($order->currency_code ?? '')) ?: 1.0);
+        $declared = (float) ($order->order_total ?? 0);
+        $bodyKeys = [];
+
+        foreach ($rows as $index => $row) {
+            if ($row['type'] === 'grandtotal') {
+                $declared = $row['amount'];
+            } else {
+                $bodyKeys[] = $index;
+            }
+        }
+
+        $footed = CurrencyHelper::footConverted(
+            array_map(static fn (int $index): float => $rows[$index]['type'] === 'discount' ? -$rows[$index]['amount'] : $rows[$index]['amount'], $bodyKeys),
+            $declared,
+            $rate,
+            $scale
+        );
+
+        foreach ($rows as $index => &$row) {
+            $position       = array_search($index, $bodyKeys, true);
+            $row['display'] = $position === false ? round($declared * $rate, $scale) : abs($footed[$position]);
+        }
+
+        unset($row);
+
+        return $rows;
     }
 
     /**

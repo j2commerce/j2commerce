@@ -632,6 +632,39 @@ class CurrencyHelper
         return $number * $rate;
     }
 
+    /**
+     * Convert signed base-currency rows to the order currency so the rounded rows sum to the
+     * rounded converted total (largest-remainder). Falls back to plain per-row rounding when the
+     * base rows do not foot to $baseTotal.
+     *
+     * @param   array<int, float>  $signedBase  Row amounts, deductions negative.
+     *
+     * @return  array<int, float>  Same order, in the order currency, at $scale decimals.
+     */
+    public static function footConverted(array $signedBase, float $baseTotal, float $rate, int $scale): array
+    {
+        $unit   = 10 ** $scale;
+        $target = (int) round(round($baseTotal * $rate, $scale) * $unit);
+        $exact  = array_map(static fn ($amount): float => round((float) $amount * $rate * $unit, 6), array_values($signedBase));
+        $floors = array_map('floor', $exact);
+        $fracs  = array_map(static fn (float $e, float $f): float => $e - $f, $exact, $floors);
+        $delta  = $target - (int) array_sum($floors);
+        $footed = abs(array_sum(array_map('floatval', $signedBase)) - $baseTotal) < 0.005;
+
+        if (!$footed || $delta < 0 || $delta > \count(array_filter($fracs, static fn (float $frac): bool => $frac > 1e-9))) {
+            return array_map(static fn (float $e): float => round($e) / $unit, $exact);
+        }
+
+        arsort($fracs);
+        $bumped = \array_slice(array_keys($fracs), 0, $delta);
+
+        return array_map(
+            static fn (float $f, int $i): float => ($f + (\in_array($i, $bumped, true) ? 1 : 0)) / $unit,
+            $floors,
+            array_keys($floors)
+        );
+    }
+
     /** Gateway charge amount for an order, in its display currency. */
     public static function gatewayAmount(object $order): float
     {

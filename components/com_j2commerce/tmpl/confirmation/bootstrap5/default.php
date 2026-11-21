@@ -522,7 +522,7 @@ if ($info) {
                         <?php foreach ($summaryRows as $summaryRow) : ?>
                             <div class="d-flex justify-content-between mb-2<?php echo $summaryRow['type'] === 'discount' ? ' text-success' : ''; ?>">
                                 <span><?php echo $this->escape($summaryRow['label']); ?></span>
-                                <span><?php echo $summaryRow['type'] === 'discount' ? '-' : ''; ?><?php echo $fmt($summaryRow['amount']); ?></span>
+                                <span><?php echo $summaryRow['type'] === 'discount' ? '-' : ''; ?><?php echo CurrencyHelper::format($summaryRow['display'], $currencyCode, 1.0); ?></span>
                             </div>
                         <?php endforeach; ?>
                     </div>

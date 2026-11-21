@@ -3049,6 +3049,13 @@ class CartOrder
         $params               = J2CommerceHelper::config();
         $combineTax           = (int) $params->get('combine_tax_calculations', 1);
         $checkoutPriceDisplay = (int) $params->get('checkout_price_display_options', 0);
+        $rows                 = [];
+        $line                 = static function (string $key, float $signed) use ($currency, &$rows): string {
+            $text       = ($signed < 0 ? '-' : '') . $currency->format(abs($signed));
+            $rows[$key] = [$signed, $text];
+
+            return $text;
+        };
 
         // Subtotal row — when showing inclusive prices, sum displayed line-item totals
         // so the subtotal matches what the customer sees (regardless of geozone resolution)
@@ -3063,7 +3070,7 @@ class CartOrder
 
         $totals['subtotal'] = [
             'label' => Text::_('COM_J2COMMERCE_CART_SUBTOTAL'),
-            'value' => $currency->format($displaySubtotal),
+            'value' => $line('subtotal', $displaySubtotal),
         ];
 
         // Shipping - placed before tax
@@ -3075,14 +3082,14 @@ class CartOrder
 
             $totals['shipping'] = [
                 'label' => $shippingLabel,
-                'value' => $currency->format($this->order_shipping),
+                'value' => $line('shipping', $this->order_shipping),
             ];
 
             // Shipping tax as separate line — only when NOT combining taxes
             if ($this->order_shipping_tax > 0 && !$combineTax) {
                 $totals['shipping_tax'] = [
                     'label' => Text::_('COM_J2COMMERCE_ORDER_SHIPPING_TAX'),
-                    'value' => $currency->format($this->order_shipping_tax),
+                    'value' => $line('shipping_tax', $this->order_shipping_tax),
                 ];
             }
         }
@@ -3097,7 +3104,7 @@ class CartOrder
                 $feeKey          = 'fee_' . preg_replace('/[^a-z0-9_]/', '_', strtolower($fee->name ?? 'custom'));
                 $totals[$feeKey] = [
                     'label' => J2htmlHelper::translateKey($fee->name),
-                    'value' => $currency->format($this->get_formatted_fees($fee, $feeDisplay)),
+                    'value' => $line($feeKey, $this->get_formatted_fees($fee, $feeDisplay)),
                 ];
             }
         }
@@ -3106,7 +3113,7 @@ class CartOrder
         if ($this->order_surcharge > 0 && empty($fees)) {
             $totals['surcharge'] = [
                 'label' => Text::_('COM_J2COMMERCE_CART_SURCHARGE'),
-                'value' => $currency->format($this->order_surcharge),
+                'value' => $line('surcharge', $this->order_surcharge),
             ];
         }
 
@@ -3139,11 +3146,11 @@ class CartOrder
                     // Plugin markup after the discount title rides in 'link' — templates escape 'label' as plain text
                     $link = J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayDiscountTitle', [$this, $discount]) . $link;
 
-                    $value = '-' . $currency->format($discountAmount);
+                    $discountKey = $discountType . '_' . preg_replace('/[^a-z0-9_]/', '_', strtolower($discount->discount_code ?? 'discount'));
+                    $value       = $line($discountKey, -$discountAmount);
                     // Allow plugins to add content after discount amount
                     $value .= J2CommerceHelper::plugin()->eventWithHtml('AfterDisplayDiscountAmount', [$this, $discount]);
 
-                    $discountKey          = $discountType . '_' . preg_replace('/[^a-z0-9_]/', '_', strtolower($discount->discount_code ?? 'discount'));
                     $totals[$discountKey] = [
                         'label' => $label,
                         'link'  => $link,
@@ -3180,10 +3187,24 @@ class CartOrder
                     $taxKey          = 'tax_' . preg_replace('/[^a-z0-9_]/', '_', strtolower($taxTitle)) . '_' . $key;
                     $totals[$taxKey] = [
                         'label' => $label,
-                        'value' => $currency->format($taxAmount),
+                        'value' => $line($taxKey, $taxAmount),
                     ];
                 }
             }
+        }
+
+        // Rows are footed together so the converted figures add up to the converted Total.
+        $footed = CurrencyHelper::footConverted(
+            array_column($rows, 0),
+            (float) $this->order_total,
+            CurrencyHelper::getValue() ?: 1.0,
+            CurrencyHelper::getDecimalPlace()
+        );
+
+        foreach (array_keys($rows) as $index => $key) {
+            // Only the leading amount is ours; any plugin markup appended after it is left as is.
+            $totals[$key]['value'] = ($footed[$index] < 0 ? '-' : '') . $currency->format(abs($footed[$index]), '', 1.0)
+                . substr($totals[$key]['value'], \strlen($rows[$key][1]));
         }
 
         // Grand Total

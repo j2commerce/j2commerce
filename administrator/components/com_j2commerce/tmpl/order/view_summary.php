@@ -21,7 +21,8 @@ use Joomla\CMS\Language\Text;
 $item = $this->item;
 $currencyCode = $item->currency_code ?? '';
 
-$fmt = static fn(float $amount): string => CurrencyHelper::format($amount, $currencyCode);
+$currencyValue = (float) ($item->currency_value ?? 1);
+$fmt           = static fn(float $amount, float $rate = 0.0): string => CurrencyHelper::format($amount, $currencyCode, $rate ?: $currencyValue);
 
 $taxes     = $item->ordertaxes ?? [];
 $discounts = $item->orderdiscounts ?? [];
@@ -87,7 +88,7 @@ unset($totalRow);
                     <?php foreach ($totalRows as $totalRow) : ?>
                         <tr>
                             <th scope="row"><?php echo $this->escape($totalRow['label']); ?></th>
-                            <td class="text-end<?php echo $totalRow['type'] === 'discount' ? ' text-danger' : ''; ?>"><?php echo $totalRow['type'] === 'discount' ? '-' : ''; ?><?php echo $fmt($totalRow['amount']); ?></td>
+                            <td class="text-end<?php echo $totalRow['type'] === 'discount' ? ' text-danger' : ''; ?>"><?php echo $totalRow['type'] === 'discount' ? '-' : ''; ?><?php echo $fmt($totalRow['display'], 1.0); ?></td>
                         </tr>
                     <?php endforeach; ?>
                     <tr class="total-row">

@@ -1815,6 +1815,8 @@ class EmailHelper
         $decimals       = CurrencyHelper::getDecimalPlace($currencyCode);
         $fmt            = static fn (float $amount): string => CurrencyHelper::format($amount, $currencyCode, $currencyValue);
         $isIncludingTax = (int) ($order->is_including_tax ?? 0) === 1;
+        $lines          = [];
+        $taxLines       = [];
 
         // The fee rows are the only place a taxable payment-method surcharge's tax is ever
         // recorded apart from the blended order_surcharge/order_fees columns — read here so the
@@ -1862,7 +1864,6 @@ class EmailHelper
         $remainder      = round($taxTotal - $profileSum, $decimals);
 
         if (!empty($taxProfileRows) && $remainder >= 0) {
-            $taxHtml = '';
             foreach ($taxProfileRows as $tax) {
                 $amount = (float) $tax->ordertax_amount;
                 if ($amount <= 0) {
@@ -1874,7 +1875,7 @@ class EmailHelper
                 $label   = $percent > 0
                     ? \sprintf($language->_($isIncludingTax ? 'COM_J2COMMERCE_CART_TAX_INCLUDED_TITLE' : 'COM_J2COMMERCE_CART_TAX_EXCLUDED_TITLE'), $title, $percent . '%')
                     : $title;
-                $taxHtml .= $this->totalsRow($label, $fmt($amount));
+                $taxLines[] = [$label, $amount];
             }
 
             if ($remainder > 0) {
@@ -1882,12 +1883,10 @@ class EmailHelper
                 // computed outside the itemized tax engine, a taxable surcharge whose tax
                 // predates CartOrder::buildDisplayTaxRates() folding it into that table, or
                 // both. Generic label rather than naming one specific source.
-                $taxHtml .= $this->totalsRow($language->_('COM_J2COMMERCE_CART_TAX'), $fmt($remainder));
+                $taxLines[] = [$language->_('COM_J2COMMERCE_CART_TAX'), $remainder];
             }
         } elseif ($taxTotal > 0) {
-            $taxHtml = $this->totalsRow($language->_('COM_J2COMMERCE_CART_TAX'), $fmt($taxTotal));
-        } else {
-            $taxHtml = '';
+            $taxLines[] = [$language->_('COM_J2COMMERCE_CART_TAX'), $taxTotal];
         }
 
         // Self-check: the monetary rows above (excluding plugin-contributed extra rows,
@@ -1898,10 +1897,10 @@ class EmailHelper
         // breakdown that sometimes doesn't.
         if (round($nonTaxTotal + $taxTotal, $decimals) !== round($grandTotal, $decimals)) {
             $derivedTax = round($grandTotal - $nonTaxTotal, $decimals);
-            $taxHtml    = $derivedTax > 0 ? $this->totalsRow($language->_('COM_J2COMMERCE_CART_TAX'), $fmt($derivedTax)) : '';
+            $taxLines   = $derivedTax > 0 ? [[$language->_('COM_J2COMMERCE_CART_TAX'), $derivedTax]] : [];
         }
 
-        $rows = $this->totalsRow($language->_('COM_J2COMMERCE_CART_SUBTOTAL'), $fmt($subtotal));
+        $lines[] = [$language->_('COM_J2COMMERCE_CART_SUBTOTAL'), $subtotal];
 
         // A zero-priced named method (pickup, free shipping) still gets a row — the customer
         // chose it, and checkout's confirmation view lists it the same way.
@@ -1912,15 +1911,15 @@ class EmailHelper
                 ? $language->_('COM_J2COMMERCE_CART_SHIPPING')
                 : $language->_('COM_J2COMMERCE_CART_SHIPPING') . ' (' . self::translateKey($shippingName, $language) . ')';
 
-            $rows .= $this->totalsRow($shippingLabel, $fmt($shippingAmount));
+            $lines[] = [$shippingLabel, $shippingAmount];
         }
 
         if ($surchargeAmount > 0) {
-            $rows .= $this->totalsRow($language->_('COM_J2COMMERCE_CART_SURCHARGE'), $fmt($surchargeAmount));
+            $lines[] = [$language->_('COM_J2COMMERCE_CART_SURCHARGE'), $surchargeAmount];
         }
 
         if ($feesAmount > 0) {
-            $rows .= $this->totalsRow($language->_('COM_J2COMMERCE_FEES'), $fmt($feesAmount));
+            $lines[] = [$language->_('COM_J2COMMERCE_FEES'), $feesAmount];
         }
 
         if ($discountAmount > 0) {
@@ -1941,24 +1940,38 @@ class EmailHelper
 
             if (!empty($discountRows) && round($discountSum, $decimals) === round($discountAmount, $decimals)) {
                 foreach ($discountRows as $discount) {
-                    $label = (string) ($discount->discount_title ?: ($discount->discount_code ?? ''));
-                    $rows .= $this->totalsRow(
+                    $label   = (string) ($discount->discount_title ?: ($discount->discount_code ?? ''));
+                    $lines[] = [
                         $label === '' ? $language->_('COM_J2COMMERCE_CART_DISCOUNT') : $language->_($label),
-                        '-' . $fmt((float) $discount->discount_amount)
-                    );
+                        -(float) $discount->discount_amount,
+                    ];
                 }
             } else {
-                $rows .= $this->totalsRow($language->_('COM_J2COMMERCE_CART_DISCOUNT'), '-' . $fmt($discountAmount));
+                $lines[] = [$language->_('COM_J2COMMERCE_CART_DISCOUNT'), -$discountAmount];
             }
         }
 
         // Printed as well as subtracted above: a credit that reduces the grand total without
         // appearing as a row leaves the visible rows failing to foot to it.
         if ($creditAmount > 0) {
-            $rows .= $this->totalsRow($language->_('COM_J2COMMERCE_CART_CREDIT'), '-' . $fmt($creditAmount));
+            $lines[] = [$language->_('COM_J2COMMERCE_CART_CREDIT'), -$creditAmount];
         }
 
-        $rows .= $taxHtml;
+        // Rows are footed together so the converted figures add up to the converted Total.
+        $footed = CurrencyHelper::footConverted(
+            array_column([...$lines, ...$taxLines], 1),
+            $grandTotal,
+            $currencyValue > 0 ? $currencyValue : (CurrencyHelper::getValue($currencyCode) ?: 1.0),
+            $decimals
+        );
+        $rows = '';
+
+        foreach ([...$lines, ...$taxLines] as $index => [$label]) {
+            $rows .= $this->totalsRow(
+                $label,
+                ($footed[$index] < 0 ? '-' : '') . CurrencyHelper::format(abs($footed[$index]), $currencyCode, 1.0)
+            );
+        }
 
         foreach ($extraRows as $extraRow) {
             $rows .= $this->totalsRow((string) $extraRow['label'], (string) $extraRow['value']);

@@ -283,7 +283,7 @@ $statusName = Text::_($order->orderstatus_name ?? '');
                                 <span class="d-block small text-body-secondary"><?php echo Text::sprintf('COM_J2COMMERCE_ORDER_TRACKING_NUMBER', nl2br($this->escape($totalRow['tracking']))); ?></span>
                             <?php endif; ?>
                         </td>
-                        <td class="text-end<?php echo $totalRow['type'] === 'subtotal' ? ' fw-bold' : ($totalRow['type'] === 'discount' ? ' text-danger' : ''); ?>"><?php echo $totalRow['type'] === 'discount' ? '-' : ''; ?><?php echo $fmt($totalRow['amount']); ?></td>
+                        <td class="text-end<?php echo $totalRow['type'] === 'subtotal' ? ' fw-bold' : ($totalRow['type'] === 'discount' ? ' text-danger' : ''); ?>"><?php echo $totalRow['type'] === 'discount' ? '-' : ''; ?><?php echo CurrencyHelper::format($totalRow['display'], $currencyCode, 1.0); ?></td>
                     </tr>
                     <?php endforeach; ?>
                     <tr class="border-top">
