@@ -82,7 +82,7 @@ trait PluginLayoutTrait
         $subtemplate = (string) $this->params->get('subtemplate', '');
 
         if ($subtemplate === '' || $subtemplate === 'auto') {
-            $subtemplate = SubtemplateHelper::fromActiveMenu();
+            $subtemplate = SubtemplateHelper::fromActiveMenu(true);
         }
 
         if ($subtemplate === '' || $subtemplate === 'auto') {
