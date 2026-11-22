@@ -135,7 +135,7 @@ class OrderModel extends AdminModel
             $voucherType = 'voucher';
             $rows        = $db->setQuery(
                 $db->getQuery(true)
-                    ->select('DISTINCT ' . $db->quoteName(['o.order_id', 'o.order_state_id']))
+                    ->select('DISTINCT ' . $db->quoteName('o.order_id') . ', ' . $db->quoteName('o.order_state_id'))
                     ->from($db->quoteName('#__j2commerce_orders', 'o'))
                     ->join('INNER', $db->quoteName('#__j2commerce_orderdiscounts', 'od'), $db->quoteName('od.order_id') . ' = ' . $db->quoteName('o.order_id'))
                     ->whereIn($db->quoteName('o.order_id'), array_values($orderIds), ParameterType::STRING)
@@ -151,21 +151,17 @@ class OrderModel extends AdminModel
         }
 
         if ($holding !== []) {
-            $this->setError(Text::sprintf('COM_J2COMMERCE_ERR_ORDER_DELETE_VOUCHER', implode(', ', $holding)));
-
-            return false;
+            throw new UserFacingException(Text::sprintf('COM_J2COMMERCE_ERR_ORDER_DELETE_VOUCHER', implode(', ', $holding)));
         }
 
         $transactionCount = self::countTransactions($db, array_keys($orderIds));
 
         if ($transactionCount > 0 && !Factory::getApplication()->getInput()->getBool('confirm_transactions', false)) {
-            $this->setError(Text::sprintf(
+            throw new UserFacingException(Text::sprintf(
                 'COM_J2COMMERCE_ORDER_DELETE_TRANSACTIONS_NOT_CONFIRMED',
                 \count($orderIds),
                 $transactionCount
             ));
-
-            return false;
         }
 
         // The parent row goes first. AdminModel::delete() stops at the first key that fails to
