@@ -134,7 +134,7 @@ class SeedOrderLedgerCommand extends AbstractCommand
         $orderId       = (int) $order->j2commerce_order_id;
         $plugin        = (string) ($order->orderpayment_type ?? '');
         $currencyCode  = (string) ($order->currency_code ?? '');
-        $currencyValue = (float) ($order->currency_value ?: 1.0);
+        $currencyValue = CurrencyHelper::orderRate($order);
         $createdBy     = (int) ($order->created_by ?? 0);
         $transactionId = (string) ($order->transaction_id ?? '');
 

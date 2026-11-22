@@ -19,6 +19,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\CurrencyHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\EmailHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2CommerceHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\J2htmlHelper;
+use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderHistoryHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPayGrantHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\OrderPaymentHelper;
@@ -840,7 +841,7 @@ class OrderController extends FormController
                     'order_id'  => $created['id'],
                     'order_ref' => $created['order_id'],
                     'message'   => Text::_('COM_J2COMMERCE_ORDER_CREATED'),
-                    'totals'    => $this->totalsPayload($totals, (string) ($order->currency_code ?? '')),
+                    'totals'    => $this->totalsPayload($totals, $order),
                     'redirect'  => Route::_('index.php?option=com_j2commerce&view=order&layout=edit&id=' . $created['id'], false),
                     // Reveal the Take Payment button without a page reload.
                     'take_payment_url' => OrderPayGrantHelper::isPayable($order) ? OrderPayGrantHelper::buildUrl($created['id']) : '',
@@ -873,7 +874,7 @@ class OrderController extends FormController
             $this->sendJson([
                 'success' => true,
                 'message' => $message,
-                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+                'totals'  => $this->totalsPayload($totals, $order),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
@@ -942,6 +943,7 @@ class OrderController extends FormController
             // Guest orders (user_id < 1) must never offer subscription products.
             $excludeSubscription = false;
             $currency            = '';
+            $rate                = 0.0;
 
             if ($orderId > 0) {
                 $order = $model->getItem($orderId);
@@ -949,6 +951,7 @@ class OrderController extends FormController
                 if ($order && !empty($order->order_id)) {
                     $excludeSubscription = (int) $order->user_id < 1;
                     $currency            = (string) $order->currency_code;
+                    $rate                = CurrencyHelper::orderRate($order);
                 }
             }
 
@@ -969,7 +972,7 @@ class OrderController extends FormController
                     'sku'             => (string) $row->sku,
                     'name'            => (string) $row->product_name,
                     'price'           => number_format((float) $row->price, 2, '.', ''),
-                    'price_formatted' => CurrencyHelper::format((float) $row->price, $currency),
+                    'price_formatted' => CurrencyHelper::format((float) $row->price, $currency, $rate),
                     'image'           => $model->resolveThumbImage((int) $row->product_id),
                     'has_options'     => \in_array((int) $row->product_id, $editable, true),
                 ], $results),
@@ -1070,20 +1073,18 @@ class OrderController extends FormController
                 'system_note'
             );
 
-            $currency = (string) $order->currency_code;
-
             $this->sendJson([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_ITEM_ADDED'),
-                'totals'  => $this->totalsPayload($totals, $currency),
+                'totals'  => $this->totalsPayload($totals, $order),
                 'line'    => [
                     'id'                   => (int) $item->j2commerce_orderitem_id,
                     'name'                 => (string) $item->orderitem_name,
                     'sku'                  => (string) ($item->orderitem_sku ?? ''),
                     'quantity'             => (int) $item->orderitem_quantity,
                     'price'                => number_format((float) $item->orderitem_price, 2, '.', ''),
-                    'price_formatted'      => CurrencyHelper::format((float) $item->orderitem_price, $currency),
-                    'finalprice_formatted' => CurrencyHelper::format((float) $item->orderitem_finalprice, $currency),
+                    'price_formatted'      => CurrencyHelper::formatForOrder((float) $item->orderitem_price, $order),
+                    'finalprice_formatted' => CurrencyHelper::formatForOrder((float) $item->orderitem_finalprice, $order),
                     'stock'                => (int) ($item->stock_quantity ?? 0),
                     'manages_stock'        => (bool) ($item->manages_stock ?? false),
                     'image_url'            => (string) ($item->image_url ?? ''),
@@ -1137,7 +1138,7 @@ class OrderController extends FormController
                     'quantity'             => (int) $line->orderitem_quantity,
                     'price'                => number_format((float) $line->orderitem_price, 2, '.', ''),
                     'finalprice'           => number_format((float) $line->orderitem_finalprice, 2, '.', ''),
-                    'finalprice_formatted' => CurrencyHelper::format((float) $line->orderitem_finalprice, (string) $order->currency_code),
+                    'finalprice_formatted' => CurrencyHelper::formatForOrder((float) $line->orderitem_finalprice, $order),
                     'stock'                => (int) ($line->stock_quantity ?? 0),
                     'manages_stock'        => (bool) ($line->manages_stock ?? false),
                 ];
@@ -1146,7 +1147,7 @@ class OrderController extends FormController
             $this->sendJson([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_CHANGES_SAVED'),
-                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+                'totals'  => $this->totalsPayload($totals, $order),
                 'lines'   => $lines,
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
@@ -1217,10 +1218,9 @@ class OrderController extends FormController
                 return;
             }
 
-            $line     = $result['line'];
-            $currency = (string) $order->currency_code;
-            $totals   = $model->recalculateOrderTotals((string) $order->order_id);
-            $final    = CurrencyHelper::format((float) $line->orderitem_finalprice, $currency);
+            $line   = $result['line'];
+            $totals = $model->recalculateOrderTotals((string) $order->order_id);
+            $final  = CurrencyHelper::formatForOrder((float) $line->orderitem_finalprice, $order);
 
             $model->addAdminNote(
                 (string) $order->order_id,
@@ -1234,7 +1234,7 @@ class OrderController extends FormController
                 'changed'  => true,
                 'message'  => Text::_('COM_J2COMMERCE_ORDERITEM_OPTIONS_UPDATED'),
                 'announce' => Text::sprintf('COM_J2COMMERCE_ORDERITEM_OPTIONS_UPDATED_FOR', $line->orderitem_name, $final),
-                'totals'   => $this->totalsPayload($totals, $currency),
+                'totals'   => $this->totalsPayload($totals, $order),
                 'line'     => [
                     'id'                   => (int) $line->j2commerce_orderitem_id,
                     'finalprice_formatted' => $final,
@@ -1272,10 +1272,8 @@ class OrderController extends FormController
                 $this->input->post->getInt('variant_id', 0)
             );
 
-            $currency = (string) $order->currency_code;
-
-            $swap['current']['price_formatted'] = CurrencyHelper::format((float) $swap['current']['price'], $currency);
-            $swap['target']['price_formatted']  = CurrencyHelper::format((float) $swap['target']['price'], $currency);
+            $swap['current']['price_formatted'] = CurrencyHelper::formatForOrder((float) $swap['current']['price'], $order);
+            $swap['target']['price_formatted']  = CurrencyHelper::formatForOrder((float) $swap['target']['price'], $order);
 
             $this->sendJson(['success' => true, 'data' => $swap]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
@@ -1319,10 +1317,9 @@ class OrderController extends FormController
                 $rawPrice === '' ? null : (float) $rawPrice
             );
 
-            $line     = $result['line'];
-            $currency = (string) $order->currency_code;
-            $totals   = $model->recalculateOrderTotals((string) $order->order_id);
-            $final    = CurrencyHelper::format((float) $line->orderitem_finalprice, $currency);
+            $line   = $result['line'];
+            $totals = $model->recalculateOrderTotals((string) $order->order_id);
+            $final  = CurrencyHelper::formatForOrder((float) $line->orderitem_finalprice, $order);
 
             $model->addAdminNote(
                 (string) $order->order_id,
@@ -1335,12 +1332,12 @@ class OrderController extends FormController
                 'success'  => true,
                 'message'  => Text::_('COM_J2COMMERCE_ORDERITEM_VARIANT_UPDATED'),
                 'announce' => Text::sprintf('COM_J2COMMERCE_ORDERITEM_VARIANT_UPDATED_FOR', $line->orderitem_name, $final),
-                'totals'   => $this->totalsPayload($totals, $currency),
+                'totals'   => $this->totalsPayload($totals, $order),
                 'line'     => [
                     'id'                   => (int) $line->j2commerce_orderitem_id,
                     'sku'                  => (string) $line->orderitem_sku,
                     'price'                => number_format((float) $line->orderitem_price, 2, '.', ''),
-                    'price_formatted'      => CurrencyHelper::format((float) $line->orderitem_price, $currency),
+                    'price_formatted'      => CurrencyHelper::formatForOrder((float) $line->orderitem_price, $order),
                     'finalprice_formatted' => $final,
                     'attributes'           => $result['attributes'],
                     'stock'                => (int) $result['stock'],
@@ -1400,7 +1397,7 @@ class OrderController extends FormController
             $this->sendJson([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_ITEMS_REMOVED'),
-                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+                'totals'  => $this->totalsPayload($totals, $order),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
@@ -1436,7 +1433,7 @@ class OrderController extends FormController
             $this->sendJson([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_TOTALS_RECALCULATED'),
-                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+                'totals'  => $this->totalsPayload($totals, $order),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
@@ -1446,13 +1443,24 @@ class OrderController extends FormController
         }
     }
 
-    /** Append CurrencyHelper-formatted strings to a totals array for the JS layer. */
-    private function totalsPayload(array $totals, string $currencyCode): array
+    /** Append order-currency formatted strings (stored rate, rows footed to the Total) to a totals array for the JS layer. */
+    private function totalsPayload(array $totals, object $order): array
     {
         $formatted = [];
 
         foreach ($totals as $name => $value) {
-            $formatted[$name] = CurrencyHelper::format((float) $value, $currencyCode);
+            $formatted[$name] = CurrencyHelper::formatForOrder((float) $value, $order);
+        }
+
+        if ($totals !== []) {
+            $code = (string) ($order->currency_code ?? '');
+
+            foreach (OrderHelper::getFootedSummary($totals, $order) as $name => $display) {
+                $formatted[$name] = CurrencyHelper::format($display, $code, 1.0);
+            }
+
+            // The Discount row carries store credit too (as the footed figure does), so the row toggle sees it.
+            $totals['discount'] = (float) ($totals['discount'] ?? 0) + (float) ($order->order_credit ?? 0);
         }
 
         $totals['formatted'] = $formatted;
@@ -1640,8 +1648,7 @@ class OrderController extends FormController
 
             // Event contract (all gateways): args = [element, (int) varchar order_id,
             // amount in STORE BASE currency] — gateways convert to display internally.
-            $rate       = (float) ($order->currency_value ?? 1.0);
-            $rate       = $rate > 0 ? $rate : 1.0;
+            $rate       = CurrencyHelper::orderRate($order);
             $baseAmount = $amount / $rate;
 
             $event  = J2CommerceHelper::plugin()->event('RefundPayment', [$element, (int) $order->order_id, $baseAmount]);
@@ -1752,8 +1759,7 @@ class OrderController extends FormController
             $epsilon      = 10 ** -$decimals / 2;
             $amount       = round($amount, $decimals);
 
-            $rate              = (float) ($order->currency_value ?? 1.0);
-            $rate              = $rate > 0 ? $rate : 1.0;
+            $rate              = CurrencyHelper::orderRate($order);
             $orderTotalDisplay = round((float) ($order->order_total ?? 0) * $rate, $decimals);
             $balanceDue        = max(0.0, $orderTotalDisplay - max(0.0, OrderTransactionHelper::getNetPaid($orderPk)));
 
@@ -1855,7 +1861,7 @@ class OrderController extends FormController
             $this->sendJson([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_FEE_ADDED'),
-                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+                'totals'  => $this->totalsPayload($totals, $order),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
@@ -1890,7 +1896,7 @@ class OrderController extends FormController
             $this->sendJson([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_FEE_REMOVED'),
-                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+                'totals'  => $this->totalsPayload($totals, $order),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
@@ -1935,7 +1941,7 @@ class OrderController extends FormController
             $this->sendJson([
                 'success' => true,
                 'message' => $message,
-                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+                'totals'  => $this->totalsPayload($totals, $order),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
@@ -1980,7 +1986,7 @@ class OrderController extends FormController
             $this->sendJson([
                 'success' => true,
                 'message' => $message,
-                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+                'totals'  => $this->totalsPayload($totals, $order),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');
@@ -2017,7 +2023,7 @@ class OrderController extends FormController
             $this->sendJson([
                 'success' => true,
                 'message' => Text::_('COM_J2COMMERCE_ORDER_DISCOUNT_REMOVED'),
-                'totals'  => $this->totalsPayload($totals, (string) $order->currency_code),
+                'totals'  => $this->totalsPayload($totals, $order),
             ]);
         } catch (\Joomla\Database\Exception\ExecutionFailureException $e) {
             Log::add($e->getMessage(), Log::ERROR, 'com_j2commerce');

@@ -604,7 +604,7 @@ class CurrencyHelper
         $toRate   = self::has($to) ? self::getValue($to) : 0.0;
 
         // Avoid division by zero
-        if ($fromRate <= 0) {
+        if ($fromRate <= 0 || $toRate <= 0) {
             return 0.0;
         }
 
@@ -623,13 +623,68 @@ class CurrencyHelper
      */
     public static function convertForOrder(float $number, object $order): float
     {
-        $rate = (float) ($order->currency_value ?? 1.0);
+        return $number * self::orderRate($order);
+    }
 
-        if ($rate <= 0) {
-            $rate = 1.0;
+    /** Rate to convert with: the stored one when positive, else the currency table's, else 1.0 (same fallback as format()). */
+    public static function effectiveRate(float $stored, string $currencyCode = ''): float
+    {
+        if ($stored > 0) {
+            return $stored;
         }
 
-        return $number * $rate;
+        // A code no longer in the table cannot borrow another currency's rate.
+        if ($currencyCode !== '' && !self::has($currencyCode)) {
+            return 1.0;
+        }
+
+        $table = self::getValue($currencyCode);
+
+        return $table > 0 ? $table : 1.0;
+    }
+
+    public static function orderRate(object $order): float
+    {
+        return self::effectiveRate((float) ($order->currency_value ?? 1.0), (string) ($order->currency_code ?? ''));
+    }
+
+    /** Format a base-currency amount in the order's own currency at the order's stored rate. */
+    public static function formatForOrder(float $number, object $order): string
+    {
+        return self::format($number, (string) ($order->currency_code ?? ''), self::orderRate($order));
+    }
+
+    /**
+     * Convert signed base-currency rows to the order currency so the rounded rows sum to the
+     * rounded converted total (largest-remainder). Falls back to plain per-row rounding when the
+     * base rows do not foot to $baseTotal.
+     *
+     * @param   array<int, float>  $signedBase  Row amounts, deductions negative.
+     *
+     * @return  array<int, float>  Same order, in the order currency, at $scale decimals.
+     */
+    public static function footConverted(array $signedBase, float $baseTotal, float $rate, int $scale): array
+    {
+        $unit   = 10 ** $scale;
+        $target = (int) round(round($baseTotal * $rate, $scale) * $unit);
+        $exact  = array_map(static fn ($amount): float => round((float) $amount * $rate * $unit, 6), array_values($signedBase));
+        $floors = array_map('floor', $exact);
+        $fracs  = array_map(static fn (float $e, float $f): float => $e - $f, $exact, $floors);
+        $delta  = $target - (int) array_sum($floors);
+        $footed = abs(array_sum(array_map('floatval', $signedBase)) - $baseTotal) < 0.005;
+
+        if (!$footed || $delta < 0 || $delta > \count(array_filter($fracs, static fn (float $frac): bool => $frac > 1e-9))) {
+            return array_map(static fn (float $e): float => round($e) / $unit, $exact);
+        }
+
+        arsort($fracs);
+        $bumped = \array_slice(array_keys($fracs), 0, $delta);
+
+        return array_map(
+            static fn (float $f, int $i): float => ($f + (\in_array($i, $bumped, true) ? 1 : 0)) / $unit,
+            $floors,
+            array_keys($floors)
+        );
     }
 
     /** Gateway charge amount for an order, in its display currency. */

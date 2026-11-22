@@ -153,8 +153,7 @@ final class OrderPaymentHelper
      */
     public static function evaluate(object $order, ?array $ledger, int $decimals): array
     {
-        $rate = (float) ($order->currency_value ?? 1.0);
-        $rate = $rate > 0 ? $rate : 1.0;
+        $rate = CurrencyHelper::orderRate($order);
         // Half the currency's smallest unit: amounts closer than this are equal after rounding.
         $half = 0.5 * 10 ** -$decimals;
 
@@ -203,7 +202,7 @@ final class OrderPaymentHelper
     public static function legacyFigures(object $order, ?float $due = null, ?float $rate = null, ?int $decimals = null): array
     {
         $decimals ??= CurrencyHelper::getDecimalPlace((string) ($order->currency_code ?? ''));
-        $rate     ??= ((float) ($order->currency_value ?? 1.0)) > 0 ? (float) $order->currency_value : 1.0;
+        $rate     ??= CurrencyHelper::orderRate($order);
         $due      ??= round(CurrencyHelper::convertForOrder(CurrencyHelper::baseChargeAmount($order), $order), $decimals);
         $word       = self::normalizeTransactionStatus((string) ($order->transaction_status ?? ''));
         $half       = 0.5 * 10 ** -$decimals;

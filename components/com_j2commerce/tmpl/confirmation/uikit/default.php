@@ -525,7 +525,7 @@ if ($info) {
                         <?php foreach ($summaryRows as $summaryRow) : ?>
                             <div class="uk-flex uk-flex-between uk-margin-small-bottom<?php echo $summaryRow['type'] === 'discount' ? ' uk-text-success' : ''; ?>">
                                 <span><?php echo $this->escape($summaryRow['label']); ?></span>
-                                <span><?php echo $summaryRow['type'] === 'discount' ? '-' : ''; ?><?php echo $fmt($summaryRow['amount']); ?></span>
+                                <span><?php echo $summaryRow['type'] === 'discount' ? '-' : ''; ?><?php echo CurrencyHelper::format($summaryRow['display'], $currencyCode, 1.0); ?></span>
                             </div>
                         <?php endforeach; ?>
                     </div>

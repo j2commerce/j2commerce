@@ -141,8 +141,7 @@ final class OrderRecordedPaymentHelper
     {
         $currency = (string) ($order->currency_code ?? '');
         $decimals = CurrencyHelper::getDecimalPlace($currency);
-        $rate     = (float) ($order->currency_value ?? 1.0);
-        $rate     = $rate > 0 ? $rate : 1.0;
+        $rate     = CurrencyHelper::orderRate($order);
         $total    = round((float) ($order->order_total ?? 0) * $rate, $decimals);
         $summary  = OrderTransactionHelper::getBalanceSummary((int) $order->j2commerce_order_id);
 
@@ -275,8 +274,8 @@ final class OrderRecordedPaymentHelper
         $currency   = (string) ($order->currency_code ?? '');
         $decimals   = CurrencyHelper::getDecimalPlace($currency);
         $threshold  = 10 ** -$decimals / 2;
-        $rate       = (float) ($order->currency_value ?? 1.0);
-        $total      = round((float) ($order->order_total ?? 0) * ($rate > 0 ? $rate : 1.0), $decimals);
+        $rate       = CurrencyHelper::orderRate($order);
+        $total      = round((float) ($order->order_total ?? 0) * $rate, $decimals);
         $secondary  = '';
         $deposit    = false;
 

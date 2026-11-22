@@ -132,7 +132,7 @@ class OrderHelper
      * @param   object  $order  Row from #__j2commerce_orders.
      * @param   array   $parts  Related rows: shippings, taxes, fees, discounts.
      *
-     * @return  array<int, array{key: string, type: string, label: string, amount: float}>
+     * @return  array<int, array{key: string, type: string, label: string, amount: float, display: float}>  `display` is `amount` converted to the order currency, rows footed to the Total.
      *
      * @since   6.1.0
      */
@@ -152,6 +152,12 @@ class OrderHelper
         $shippingTax = (float) ($order->order_shipping_tax ?? 0);
         $isShippable = (int) ($order->is_shippable ?? 0) === 1;
 
+        // A shipping with neither a price nor a name is an empty carrier slot (tracking only).
+        $printable = array_values(array_filter(
+            $shippings,
+            static fn ($shipping): bool => (float) ($shipping->ordershipping_price ?? 0) > 0 || !empty($shipping->ordershipping_name)
+        ));
+
         $rows = [];
 
         // Tax-inclusive stores carry the item tax inside order_subtotal — show the ex-tax figure
@@ -165,22 +171,39 @@ class OrderHelper
                 : (float) ($order->order_subtotal ?? 0),
         ];
 
-        $tax = self::buildTaxRows($taxes, $itemTax, $shippingTax, $combineTax, $priceDisplay, $scale);
+        $feeTax = (float) array_sum(array_map(static fn ($fee): float => (float) ($fee->tax ?? 0), $fees));
+        $tax    = self::buildTaxRows($taxes, $itemTax, $shippingTax, $feeTax, $combineTax, $priceDisplay, $scale);
 
-        if ($isShippable) {
-            $shippingLabel = Text::_('COM_J2COMMERCE_CART_SHIPPING');
-            $firstShipping = !empty($shippings) ? reset($shippings) : null;
+        if ($isShippable || (float) ($order->order_shipping ?? 0) > 0 || !empty($printable)) {
+            $shippingName = static fn (object $shipping): string => J2htmlHelper::translateKey(stripslashes((string) $shipping->ordershipping_name));
+            $tracking     = static fn (array $list): string => implode("\n", array_filter(
+                array_map(static fn ($shipping): string => (string) ($shipping->ordershipping_tracking_id ?? ''), $list)
+            ));
 
-            if ($firstShipping && !empty($firstShipping->ordershipping_name)) {
-                $shippingLabel = J2htmlHelper::translateKey(stripslashes($firstShipping->ordershipping_name));
+            // One row per shipping only while their prices account for the whole charge.
+            $pricedSum = array_sum(array_map(static fn ($shipping): float => (float) ($shipping->ordershipping_price ?? 0), $printable));
+
+            if (\count($printable) > 1 && round($pricedSum, $scale) === round((float) ($order->order_shipping ?? 0), $scale)) {
+                foreach ($printable as $index => $shipping) {
+                    $rows[] = [
+                        'key'      => 'shipping_' . $index,
+                        'type'     => 'shipping',
+                        'label'    => !empty($shipping->ordershipping_name) ? $shippingName($shipping) : Text::_('COM_J2COMMERCE_CART_SHIPPING'),
+                        'amount'   => (float) ($shipping->ordershipping_price ?? 0),
+                        'tracking' => $tracking([$shipping]),
+                    ];
+                }
+            } else {
+                $first = $printable[0] ?? null;
+
+                $rows[] = [
+                    'key'      => 'shipping',
+                    'type'     => 'shipping',
+                    'label'    => $first && !empty($first->ordershipping_name) ? $shippingName($first) : Text::_('COM_J2COMMERCE_CART_SHIPPING'),
+                    'amount'   => (float) ($order->order_shipping ?? 0),
+                    'tracking' => $tracking($shippings),
+                ];
             }
-
-            $rows[] = [
-                'key'    => 'shipping',
-                'type'   => 'shipping',
-                'label'  => $shippingLabel,
-                'amount' => (float) ($order->order_shipping ?? 0),
-            ];
 
             // Split tax display puts shipping tax directly under the shipping charge it belongs
             // to, the same place the cart shows it.
@@ -193,7 +216,6 @@ class OrderHelper
                 ];
             }
         }
-
         // The fee rows and order_surcharge are the same money recorded two ways — rows win where
         // they exist, the column is the only record where they do not.
         //
@@ -250,6 +272,16 @@ class OrderHelper
             ];
         }
 
+        // recalculateOrderTotals() subtracts order_credit from order_total, so it prints as a deduction.
+        if ((float) ($order->order_credit ?? 0) > 0) {
+            $rows[] = [
+                'key'    => 'credit',
+                'type'   => 'discount',
+                'label'  => Text::_('COM_J2COMMERCE_CART_CREDIT'),
+                'amount' => (float) $order->order_credit,
+            ];
+        }
+
         foreach ($tax['rows'] as $index => $taxRow) {
             $taxRow['key'] = 'tax_' . $index;
             $rows[]        = $taxRow;
@@ -262,14 +294,84 @@ class OrderHelper
             'amount' => (float) ($order->order_total ?? 0),
         ];
 
-        return self::reconcileTotalRows($rows, $scale);
+        $rows = self::reconcileTotalRows($rows, $scale);
+
+        // 'amount' stays in the base currency; 'display' is the order-currency figure, footed so
+        // the printed rows add up to the printed Total.
+        $rate     = CurrencyHelper::effectiveRate((float) ($order->currency_value ?? 0), (string) ($order->currency_code ?? ''));
+        $declared = (float) ($order->order_total ?? 0);
+        $bodyKeys = [];
+
+        foreach ($rows as $index => $row) {
+            if ($row['type'] === 'grandtotal') {
+                $declared = $row['amount'];
+            } else {
+                $bodyKeys[] = $index;
+            }
+        }
+
+        $footed = CurrencyHelper::footConverted(
+            array_map(static fn (int $index): float => $rows[$index]['type'] === 'discount' ? -$rows[$index]['amount'] : $rows[$index]['amount'], $bodyKeys),
+            $declared,
+            $rate,
+            $scale
+        );
+
+        foreach ($rows as $index => &$row) {
+            $position       = array_search($index, $bodyKeys, true);
+            $row['display'] = $position === false ? round($declared * $rate, $scale) : abs($footed[$position]);
+        }
+
+        unset($row);
+
+        return $rows;
+    }
+
+    /**
+     * Edit-screen summary figures in the order currency at the order's stored rate, footed so the
+     * printed rows add up to the printed Total (same footing as getFormattedOrderTotals()).
+     *
+     * @param   array<string, float>  $totals  Base-currency figures: subtotal, shipping, shipping_tax, surcharge, fees, fee_tax, discount, tax, total.
+     *
+     * @return  array{subtotal: float, shipping: float, surcharge: float, discount: float, tax: float, fees: float, total: float}
+     */
+    public static function getFootedSummary(array $totals, object $order): array
+    {
+        $value     = static fn (string $key): float => (float) ($totals[$key] ?? 0);
+        $rate      = CurrencyHelper::orderRate($order);
+        $scale     = CurrencyHelper::getDecimalPlace((string) ($order->currency_code ?? ''));
+        $inclusive = (int) ($order->is_including_tax ?? 0) === 1;
+        // 'tax' is the panel's combined figure (item + shipping + fee tax, as OrderModel's
+        // recalculation overlay returns it); only the item part is its own footing atom.
+        $itemTax   = $value('tax') - $value('shipping_tax') - $value('fee_tax');
+        $atoms     = [
+            'subtotal'     => $value('subtotal'),
+            'shipping'     => $value('shipping'),
+            'shipping_tax' => $value('shipping_tax'),
+            'fees'         => $value('fees'),
+            'surcharge'    => $value('surcharge'),
+            'discount'     => -($value('discount') + (float) ($order->order_credit ?? 0)),
+            'tax'          => $inclusive ? 0.0 : $itemTax,
+            'fee_tax'      => $value('fee_tax'),
+        ];
+        $footed = array_combine(array_keys($atoms), CurrencyHelper::footConverted(array_values($atoms), $value('total'), $rate, $scale));
+
+        return [
+            'subtotal'  => $footed['subtotal'],
+            'shipping'  => $footed['shipping'],
+            'surcharge' => $footed['surcharge'],
+            'discount'  => abs($footed['discount']),
+            'tax'       => ($inclusive ? round($itemTax * $rate, $scale) : $footed['tax']) + $footed['shipping_tax'] + $footed['fee_tax'],
+            'fees'      => $footed['fees'],
+            'total'     => round($value('total') * $rate, $scale),
+        ];
     }
 
     /**
      * Tax rows for a saved order. The persisted #__j2commerce_ordertaxes rows are written to
      * match `combine_tax_calculations` as it stood when the order was placed, so the setting
      * alone cannot be trusted for an older order — whether those rows already carry the
-     * shipping tax is read from the figures themselves.
+     * shipping and fee tax is read from the figures themselves.
      *
      * @return  array{rows: array<int, array{type: string, label: string, amount: float}>, shipping: float}
      *          `shipping` is the figure owed its own line under the shipping charge, and is 0.0
@@ -281,6 +383,7 @@ class OrderHelper
         array $taxes,
         float $itemTax,
         float $shippingTax,
+        float $feeTax,
         int $combineTax,
         int $priceDisplay,
         int $scale
@@ -316,7 +419,7 @@ class OrderHelper
 
         // No itemised rows at all — one line carrying whatever tax the order holds.
         if (empty($rows)) {
-            $combined = round($itemTax + ($combineTax ? $shippingTax : 0.0), $scale);
+            $combined = round($itemTax + $feeTax + ($combineTax ? $shippingTax : 0.0), $scale);
             $split    = $combineTax ? 0.0 : round($shippingTax, $scale);
 
             return [
@@ -327,28 +430,54 @@ class OrderHelper
             ];
         }
 
-        // Rows summing past the item tax already have the shipping tax folded into them, whatever
-        // the setting says now; showing it again would present the same money twice.
-        $carriesShippingTax = round($profileSum, $scale) > round($itemTax, $scale);
-        $remainder          = round($itemTax + $shippingTax - $profileSum, $scale);
+        // A fee's tax is always merged into the rows (CartOrder::buildDisplayTaxRates()); shipping tax
+        // only under combine_tax_calculations — and older orders were written either way. Read which
+        // of them the rows carry from the figures, using the flag only to break a tie.
+        $shipCarried = false;
+        $feeCarried  = false;
+        $matched     = false;
+        $bestScore   = -1;
 
-        if ($shippingTax <= 0 || $carriesShippingTax || $remainder <= 0) {
-            return ['rows' => $rows, 'shipping' => 0.0];
+        foreach ([[false, false], [false, true], [true, false], [true, true]] as [$withShip, $withFee]) {
+            if (($withShip && $shippingTax <= 0) || ($withFee && $feeTax <= 0)) {
+                continue;
+            }
+
+            $expected = round($itemTax + ($withShip ? $shippingTax : 0.0) + ($withFee ? $feeTax : 0.0), $scale);
+
+            if (round($profileSum, $scale) !== $expected) {
+                continue;
+            }
+
+            // Prefer the reading that matches the convention: fee tax always merged, shipping tax
+            // merged only when combining.
+            $score = ($withFee === ($feeTax > 0) ? 2 : 0) + ($withShip === (bool) $combineTax ? 1 : 0);
+
+            if ($score > $bestScore) {
+                [$shipCarried, $feeCarried, $matched, $bestScore] = [$withShip, $withFee, true, $score];
+            }
         }
 
-        // Combining, but the rows were written split (or by an engine that itemised only the
-        // product tax) — the shipping share joins the tax block rather than standing apart.
-        if ($combineTax) {
+        if (!$matched) {
+            $feeCarried  = $feeTax > 0 && round($profileSum, $scale) > round($itemTax, $scale);
+            $shipCarried = $shippingTax > 0
+                && round($profileSum, $scale) > round($itemTax + ($feeCarried ? $feeTax : 0.0), $scale);
+        }
+
+        $feeRemainder  = $feeCarried ? 0.0 : round($feeTax, $scale);
+        $shipRemainder = $shipCarried ? 0.0 : round($shippingTax, $scale);
+
+        // A fee has no line of its own, so its tax joins the tax block; shipping tax does only
+        // when combining.
+        if ($feeRemainder > 0 || ($combineTax && $shipRemainder > 0)) {
             $rows[] = [
                 'type'   => 'tax',
                 'label'  => Text::_('COM_J2COMMERCE_CART_TAX'),
-                'amount' => $remainder,
+                'amount' => $feeRemainder + ($combineTax ? $shipRemainder : 0.0),
             ];
-
-            return ['rows' => $rows, 'shipping' => 0.0];
         }
 
-        return ['rows' => $rows, 'shipping' => $remainder];
+        return ['rows' => $rows, 'shipping' => $combineTax ? 0.0 : max(0.0, $shipRemainder)];
     }
 
     /**

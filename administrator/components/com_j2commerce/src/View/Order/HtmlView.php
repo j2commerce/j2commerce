@@ -258,8 +258,7 @@ class HtmlView extends BaseHtmlView
 
             if (!$this->isNew && $orderPk > 0 && OrderTransactionHelper::hasLedger($orderPk)) {
                 $paymentType = (string) ($this->item->orderpayment_type ?? '');
-                $rate        = (float) ($this->item->currency_value ?? 1.0);
-                $rate        = $rate > 0 ? $rate : 1.0;
+                $rate        = CurrencyHelper::orderRate($this->item);
                 $decimals    = CurrencyHelper::getDecimalPlace((string) ($this->item->currency_code ?? ''));
                 $threshold   = 10 ** -$decimals / 2;
 
