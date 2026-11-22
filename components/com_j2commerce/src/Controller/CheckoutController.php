@@ -77,17 +77,6 @@ class CheckoutController extends BaseController
         return parent::execute($task);
     }
 
-    /**
-     * Ends the session without saving it, for a task that changes none of it. The session handler
-     * writes back the whole session each request loaded at its start, so a slow request that only
-     * reads would otherwise overwrite a selection another request saved while it ran. Whatever the
-     * rest of the request reads still comes from the copy already in memory.
-     */
-    private function releaseSession(): void
-    {
-        $this->app->getSession()->abort();
-    }
-
     public function display($cachable = false, $urlparams = []): static
     {
         UtilitiesHelper::sendNoCacheHeaders();
