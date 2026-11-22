@@ -1587,13 +1587,199 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // "No Payment Method Needed" suppresses the pseudo-checkout handoff;
             // a real method re-shows Take Payment only when a signed URL exists.
-            const payWrap = document.getElementById('j2c-take-payment-wrap');
-            if (payWrap) {
-                const hasUrl = (payWrap.querySelector('.j2c-take-payment')?.getAttribute('href') || '') !== '';
-                payWrap.classList.toggle('d-none', payRadio.value === 'none' || !hasUrl);
-            }
+            syncPaymentPanels(payRadio);
         }
     });
+
+    // Core offline methods swap Take Payment for Mark Payment Received; every other method keeps Take Payment.
+    function syncPaymentPanels(radio) {
+        // Nothing selected (a saved method that is missing or disabled): keep what the server rendered.
+        if (!radio) return;
+
+        const payWrap = document.getElementById('j2c-take-payment-wrap');
+        const markPaid = document.getElementById('j2c-mark-paid');
+        const offline = radio.dataset.j2cOffline === '1';
+
+        if (payWrap) {
+            const hasUrl = (payWrap.querySelector('.j2c-take-payment')?.getAttribute('href') || '') !== '';
+            payWrap.classList.toggle('d-none', radio.value === 'none' || !hasUrl || offline);
+        }
+
+        if (markPaid) {
+            markPaid.classList.toggle('d-none', !offline || markPaid.dataset.done === '1');
+        }
+    }
+
+    syncPaymentPanels(document.querySelector('.j2c-payment-radio:checked'));
+
+    // === Mark Payment Received (core offline methods) ===
+    // The inputs are detached from every form (form="j2c-mp-detached") so Enter and the order Save never see them;
+    // the values are posted here, one at a time, to order.ajaxRecordPayment.
+    const markPaidOpts = (typeof Joomla !== 'undefined' && Joomla.getOptions)
+        ? (Joomla.getOptions('com_j2commerce.markpaid') || {})
+        : {};
+    const markPaidPanel = document.getElementById('j2c-mark-paid');
+
+    if (markPaidPanel && markPaidOpts.url) {
+        const mpSubmit = document.getElementById('j2c-mp-submit');
+        const mpError = document.getElementById('j2c-mp-error');
+        const mpStatus = document.getElementById('j2c-mp-status');
+        const mpInputs = [...markPaidPanel.querySelectorAll('.j2c-mp-input')];
+
+        const mpClearError = () => {
+            mpError.hidden = true;
+            mpError.textContent = '';
+            mpInputs.forEach((el) => el.removeAttribute('aria-invalid'));
+        };
+
+        const mpShowError = (message, fieldName) => {
+            mpStatus.replaceChildren();
+            mpError.textContent = message;
+            mpError.hidden = false;
+
+            const field = mpInputs.find((el) => el.dataset.field === fieldName);
+            if (field) {
+                field.setAttribute('aria-invalid', 'true');
+                field.focus();
+            }
+        };
+
+        const mpSubmitNow = async () => {
+            if (mpSubmit.getAttribute('aria-disabled') === 'true') return;
+
+            const radio = document.querySelector('.j2c-payment-radio:checked');
+            const method = radio ? radio.value : '';
+
+            // The panel is hidden for every other method, so there is nothing to report.
+            if (!(markPaidOpts.methods || []).includes(method)) return;
+
+            mpClearError();
+            mpStatus.replaceChildren();
+
+            const body = new FormData();
+            body.append(markPaidOpts.token, '1');
+            body.append('order_id', String(markPaidOpts.orderId));
+            body.append('payment_method', method);
+
+            mpInputs.forEach((el) => {
+                if (el.type === 'checkbox') {
+                    body.append(el.dataset.field, el.checked ? '1' : '0');
+                } else {
+                    body.append(el.dataset.field, el.value);
+                }
+            });
+
+            mpSubmit.setAttribute('aria-disabled', 'true');
+            mpSubmit.classList.add('disabled');
+            mpSubmit.querySelector('.j2c-mp-spinner').hidden = false;
+
+            try {
+                // Same save Take Payment makes first, so the ledger method and the order's payment type agree.
+                if (method !== (markPaidPanel.dataset.savedMethod || '')) {
+                    const saved = await postEditData('ajaxSaveOrderEdit');
+
+                    if (!saved.success) {
+                        mpShowError(saved.message || translate('COM_J2COMMERCE_ERR_GENERIC', 'An error occurred. Please try again.'), '');
+                        return;
+                    }
+
+                    markPaidPanel.dataset.savedMethod = method;
+                }
+
+                const response = await fetch(markPaidOpts.url, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': markPaidOpts.token },
+                    body,
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    mpShowError(result.message || translate('COM_J2COMMERCE_ERR_GENERIC', 'An error occurred. Please try again.'), result.field || '');
+                    return;
+                }
+
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success mb-0';
+                alert.textContent = result.message;
+                mpStatus.replaceChildren(alert);
+
+                const figures = result.figures || {};
+                document.getElementById('j2c-mp-balance-hint')?.replaceChildren(document.createTextNode(figures.balanceHint || ''));
+                document.getElementById('j2c-mp-amount').value = figures.amountDefault || '';
+                document.getElementById('j2c-mp-reference').value = '';
+                document.getElementById('j2c-mp-confirm').checked = false;
+
+                // Edit-page elements that show payment state: the status select (part of the order Save, so it must not
+                // revert a status moved here), and the Summary tab's balance card and transaction status when they exist.
+                const statusSelect = document.getElementById('order_state_id');
+                if (statusSelect && result.status && [...statusSelect.options].some((o) => o.value === String(result.status.id))) {
+                    statusSelect.value = String(result.status.id);
+                }
+
+                [['total', 'total'], ['paid', 'paid'], ['refunded', 'refunded'], ['net', 'net'], ['due', 'balance']].forEach(([cell, key]) => {
+                    const node = document.querySelector(`[data-j2c-balance="${cell}"]`);
+                    if (node && figures[key] !== undefined) node.textContent = figures[key];
+                });
+
+                if (figures.paidInFull) {
+                    const txnStatus = document.querySelector('.j2c-summary-payment-status strong');
+                    if (txnStatus) txnStatus.textContent = 'Completed';
+                }
+
+                if (!figures.canRecordPayment) {
+                    // The panel is about to be hidden: move focus to the result first so it is not lost with the button.
+                    mpStatus.focus({ preventScroll: true });
+                    markPaidPanel.dataset.done = '1';
+                    markPaidPanel.classList.add('d-none');
+                    document.getElementById('j2c-payment-taken').hidden = false;
+                }
+            } catch (err) {
+                mpShowError(translate('COM_J2COMMERCE_ERROR_NETWORK', 'Network error. Please try again.'), '');
+            } finally {
+                mpSubmit.removeAttribute('aria-disabled');
+                mpSubmit.classList.remove('disabled');
+                mpSubmit.querySelector('.j2c-mp-spinner').hidden = true;
+            }
+        };
+
+        mpSubmit.addEventListener('click', mpSubmitNow);
+
+        // Enter in a detached input does nothing by itself; make it submit this panel only.
+        markPaidPanel.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.target.matches('input:not([type="checkbox"])')) {
+                e.preventDefault();
+                mpSubmitNow();
+            }
+        });
+
+        // Arriving from the order view's Record Payment link: put the keyboard in the panel, not on the tab button.
+        // The browser's fragment scroll runs after load and drops focus when the target is not focusable, so focus
+        // goes in once that has happened; a tab element that activates later is covered by the shown listener.
+        const focusMarkPaid = () => {
+            const amount = document.getElementById('j2c-mp-amount');
+
+            if (window.location.hash === '#payment_shipping' && amount && amount.offsetParent !== null) {
+                amount.focus();
+            }
+        };
+        const onTabShown = (e) => {
+            if (e.target.getAttribute('aria-controls') === 'payment_shipping') focusMarkPaid();
+        };
+
+        if (document.readyState === 'complete') {
+            focusMarkPaid();
+        } else {
+            window.addEventListener('load', () => window.setTimeout(focusMarkPaid, 0), { once: true });
+        }
+
+        document.addEventListener('joomla.tab.shown', onTabShown);
+        window.setTimeout(() => document.removeEventListener('joomla.tab.shown', onTabShown), 3000);
+    }
 
     // Take Payment: persist the current step first (payment-method radio, shipping
     // edits) so the pseudo-checkout preselects the chosen method, then open it.
