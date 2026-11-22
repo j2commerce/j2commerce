@@ -198,8 +198,8 @@ final class SubtemplateHelper
         return array_values(array_filter([$template->template ?? '', $template->parent ?? '']));
     }
 
-    /** The active menu item's subtemplate, or an empty string when there is no usable one. */
-    public static function fromActiveMenu(): string
+    /** The active menu item's subtemplate, or ''; $orFramework falls back to its `framework` param. */
+    public static function fromActiveMenu(bool $orFramework = false): string
     {
         try {
             $app = Factory::getApplication();
@@ -208,7 +208,14 @@ final class SubtemplateHelper
                 return '';
             }
 
-            return (string) ($app->getMenu()?->getActive()?->getParams()->get('subtemplate') ?? '');
+            $params      = $app->getMenu()?->getActive()?->getParams();
+            $subtemplate = (string) ($params?->get('subtemplate') ?? '');
+
+            if ($subtemplate === '' && $orFramework) {
+                $subtemplate = (string) ($params?->get('framework') ?? '');
+            }
+
+            return $subtemplate;
         } catch (\Throwable) {
             return '';
         }
