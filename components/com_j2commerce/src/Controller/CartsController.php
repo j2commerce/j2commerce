@@ -26,6 +26,7 @@ use J2Commerce\Component\J2commerce\Administrator\Helper\UploadHelper;
 use J2Commerce\Component\J2commerce\Administrator\Helper\UtilitiesHelper;
 use J2Commerce\Component\J2commerce\Administrator\Model\CartModel;
 use J2Commerce\Component\J2commerce\Administrator\Model\CouponModel;
+use J2Commerce\Component\J2commerce\Site\Service\CheckoutPlacementService;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Helper\ModuleHelper;
 use Joomla\CMS\Language\Text;
@@ -932,7 +933,13 @@ class CartsController extends BaseController
         $currencyCode = $this->input->getString('currency_code', '');
 
         if (!empty($currencyCode)) {
+            $before = $currency->getCode();
+
             $currency->setCurrency($currencyCode);
+
+            if ($currency->getCode() !== $before) {
+                (new CheckoutPlacementService($this->app, $this->factory))->clearCurrencyPricedState();
+            }
         }
 
         $redirect = $this->input->getString('redirect', '');

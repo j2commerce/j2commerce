@@ -239,6 +239,94 @@ document.addEventListener('DOMContentLoaded', function() {
     var modifyText = <?php echo json_encode(Text::_('COM_J2COMMERCE_CHECKOUT_MODIFY'), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
     var billingTask = isLoggedIn ? 'billingAddress' : null;
 
+    // Every request that reads or writes the checkout session runs through this one queue.
+    // The session handler saves the whole session at the end of each request, so two requests
+    // in flight at once let the one that finishes last write back what it loaded at its start,
+    // undoing a selection the other one saved. While the queue is busy the step is aria-busy
+    // and its rate, payment and continue controls are disabled; the ones disabled here carry
+    // data-j2c-busy so only they are re-enabled.
+    var queueTail = Promise.resolve();
+    var busyCount = 0;
+    var jobCount = 0;
+    var BUSY_CONTROLS = '#shipping-payment-method input[name="shipping_plugin"], #shipping-payment-method input[name="payment_plugin"]';
+
+    var busyFocus = null;
+
+    function syncBusy() {
+        var busy = busyCount > 0;
+
+        // On the groups holding the locked radios, never on the step: checkout.css makes a busy .checkout-content
+        // pointer-events:none, which swallows a button press that lands while a save is in flight.
+        document.querySelectorAll('#shipping-payment-method .shipping-methods-group, #shipping-payment-method .payment-methods-group').forEach(function(el) {
+            el.setAttribute('aria-busy', busy ? 'true' : 'false');
+        });
+
+        document.querySelectorAll(BUSY_CONTROLS).forEach(function(el) {
+            if (busy && !el.disabled) {
+                if (el === document.activeElement) busyFocus = el;
+                el.disabled = true;
+                el.setAttribute('data-j2c-busy', '1');
+            } else if (!busy && el.hasAttribute('data-j2c-busy')) {
+                el.disabled = false;
+                el.removeAttribute('data-j2c-busy');
+            }
+        });
+
+        // A disabled control drops keyboard focus; hand it back once the queue is idle.
+        if (!busy && busyFocus) {
+            if (document.body.contains(busyFocus) && document.activeElement === document.body) busyFocus.focus();
+            busyFocus = null;
+        }
+    }
+
+    // One hung request must not freeze the line: each job gets this long, then it is aborted, rejected
+    // (the caller's own error path shows the message) and the controls are released.
+    var JOB_TIMEOUT = 60000;
+    var queueSignal = null;
+
+    function runJob(job) {
+        var controller = new AbortController();
+        queueSignal = controller.signal;
+
+        return new Promise(function(resolve, reject) {
+            var timer = setTimeout(function() {
+                reject(new Error('checkout request timed out'));
+                controller.abort();
+            }, JOB_TIMEOUT);
+
+            Promise.resolve().then(job).then(resolve, reject).finally(function() { clearTimeout(timer); });
+        });
+    }
+
+    // A silent job keeps its place in line but does not lock the controls: the sidecart refresh only reads.
+    function queued(job, silent) {
+        jobCount++;
+
+        if (!silent) {
+            busyCount++;
+            syncBusy();
+        }
+
+        var run = queueTail.then(function() { return runJob(job); });
+        var release = function() {
+            if (!silent) {
+                busyCount--;
+                syncBusy();
+            }
+        };
+        queueTail = run.then(release, release);
+
+        return run;
+    }
+
+    // Lets a page-level action that replaces the session (the currency switcher) wait until nothing is in flight.
+    window.J2CommerceCheckout = {
+        whenIdle: function whenIdle() {
+            var tail = queueTail;
+            return tail.then(function() { return tail === queueTail ? undefined : whenIdle(); });
+        }
+    };
+
     // Utility: slide content up (hide)
     function slideUp(el) {
         if (!el) return;
@@ -603,6 +691,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    function appendShippingSelection(formData) {
+        var radio = document.querySelector('#shipping-payment-method input[type="radio"][name="shipping_plugin"]:checked');
+        var row = radio ? radio.closest('.list-group-item') : null;
+        if (!radio || !row) return;
+
+        formData.append('shipping_plugin', radio.value);
+        row.querySelectorAll('input[type="hidden"][name="shipping_name"], input[type="hidden"][name="shipping_code"]').forEach(function(input) {
+            formData.append(input.name, input.value);
+        });
+    }
+
     // Core: fetch a step's HTML content from the server
     function fetchStep(task, stepId) {
         var content = getContent(stepId);
@@ -614,7 +713,13 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('task', 'checkout.' + task);
         formData.append(token, '1');
 
-        return fetch(baseUrl, {
+        // The shipping rate this page shows as chosen travels with the confirm request, so the
+        // server can refuse a confirm whose session no longer holds that choice.
+        if (task === 'confirm') appendShippingSelection(formData);
+
+        return queued(function() {
+            return fetch(baseUrl, {
+            signal: queueSignal,
             method: 'POST',
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -648,6 +753,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
             return response.text();
+        });
         })
         .then(function(html) {
             if (html !== undefined) {
@@ -686,7 +792,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 var selectedShippingContainer = checkedShippingRadio ? checkedShippingRadio.closest('.list-group-item') : null;
 
                 el.querySelectorAll('input, select, textarea').forEach(function(input) {
-                    if (!input.name || input.disabled) return;
+                    // A control the busy lock disabled is still part of the form.
+                    if (!input.name || (input.disabled && !input.hasAttribute('data-j2c-busy'))) return;
                     if (input.type === 'checkbox' || input.type === 'radio') {
                         if (input.checked) formData.append(input.name, input.value);
                     } else if (input.type !== 'file' && input.type !== 'submit') {
@@ -703,7 +810,9 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('task', 'checkout.' + task);
         formData.append(token, '1');
 
-        return fetch(baseUrl, {
+        return queued(function() {
+            return fetch(baseUrl, {
+            signal: queueSignal,
             method: 'POST',
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -732,6 +841,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(function(error) {
             console.error('Checkout network error:', error);
             return { error: { warning: <?php echo $networkErrorJs; ?> } };
+        });
         });
     }
 
@@ -942,7 +1052,9 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('position', position);
         formData.append(token, '1');
 
-        fetch(baseUrl, {
+        queued(function() {
+            return fetch(baseUrl, {
+            signal: queueSignal,
             method: 'POST',
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -956,6 +1068,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             return r.json();
+        });
         })
         .then(function(json) {
             if (json.hasSteps) {
@@ -1356,7 +1469,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         showLoading(btn);
 
-        fetch(baseUrl, {
+        queued(function() {
+            return fetch(baseUrl, {
+            signal: queueSignal,
             method: 'POST',
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -1377,6 +1492,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     return { error: <?php echo $unexpectedFlatJs; ?> };
                 }
             });
+        });
         })
         .then(function(json) {
             hideLoading(btn);
@@ -1502,12 +1618,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (input.name) formData.append(input.name, input.value);
         });
 
-        fetch(baseUrl, { method: 'POST', body: formData, headers: {'X-Requested-With': 'XMLHttpRequest'} })
-            .then(function(r) { return r.json(); })
+        queued(function() {
+            return fetch(baseUrl, { signal: queueSignal, method: 'POST', body: formData, headers: {'X-Requested-With': 'XMLHttpRequest'} })
+                .then(function(r) { return r.json(); });
+        })
             .then(function(data) {
                 if (data.success) refreshSidecart().then(function(updated) { if (updated) announceOrderTotal(); });
             })
-            .catch(function(e) { console.error('Shipping selection error:', e); });
+            .catch(function(e) {
+                console.error('Shipping selection error:', e);
+                showWarning(getContent('shipping-payment-method'), <?php echo $networkErrorJs; ?>);
+            });
     });
 
     // === PAYMENT RADIO CHANGE: save selection to session + refresh sidecart ===
@@ -1521,12 +1642,17 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append(token, '1');
         formData.append('payment_plugin', radio.value);
 
-        fetch(baseUrl, { method: 'POST', body: formData, headers: {'X-Requested-With': 'XMLHttpRequest'} })
-            .then(function(r) { return r.json(); })
+        queued(function() {
+            return fetch(baseUrl, { signal: queueSignal, method: 'POST', body: formData, headers: {'X-Requested-With': 'XMLHttpRequest'} })
+                .then(function(r) { return r.json(); });
+        })
             .then(function(data) {
                 if (data.success) refreshSidecart();
             })
-            .catch(function(e) { console.error('Payment selection error:', e); });
+            .catch(function(e) {
+                console.error('Payment selection error:', e);
+                showWarning(getContent('shipping-payment-method'), <?php echo $networkErrorJs; ?>);
+            });
     });
 
     // === CUSTOMER NOTE CHANGE: persist to the order before the shopper can leave ===
@@ -1542,19 +1668,32 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append(token, '1');
         formData.append('customer_note', e.target.value);
 
-        fetch(baseUrl, { method: 'POST', body: formData, keepalive: true, headers: {'X-Requested-With': 'XMLHttpRequest'} })
+        queued(function() {
+            return fetch(baseUrl, { signal: queueSignal, method: 'POST', body: formData, keepalive: true, headers: {'X-Requested-With': 'XMLHttpRequest'} });
+        })
             .catch(function(e) { console.error('Customer note save error:', e); });
     });
 
     // === SIDECART REFRESH ===
-    function refreshSidecart() {
-        var formData = new FormData();
-        formData.append('option', 'com_j2commerce');
-        formData.append('task', 'checkout.refreshSidecart');
-        formData.append(token, '1');
+    // Queued behind any save so it shows the state that save left; one pending refresh serves every caller.
+    // A refresh already waiting is reused only when nothing was queued after it.
+    var sidecartPending = null;
+    var sidecartJobNo = 0;
 
-        return fetch(baseUrl, { method: 'POST', body: formData, headers: {'X-Requested-With': 'XMLHttpRequest'} })
-            .then(function(r) { return r.json(); })
+    function refreshSidecart() {
+        if (sidecartPending && sidecartJobNo === jobCount) return sidecartPending;
+
+        sidecartPending = queued(function() {
+            sidecartPending = null;
+
+            var formData = new FormData();
+            formData.append('option', 'com_j2commerce');
+            formData.append('task', 'checkout.refreshSidecart');
+            formData.append(token, '1');
+
+            return fetch(baseUrl, { signal: queueSignal, method: 'POST', body: formData, headers: {'X-Requested-With': 'XMLHttpRequest'} })
+                .then(function(r) { return r.json(); });
+        }, true)
             .then(function(data) {
                 if (data.success && data.html) {
                     var container = document.getElementById('checkout-sidecart-content');
@@ -1565,6 +1704,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 return false;
             })
             .catch(function(e) { console.error('Sidecart refresh error:', e); return false; });
+
+        sidecartJobNo = jobCount;
+
+        return sidecartPending;
     }
 
     function announceOrderTotal() {
@@ -1608,12 +1751,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (input.name) formData.append(input.name, input.value);
         });
 
-        fetch(baseUrl, { method: 'POST', body: formData, headers: {'X-Requested-With': 'XMLHttpRequest'} })
-            .then(function(r) { return r.json(); })
+        queued(function() {
+            return fetch(baseUrl, { signal: queueSignal, method: 'POST', body: formData, headers: {'X-Requested-With': 'XMLHttpRequest'} })
+                .then(function(r) { return r.json(); });
+        })
             .then(function(data) {
                 if (data.success) refreshSidecart();
             })
-            .catch(function(e) { console.error('Auto shipping select error:', e); });
+            .catch(function(e) {
+                console.error('Auto shipping select error:', e);
+                showWarning(getContent('shipping-payment-method'), <?php echo $networkErrorJs; ?>);
+            });
     }
 
     // Toggle text show/hide for mobile sidecart (UIkit toggle events)
