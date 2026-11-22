@@ -34,7 +34,7 @@
     --white: #fff;
     --light-rgb: 248, 249, 250;
     --dark-rgb: 33, 37, 41;
-    --action-rgb: 0, 123, 255;
+    --action-rgb: 0, 114, 238;
     --bg-opacity: 1;
 }
 
@@ -45,14 +45,14 @@ body.com_j2commerce #content,
 #j2commerce-setup-guide {
     --success: #0d9347;
     --success-rgb: 51,179,107;
-    --success-text: #0d9347; /* should be used for text color - Joomla uses --success for bg */
+    --success-text: #00813c; /* should be used for text color - Joomla uses --success for bg */
     --success-bg-subtle: #ebf7f0;
     --success-btn-bg-subtle: #ebf7f0;
     --success-btn-border-subtle: #ebf7f0;
     --success-border-subtle: #d6f0e1;
     --success-active: #097337;
     --info: #0d6efd;
-    --info-text: var(--info);
+    --info-text: #0064ef;
     --info-rgb: 13,110,253;
     --info-bg-subtle: #e7f1ff;
     --info-border-subtle: #d5e2f7;
@@ -60,12 +60,12 @@ body.com_j2commerce #content,
     --state-info-bg: #e7f1ff;
     --state-info-border: #d5e2f7;
     --warning: #fc9231;
-    --warning-text: var(--warning);
+    --warning-text: #ac5c00;
     --warning-rgb: 252,146,49;
     --warning-bg-subtle: #fff4ea;
     --warning-border-subtle: #fee9d6;
     --danger: #dc3545;
-    --danger-text: var(--danger);
+    --danger-text: #d1283c;
     --danger-rgb: 220,53,69;
     --danger-bg-subtle: #fdecec;
     --danger-border-subtle: #fcd8d8;
@@ -249,7 +249,7 @@ body.com_j2commerce #content,
 
     .text-bg-action {
         color: #fff !important;
-        background-color: #007bff !important;
+        background-color: #0072ee !important;
     }
 
     /* .subform-repeatable-group .control-group { margin-bottom : 0; } */

@@ -1,20 +1,25 @@
 .j2commerce {
     --primary: #112855;
     --success: #0d9347;
+    --success-text: #00813c;
     --success-rgb: 51, 179, 107;
     --success-bg-subtle: #ebf7f0;
     --success-btn-bg-subtle: #ebf7f0;
     --success-btn-border-subtle: #ebf7f0;
     --success-active: #097337;
     --info: #0d6efd;
+    --info-text: #0064ef;
     --info-rgb: 13, 110, 253;
     --info-bg-subtle: #e7f1ff;
     --warning: #fc9231;
+    --warning-text: #ac5c00;
     --warning-rgb: 252, 146, 49;
     --warning-bg-subtle: #fff4ea;
     --danger: #dc3545;
+    --danger-text: #d1283c;
     --danger-rgb: 220, 53, 69;
     --danger-bg-subtle: #fdecec;
+    --action-rgb: 0, 114, 238;
     --purple: #6f42c1;
     --purple-rgb: 111, 66, 193;
     --purple-bg-subtle: #e2d9f3;
