@@ -130,7 +130,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         form.querySelector('input[name="currency_code"]').value = code;
-        form.submit();
+
+        // On the checkout page a request still in flight would save its older session over the new currency.
+        var idle = window.J2CommerceCheckout ? window.J2CommerceCheckout.whenIdle() : Promise.resolve();
+        idle.then(function () { form.submit(); });
     });
 });
 </script>
