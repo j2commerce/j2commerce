@@ -868,7 +868,8 @@ CREATE TABLE IF NOT EXISTS `#__j2commerce_orders` (
   KEY `idx_invoice_number` (`invoice_number`),
   KEY `idx_access` (`access`),
   KEY `idx_checkout` (`checked_out`),
-  KEY `idx_createdby` (`created_by`)
+  KEY `idx_createdby` (`created_by`),
+  KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
