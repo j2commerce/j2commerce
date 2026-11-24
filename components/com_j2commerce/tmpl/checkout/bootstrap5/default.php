@@ -610,7 +610,8 @@ document.addEventListener('DOMContentLoaded', function() {
         var countryUrl = ajaxUrl('option=com_j2commerce&task=ajax.getCountries');
         if (savedCountryId) countryUrl += '&country_id=' + savedCountryId;
 
-        fetch(countryUrl)
+        // Queued behind the checkout steps: an overlapping lookup used to finish last and write back a session without the step just saved.
+        queued(function() { return fetch(countryUrl, { signal: queueSignal }); }, true)
             .then(function(r) { return r.text(); })
             .then(function(html) {
                 J2CommerceDom.adopt(countrySelect, html);
@@ -640,7 +641,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var url = ajaxUrl('option=com_j2commerce&task=ajax.getZones&country_id=' + countryId);
             if (selectedZoneId) url += '&zone_id=' + selectedZoneId;
 
-            fetch(url)
+            queued(function() { return fetch(url, { signal: queueSignal }); }, true)
                 .then(function(r) { return r.text(); })
                 .then(function(html) {
                     J2CommerceDom.adopt(zoneSelect, html);

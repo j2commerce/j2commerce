@@ -46,6 +46,9 @@ class AjaxController extends BaseController
     {
         $app = Factory::getApplication();
 
+        // Read-only lookup: end the session unsaved so its stale copy cannot overwrite a checkout step saved meanwhile.
+        $app->getSession()->abort();
+
         $countryId      = $app->getInput()->getInt('country_id', 0);
         $selectedZoneId = $app->getInput()->getInt('zone_id', 0);
 
@@ -95,6 +98,9 @@ class AjaxController extends BaseController
     {
         $app = Factory::getApplication();
 
+        // Read-only lookup: end the session unsaved so its stale copy cannot overwrite a checkout step saved meanwhile.
+        $app->getSession()->abort();
+
         $selectedCountryId = $app->getInput()->getInt('country_id', 0);
 
         $html = '<option value="">' . Text::sprintf('COM_J2COMMERCE_SELECT_PLACEHOLDER', Text::_('COM_J2COMMERCE_COUNTRY')) . '</option>';
@@ -138,6 +144,9 @@ class AjaxController extends BaseController
     public function lookupCountryZone(): void
     {
         $app = Factory::getApplication();
+
+        // Read-only lookup: end the session unsaved so its stale copy cannot overwrite a checkout step saved meanwhile.
+        $app->getSession()->abort();
 
         $countryCode = $app->getInput()->getString('country_code', '');
         $stateName   = $app->getInput()->getString('state_name', '');
