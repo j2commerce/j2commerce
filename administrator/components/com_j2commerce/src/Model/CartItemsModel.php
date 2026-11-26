@@ -164,8 +164,10 @@ class CartItemsModel extends ListModel
                 ' ON ' . $db->quoteName('c.id') . ' = ' . $db->quoteName('p.product_source_id')
             );
 
-        // Join with variants table to get variant information (shipping needed for isShippingEnabled check)
-        $query->select('v.sku, v.price as variant_price, v.shipping, v.weight')
+        // Join with variants table to get variant information (shipping needed for isShippingEnabled check).
+        // length/width/height/weight_class_id/length_class_id are required so shipping plugins can read the
+        // item's real dimensions and its own weight/length unit instead of falling back to configured defaults.
+        $query->select('v.sku, v.price as variant_price, v.shipping, v.weight, v.length, v.width, v.height, v.weight_class_id, v.length_class_id')
             ->join('LEFT', $db->quoteName('#__j2commerce_variants', 'v') . ' ON (' . $db->quoteName('v.j2commerce_variant_id') . ' = ' . $db->quoteName('a.variant_id') . ')');
 
         // Filter by cart ID (required)
