@@ -128,16 +128,18 @@ class ShipperHelper
 
     public static function getPerItemPackages(array $items, array $options = []): PackingResult
     {
-        $defaults = self::getDefaults($options);
-        $boxes    = [];
+        $defaults     = self::getDefaults($options);
+        $weightUnitId = (int) ($options['weight_unit_id'] ?? 1);
+        $lengthUnitId = (int) ($options['length_unit_id'] ?? 1);
+        $boxes        = [];
 
         foreach ($items as $item) {
             $item        = (object) $item;
             $qty         = self::getItemQty($item);
-            $weight      = self::getItemWeight($item, $defaults['default_weight']);
-            $length      = self::getItemDimension($item, 'length', $defaults['default_length']);
-            $width       = self::getItemDimension($item, 'width', $defaults['default_width']);
-            $height      = self::getItemDimension($item, 'height', $defaults['default_height']);
+            $weight      = self::getItemWeight($item, $defaults['default_weight'], $weightUnitId);
+            $length      = self::getItemDimension($item, 'length', $defaults['default_length'], $lengthUnitId);
+            $width       = self::getItemDimension($item, 'width', $defaults['default_width'], $lengthUnitId);
+            $height      = self::getItemDimension($item, 'height', $defaults['default_height'], $lengthUnitId);
             $description = self::getItemDescription($item);
             $price       = self::getItemPrice($item);
 
@@ -220,10 +222,10 @@ class ShipperHelper
             for ($i = 0; $i < $qty; $i++) {
                 $packer->addItem(new ShippableItem(
                     description: self::getItemDescription($item),
-                    width: self::toMm(self::getItemDimension($item, 'width', $defaults['default_width']), $lengthUnitId),
-                    length: self::toMm(self::getItemDimension($item, 'length', $defaults['default_length']), $lengthUnitId),
-                    depth: self::toMm(self::getItemDimension($item, 'height', $defaults['default_height']), $lengthUnitId),
-                    weight: self::toGrams(self::getItemWeight($item, $defaults['default_weight']), $weightUnitId),
+                    width: self::toMm(self::getItemDimension($item, 'width', $defaults['default_width'], $lengthUnitId), $lengthUnitId),
+                    length: self::toMm(self::getItemDimension($item, 'length', $defaults['default_length'], $lengthUnitId), $lengthUnitId),
+                    depth: self::toMm(self::getItemDimension($item, 'height', $defaults['default_height'], $lengthUnitId), $lengthUnitId),
+                    weight: self::toGrams(self::getItemWeight($item, $defaults['default_weight'], $weightUnitId), $weightUnitId),
                     rotation: $rotation,
                     value: self::getItemPrice($item),
                 ));
@@ -330,10 +332,10 @@ class ShipperHelper
             for ($i = 0; $i < $qty; $i++) {
                 $packer->addItem(new ShippableItem(
                     description: self::getItemDescription($item),
-                    width: self::toMm(self::getItemDimension($item, 'width', $defaults['default_width']), $lengthUnitId),
-                    length: self::toMm(self::getItemDimension($item, 'length', $defaults['default_length']), $lengthUnitId),
-                    depth: self::toMm(self::getItemDimension($item, 'height', $defaults['default_height']), $lengthUnitId),
-                    weight: self::toGrams(self::getItemWeight($item, $defaults['default_weight']), $weightUnitId),
+                    width: self::toMm(self::getItemDimension($item, 'width', $defaults['default_width'], $lengthUnitId), $lengthUnitId),
+                    length: self::toMm(self::getItemDimension($item, 'length', $defaults['default_length'], $lengthUnitId), $lengthUnitId),
+                    depth: self::toMm(self::getItemDimension($item, 'height', $defaults['default_height'], $lengthUnitId), $lengthUnitId),
+                    weight: self::toGrams(self::getItemWeight($item, $defaults['default_weight'], $weightUnitId), $weightUnitId),
                     rotation: $rotation,
                     value: self::getItemPrice($item),
                 ));
@@ -503,16 +505,44 @@ class ShipperHelper
         }));
     }
 
-    private static function getItemWeight(object $item, float $default): float
+    /**
+     * Get an item's weight, converted from the item's own weight unit to $targetUnitId.
+     *
+     * Products carry their own weight_class_id (e.g. Ounce) that can differ from the
+     * shipping plugin's configured unit (e.g. Pound); without converting, a raw "6" stored
+     * as ounces would be sent to the carrier as 6 of whatever unit the plugin is configured for.
+     */
+    private static function getItemWeight(object $item, float $default, int $targetUnitId): float
     {
         $w = (float) ($item->weight ?? $item->orderitem_weight ?? 0);
-        return $w > 0 ? $w : $default;
+
+        if ($w <= 0) {
+            return $default;
+        }
+
+        $itemUnitId = (int) ($item->weight_class_id ?? 0);
+        if ($itemUnitId <= 0) {
+            $itemUnitId = ConfigHelper::getDefaultWeightClassId();
+        }
+
+        return WeightHelper::convert($w, $itemUnitId, $targetUnitId);
     }
 
-    private static function getItemDimension(object $item, string $dim, float $default): float
+    /** Get an item's dimension, converted from the item's own length unit to $targetUnitId. */
+    private static function getItemDimension(object $item, string $dim, float $default, int $targetUnitId): float
     {
         $v = (float) ($item->{$dim} ?? 0);
-        return $v > 0 ? $v : $default;
+
+        if ($v <= 0) {
+            return $default;
+        }
+
+        $itemUnitId = (int) ($item->length_class_id ?? 0);
+        if ($itemUnitId <= 0) {
+            $itemUnitId = ConfigHelper::getDefaultLengthClassId();
+        }
+
+        return LengthHelper::convert($v, $itemUnitId, $targetUnitId);
     }
 
     private static function getItemQty(object $item): int
