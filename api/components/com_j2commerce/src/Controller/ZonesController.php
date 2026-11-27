@@ -22,7 +22,7 @@ class ZonesController extends J2CommerceApiController
 
     protected $default_view = 'zones';
 
-    protected string $readAction = 'core.manage';
+    protected string $readAction = 'core.api';
 
     protected string $writeAction = 'core.manage';
 

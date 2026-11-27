@@ -364,19 +364,21 @@ class OrderfulfilmentController extends J2CommerceApiController
     /**
      * Any one of $actions, and — when given — $requires as well.
      *
-     * $requires is separate because it must not become another alternative: ApiDispatcher
-     * overrides dispatch() without calling checkAccess(), so unlike the admin surface there
-     * is no core.manage floor here, and a capability listed alongside a j2commerce.* action
-     * would let a caller past a deny the merchant configured deliberately.
+     * $requires is separate because it must not become another alternative: a capability
+     * listed alongside a j2commerce.* action would let a caller past a deny the merchant
+     * configured deliberately.
      *
-     * For the same reason every alternative except core.fulfilment counts only behind
-     * core.manage: core.edit is inherited from the root asset and the j2commerce.* actions
-     * were written by the ACL seed, so either can outlive the core.manage revoke that removes
-     * the group from the administrator. core.fulfilment is declared for these four routes
-     * alone, is not inherited from the root asset, and is seeded to Administrator (group 7)
-     * only — script.j2commerce.php grants it there and AclSeedHelper::CUSTOM_ACL_ACTIONS
-     * omits it, so an upgrade never widens it. A warehouse token granted it deliberately
-     * therefore keeps working without component management rights.
+     * For the same reason every alternative except core.fulfilment counts only behind the
+     * API floor (apiAccessAction()): core.edit is inherited from the root asset and the
+     * j2commerce.* actions were written by the ACL seed, so either can outlive the revoke
+     * that removes the group's API access. From Joomla 6.2.1 the core ApiDispatcher requires
+     * core.api on every route, so a fulfilment-only group needs that granted as well.
+     *
+     * core.fulfilment is declared for these four routes alone, is not inherited from the root
+     * asset, and is seeded to Administrator (group 7) only — script.j2commerce.php grants it
+     * there and AclSeedHelper::CUSTOM_ACL_ACTIONS omits it, so an upgrade never widens it. A
+     * warehouse token granted it deliberately therefore keeps working without component
+     * management rights, given API access (core.api from Joomla 6.2.1).
      */
     private function assertCan(array $actions, string $requires = ''): void
     {
@@ -388,7 +390,7 @@ class OrderfulfilmentController extends J2CommerceApiController
                 continue;
             }
 
-            if ($action === 'core.fulfilment' || $user->authorise('core.manage', 'com_j2commerce')) {
+            if ($action === 'core.fulfilment' || $user->authorise(self::apiAccessAction(), 'com_j2commerce')) {
                 $allowed = true;
                 break;
             }
