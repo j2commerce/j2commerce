@@ -22,7 +22,7 @@ class CountriesController extends J2CommerceApiController
 
     protected $default_view = 'countries';
 
-    protected string $readAction = 'core.manage';
+    protected string $readAction = 'core.api';
 
     protected string $writeAction = 'core.manage';
 

@@ -68,6 +68,9 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
     /** Installed component version read in preflight, before the update overwrites manifest_cache. */
     private string $previousVersion = '';
 
+    /** Whether the installed access.xml declared core.api, read in preflight before the update replaces it. */
+    private bool $apiActionDeclared = false;
+
     // InstallerScriptTrait declares these as typed properties of its own. Redeclaring one here
     // with a different default is an incompatible trait composition and fatals at class load,
     // so the values are assigned rather than declared. There is no ceiling counterpart: neither
@@ -155,7 +158,10 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
         // before Joomla attempts schema updates on non-existent tables.
         if ($route === 'update') {
             $this->repairMissingTables($adapter);
-            $this->previousVersion = $this->readInstalledVersion();
+            $this->previousVersion   = $this->readInstalledVersion();
+            $accessFile              = JPATH_ADMINISTRATOR . '/components/com_j2commerce/access.xml';
+            $this->apiActionDeclared = is_file($accessFile)
+                && str_contains((string) file_get_contents($accessFile), 'name="core.api"');
         }
 
         if ($route === 'install') {
@@ -868,6 +874,11 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
         $this->setFinderPluginOrdering();
 
         $this->seedCustomAclActions();
+
+        if ($route === 'update' && !$this->apiActionDeclared) {
+            $this->repairApiPermission();
+        }
+
         $this->seedQueueKey();
         $this->seedStockCommitted();
         $this->repairVariantAvailability();
@@ -1433,6 +1444,67 @@ class Com_J2commerceInstallerScript implements InstallerScriptInterface
         Access::clearStatics();
 
         $this->writeDefaultAclFlag($db, (int) $extension->extension_id, $storedParams);
+    }
+
+    /**
+     * Copy core.manage to core.api on the component asset when core.api is absent.
+     *
+     * Joomla 6.2.1 made core.api the Web Services permission and its upgrade SQL copies
+     * core.manage across once. Saving this component's Options before core.api was declared
+     * in access.xml dropped the copied rule, so the same copy is repeated here, once: postflight
+     * calls this only on the update from a release whose access.xml lacked core.api, because a
+     * later Options save that leaves core.api inherited also drops the key, and re-copying
+     * then would undo the merchant's choice. A fresh install keeps core's default, where
+     * core.api is inherited from the root asset.
+     * DELETE WHEN: $minimumJoomla is 6.2.1 or newer and the oldest supported upgrade source
+     * already declares core.api in access.xml.
+     */
+    private function repairApiPermission(): void
+    {
+        if (version_compare(JVERSION, '6.2.1-dev', '<')) {
+            return;
+        }
+
+        $db    = Factory::getContainer()->get(DatabaseInterface::class);
+        $name  = 'com_j2commerce';
+        $query = $db->getQuery(true)
+            ->select([$db->quoteName('id'), $db->quoteName('rules')])
+            ->from($db->quoteName('#__assets'))
+            ->where($db->quoteName('name') . ' = :name')
+            ->bind(':name', $name);
+        $asset = $db->setQuery($query)->loadObject();
+
+        if (!$asset) {
+            return;
+        }
+
+        $storedRules = (string) $asset->rules;
+        $rules       = json_decode($storedRules, true);
+
+        if (!\is_array($rules) || !\array_key_exists('core.manage', $rules) || \array_key_exists('core.api', $rules)) {
+            return;
+        }
+
+        $rules['core.api'] = $rules['core.manage'];
+        $newRules          = json_encode($rules, JSON_FORCE_OBJECT);
+        $assetId           = (int) $asset->id;
+
+        // Compare and swap, as seedDefaultAcl() does: a Permissions save since the read wins.
+        $update = $db->getQuery(true)
+            ->update($db->quoteName('#__assets'))
+            ->set($db->quoteName('rules') . ' = :rules')
+            ->where($db->quoteName('id') . ' = :id')
+            ->where('CAST(' . $db->quoteName('rules') . ' AS BINARY) = :expected')
+            ->bind(':rules', $newRules)
+            ->bind(':expected', $storedRules)
+            ->bind(':id', $assetId, ParameterType::INTEGER);
+
+        $db->setQuery($update)->execute();
+
+        if ($db->getAffectedRows() > 0) {
+            Access::clearStatics();
+            $this->debugLog('ACL: copied core.manage to core.api on the component asset');
+        }
     }
 
     /** A lost compare here is harmless: the rules are written, and the next update re-reads them. */

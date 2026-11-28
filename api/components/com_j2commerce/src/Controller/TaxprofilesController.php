@@ -21,7 +21,7 @@ class TaxprofilesController extends J2CommerceApiController
 
     protected $default_view = 'taxprofiles';
 
-    protected string $readAction = 'core.manage';
+    protected string $readAction = 'core.api';
 
     protected string $writeAction = 'core.manage';
 }

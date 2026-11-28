@@ -26,11 +26,11 @@ use Joomla\CMS\MVC\Controller\Exception\Save;
  * Forces 'Administrator' prefix for model resolution since J2Commerce
  * API controllers reuse admin models (no API-specific models exist).
  *
- * Also carries the authorisation every J2Commerce API route needs. ApiDispatcher overrides
- * dispatch() without calling checkAccess(), so there is no core.manage floor the way there is
- * on the admin surface, and ApiController::displayList()/displayItem() authorise nothing at
- * all. Without the gates below, any principal a merchant has granted core.login.api reads
- * every order, customer and address regardless of what j2commerce.vieworders says.
+ * Also carries the authorisation every J2Commerce API route needs. Before Joomla 6.2.1
+ * ApiDispatcher never called checkAccess(), and ApiController::displayList()/displayItem()
+ * authorise nothing at all. Without the gates below, any principal a merchant has granted
+ * core.login.api reads every order, customer and address regardless of what
+ * j2commerce.vieworders says.
  *
  * Each subclass declares the capability its resource needs. The values mirror the admin
  * views over the same data — Orders and Customers gate on j2commerce.vieworders, Products on
@@ -42,8 +42,8 @@ use Joomla\CMS\MVC\Controller\Exception\Save;
 abstract class J2CommerceApiController extends ApiController
 {
     /**
-     * Capability a read requires: a j2commerce.* action, or a core.* one where the admin twin
-     * has no custom action and relies on the dispatcher's core.manage floor.
+     * Capability a read requires: a j2commerce.* action, a core.* one, or core.api where the
+     * resource needs nothing beyond API access itself.
      *
      * Empty denies. A controller that declares nothing must fail closed rather than inherit
      * an unauthorised displayList() from ApiController.
@@ -161,15 +161,13 @@ abstract class J2CommerceApiController extends ApiController
     }
 
     /**
-     * Throw unless the caller holds core.manage plus $action, and $coreVerb when one is given.
+     * Throw unless the caller holds the API floor plus $action, and $coreVerb when one is given.
      *
-     * core.manage is a precondition rather than one capability among several: the ACL seed
-     * materialises the j2commerce.* actions as explicit allows on the component asset for
-     * every group that held core.manage when it ran, and from then on those allows stand on
-     * their own. ComponentDispatcher::checkAccess() applies core.manage for the administrator
-     * client only, and ApiDispatcher::dispatch() never calls checkAccess() at all, so without
-     * the floor below a revoked core.manage closes the admin screens while leaving the whole
-     * API surface open to the same group.
+     * The floor is a precondition rather than one capability among several: the ACL seed
+     * materialises the j2commerce.* actions as explicit allows on the component asset, and
+     * those allows stand on their own, so without it revoking API access would leave every
+     * resource open to the same group. Joomla 6.2.1 ApiDispatcher checks core.api as well;
+     * repeating it here keeps the gate whichever dispatcher runs.
      *
      * j2commerce.* actions go through canAccess(), which honours an explicit deny and keeps
      * the pre-seed core.manage fallback, so this reads the same way the admin views do.
@@ -178,16 +176,31 @@ abstract class J2CommerceApiController extends ApiController
     {
         $user = $this->app->getIdentity();
 
-        if (!$user || $user->guest || $action === '' || !$user->authorise('core.manage', 'com_j2commerce')) {
+        if (!$user || $user->guest || $action === '' || !$user->authorise(self::apiAccessAction(), 'com_j2commerce')) {
             throw new NotAllowed('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN', 403);
         }
 
-        $allowed = str_starts_with($action, 'j2commerce.')
-            ? J2CommerceHelper::canAccess($action)
-            : $user->authorise($action, 'com_j2commerce');
+        $allowed = match (true) {
+            $action === 'core.api'                  => true,
+            str_starts_with($action, 'j2commerce.') => J2CommerceHelper::canAccess($action),
+            default                                 => $user->authorise($action, 'com_j2commerce'),
+        };
 
         if (!$allowed || ($coreVerb !== '' && !$user->authorise($coreVerb, 'com_j2commerce'))) {
             throw new NotAllowed('JLIB_APPLICATION_ERROR_ACCESS_FORBIDDEN', 403);
         }
+    }
+
+    /**
+     * The action that grants API access to this component.
+     *
+     * Joomla 6.2.1 replaced core.manage with core.api for Web Services and seeds core.api only
+     * from that release on; below it no group holds core.api, so core.manage stays the floor.
+     * The -dev suffix also counts 6.2.1 pre-releases, which already carry the change.
+     * DELETE WHEN: script.j2commerce.php $minimumJoomla is 6.2.1 or newer.
+     */
+    public static function apiAccessAction(): string
+    {
+        return version_compare(JVERSION, '6.2.1-dev', '>=') ? 'core.api' : 'core.manage';
     }
 }
